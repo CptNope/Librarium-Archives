@@ -47,6 +47,13 @@ function librarium_museum_exhibits() {
 		'lewis'      => __( 'The Lewis Chessmen', 'librarium-museum' ),
 		'cards'      => __( 'Playing cards', 'librarium-museum' ),
 		'tarot'      => __( 'Tarot', 'librarium-museum' ),
+		'wing4'      => __( 'Wing IV: Printed Boards and Parlour Tables', 'librarium-museum' ),
+		'foxgeese'   => __( 'Fox and Geese', 'librarium-museum' ),
+		'newqueen'   => __( 'The New Queen (chess)', 'librarium-museum' ),
+		'draughts'   => __( 'Draughts', 'librarium-museum' ),
+		'pachisi'    => __( 'Pachisi', 'librarium-museum' ),
+		'goose'      => __( 'The Game of the Goose', 'librarium-museum' ),
+		'mahjong'    => 'Mahjong',
 		'next'       => __( 'Librarium lectern', 'librarium-museum' ),
 	);
 }

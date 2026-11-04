@@ -37,7 +37,25 @@ Through the second arch: chess travels from India to the far North, Rome's dice 
 | Playing cards | c. 900–1400 CE | Earliest games lost | On display (new designs in old styles) |
 | Tarot (tarocchi) | c. 1440 CE | Still played as a card game | On display (new paintings in the Milan style) |
 
-The hall ends at a lectern featuring Librarium's own games and the closed arch of Wing IV, which is in preparation.
+## Wing IV: Printed Boards and Parlour Tables (c. 1300–1900 CE)
+
+Through the third arch: games are printed, sold and brought home.
+
+| Exhibit | Date | Rules | In the museum |
+| --- | --- | --- | --- |
+| Fox and Geese | by c. 1300 CE | Survive in tradition; many local variants | Playable, as the fox |
+| The New Queen (chess) | c. 1475 CE | Survive in writing (*Scachs d'amor*; Lucena) | On display, with the old firzan beside the new queen |
+| Draughts | c. 1100s–1500s CE | English draughts (checkers) | Playable |
+| Pachisi (chaupar) | 16th century CE | Still played; ancestor of Ludo | On display (cloth cross, cowries) |
+| The Game of the Goose | c. 1575 CE | Survive in print | Playable |
+| Mahjong | mid-1800s CE | Still played | On display (wall and hand of tiles) |
+
+Rule choices worth knowing:
+
+- **Fox and Geese** is played on the plain cross board (no diagonal lines) with 13 geese that may move forward or sideways but never back. A **museum rule** lets the fox win if the geese go twenty moves each without advancing or losing a goose: without it, games with sideways moves can go on forever.
+- **The Goose:** a throw of 9 from the start goes to 26 (6 and 3) or 53 (5 and 4), whenever the piece is at the start, since geese every nine squares would otherwise fly it straight home. With two players, the Well and the Prison hold a player for two and three turns instead of until someone else arrives.
+
+The hall ends at a lectern featuring Librarium's own games and the closed arch of Wing V, which is in preparation.
 
 ## The Scribe
 
@@ -45,7 +63,7 @@ The AI opponent has three levels, picked at any table and remembered: **Gentle**
 
 - **Race games** (Senet, Ur) score each move. Gentle adds a lot of chance and sometimes just plays any legal move; Sharp plays its best move.
 - **Tables** scores every legal full turn (pip count, safe points, exposed checkers). Gentle picks loosely among the good ones; Sharp always takes the best.
-- **Strategy games** (Morris, Oware, Brandubh, Shatranj) use a negamax search with alpha-beta pruning and iterative deepening. Each level has a thinking budget (about 0.1, 0.6 and 1.5 seconds): the Scribe searches one move deeper at a time and stops the moment its budget runs out, so it plays as well as the visitor's device allows without stalling.
+- **Strategy games** (Morris, Oware, Brandubh, Shatranj, Fox and Geese, Draughts) use a negamax search with alpha-beta pruning and iterative deepening. Each level has a thinking budget (about 0.1, 0.6 and 1.5 seconds): the Scribe searches one move deeper at a time and stops the moment its budget runs out, so it plays as well as the visitor's device allows without stalling. In Fox and Geese it plays the geese, steering by how much room the fox has left to roam.
 
 In Brandubh the visitor's side still wins most games, even against Sharp.
 
@@ -130,7 +148,7 @@ To preview locally, serve the folder with any static server, for example `npx se
 
 ### Adding a game
 
-1. Add a rule engine to `js/rules.js` with `init`, `legal(pl)`, `apply(m)` and `result(pl)`. Dice games set `dice: true`, provide `roll`, `done`, `home`, `extra` and `aiPlan(pl, moves)`, and receive the full roll as `legal(pl, value, roll)`. A move can return `followUp` choices for the same player (Morris removals, the second die in Tables). Strategy games also provide `snapshot`, `restore`, `turns`, `terminal`, `evaluate` and `aiPlan`, which plug into the shared negamax search.
+1. Add a rule engine to `js/rules.js` with `init`, `legal(pl)`, `apply(m)` and `result(pl)`. Dice games set `dice: true`, provide `roll`, `done`, `home`, `extra` and `aiPlan(pl, moves)`, and receive the full roll as `legal(pl, value, roll)`. A move can return `followUp` choices for the same player (Morris removals, the second die in Tables). Optional hooks: `skipTurn(pl)` returns a message when a player misses a turn, `autoMove` plays a throw's only move without a click, `pipDice` draws two six-sided dice, and `winText(pl)` words the result. Strategy games also provide `snapshot`, `restore`, `turns`, `terminal`, `evaluate` and `aiPlan`, which plug into the shared negamax search.
 2. Add a presenter in `js/museum.js` (`setup`, `meshesFor`, `ringFor`, `play`, `score`, `prompt`) and register it in `PRES`.
 3. Add a board builder and a `STOPS` entry with `game: '<id>'`.
 4. Add tests in `tests/rules.test.mjs`.
@@ -154,6 +172,10 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 - Wikipedia: Chaturanga, Shatranj, Tabula (game), Backgammon, Game pieces of the Lewis chessmen hoard
 - The World of Playing Cards (wopc.co.uk): early references; Mamluk cards and the making of the European deck
 - Tarot Heritage: tarot history chronology
+- Wikipedia: Fox games, Game of the Goose, Ludo, Mahjong culture; Britannica: mah-jongg
+- Masters Traditional Games, Fox and Geese; Traditional Board Games (tradgames.org.uk), Draughts
+- Kasparov–Wilson (kwabc.org): Scachs d'amor; ISTC: Lucena, *Repetición de amores y arte de ajedrez*
+- Live History India: Ludo's Indian roots
 
 ## Roadmap
 
@@ -161,7 +183,8 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 - [ ] Swap the type-set wordmark for Librarium's logo files
 - [x] Wing II: strategy games (Weiqi, Ludus latrunculorum, Nine Men's Morris, Oware, Brandubh)
 - [x] Wing III: kings, cards and courts (Tables, chaturanga, shatranj, Lewis chessmen, cards, tarot)
-- [ ] Wing IV: the early modern era (modern chess, draughts, Go-moku, the first commercial board games)
+- [x] Wing IV: printed boards and parlour tables (Fox and Geese, the new queen, Draughts, Pachisi, the Goose, Mahjong)
+- [ ] Wing V: the modern board game (from the first patented games to Librarium's own)
 - [ ] A playable early card game, such as a simple tarocchi trick-taking game
 - [x] Difficulty settings for the Scribe
 - [ ] A stronger Brandubh attacker

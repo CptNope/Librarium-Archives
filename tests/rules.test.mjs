@@ -448,3 +448,141 @@ for (const level of ['gentle', 'fair', 'sharp']) {
     rules.setLevel('fair');
   });
 }
+
+/* ---------------------------------------------------------- Fox and Geese */
+const { foxgeese: FG, draughts: DRA, goose: GO } = rules;
+
+test('Fox and Geese: 33 points, 13 geese, the fox in the centre, geese first', () => {
+  FG.init();
+  assert.equal(FG.geese(), 13);
+  assert.equal(FG.fox(), 24);
+  assert.equal(FG.first, 1);
+  let points = 0; for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) if ((r >= 2 && r <= 4) || (c >= 2 && c <= 4)) points++;
+  assert.equal(points, 33);
+});
+
+test('Fox and Geese: geese never move back toward their side', () => {
+  FG.init();
+  assert.ok(FG.legal(1).every(m => ((m.to / 7) | 0) >= ((m.from / 7) | 0)));
+});
+
+test('Fox and Geese: the fox jumps geese and may chain jumps', () => {
+  FG.init(); FG.b.fill(0);
+  FG.b[24] = 1; FG.b[31] = 2; FG.b[45] = 2; // geese at (4,3) and (6,3)
+  const jumps = FG.legal(0).filter(m => m.caps.length);
+  assert.deepEqual(jumps.map(m => m.to), [38]);
+  FG.b.fill(0); FG.b[17] = 1; FG.b[24] = 2; FG.b[38] = 2; FG.b[31] = 0; FG.b[2] = 2;
+  const chain = FG.legal(0).find(m => m.caps.length === 2);
+  assert.ok(chain, 'a double jump is offered');
+  FG.apply(chain);
+  assert.equal(FG.geese(), 1);
+});
+
+test('Fox and Geese: penning the fox wins for the geese; a thin flock loses', () => {
+  FG.init(); FG.b.fill(0);
+  FG.b[2] = 1; FG.b[3] = 2; FG.b[4] = 2; FG.b[9] = 2; FG.b[16] = 2; FG.b[10] = 2; FG.b[11] = 2; FG.b[17] = 2;
+  assert.equal(FG.result(0).winner, 1, 'fox in the top corner with no move or jump');
+  FG.init(); FG.b.fill(0); FG.b[24] = 1; [2, 3, 4, 9, 10, 11].forEach(i => { FG.b[i] = 2; });
+  assert.equal(FG.result(1).winner, 0);
+});
+
+test('Fox and Geese: the geese lose if they stop advancing', () => {
+  FG.init(); FG.stall = FG.STALL;
+  assert.equal(FG.result(1).winner, 0);
+});
+
+/* ---------------------------------------------------------------- Draughts */
+
+test('Draughts: 12 pieces each on dark squares; seven opening moves', () => {
+  DRA.init();
+  assert.equal(DRA.count(0), 12); assert.equal(DRA.count(1), 12);
+  assert.ok(DRA.b.every((v, i) => !v || (((i >> 3) + (i & 7)) % 2 === 1)));
+  assert.equal(DRA.legal(0).length, 7);
+});
+
+test('Draughts: capture is compulsory and chains continue', () => {
+  DRA.init(); DRA.b.fill(0);
+  DRA.b[2 * 8 + 1] = 1;            // man at (2,1)
+  DRA.b[3 * 8 + 2] = 3;            // enemy at (3,2)
+  DRA.b[5 * 8 + 4] = 3;            // enemy at (5,4)
+  DRA.b[0 * 8 + 7] = 1;            // another man with a quiet move available
+  const ms = DRA.legal(0);
+  assert.ok(ms.every(m => m.caps.length), 'only captures are legal');
+  assert.equal(ms[0].caps.length, 2, 'the double jump is taken in one move');
+  assert.equal(ms[0].to, 6 * 8 + 5);
+});
+
+test('Draughts: men crown on the far row and the capture stops there', () => {
+  DRA.init(); DRA.b.fill(0);
+  DRA.b[5 * 8 + 0] = 1; DRA.b[6 * 8 + 1] = 3; DRA.b[6 * 8 + 3] = 3; DRA.b[0] = 0; DRA.b[1 * 8 + 0] = 3;
+  const m = DRA.legal(0).find(x => x.caps.length);
+  assert.ok(m.crown); assert.equal(m.caps.length, 1, 'a man crowned mid-capture stops');
+  DRA.apply(m);
+  assert.equal(DRA.b[7 * 8 + 2], 2);
+});
+
+test('Draughts: kings move backwards; men do not', () => {
+  DRA.init(); DRA.b.fill(0);
+  DRA.b[3 * 8 + 4] = 1; DRA.b[7 * 8 + 0] = 3;
+  assert.ok(DRA.legal(0).every(m => (m.to >> 3) > 3));
+  DRA.b[3 * 8 + 4] = 2;
+  assert.ok(DRA.legal(0).some(m => (m.to >> 3) < 3));
+});
+
+/* ------------------------------------------------------- Game of the Goose */
+
+test('Goose: a 9 from the start goes to 26 or 53, never straight home', () => {
+  GO.init();
+  assert.equal(GO.legal(0, 9, { faces: [6, 3], value: 9 })[0].to, 26);
+  assert.equal(GO.legal(0, 9, { faces: [4, 5], value: 9 })[0].to, 53);
+  GO.fresh = [false, false]; // back at the start after Death: the rule still applies
+  assert.equal(GO.legal(0, 9, { faces: [3, 6], value: 9 })[0].to, 26);
+});
+
+test('Goose: geese fly on by the same throw', () => {
+  GO.init(); GO.pos[0][0] = 1;
+  assert.equal(GO.legal(0, 4, { faces: [2, 2], value: 4 })[0].to, 13, '1 + 4 = 5 (goose), 9 (goose), 13');
+});
+
+test('Goose: the Bridge, the Maze and Death', () => {
+  GO.init(); GO.pos[0][0] = 3;
+  assert.equal(GO.legal(0, 3, { faces: [1, 2], value: 3 })[0].to, 12);
+  GO.pos[0][0] = 38;
+  assert.equal(GO.legal(0, 4, { faces: [1, 3], value: 4 })[0].to, 39);
+  GO.pos[0][0] = 55;
+  assert.equal(GO.legal(0, 3, { faces: [1, 2], value: 3 })[0].to, 0);
+});
+
+test('Goose: exact landing on 63, and a bounce back', () => {
+  GO.init(); GO.pos[0][0] = 57;
+  assert.equal(GO.legal(0, 6, { faces: [3, 3], value: 6 })[0].to, 63);
+  GO.pos[0][0] = 60; // 61, 62, 63, back to 59: a goose while bouncing, so back 7 more, to the Prison
+  const m = GO.legal(0, 7, { faces: [3, 4], value: 7 })[0];
+  assert.equal(m.to, 52); assert.equal(m.skip, 3);
+});
+
+test('Goose: the Inn costs a turn, and landing on the other player swaps', () => {
+  GO.init(); GO.fresh = [false, false];
+  GO.pos[0][0] = 16; GO.pos[1][0] = 30;
+  const inn = GO.legal(0, 3, { faces: [1, 2], value: 3 })[0];
+  GO.apply(inn);
+  assert.equal(GO.pos[0][0], 19); assert.ok(GO.skipTurn(0)); assert.equal(GO.skipTurn(0), '');
+  GO.pos[0][0] = 26;
+  const sw = GO.legal(0, 4, { faces: [1, 3], value: 4 })[0];
+  assert.ok(sw.swap);
+  GO.apply(sw);
+  assert.deepEqual([GO.pos[0][0], GO.pos[1][0]], [30, 26]);
+});
+
+test('Goose: 500 two-player games finish', () => {
+  for (let n = 0; n < 500; n++) {
+    GO.init(); let pl = 0, t = 0;
+    while (!GO.done(0) && !GO.done(1)) {
+      assert.ok(++t < 3000, 'game did not finish');
+      if (GO.skipTurn(pl)) { pl = 1 - pl; continue; }
+      const r = GO.roll(); GO.apply(GO.legal(pl, r.value, r)[0]);
+      for (const p of [0, 1]) assert.ok(GO.pos[p][0] >= 0 && GO.pos[p][0] <= 63);
+      if (!GO.done(pl)) pl = 1 - pl;
+    }
+  }
+});

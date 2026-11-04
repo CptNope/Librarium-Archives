@@ -568,7 +568,7 @@
    * moves; legal() works out every full sequence, and apply() narrows them
    * as moves are made, returning the next choices as a follow-up. */
   const TABLES = {
-    id: 'tables', name: 'Tables', dice: true, first: 0, N: 15, sides: ['pale checkers', 'dark checkers'],
+    id: 'tables', name: 'Tables', dice: true, pipDice: true, first: 0, N: 15, sides: ['pale checkers', 'dark checkers'],
     rules: [
       'Throw two dice and move one checker by each die, or one checker by both. Doubles are played four times.',
       'Your checkers travel counterclockwise toward your home board in the near-right quarter.',
@@ -841,7 +841,314 @@
     aiPlan(pl, depth) { return bestPlan(this, pl, depth, 5); },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ };
+  /* ----------------------------------------------------------- Fox and Geese
+   * The 33-point cross board: point (r, c) exists when r or c is 2, 3 or 4.
+   * Lines run along rows and columns, and diagonally through the points whose
+   * r + c is even. Index r*7+c (unused indexes are simply never occupied).
+   * Player 0, the visitor, is the fox; player 1, the Scribe, has 15 geese that
+   * start on the far side (rows 0-2) and may never move back toward it. */
+  const FG_ON = (r, c) => r >= 0 && r < 7 && c >= 0 && c < 7 && ((r >= 2 && r <= 4) || (c >= 2 && c <= 4));
+  const FG_POINTS = []; for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) if (FG_ON(r, c)) FG_POINTS.push(r * 7 + c);
+  const FG_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  // Rule choices, kept as data so they can be tuned and tested: whether the board
+  // has diagonal lines, whether geese may step sideways, and where they start.
+  const FOXGEESE = {
+    id: 'foxgeese', name: 'Fox and Geese', dice: false, first: 1, FOX_WINS_AT: 6,
+    STALL: 40, // plies without a goose advancing or a capture before the fox escapes
+    variant: { diagonals: false, sideways: true, start: [2, 3, 4, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20] },
+    line(r, c, dr, dc) { return !(dr && dc) || (this.variant.diagonals && (r + c) % 2 === 0); },
+    get GEESE() { return this.variant.start.length; },
+    rules: [
+      'You are the fox. The Scribe has thirteen geese and moves first.',
+      'Each turn, move one piece along a line, across or up and down the board, to the next empty point. The fox may go any way; geese may go forward or sideways, never back.',
+      'The fox captures by jumping a goose to the empty point just beyond it, and may keep jumping in one turn. Geese cannot capture.',
+      'The geese win by penning the fox in so it cannot move.',
+      'The fox wins by thinning the flock to six geese or fewer, or by leaving the geese with no move.',
+      'Museum rule: if the geese go twenty moves without moving forward or losing a goose, the fox slips away and wins.'
+    ],
+    source: 'A common English form of the game, on the plain cross board. Medieval versions varied in the number of geese, in the lines on the board and in whether geese could move backwards. The twenty-move rule is ours, so games end.',
+    init() {
+      this.b = Array(49).fill(0);
+      this.variant.start.forEach(i => { this.b[i] = 2; });
+      this.b[24] = 1; // the fox starts in the centre
+      this.ply = 0; this.stall = 0;
+    },
+    fox() { return this.b.indexOf(1); },
+    geese() { let n = 0; for (const v of this.b) if (v === 2) n++; return n; },
+    foxMoves() {
+      const f = this.fox(); if (f < 0) return [];
+      const out = [], r0 = (f / 7) | 0, c0 = f % 7;
+      for (const [dr, dc] of FG_DIRS) {
+        if (!this.line(r0, c0, dr, dc)) continue;
+        const r = r0 + dr, c = c0 + dc;
+        if (FG_ON(r, c) && !this.b[r * 7 + c]) out.push({ pl: 0, from: f, to: r * 7 + c, path: [r * 7 + c], caps: [] });
+      }
+      // Jump chains. Every stopping point along a chain is a legal move of its own.
+      const seen = new Set();
+      const jump = (at, path, caps) => {
+        const r1 = (at / 7) | 0, c1 = at % 7;
+        for (const [dr, dc] of FG_DIRS) {
+          if (!this.line(r1, c1, dr, dc)) continue;
+          const mr = r1 + dr, mc = c1 + dc, lr = r1 + 2 * dr, lc = c1 + 2 * dc;
+          if (!FG_ON(mr, mc) || !FG_ON(lr, lc)) continue;
+          const mid = mr * 7 + mc, land = lr * 7 + lc;
+          if (this.b[mid] !== 2 || caps.includes(mid)) continue;
+          if (this.b[land] && land !== f) continue;
+          const np = path.concat([land]), nc = caps.concat([mid]);
+          const key = land + ':' + nc.slice().sort((a, b) => a - b).join(',');
+          if (seen.has(key)) continue; seen.add(key);
+          out.push({ pl: 0, from: f, to: land, path: np, caps: nc });
+          jump(land, np, nc);
+        }
+      };
+      jump(f, [], []);
+      // Where two chains end on the same point, offer the one that takes more geese.
+      const best = new Map();
+      for (const m of out) { const k = m.to, b = best.get(k); if (!b || m.caps.length > b.caps.length) best.set(k, m); }
+      return [...best.values()];
+    },
+    geeseMoves() {
+      const out = [];
+      for (const i of FG_POINTS) {
+        if (this.b[i] !== 2) continue;
+        const r0 = (i / 7) | 0, c0 = i % 7;
+        for (const [dr, dc] of FG_DIRS) {
+          if (dr < 0 || (!dr && !this.variant.sideways) || !this.line(r0, c0, dr, dc)) continue; // never back toward the far side
+          const r = r0 + dr, c = c0 + dc;
+          if (FG_ON(r, c) && !this.b[r * 7 + c]) out.push({ pl: 1, from: i, to: r * 7 + c, path: [r * 7 + c], caps: [] });
+        }
+      }
+      return out;
+    },
+    legal(pl) { return pl === 0 ? this.foxMoves() : this.geeseMoves(); },
+    apply(m) {
+      const v = this.b[m.from]; this.b[m.from] = 0;
+      for (const c of m.caps) this.b[c] = 0;
+      this.b[m.to] = v; this.ply++;
+      const n = m.caps.length;
+      const advanced = m.pl === 1 && ((m.to / 7) | 0) > ((m.from / 7) | 0);
+      this.stall = n || advanced ? 0 : this.stall + 1;
+      return { caps: m.caps.slice(), note: n ? (n > 1 ? `The fox takes ${n} geese.` : 'The fox takes a goose.') : '' };
+    },
+    result(pl) {
+      if (this.geese() <= this.FOX_WINS_AT) return { winner: 0, text: `Only ${this.geese()} geese are left, too few to pen the fox.` };
+      if (pl === 0 && !this.foxMoves().length) return { winner: 1, text: 'The geese have penned the fox in.' };
+      if (pl === 1 && !this.geeseMoves().length) return { winner: 0, text: 'The geese have no move left.' };
+      if (this.stall >= this.STALL) return { winner: 0, text: 'The geese stopped advancing, and the fox slipped away.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.ply, this.stall]; },
+    restore(s) { this.b = s[0].slice(); this.ply = s[1]; this.stall = s[2]; },
+    turns(pl) {
+      // Captures first for the fox; forward steps first for the geese, so alpha-beta prunes more.
+      const key = m => m.caps.length * 10 + (m.pl === 1 ? ((m.to / 7) | 0) - ((m.from / 7) | 0) : 0);
+      return this.legal(pl).sort((a, b) => key(b) - key(a)).map(m => [m]);
+    },
+    terminal(pl, depth) {
+      const r = this.result(pl);
+      if (!r) return null;
+      return r.winner === pl ? 1000 + depth : -1000 - depth;
+    },
+    // How many empty points the fox could walk to without jumping: the space the geese must close.
+    room() {
+      const f = this.fox(); if (f < 0) return 0;
+      const seen = new Set([f]), q = [f];
+      while (q.length) {
+        const at = q.pop(), r0 = (at / 7) | 0, c0 = at % 7;
+        for (const [dr, dc] of FG_DIRS) {
+          if (!this.line(r0, c0, dr, dc)) continue;
+          const r = r0 + dr, c = c0 + dc, j = r * 7 + c;
+          if (FG_ON(r, c) && !this.b[j] && !seen.has(j)) { seen.add(j); q.push(j); }
+        }
+      }
+      return seen.size - 1;
+    },
+    evaluate(pl) {
+      const moves = this.foxMoves(), jumps = moves.filter(m => m.caps.length).length;
+      let geeseAdvance = 0; for (const i of FG_POINTS) if (this.b[i] === 2) geeseAdvance += (i / 7) | 0;
+      // Good for the fox: geese taken, room to roam, moves and jumps on offer.
+      // Good for the geese: a flock that has advanced and boxed the fox in.
+      const s = (this.GEESE - this.geese()) * 14 + this.room() * 0.9 + moves.length * 1.2 + jumps * 5 - geeseAdvance * 1.0;
+      return pl === 0 ? s : -s;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 6); },
+  };
+
+  /* --------------------------------------------------------------- Draughts
+   * English draughts (checkers) on the 32 dark squares of an 8x8 board, index
+   * r*8+c with (r + c) odd. Player 0, the visitor, starts on rows 0-2 and moves
+   * up; player 1 starts on rows 5-7 and moves down. Values: 1 man, 2 king for
+   * player 0; 3 man, 4 king for player 1. */
+  const DR_DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const DRAUGHTS = {
+    id: 'draughts', name: 'Draughts', dice: false, first: 0,
+    rules: [
+      'You play the dark pieces and move first. Pieces move one square diagonally forward, on the dark squares only.',
+      'Capture by jumping an enemy piece diagonally into the empty square beyond. If you can capture, you must, and you keep jumping while you can.',
+      'A piece that reaches the far row is crowned a king. Kings move and capture diagonally backwards as well as forwards.',
+      'You win when the Scribe has no pieces left or no legal move. A long stretch with no capture or uncrowned move is a draw.'
+    ],
+    source: 'English draughts (checkers). Forced capture is first recorded in France around 1535.',
+    init() {
+      const b = Array(64).fill(0);
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if ((r + c) % 2) { if (r <= 2) b[r * 8 + c] = 1; else if (r >= 5) b[r * 8 + c] = 3; }
+      this.b = b; this.quiet = 0; this.ply = 0;
+    },
+    owner: v => (v >= 3 ? 1 : 0),
+    king: v => v === 2 || v === 4,
+    count(pl) { let n = 0; for (const v of this.b) if (v && this.owner(v) === pl) n++; return n; },
+    dirs(v) { if (this.king(v)) return DR_DIAG; return this.owner(v) === 0 ? DR_DIAG.slice(0, 2) : DR_DIAG.slice(2); },
+    lastRow(pl) { return pl === 0 ? 7 : 0; },
+    captures(pl) {
+      const out = [];
+      for (let i = 0; i < 64; i++) {
+        const v = this.b[i]; if (!v || this.owner(v) !== pl) continue;
+        const walk = (at, path, caps) => {
+          const r = at >> 3, c = at & 7; let extended = false;
+          for (const [dr, dc] of this.dirs(v)) {
+            const mr = r + dr, mc = c + dc, lr = r + 2 * dr, lc = c + 2 * dc;
+            if (lr < 0 || lr > 7 || lc < 0 || lc > 7) continue;
+            const mid = mr * 8 + mc, land = lr * 8 + lc, mv = this.b[mid];
+            if (!mv || this.owner(mv) === pl || caps.includes(mid)) continue;
+            if (this.b[land] && land !== i) continue;
+            extended = true;
+            const np = path.concat([land]), nc = caps.concat([mid]);
+            // A man crowned by a capture stops there.
+            if (!this.king(v) && lr === this.lastRow(pl)) out.push({ pl, from: i, to: land, path: np, caps: nc, crown: true });
+            else walk(land, np, nc);
+          }
+          if (!extended && caps.length) out.push({ pl, from: i, to: at, path, caps, crown: false });
+        };
+        walk(i, [], []);
+      }
+      return out;
+    },
+    legal(pl) {
+      const caps = this.captures(pl);
+      if (caps.length) return caps;
+      const out = [];
+      for (let i = 0; i < 64; i++) {
+        const v = this.b[i]; if (!v || this.owner(v) !== pl) continue;
+        const r = i >> 3, c = i & 7;
+        for (const [dr, dc] of this.dirs(v)) {
+          const nr = r + dr, nc = c + dc;
+          if (nr < 0 || nr > 7 || nc < 0 || nc > 7 || this.b[nr * 8 + nc]) continue;
+          out.push({ pl, from: i, to: nr * 8 + nc, path: [nr * 8 + nc], caps: [], crown: !this.king(v) && nr === this.lastRow(pl) });
+        }
+      }
+      return out;
+    },
+    apply(m) {
+      const v = this.b[m.from]; this.b[m.from] = 0;
+      for (const c of m.caps) this.b[c] = 0;
+      this.b[m.to] = m.crown ? (m.pl === 0 ? 2 : 4) : v;
+      this.quiet = m.caps.length || !this.king(v) ? 0 : this.quiet + 1; this.ply++;
+      const parts = [];
+      if (m.caps.length) parts.push(m.pl === 0 ? `You take ${m.caps.length > 1 ? m.caps.length + ' pieces' : 'a piece'}.` : `The Scribe takes ${m.caps.length > 1 ? m.caps.length + ' of your pieces' : 'one of your pieces'}.`);
+      if (m.crown) parts.push(m.pl === 0 ? 'Your piece is crowned.' : 'The Scribe crowns a piece.');
+      return { caps: m.caps.slice(), note: parts.join(' ') };
+    },
+    result(pl) {
+      if (!this.legal(pl).length) return { winner: 1 - pl, text: pl === 0 ? (this.count(0) ? 'You have no legal move.' : 'All your pieces are gone.') : (this.count(1) ? 'The Scribe has no legal move.' : 'You have taken every one of the Scribe\'s pieces.') };
+      if (this.quiet >= 80) return { winner: -1, text: 'Forty moves each with no capture or uncrowned move. The game is drawn.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.quiet, this.ply]; },
+    restore(s) { this.b = s[0].slice(); this.quiet = s[1]; this.ply = s[2]; },
+    turns(pl) { return this.legal(pl).sort((a, b) => b.caps.length - a.caps.length).map(m => [m]); },
+    terminal(pl, depth) {
+      if (!this.legal(pl).length) return -1000 - depth;
+      if (this.quiet >= 80) return 0;
+      return null;
+    },
+    evaluate(pl) {
+      let s = 0;
+      for (let i = 0; i < 64; i++) {
+        const v = this.b[i]; if (!v) continue;
+        const o = this.owner(v), r = i >> 3, c = i & 7;
+        let val = this.king(v) ? 1.6 : 1 + 0.04 * (o === 0 ? r : 7 - r);
+        if (c >= 2 && c <= 5 && r >= 2 && r <= 5) val += 0.05;
+        if (!this.king(v) && r === (o === 0 ? 0 : 7)) val += 0.06; // guarding the back row
+        s += o === pl ? val : -val;
+      }
+      return s;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 8); },
+  };
+
+  /* ------------------------------------------------------- Game of the Goose
+   * A race along a spiral of 63 squares with two dice. Each player has one
+   * piece; pos[pl][0] is its square (0 = not yet on the board). */
+  const GOOSE_SQ = new Set([5, 9, 14, 18, 23, 27, 32, 36, 41, 45, 50, 54, 59]);
+  const GOOSE = {
+    id: 'goose', name: 'The Game of the Goose', dice: true, pipDice: true, autoMove: true, first: 0, N: 1,
+    sides: ['gold piece', 'silver piece'],
+    rules: [
+      'Throw two dice and move your piece that many squares along the spiral. The first to land exactly on 63 wins; overshoot and you bounce back.',
+      'Land on a goose and you fly on again by the same throw.',
+      'Throwing 9 from the start would ride the geese all the way home, so 6 and 3 takes you to 26 and 5 and 4 to 53 instead.',
+      'The Bridge (6) carries you to 12. The Maze (42) sends you back to 39. Death (58) sends you back to the start.',
+      'The Inn (19) costs one turn, the Well (31) two and the Prison (52) three.',
+      'Land on the other player\'s square and you swap places with them.'
+    ],
+    source: 'The traditional squares. In the old game the Well and the Prison held a player until someone else landed there; with only two players we use a set number of turns instead.',
+    init() { this.pos = [[0], [0]]; this.skip = [0, 0]; this.fresh = [true, true]; },
+    roll() { const a = 1 + ((Math.random() * 6) | 0), b = 1 + ((Math.random() * 6) | 0); return { faces: [a, b], value: a + b }; },
+    who: pl => (pl === 0 ? 'You' : 'The Scribe'),
+    skipTurn(pl) {
+      if (!this.skip[pl]) return '';
+      this.skip[pl]--;
+      const where = this.pos[pl][0] === 19 ? 'the Inn' : this.pos[pl][0] === 31 ? 'the Well' : 'the Prison';
+      return pl === 0 ? `You are still in ${where} and miss this turn.` : `The Scribe is still in ${where} and misses a turn.`;
+    },
+    plan(pl, roll) {
+      const from = this.pos[pl][0], v = roll.value, notes = [], path = [];
+      const you = pl === 0 ? 'you' : 'the Scribe', miss = n => (pl === 0 ? `miss ${n}` : `the Scribe misses ${n}`);
+      let at = from, dir = 1;
+      const walk = n => {
+        for (let k = 0; k < n; k++) {
+          if (at === 63) dir = -1;
+          at += dir; path.push(at);
+        }
+      };
+      let skip = 0;
+      // With a goose every nine squares, a 9 from the start would fly all the way home,
+      // so the old rules send it to 26 or 53 instead, whenever the piece is at the start.
+      if (from === 0 && roll.faces.includes(6) && roll.faces.includes(3)) { at = 26; path.push(26); notes.push('6 and 3 from the start: straight to 26.'); }
+      else if (from === 0 && roll.faces.includes(5) && roll.faces.includes(4)) { at = 53; path.push(53); notes.push('5 and 4 from the start: straight to 53.'); }
+      else {
+        walk(v);
+        for (let guard = 0; GOOSE_SQ.has(at) && guard < 10; guard++) { notes.push('A goose! On again by ' + v + '.'); walk(v); }
+      }
+      if (at === 6) { at = 12; path.push(12); notes.push(`The Bridge carries ${you} to 12.`); }
+      else if (at === 42) { at = 39; path.push(39); notes.push('Lost in the Maze: back to 39.'); }
+      else if (at === 58) { at = 0; path.push(0); notes.push('Death! Back to the start.'); }
+      else if (at === 19) { skip = 1; notes.push(`A night at the Inn: ${miss('a turn')}.`); }
+      else if (at === 31) { skip = 2; notes.push(`Down the Well: ${miss('two turns')}.`); }
+      else if (at === 52) { skip = 3; notes.push(`Into the Prison: ${miss('three turns')}.`); }
+      else if (at === 63) notes.push(pl === 0 ? 'Home to the garden at 63!' : 'The Scribe reaches 63.');
+      const opp = 1 - pl, swap = at > 0 && at < 63 && this.pos[opp][0] === at;
+      if (swap) notes.push(pl === 0 ? 'You land on the Scribe and swap places.' : 'The Scribe lands on you and you swap places.');
+      return { pl, i: 0, from, to: at, path, skip, swap, notes };
+    },
+    legal(pl, value, roll) { return [this.plan(pl, roll || { faces: [value, 0], value })]; },
+    steps(m) { return m.path; },
+    apply(m) {
+      const opp = 1 - m.pl;
+      this.pos[m.pl][0] = m.to; this.fresh[m.pl] = false; this.skip[m.pl] = m.skip;
+      const moved = [];
+      if (m.swap) { this.pos[opp][0] = m.from; moved.push({ pl: opp, i: 0 }); }
+      return { moved, note: m.notes.join(' ') };
+    },
+    extra() { return false; },
+    extraNote: '',
+    done(pl) { return this.pos[pl][0] === 63; },
+    home(pl) { return this.pos[pl][0] === 63 ? 1 : 0; },
+    ai(moves) { return moves[0]; },
+    aiPlan(pl, moves) { return [moves[0]]; },
+  };
+
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);
