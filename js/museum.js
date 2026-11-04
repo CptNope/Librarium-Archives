@@ -1185,8 +1185,10 @@ function stopView(stop) {
   if (stop.id === 'hall') return { pos: V3(0, 1.62, 2.4), target: V3(0, 1.75, -12) };
   if (stop.id === 'wing2') return { pos: V3(0, 1.62, HALL.divider - 1.2), target: V3(0, 1.85, HALL.divider - 14) };
   if (stop.id === 'next') return { pos: V3(0, 1.62, lectern.position.z + 3), target: V3(0, 1.15, lectern.position.z) };
-  const g = stop.group;
-  return { pos: g.localToWorld(V3(0, 1.66, 2.15)), target: g.localToWorld(V3(0, 1.08, 0)) };
+  const g = stop.group, sheet = window.innerWidth <= 720;
+  return sheet
+    ? { pos: g.localToWorld(V3(0, 2.05, 2.5)), target: g.localToWorld(V3(0, 0.55, -0.4)) }
+    : { pos: g.localToWorld(V3(0, 1.66, 2.15)), target: g.localToWorld(V3(0, 1.08, 0)) };
 }
 function flyToPlay(stop, dur = 1.4) {
   const g = stop.group;
@@ -1260,6 +1262,7 @@ $('#helpBtn').addEventListener('click', () => { if (mode === 'gallery') goStop(0
 /* ------------------------------------------------------------- play table */
 const play = { ex: null, game: null, P: null, token: 0, phase: 'idle', roll: null, moves: [], rings: [], byMesh: new Map(), glowing: new Set(), selected: null, hover: null, twoStep: false };
 const ringGeo = new THREE.TorusGeometry(0.05, 0.006, 8, 36);
+const ringHitGeo = new THREE.CircleGeometry(0.062, 24); // the whole ring face is clickable, not just its outline
 const RING_COLOR = { gold: 0xf6a01a, ember: 0xe06418 };
 function glowMats(obj) {
   if (obj.userData.mats) return obj.userData.mats;
@@ -1274,6 +1277,7 @@ async function startGame(ex) {
   g.surface = ex.surface;
   g.init(); P.setup(ex);
   showPlacard(false); $('#hint').style.opacity = 0; rail.hidden = true;
+  document.body.classList.add('playing');
   $('#hud').hidden = false; $('#win').hidden = true; $('#rules').hidden = true;
   $('#hudTitle').textContent = g.name;
   $('#throwBtn').hidden = !g.dice; $('#dice').hidden = !g.dice;
@@ -1295,6 +1299,7 @@ function leaveGame() {
   play.token++; clearHighlights();
   mode = 'gallery';
   $('#hud').hidden = true; rail.hidden = false; $('#hint').style.opacity = 1;
+  document.body.classList.remove('playing');
   goStop(STOPS.indexOf(play.ex));
 }
 $('#leaveBtn').addEventListener('click', leaveGame);
@@ -1447,6 +1452,7 @@ function addRing(m) {
   ring.rotation.x = -Math.PI / 2;
   ring.position.copy(P.ringFor(m)); ring.position.y += 0.004;
   ring.userData.move = m; ring.userData.base = P.ringScale || 1;
+  ring.add(new THREE.Mesh(ringHitGeo, MAT.hit));
   play.ex.group.add(ring); play.rings.push(ring);
 }
 function highlight(moves) {

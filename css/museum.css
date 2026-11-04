@@ -30,6 +30,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
 .brand .mark{font-family:var(--f-display);color:var(--gold);font-size:26px;letter-spacing:.02em;text-shadow:0 2px 18px rgba(0,0,0,.8)}
 .brand .sub{font-family:var(--f-ui);font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--dust);margin-top:6px}
 
+.playing .brand{opacity:0}
+.brand{transition:opacity .3s}
 .iconbtn{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-family:var(--f-display);font-size:18px;color:var(--gold)}
 
 /* Placard */
