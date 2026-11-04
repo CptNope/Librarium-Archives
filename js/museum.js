@@ -2097,7 +2097,11 @@ async function boot() {
 }
 // Inspect the live state from the console with ?debug in the address.
 if (/[?&]debug\b/.test(location.search)) {
-  window.__museum = { play, GAMES, PRES, STOPS, cam, choose, humanThrow, startGame, leaveGame, goStop };
+  window.__museum = {
+    play, GAMES, PRES, STOPS, cam, choose, humanThrow, startGame, leaveGame, goStop,
+    // Render one frame and return a small JPEG of the 3D view.
+    snap(w = 360) { step(); const c = document.createElement('canvas'); c.width = w; c.height = Math.round(w * canvas.height / canvas.width); c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.55); },
+  };
   // Keep the scene ticking when the browser starves animation frames (a hidden pane or tab).
   setInterval(() => { if (performance.now() - lastStep > 120) step(); }, 40);
 }
