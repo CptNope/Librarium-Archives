@@ -2020,9 +2020,14 @@ function settleNearest() {
 /* -------------------------------------------------------------- loop */
 const clock = new THREE.Clock();
 let t = 0;
+let lastStep = 0;
 function frame() {
   requestAnimationFrame(frame);
   if (document.hidden) return;
+  step();
+}
+function step() {
+  lastStep = performance.now();
   const dt = Math.min(0.05, clock.getDelta()); t += dt;
   for (let i = tweens.length - 1; i >= 0; i--) {
     const tw = tweens[i]; tw.t += dt; const k = Math.min(1, tw.t / tw.dur);
@@ -2091,7 +2096,11 @@ async function boot() {
   setTimeout(() => { $('#hint').style.opacity = 0; }, 12000);
 }
 // Inspect the live state from the console with ?debug in the address.
-if (/[?&]debug\b/.test(location.search)) window.__museum = { play, GAMES, PRES, STOPS, cam, choose, humanThrow, startGame, leaveGame, goStop };
+if (/[?&]debug\b/.test(location.search)) {
+  window.__museum = { play, GAMES, PRES, STOPS, cam, choose, humanThrow, startGame, leaveGame, goStop };
+  // Keep the scene ticking when the browser starves animation frames (a hidden pane or tab).
+  setInterval(() => { if (performance.now() - lastStep > 120) step(); }, 40);
+}
 boot();
 })();
 
