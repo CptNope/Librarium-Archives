@@ -2841,6 +2841,12 @@ async function boot() {
 if (/[?&]debug\b/.test(location.search)) {
   window.__museum = {
     play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop,
+    // Put the camera at an exhibit straight away, without the glide (for slow test machines).
+    jump(id) {
+      const i = STOPS.findIndex(x => x.id === id); goStop(i, false); showPlacard(false);
+      const v = stopView(STOPS[i]), a = lookAngles(v.pos, v.target);
+      camTween = null; cam.pos.copy(v.pos); cam.yaw = a.yaw; cam.pitch = a.pitch; step();
+    },
     // Render one frame and return a small JPEG of the 3D view.
     snap(w = 360) { step(); const c = document.createElement('canvas'); c.width = w; c.height = Math.round(w * canvas.height / canvas.width); c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.55); },
   };
