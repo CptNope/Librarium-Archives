@@ -1644,6 +1644,8 @@ async function boot() {
   setTimeout(() => { $('#loader').classList.add('done'); goStop(0, false); flyTo(v.pos, v.target, 2.2); }, 250);
   setTimeout(() => { $('#hint').style.opacity = 0; }, 12000);
 }
+// Inspect the live state from the console with ?debug in the address.
+if (/[?&]debug\b/.test(location.search)) window.__museum = { play, GAMES, PRES, STOPS, cam };
 boot();
 })();
 
