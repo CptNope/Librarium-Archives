@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0: Refinements
+
+- **Scribe levels:** Gentle, Fair and Sharp, chosen from the table's HUD and remembered. Strategy games now search with iterative deepening inside a per-level time budget, and stop as soon as the budget is spent, so phones never stall.
+- **Last move:** ember marks show where the Scribe's last move came from and went to; they clear when you move.
+- **Rules on first visit:** each table opens its rules the first time you sit down, with a "Got it" button.
+- **Visitor progress:** visited exhibits are marked on the timeline, and each table keeps your win/loss/draw record, shown on its placard and after every game. Stored in the browser only.
+- **Fix:** the Scribe no longer waits for an animation frame before thinking, so a game left in a background tab carries on instead of pausing.
+- New tests for levels: the Scribe stays within its budget at every level and never leaves the board changed after thinking.
+
 ## 0.3.0: Wing III
 
 - New wing, **Kings, Cards and Courts**, through a second open arch.

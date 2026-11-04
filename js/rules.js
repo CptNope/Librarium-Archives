@@ -11,6 +11,15 @@
  */
 (function (root) {
   'use strict';
+
+  /* How hard the Scribe plays: 'gentle', 'fair' (default) or 'sharp'.
+   * Strategy games search deeper or shallower; race games add or remove luck. */
+  const LEVEL = { name: 'fair' };
+  const LEVELS = ['gentle', 'fair', 'sharp'];
+  function setLevel(name) { if (LEVELS.includes(name)) LEVEL.name = name; return LEVEL.name; }
+  const pick = (gentle, fair, sharp) => (LEVEL.name === 'gentle' ? gentle : LEVEL.name === 'sharp' ? sharp : fair);
+  // Gentle play sometimes just picks any legal move.
+  const wander = moves => (LEVEL.name === 'gentle' && Math.random() < 0.45 ? moves[(Math.random() * moves.length) | 0] : null);
   const DICE_P = [1, 4, 6, 4, 1].map(v => v / 16);
   const UR = {
     id: 'ur', name: 'The Royal Game of Ur', N: 7, sides: ['shell', 'lapis'],
@@ -61,6 +70,7 @@
       return Math.min(1, p);
     },
     ai(moves) {
+      const w = wander(moves); if (w) return w;
       let best = moves[0], bs = -1e9;
       for (const m of moves) {
         const opp = 1 - m.pl; let s = 0;
@@ -71,7 +81,7 @@
         s += this.threat(opp, m.from) * 30;
         if (m.from === 8) s -= 12;
         if (m.from === 0) s += 8;
-        s += m.to * 0.6 + Math.random() * 3;
+        s += m.to * 0.6 + Math.random() * pick(8, 3, 0.5);
         if (s > bs) { bs = s; best = m; }
       }
       return best;
@@ -146,6 +156,7 @@
     done(pl) { return this.pos[pl].every(p => p === 31); },
     home(pl) { return this.pos[pl].filter(p => p === 31).length; },
     ai(moves) {
+      const w = wander(moves); if (w) return w;
       let best = moves[0], bs = -1e9;
       for (const m of moves) {
         const pl = m.pl; let s = 0;
@@ -157,7 +168,7 @@
         if (!m.water && m.to <= 30 && (mine(m.to - 1) || mine(m.to + 1))) s += 10;
         if (m.from < 26 && (mine(m.from - 1) || mine(m.from + 1))) s -= 5;
         if (m.to >= 28 && m.to <= 30) s += 12;
-        s += (m.to === 31 ? 30 : m.water ? 0 : m.to) * 0.5 + Math.random() * 3;
+        s += (m.to === 31 ? 30 : m.water ? 0 : m.to) * 0.5 + Math.random() * pick(8, 3, 0.5);
         if (s > bs) { bs = s; best = m; }
       }
       return best;
@@ -173,7 +184,10 @@
   /* Shared negamax search for the strategy games. Each game supplies
    * snapshot/restore, turns(pl) (a list of move sequences), terminal(pl, depth)
    * and evaluate(pl). */
+  let deadline = Infinity, nodes = 0;
+  const OUT_OF_TIME = { outOfTime: true };
   function negamax(G, pl, depth, alpha, beta) {
+    if ((++nodes & 127) === 0 && Date.now() > deadline) throw OUT_OF_TIME;
     const t = G.terminal(pl, depth);
     if (t !== null) return t;
     if (depth === 0) return G.evaluate(pl);
@@ -189,15 +203,41 @@
     }
     return best;
   }
-  function bestPlan(G, pl, depth) {
+  function searchAt(G, pl, depth, first) {
     let best = null, bv = -Infinity;
-    for (const seq of G.turns(pl)) {
+    const turns = G.turns(pl);
+    if (first) { // try the previous depth's choice first; it is usually still best
+      const key = JSON.stringify(first), i = turns.findIndex(t => JSON.stringify(t) === key);
+      if (i > 0) turns.unshift(turns.splice(i, 1)[0]);
+    }
+    for (const seq of turns) {
       const s = G.snapshot();
       for (const m of seq) G.apply(m);
-      const v = -negamax(G, 1 - pl, depth - 1, -Infinity, Infinity) + Math.random() * 0.6;
+      const v = -negamax(G, 1 - pl, depth - 1, -Infinity, Infinity) + Math.random() * pick(6, 0.6, 0.05);
       G.restore(s);
       if (v > bv) { bv = v; best = seq; }
     }
+    return best;
+  }
+  /* With a fixed depth (tests), search exactly that deep. Otherwise deepen one
+   * ply at a time until the level's thinking budget would run out, so the
+   * Scribe plays as well as the visitor's device allows without stalling. */
+  const BUDGET_MS = { gentle: 120, fair: 600, sharp: 1500 };
+  function bestPlan(G, pl, depth, maxDepth) {
+    if (depth) return searchAt(G, pl, depth);
+    const t0 = Date.now(), budget = BUDGET_MS[LEVEL.name], cap = pick(2, maxDepth, maxDepth + 2);
+    const root = G.snapshot();
+    let best = searchAt(G, pl, 1);
+    deadline = t0 + budget;
+    try {
+      for (let d = 2; d <= cap; d++) {
+        if ((Date.now() - t0) * 3 > budget) break; // the next ply usually costs several times more
+        best = searchAt(G, pl, d, best);
+      }
+    } catch (e) {
+      if (e !== OUT_OF_TIME) throw e;
+      G.restore(root); // an interrupted search leaves moves applied; put the board back
+    } finally { deadline = Infinity; }
     return best;
   }
 
@@ -299,7 +339,7 @@
       if (!this.hand[pl] && !this.hand[opp]) s += (this.legal(pl).length - this.legal(opp).length) * 0.4;
       return s;
     },
-    aiPlan(pl, depth) { return bestPlan(this, pl, depth || (this.hand[pl] > 0 ? 3 : 4)); },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 4); },
   };
 
   /* --------------------------------------------------------------- Oware
@@ -379,7 +419,7 @@
       return null;
     },
     evaluate(pl) { return this.store[pl] - this.store[1 - pl]; },
-    aiPlan(pl, depth) { return bestPlan(this, pl, depth || 8); },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 10); },
   };
 
   /* ------------------------------------------------------------- Brandubh
@@ -518,7 +558,7 @@
       }
       return pl === 0 ? s : -s;
     },
-    aiPlan(pl, depth) { return bestPlan(this, pl, depth || 4); },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 5); },
   };
 
   /* ----------------------------------------------------- Tables (backgammon)
@@ -650,7 +690,7 @@
       let best = seqs[0], bv = -Infinity;
       for (const seq of seqs) {
         for (const m of seq) this.doMove(m);
-        const v = this.evaluate(pl) + Math.random() * 0.3;
+        const v = this.evaluate(pl) + Math.random() * pick(14, 0.3, 0);
         for (let k = seq.length - 1; k >= 0; k--) this.undoMove(seq[k]);
         if (v > bv) { bv = v; best = seq; }
       }
@@ -798,10 +838,10 @@
       if (!this.material(1 - pl)) s += 6;
       return s;
     },
-    aiPlan(pl, depth) { return bestPlan(this, pl, depth || 4); },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 5); },
   };
 
-  const api = { DICE_P, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ };
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);

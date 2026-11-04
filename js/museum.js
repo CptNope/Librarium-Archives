@@ -1340,6 +1340,7 @@ function racePresenter(G) {
       return a;
     },
     ringFor(m) { if (m.water) { const c = seCell(27); return V3(c.x, G.surface, c.z); } return G.local(m.pl, m.to, m.i); },
+    fromFor(m) { return G.local(m.pl, m.from, m.i); },
     async play(m) {
       const tok = play.token, mesh = this.meshes[m.pl][m.i];
       for (const s of G.steps(m)) {
@@ -1379,6 +1380,7 @@ const MORRIS_P = {
   pt(p) { const q = moPoint(p); return V3(q.x, GAMES.morris.surface, q.z); },
   meshesFor(m) { return m.type === 'place' ? [] : [this.at[m.type === 'move' ? m.from : m.at]]; },
   ringFor(m) { return this.pt(m.type === 'remove' ? m.at : m.to); },
+  fromFor(m) { return m.type === 'move' ? this.pt(m.from) : null; },
   ringTone: m => (m.type === 'remove' ? 'ember' : 'gold'),
   async play(m) {
     const G = GAMES.morris; let mesh, res;
@@ -1473,6 +1475,7 @@ const BRANDUBH_P = {
   lostSpot: (owner, k) => V3(owner === 1 ? 0.64 : -0.64, TOP, -0.36 + k * 0.09),
   meshesFor(m) { return [this.cell[m.from]]; },
   ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
   async play(m) {
     const G = GAMES.brandubh, P = this.ex.pieces;
     const mesh = this.cell[m.from]; this.cell[m.from] = null; this.cell[m.to] = mesh;
@@ -1521,6 +1524,7 @@ const TABLES_P = {
   },
   layout(pl, rel) { const st = this.stacks[pl][rel]; return st.map((m, k) => [m, this.slot(pl, rel, k, st.length)]); },
   meshesFor(m) { const st = this.stacks[m.pl][m.from]; return [st[st.length - 1]]; },
+  fromFor(m) { const st = this.stacks[m.pl][m.from]; return this.slot(m.pl, m.from, st.length - 1, st.length); },
   ringFor(m) {
     if (m.to === 0) return this.slot(m.pl, 0, this.stacks[m.pl][0].length, 0);
     const n = this.stacks[m.pl][m.to].length;
@@ -1571,6 +1575,7 @@ const SHATRANJ_P = {
   lostSpot(owner, k) { const col = k % 2, row = (k / 2) | 0; return V3((owner === 1 ? 0.48 : -0.48) + (owner === 1 ? 1 : -1) * col * 0.065, TOP, -0.3 + row * 0.075); },
   meshesFor(m) { return [this.cell[m.from]]; },
   ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
   async play(m) {
     const G = GAMES.shatranj;
     const mesh = this.cell[m.from], victim = this.cell[m.to];
@@ -1636,6 +1641,24 @@ function flyToPlay(stop, dur = 1.4) {
   return flyTo(g.localToWorld(pos), g.localToWorld(center.clone().add(V3(0, 0, -0.03))), dur);
 }
 
+/* ---------------------------------------------------- visitor progress
+ * Kept in this browser only: exhibits visited, rules already shown, the
+ * Scribe's level and the visitor's record at each table. */
+const STORE_KEY = 'librarium.museum.v1';
+const store = (() => {
+  let d = {};
+  try { d = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (e) { d = {}; }
+  d.visited = d.visited || {}; d.record = d.record || {}; d.rulesSeen = d.rulesSeen || {};
+  return d;
+})();
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { /* storage blocked: progress lasts for this visit only */ } }
+function recordText(id) {
+  const r = store.record[id]; if (!r) return '';
+  const [w, l, d] = r;
+  const n = (k, one, many) => `${k} ${k === 1 ? one : many}`;
+  return `Your record against the Scribe here: ${n(w, 'win', 'wins')}, ${n(l, 'loss', 'losses')}${d ? ', ' + n(d, 'draw', 'draws') : ''}.`;
+}
+
 /* ------------------------------------------------------- UI: placard + rail */
 let mode = 'gallery', current = 0;
 const rail = $('#rail');
@@ -1645,8 +1668,9 @@ STOPS.forEach((s, i) => {
     const w = document.createElement('span'); w.className = 'wing'; w.textContent = ['', 'Wing I', 'Wing II', 'Wing III'][s.wing]; rail.appendChild(w);
   }
   const b = document.createElement('button');
-  b.innerHTML = '<span class="t"></span><span class="d"></span>';
+  b.innerHTML = '<span class="t"></span><span class="d"></span><span class="sr">, visited</span>';
   b.querySelector('.t').textContent = s.rail; b.querySelector('.d').textContent = s.date;
+  if (store.visited[s.id]) b.classList.add('seen');
   b.addEventListener('click', () => goStop(i));
   rail.appendChild(b); railButtons.push(b);
 });
@@ -1662,6 +1686,7 @@ function renderPlacard(s) {
     const dl = el('dl', 'facts');
     s.facts.forEach(([k, v]) => { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); });
   }
+  if (s.game) { const rec = recordText(s.game); if (rec) el('p', 'record', rec); }
   body.scrollTop = 0;
   const act = $('#placardActions'); act.innerHTML = '';
   if (s.game) {
@@ -1696,10 +1721,21 @@ function setActive(i) {
 function goStop(i, fly = true) {
   if (mode !== 'gallery') return;
   setActive(i);
+  if (!store.visited[STOPS[i].id]) { store.visited[STOPS[i].id] = true; save(); railButtons[i].classList.add('seen'); }
   renderPlacard(STOPS[i]); showPlacard(true);
   if (fly) { const v = stopView(STOPS[i]); flyTo(v.pos, v.target); }
 }
 $('#closeP').addEventListener('click', () => showPlacard(false));
+
+// The Scribe's level, chosen at any table and remembered.
+const levelButtons = [...document.querySelectorAll('#level button')];
+function setScribeLevel(name) {
+  name = R.setLevel(name);
+  store.level = name; save();
+  levelButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.level === name)));
+}
+levelButtons.forEach(b => b.addEventListener('click', () => setScribeLevel(b.dataset.level)));
+setScribeLevel(store.level || 'fair');
 $('#helpBtn').addEventListener('click', () => { if (mode === 'gallery') goStop(0); else $('#rules').hidden = !$('#rules').hidden; });
 
 /* ------------------------------------------------------------- play table */
@@ -1725,6 +1761,8 @@ async function startGame(ex) {
   $('#hudTitle').textContent = g.name;
   $('#throwBtn').hidden = !g.dice; $('#dice').hidden = !g.dice;
   renderRules(g);
+  if (!store.rulesSeen[g.id]) { $('#rules').hidden = false; store.rulesSeen[g.id] = true; save(); }
+  clearLastMove();
   if (g.dice) renderDice(g, null);
   updateScore();
   setMsg(g.first === 0 ? 'Your turn' : 'The Scribe', g.first === 0 ? '' : 'The Scribe moves first.');
@@ -1736,10 +1774,12 @@ function renderRules(g) {
   const h = document.createElement('h3'); h.textContent = 'How to play ' + g.name; r.appendChild(h);
   const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); r.appendChild(ul);
   const p = document.createElement('p'); p.className = 'src'; p.textContent = g.source; r.appendChild(p);
+  const close = document.createElement('button'); close.className = 'hudbtn'; close.textContent = 'Got it';
+  close.addEventListener('click', () => { r.hidden = true; }); r.appendChild(close);
 }
 function leaveGame() {
   if (mode !== 'play') return;
-  play.token++; clearHighlights();
+  play.token++; clearHighlights(); clearLastMove();
   mode = 'gallery';
   $('#hud').hidden = true; rail.hidden = false; $('#hint').style.opacity = 1;
   document.body.classList.remove('playing');
@@ -1830,7 +1870,7 @@ async function humanThrow() {
 }
 async function choose(m) {
   if (play.phase !== 'choose') return;
-  play.phase = 'anim'; clearHighlights();
+  play.phase = 'anim'; clearHighlights(); clearLastMove();
   const g = play.game, tok = play.token;
   const res = await play.P.play(m);
   if (tok !== play.token) return;
@@ -1863,8 +1903,11 @@ async function aiTurn() {
     await wait(500); if (tok !== play.token) return;
     let res = {};
     const m = plan[plan.length - 1];
+    clearLastMove();
     for (const step of plan) {
+      const from = P.fromFor ? P.fromFor(step) : null, to = P.ringFor(step);
       res = await P.play(step);
+      markLastMove(from, to);
       if (tok !== play.token) return;
       updateScore();
       if (res.note) setMsg('The Scribe', res.note);
@@ -1875,12 +1918,16 @@ async function aiTurn() {
     beginTurn(0);
     return;
   }
-  await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
+  // Let the 'thinking' message paint first, without depending on animation frames (paused in background tabs).
+  await new Promise(r => { requestAnimationFrame(() => setTimeout(r, 30)); setTimeout(r, 120); });
   const plan = g.aiPlan(1);
   if (tok !== play.token || !plan) return;
   let said = false;
+  clearLastMove();
   for (const m of plan) {
+    const from = P.fromFor ? P.fromFor(m) : null, to = P.ringFor(m);
     const res = await P.play(m);
+    markLastMove(from, to);
     if (tok !== play.token) return;
     updateScore();
     if (res.note) { setMsg('The Scribe', res.note); said = true; }
@@ -1897,7 +1944,23 @@ function finish(res) {
   $('#winText').textContent = res.text || (res.winner === 0
     ? `All ${g.N} of your pieces are home. The Scribe bows and resets the board.`
     : `The Scribe brought all ${g.N} pieces home first. You bore off ${g.home(0)}.`);
+  const rec = store.record[g.id] || (store.record[g.id] = [0, 0, 0]);
+  rec[res.winner === 0 ? 0 : res.winner === 1 ? 1 : 2]++; save();
+  $('#winRecord').textContent = recordText(g.id).replace('Your record against the Scribe here', 'Your record at this table') + ` The Scribe was playing ${R.level()}.`;
   setTimeout(() => { if (play.phase === 'over') { $('#win').hidden = false; $('#againBtn').focus({ preventScroll: true }); } }, res.sweep ? 900 : 300);
+}
+// Ember marks show where the Scribe's last move went from and to.
+const lastMarks = [];
+const markFromGeo = new THREE.CircleGeometry(0.026, 20);
+function clearLastMove() { lastMarks.splice(0).forEach(o => { o.parent && o.parent.remove(o); o.material.dispose(); }); }
+function markLastMove(from, to) {
+  const add = (geo, v, opacity) => {
+    if (!v) return;
+    const o = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: RING_COLOR.ember, transparent: true, opacity, depthWrite: false }));
+    o.rotation.x = -Math.PI / 2; o.position.copy(v); o.position.y += 0.003; o.scale.setScalar(0.9);
+    play.ex.group.add(o); lastMarks.push(o);
+  };
+  add(markFromGeo, from, 0.4); add(ringGeo, to, 0.75);
 }
 function addRing(m) {
   const P = play.P;
