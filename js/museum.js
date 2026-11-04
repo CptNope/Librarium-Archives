@@ -11,8 +11,18 @@ const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
 const wait = ms => new Promise(r => setTimeout(r, reduceMotion ? ms * 0.5 : ms));
 
+/* ------------------------------------------------------------------ host
+ * The museum fills the window on its own page, or a box when embedded in
+ * another page (the WordPress plugin wraps it in .lm-embed). Settings come
+ * from data attributes on #lm-app: data-start (an exhibit id to open on) and
+ * data-shop (where the closing "Visit Librarium Games" link points). */
+const root = $('#lm-app');
+if (!root) return; // no museum markup on this page
+const embedded = !!root.closest('.lm-embed');
+const hostSize = () => ({ w: root.clientWidth || window.innerWidth, h: root.clientHeight || window.innerHeight });
+
 /* ------------------------------------------------------------------ renderer */
-const canvas = $('#scene');
+const canvas = $('#lm-scene');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1.4 : 1.75));
 renderer.outputEncoding = THREE.sRGBEncoding;
@@ -27,7 +37,7 @@ const camera = new THREE.PerspectiveCamera(58, 1, 0.03, 90);
 camera.rotation.order = 'YXZ';
 
 function resize() {
-  const w = window.innerWidth, h = window.innerHeight;
+  const { w, h } = hostSize();
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.fov = camera.aspect < 0.8 ? 72 : 58;
@@ -1661,7 +1671,7 @@ function recordText(id) {
 
 /* ------------------------------------------------------- UI: placard + rail */
 let mode = 'gallery', current = 0;
-const rail = $('#rail');
+const rail = $('#lm-rail');
 const railButtons = [];
 STOPS.forEach((s, i) => {
   if (i === 0 || STOPS[i - 1].wing !== s.wing) {
@@ -1675,7 +1685,7 @@ STOPS.forEach((s, i) => {
   rail.appendChild(b); railButtons.push(b);
 });
 function renderPlacard(s) {
-  const body = $('#placardBody'); body.innerHTML = '';
+  const body = $('#lm-placardBody'); body.innerHTML = '';
   const el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; body.appendChild(e); return e; };
   el('div', 'eyebrow', s.eyebrow);
   el('h2', '', s.title);
@@ -1688,7 +1698,7 @@ function renderPlacard(s) {
   }
   if (s.game) { const rec = recordText(s.game); if (rec) el('p', 'record', rec); }
   body.scrollTop = 0;
-  const act = $('#placardActions'); act.innerHTML = '';
+  const act = $('#lm-placardActions'); act.innerHTML = '';
   if (s.game) {
     const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Take a seat and play';
     b.addEventListener('click', () => startGame(s)); act.appendChild(b);
@@ -1703,11 +1713,11 @@ function renderPlacard(s) {
   }
 }
 let placardOpen = false;
-function showPlacard(on) { placardOpen = on; $('#placard').classList.toggle('away', !on); }
+function showPlacard(on) { placardOpen = on; $('#lm-placard').classList.toggle('away', !on); }
 // On phones the placard is a bottom sheet, so the picture slides up to stay visible above it.
 let viewShift = 0;
 function updateViewShift(dt) {
-  const h = window.innerHeight, w = window.innerWidth;
+  const { w, h } = hostSize();
   const want = mode === 'gallery' && placardOpen && w <= 720 ? 0.26 : 0;
   viewShift += (want - viewShift) * Math.min(1, dt * 6);
   if (Math.abs(viewShift) < 0.002) { if (camera.view && camera.view.enabled) camera.clearViewOffset(); viewShift = want ? viewShift : 0; return; }
@@ -1716,7 +1726,9 @@ function updateViewShift(dt) {
 function setActive(i) {
   current = i;
   railButtons.forEach((b, k) => b.classList.toggle('on', k === i));
-  railButtons[i].scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+  // Scroll the timeline sideways only; scrollIntoView would also scroll the host page.
+  const b = railButtons[i], left = b.offsetLeft - rail.clientWidth / 2 + b.offsetWidth / 2;
+  rail.scrollTo({ left: Math.max(0, left), behavior: reduceMotion ? 'auto' : 'smooth' });
 }
 function goStop(i, fly = true) {
   if (mode !== 'gallery') return;
@@ -1725,10 +1737,24 @@ function goStop(i, fly = true) {
   renderPlacard(STOPS[i]); showPlacard(true);
   if (fly) { const v = stopView(STOPS[i]); flyTo(v.pos, v.target); }
 }
-$('#closeP').addEventListener('click', () => showPlacard(false));
+$('#lm-closeP').addEventListener('click', () => showPlacard(false));
+
+// Full screen, where the browser allows it (a phone or an embedded viewer may not).
+const fsBtn = $('#lm-fsBtn');
+if (!document.fullscreenEnabled || !root.requestFullscreen) fsBtn.hidden = true;
+fsBtn.addEventListener('click', () => {
+  const p = document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen();
+  if (p && p.catch) p.catch(() => {});
+});
+document.addEventListener('fullscreenchange', () => {
+  const on = document.fullscreenElement === root;
+  fsBtn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+  fsBtn.classList.toggle('on', on);
+  setTimeout(resize, 50);
+});
 
 // The Scribe's level, chosen at any table and remembered.
-const levelButtons = [...document.querySelectorAll('#level button')];
+const levelButtons = [...document.querySelectorAll('#lm-level button')];
 function setScribeLevel(name) {
   name = R.setLevel(name);
   store.level = name; save();
@@ -1736,7 +1762,7 @@ function setScribeLevel(name) {
 }
 levelButtons.forEach(b => b.addEventListener('click', () => setScribeLevel(b.dataset.level)));
 setScribeLevel(store.level || 'fair');
-$('#helpBtn').addEventListener('click', () => { if (mode === 'gallery') goStop(0); else $('#rules').hidden = !$('#rules').hidden; });
+$('#lm-helpBtn').addEventListener('click', () => { if (mode === 'gallery') goStop(0); else $('#lm-rules').hidden = !$('#lm-rules').hidden; });
 
 /* ------------------------------------------------------------- play table */
 const play = { ex: null, game: null, P: null, token: 0, phase: 'idle', roll: null, moves: [], rings: [], byMesh: new Map(), glowing: new Set(), selected: null, hover: null, twoStep: false };
@@ -1755,13 +1781,13 @@ async function startGame(ex) {
   play.ex = ex; play.game = g; play.P = P; play.token++;
   g.surface = ex.surface;
   g.init(); P.setup(ex);
-  showPlacard(false); $('#hint').style.opacity = 0; rail.hidden = true;
-  document.body.classList.add('playing');
-  $('#hud').hidden = false; $('#win').hidden = true; $('#rules').hidden = true;
-  $('#hudTitle').textContent = g.name;
-  $('#throwBtn').hidden = !g.dice; $('#dice').hidden = !g.dice;
+  showPlacard(false); $('#lm-hint').style.opacity = 0; rail.hidden = true;
+  root.classList.add('playing');
+  $('#lm-hud').hidden = false; $('#lm-win').hidden = true; $('#lm-rules').hidden = true;
+  $('#lm-hudTitle').textContent = g.name;
+  $('#lm-throwBtn').hidden = !g.dice; $('#lm-dice').hidden = !g.dice;
   renderRules(g);
-  if (!store.rulesSeen[g.id]) { $('#rules').hidden = false; store.rulesSeen[g.id] = true; save(); }
+  if (!store.rulesSeen[g.id]) { $('#lm-rules').hidden = false; store.rulesSeen[g.id] = true; save(); }
   clearLastMove();
   if (g.dice) renderDice(g, null);
   updateScore();
@@ -1770,7 +1796,7 @@ async function startGame(ex) {
   beginTurn(g.first, true);
 }
 function renderRules(g) {
-  const r = $('#rules'); r.innerHTML = '';
+  const r = $('#lm-rules'); r.innerHTML = '';
   const h = document.createElement('h3'); h.textContent = 'How to play ' + g.name; r.appendChild(h);
   const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); r.appendChild(ul);
   const p = document.createElement('p'); p.className = 'src'; p.textContent = g.source; r.appendChild(p);
@@ -1781,28 +1807,28 @@ function leaveGame() {
   if (mode !== 'play') return;
   play.token++; clearHighlights(); clearLastMove();
   mode = 'gallery';
-  $('#hud').hidden = true; rail.hidden = false; $('#hint').style.opacity = 1;
-  document.body.classList.remove('playing');
+  $('#lm-hud').hidden = true; rail.hidden = false; $('#lm-hint').style.opacity = 1;
+  root.classList.remove('playing');
   goStop(STOPS.indexOf(play.ex));
 }
-$('#leaveBtn').addEventListener('click', leaveGame);
-$('#winLeave').addEventListener('click', leaveGame);
-$('#againBtn').addEventListener('click', () => { const ex = play.ex; play.token++; clearHighlights(); mode = 'gallery'; startGame(ex); });
-$('#rulesBtn').addEventListener('click', () => { $('#rules').hidden = !$('#rules').hidden; });
-$('#throwBtn').addEventListener('click', humanThrow);
+$('#lm-leaveBtn').addEventListener('click', leaveGame);
+$('#lm-winLeave').addEventListener('click', leaveGame);
+$('#lm-againBtn').addEventListener('click', () => { const ex = play.ex; play.token++; clearHighlights(); mode = 'gallery'; startGame(ex); });
+$('#lm-rulesBtn').addEventListener('click', () => { $('#lm-rules').hidden = !$('#lm-rules').hidden; });
+$('#lm-throwBtn').addEventListener('click', humanThrow);
 
 function setMsg(who, text) {
-  const m = $('#msg'); m.innerHTML = '';
+  const m = $('#lm-msg'); m.innerHTML = '';
   const w = document.createElement('span'); w.className = 'who'; w.textContent = who; m.appendChild(w);
   m.appendChild(document.createTextNode(text));
 }
 function updateScore() {
-  const [a, b, suffix] = play.P.score(); const s = $('#score'); s.innerHTML = '';
+  const [a, b, suffix] = play.P.score(); const s = $('#lm-score'); s.innerHTML = '';
   const add = ([label, val]) => { const el = document.createElement('b'); el.textContent = val; s.append(label + ' ', el); };
   add(a); s.append('  ·  '); add(b); if (suffix) s.append('  ' + suffix);
 }
 function renderDice(g, r, shaking = false) {
-  const d = $('#dice'); d.innerHTML = ''; d.classList.toggle('shake', shaking);
+  const d = $('#lm-dice'); d.innerHTML = ''; d.classList.toggle('shake', shaking);
   const faces = r ? r.faces : g.id === 'tables' ? [1, 1] : [0, 0, 0, 0];
   faces.forEach(f => {
     const ns = 'http://www.w3.org/2000/svg';
@@ -1838,12 +1864,12 @@ function beginTurn(pl, first) {
   if (!g.dice) { const r = g.result(pl); if (r) return finish(r); }
   if (pl === 0) {
     if (g.dice) {
-      play.phase = 'throw'; $('#throwBtn').disabled = false;
+      play.phase = 'throw'; $('#lm-throwBtn').disabled = false;
       setMsg('Your turn', first ? P.intro() : P.prompt());
-      $('#throwBtn').focus({ preventScroll: true });
+      $('#lm-throwBtn').focus({ preventScroll: true });
     } else offer(g.legal(0), first ? P.intro() : P.prompt());
   } else {
-    play.phase = 'ai'; $('#throwBtn').disabled = true;
+    play.phase = 'ai'; $('#lm-throwBtn').disabled = true;
     setMsg('The Scribe', g.dice ? 'The Scribe is throwing…' : 'The Scribe is thinking…');
     aiTurn();
   }
@@ -1855,7 +1881,7 @@ function offer(moves, text) {
 }
 async function humanThrow() {
   if (play.phase !== 'throw') return;
-  play.phase = 'rolling'; $('#throwBtn').disabled = true;
+  play.phase = 'rolling'; $('#lm-throwBtn').disabled = true;
   const g = play.game, tok = play.token;
   const r = g.roll();
   if (!(await showRoll(r))) return;
@@ -1880,7 +1906,7 @@ async function choose(m) {
     if (g.done(0)) return finish({ winner: 0 });
     if (g.extra(m, play.roll.value)) {
       setMsg('Your turn', (res.note ? res.note + ' ' : '') + g.extraNote);
-      play.phase = 'throw'; $('#throwBtn').disabled = false; return;
+      play.phase = 'throw'; $('#lm-throwBtn').disabled = false; return;
     }
   }
   if (res.note) { setMsg('Your turn', res.note); await wait(850); if (tok !== play.token) return; }
@@ -1940,14 +1966,14 @@ function finish(res) {
   const g = play.game, P = play.P;
   if (P.onFinish) P.onFinish(res);
   updateScore();
-  $('#winTitle').textContent = res.winner === 0 ? 'You win' : res.winner === 1 ? 'The Scribe wins' : 'A draw';
-  $('#winText').textContent = res.text || (res.winner === 0
+  $('#lm-winTitle').textContent = res.winner === 0 ? 'You win' : res.winner === 1 ? 'The Scribe wins' : 'A draw';
+  $('#lm-winText').textContent = res.text || (res.winner === 0
     ? `All ${g.N} of your pieces are home. The Scribe bows and resets the board.`
     : `The Scribe brought all ${g.N} pieces home first. You bore off ${g.home(0)}.`);
   const rec = store.record[g.id] || (store.record[g.id] = [0, 0, 0]);
   rec[res.winner === 0 ? 0 : res.winner === 1 ? 1 : 2]++; save();
-  $('#winRecord').textContent = recordText(g.id).replace('Your record against the Scribe here', 'Your record at this table') + ` The Scribe was playing ${R.level()}.`;
-  setTimeout(() => { if (play.phase === 'over') { $('#win').hidden = false; $('#againBtn').focus({ preventScroll: true }); } }, res.sweep ? 900 : 300);
+  $('#lm-winRecord').textContent = recordText(g.id).replace('Your record against the Scribe here', 'Your record at this table') + ` The Scribe was playing ${R.level()}.`;
+  setTimeout(() => { if (play.phase === 'over') { $('#lm-win').hidden = false; $('#lm-againBtn').focus({ preventScroll: true }); } }, res.sweep ? 900 : 300);
 }
 // Ember marks show where the Scribe's last move went from and to.
 const lastMarks = [];
@@ -2058,9 +2084,16 @@ canvas.addEventListener('pointerup', e => {
 });
 canvas.addEventListener('pointercancel', () => { down = null; });
 const KEYMAP = { KeyW: 'f', ArrowUp: 'f', KeyS: 'b', ArrowDown: 'b', KeyA: 'l', ArrowLeft: 'l', KeyD: 'r', ArrowRight: 'r' };
+// On its own page the museum always takes the keyboard. Embedded, it only does so
+// while the pointer is over it or focus is inside it, so the host page still scrolls.
+let pointerInside = false;
+root.addEventListener('pointerenter', () => { pointerInside = true; });
+root.addEventListener('pointerleave', () => { pointerInside = false; keys.clear(); });
+const keyboardOwned = () => !embedded || pointerInside || root.contains(document.activeElement) || document.fullscreenElement === root;
 window.addEventListener('keydown', e => {
+  if (!keyboardOwned()) return;
   if (mode === 'play') {
-    if (e.code === 'Space' && play.phase === 'throw' && document.activeElement !== $('#throwBtn')) { e.preventDefault(); humanThrow(); }
+    if (e.code === 'Space' && play.phase === 'throw' && document.activeElement !== $('#lm-throwBtn')) { e.preventDefault(); humanThrow(); }
     if (e.code === 'Escape') { if (play.selected) select(play.selected); else leaveGame(); }
     return;
   }
@@ -2102,7 +2135,7 @@ function step() {
     if (keys.has('r')) cam.pos.addScaledVector(r, sp); if (keys.has('l')) cam.pos.addScaledVector(r, -sp);
     cam.pos.x = Math.max(-1.3, Math.min(1.3, cam.pos.x)); cam.pos.z = Math.max(HALL.zFar + 3.2, Math.min(HALL.zNear - 0.8, cam.pos.z));
     cam.pos.y += (1.62 - cam.pos.y) * Math.min(1, dt * 4);
-    $('#hint').style.opacity = 0;
+    $('#lm-hint').style.opacity = 0;
   }
   camera.position.copy(cam.pos); camera.rotation.set(cam.pitch, cam.yaw, 0);
   updateViewShift(dt);
@@ -2151,12 +2184,20 @@ async function boot() {
   buildDust();
   resize();
   window.addEventListener('resize', resize);
+  if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(root);
+  const shop = root.dataset.shop;
+  if (shop && /^https?:\/\//.test(shop)) STOPS.find(s => s.id === 'next').link[1] = shop;
   const v = stopView(STOPS[0]); const a = lookAngles(v.pos, v.target);
   cam.pos.copy(v.pos).add(V3(0, 0, 1.2)); cam.yaw = a.yaw; cam.pitch = a.pitch;
-  if (coarse) { $('#hint').textContent = 'Drag to look · Tap an exhibit or the timeline'; STOPS[0].facts = [['Look', 'Drag the view'], ['Visit', 'Tap an exhibit or the timeline below']]; }
+  if (coarse) { $('#lm-hint').textContent = 'Drag to look · Tap an exhibit or the timeline'; STOPS[0].facts = [['Look', 'Drag the view'], ['Visit', 'Tap an exhibit or the timeline below']]; }
   frame();
-  setTimeout(() => { $('#loader').classList.add('done'); goStop(0, false); flyTo(v.pos, v.target, 2.2); }, 250);
-  setTimeout(() => { $('#hint').style.opacity = 0; }, 12000);
+  const startAt = STOPS.findIndex(s => s.id === root.dataset.start);
+  setTimeout(() => {
+    $('#lm-loader').classList.add('done');
+    if (startAt > 0) goStop(startAt);
+    else { goStop(0, false); flyTo(v.pos, v.target, 2.2); }
+  }, 250);
+  setTimeout(() => { $('#lm-hint').style.opacity = 0; }, 12000);
 }
 // Inspect the live state from the console with ?debug in the address.
 if (/[?&]debug\b/.test(location.search)) {

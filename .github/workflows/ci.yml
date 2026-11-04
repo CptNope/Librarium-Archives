@@ -19,3 +19,30 @@ jobs:
         run: npm test
       - name: Artifact build
         run: npm run build:artifact
+
+  plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Fetch three.js r128 to bundle
+        run: |
+          mkdir -p vendor
+          curl -sSfL https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js -o vendor/three.min.js
+          curl -sSfL https://raw.githubusercontent.com/mrdoob/three.js/r128/LICENSE -o vendor/three.LICENSE
+      - name: Build the plugin
+        run: npm run build:wp
+      - name: Lint PHP
+        run: find dist/librarium-museum -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Render tests
+        run: |
+          php tests/plugin-render.test.php render
+          php tests/plugin-render.test.php sanitize
+      - name: Check three.js is bundled
+        run: test -s dist/librarium-museum/assets/vendor/three.min.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: librarium-museum-plugin
+          path: dist/librarium-museum.zip
