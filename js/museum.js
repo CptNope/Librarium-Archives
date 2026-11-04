@@ -2091,7 +2091,7 @@ async function boot() {
   setTimeout(() => { $('#hint').style.opacity = 0; }, 12000);
 }
 // Inspect the live state from the console with ?debug in the address.
-if (/[?&]debug\b/.test(location.search)) window.__museum = { play, GAMES, PRES, STOPS, cam };
+if (/[?&]debug\b/.test(location.search)) window.__museum = { play, GAMES, PRES, STOPS, cam, choose, humanThrow, startGame, leaveGame, goStop };
 boot();
 })();
 
