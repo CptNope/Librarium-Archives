@@ -41,7 +41,17 @@ The hall ends at a lectern featuring Librarium's own games and the closed arch o
 
 ## The Scribe
 
-The AI opponent plays race games with a quick scoring rule, picks Tables moves by scoring every legal full turn (pip count, safe points, exposed checkers), and plays strategy games with a negamax search (alpha-beta pruning): 3–4 moves deep in Morris, 8 in Oware, 4 in Brandubh and 4 in Shatranj. Each move takes well under half a second. In Brandubh the visitor's side currently wins most games; a difficulty setting is on the roadmap.
+The AI opponent has three levels, picked at any table and remembered: **Gentle**, **Fair** (the default) and **Sharp**.
+
+- **Race games** (Senet, Ur) score each move. Gentle adds a lot of chance and sometimes just plays any legal move; Sharp plays its best move.
+- **Tables** scores every legal full turn (pip count, safe points, exposed checkers). Gentle picks loosely among the good ones; Sharp always takes the best.
+- **Strategy games** (Morris, Oware, Brandubh, Shatranj) use a negamax search with alpha-beta pruning and iterative deepening. Each level has a thinking budget (about 0.1, 0.6 and 1.5 seconds): the Scribe searches one move deeper at a time and stops the moment its budget runs out, so it plays as well as the visitor's device allows without stalling.
+
+In Brandubh the visitor's side still wins most games, even against Sharp.
+
+## Visitor progress
+
+Kept in the visitor's browser only (`localStorage`, key `librarium.museum.v1`): exhibits visited (a green dot on the timeline), the Scribe's level, which rules panels have already been shown (each table opens its rules automatically the first time), and the visitor's win/loss/draw record at each table, shown on the placard and after each game. If storage is blocked, everything still works for that visit.
 
 ## Controls
 
@@ -51,6 +61,7 @@ The AI opponent plays race games with a quick scoring rule, picks Tables moves b
 - **Race games (Senet, Ur, Tables):** Throw (or Space), then click a glowing piece. In Tables each die is a separate move; when a checker can use either die, click it and then pick a ring
 - **Strategy games:** click a glowing piece, then one of its rings (in Morris placement and Oware, click the ring or pit directly)
 - **Esc** clears a selection, or leaves the table
+- **After the Scribe moves**, ember marks show where its last move came from and went to
 
 ## Project layout
 
@@ -109,6 +120,7 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 - [x] Wing III: kings, cards and courts (Tables, chaturanga, shatranj, Lewis chessmen, cards, tarot)
 - [ ] Wing IV: the early modern era (modern chess, draughts, Go-moku, the first commercial board games)
 - [ ] A playable early card game, such as a simple tarocchi trick-taking game
-- [ ] Difficulty settings for the Scribe, and a stronger Brandubh attacker
+- [x] Difficulty settings for the Scribe
+- [ ] A stronger Brandubh attacker
 - [ ] Playable Go on a 9 × 9 board
 - [ ] Sound: sticks, dice and room tone
