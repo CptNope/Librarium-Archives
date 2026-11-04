@@ -1185,10 +1185,8 @@ function stopView(stop) {
   if (stop.id === 'hall') return { pos: V3(0, 1.62, 2.4), target: V3(0, 1.75, -12) };
   if (stop.id === 'wing2') return { pos: V3(0, 1.62, HALL.divider - 1.2), target: V3(0, 1.85, HALL.divider - 14) };
   if (stop.id === 'next') return { pos: V3(0, 1.62, lectern.position.z + 3), target: V3(0, 1.15, lectern.position.z) };
-  const g = stop.group, sheet = window.innerWidth <= 720;
-  return sheet
-    ? { pos: g.localToWorld(V3(0, 2.05, 2.5)), target: g.localToWorld(V3(0, 0.55, -0.4)) }
-    : { pos: g.localToWorld(V3(0, 1.66, 2.15)), target: g.localToWorld(V3(0, 1.08, 0)) };
+  const g = stop.group;
+  return { pos: g.localToWorld(V3(0, 1.66, 2.15)), target: g.localToWorld(V3(0, 1.08, 0)) };
 }
 function flyToPlay(stop, dur = 1.4) {
   const g = stop.group;
@@ -1244,7 +1242,17 @@ function renderPlacard(s) {
     const n = document.createElement('span'); n.className = 'soon'; n.textContent = s.note || 'On display only. The rules did not survive.'; act.appendChild(n);
   }
 }
-function showPlacard(on) { $('#placard').classList.toggle('away', !on); }
+let placardOpen = false;
+function showPlacard(on) { placardOpen = on; $('#placard').classList.toggle('away', !on); }
+// On phones the placard is a bottom sheet, so the picture slides up to stay visible above it.
+let viewShift = 0;
+function updateViewShift(dt) {
+  const h = window.innerHeight, w = window.innerWidth;
+  const want = mode === 'gallery' && placardOpen && w <= 720 ? 0.26 : 0;
+  viewShift += (want - viewShift) * Math.min(1, dt * 6);
+  if (Math.abs(viewShift) < 0.002) { if (camera.view && camera.view.enabled) camera.clearViewOffset(); viewShift = want ? viewShift : 0; return; }
+  camera.setViewOffset(w, h, 0, h * viewShift, w, h);
+}
 function setActive(i) {
   current = i;
   railButtons.forEach((b, k) => b.classList.toggle('on', k === i));
@@ -1583,6 +1591,7 @@ function frame() {
     $('#hint').style.opacity = 0;
   }
   camera.position.copy(cam.pos); camera.rotation.set(cam.pitch, cam.yaw, 0);
+  updateViewShift(dt);
   updateLights(dt, t);
   if (!reduceMotion && dust) {
     const a = dust.geometry.attributes.position, b = dust.userData.base;
