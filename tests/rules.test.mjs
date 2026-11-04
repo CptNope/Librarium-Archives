@@ -295,3 +295,127 @@ for (const G of [MORRIS, OWARE, BR]) {
     }
   });
 }
+
+/* -------------------------------------------------------- Tables (backgammon) */
+const { tables: TB, shatranj: SHJ } = rules;
+
+test('Tables: standard start, 15 checkers each, pip count 167', () => {
+  TB.init();
+  for (const pl of [0, 1]) { assert.equal(TB.c[pl].reduce((a, b) => a + b, 0), 15); assert.equal(TB.pip(pl), 167); }
+});
+
+test('Tables: a full turn uses both dice when it can', () => {
+  TB.init();
+  const first = TB.legal(0, 4, { faces: [3, 1], value: 4 });
+  assert.ok(first.length > 0);
+  assert.ok(TB.turn.seqs.every(s => s.length === 2));
+});
+
+test('Tables: doubles give four moves', () => {
+  TB.init();
+  TB.legal(0, 12, { faces: [6, 6], value: 12 });
+  assert.ok(TB.turn.seqs.every(s => s.length === 4));
+});
+
+test('Tables: a checker on the bar must enter first, and blocked points refuse it', () => {
+  TB.init(); TB.c[0][24]--; TB.c[0][25] = 1;
+  const ms = TB.legal(0, 7, { faces: [6, 1], value: 7 });
+  assert.ok(ms.every(m => m.from === 25));
+  // The Scribe holds its own 6-point, which is the visitor's 19-point: entering with a 6 is blocked.
+  assert.ok(!ms.some(m => m.die === 6));
+});
+
+test('Tables: hitting a blot sends it to the bar', () => {
+  TB.init();
+  TB.c[1].fill(0); TB.c[1][20] = 1; TB.c[1][1] = 14; // a Scribe blot on the visitor's 5-point
+  const m = TB.legal(0, 2, { faces: [1, 1], value: 2 }).find(x => x.from === 6 && x.to === 5);
+  assert.ok(m && m.hit);
+  TB.apply(m);
+  assert.equal(TB.c[1][25], 1);
+});
+
+test('Tables: bearing off with a higher die only from the highest point', () => {
+  TB.init(); TB.c[0].fill(0); TB.c[0][3] = 2; TB.c[0][1] = 13; TB.c[1].fill(0); TB.c[1][1] = 15;
+  const ms = TB.legal(0, 11, { faces: [6, 5], value: 11 });
+  assert.ok(ms.every(m => m.from === 3 && m.to === 0));
+});
+
+test('Tables: the follow-up offers the second die after the first move', () => {
+  TB.init();
+  const ms = TB.legal(0, 9, { faces: [5, 4], value: 9 });
+  const r = TB.apply(ms[0]);
+  assert.ok(r.followUp && r.followUp.length);
+  assert.ok(r.followUp.every(m => m.die !== ms[0].die));
+});
+
+test('Tables: 200 AI-vs-AI games finish', () => {
+  for (let n = 0; n < 200; n++) {
+    TB.init(); let pl = 0, turns = 0;
+    while (!TB.done(0) && !TB.done(1)) {
+      assert.ok(++turns < 1000, 'game did not finish');
+      const r = TB.roll();
+      if (TB.legal(pl, r.value, r).length) for (const m of TB.aiPlan(pl)) TB.apply(m);
+      for (const p of [0, 1]) assert.equal(TB.c[p].reduce((a, b) => a + b, 0), 15);
+      pl = 1 - pl;
+    }
+  }
+});
+
+/* ---------------------------------------------------------------- Shatranj */
+
+test('Shatranj: opening position and moves', () => {
+  SHJ.init();
+  assert.equal(SHJ.legal(0).length, 8 + 4 + 4, '8 pawn steps, 4 knight moves, 4 alfil leaps');
+});
+
+test('Shatranj: the alfil leaps two diagonally over pieces; the firzan steps one', () => {
+  SHJ.init(); SHJ.b.fill(0);
+  SHJ.b[0] = SHJ.SH.K; SHJ.b[63] = SHJ.SH.K + 8;
+  SHJ.b[27] = SHJ.SH.E; SHJ.b[36] = SHJ.SH.P + 8;
+  const e = SHJ.legal(0).filter(m => m.from === 27).map(m => m.to).sort((a, b) => a - b);
+  assert.deepEqual(e, [9, 13, 41, 45]);
+  SHJ.b[27] = SHJ.SH.F;
+  const f = SHJ.legal(0).filter(m => m.from === 27).map(m => m.to).sort((a, b) => a - b);
+  assert.deepEqual(f, [18, 20, 34, 36]);
+});
+
+test('Shatranj: pawns step once and promote to firzan', () => {
+  SHJ.init(); SHJ.b.fill(0);
+  SHJ.b[0] = SHJ.SH.K; SHJ.b[7] = SHJ.SH.K + 8; SHJ.b[52] = SHJ.SH.P;
+  const m = SHJ.legal(0).find(x => x.from === 52);
+  assert.equal(m.to, 60); assert.ok(m.promo);
+  SHJ.apply(m);
+  assert.equal(SHJ.b[60], SHJ.SH.F);
+});
+
+test('Shatranj: stalemating the opponent wins', () => {
+  SHJ.init(); SHJ.b.fill(0);
+  SHJ.b[56] = SHJ.SH.K + 8;           // Scribe king a8
+  SHJ.b[42] = SHJ.SH.K;               // visitor king c6
+  SHJ.b[49] = SHJ.SH.R; SHJ.b[48] = 0; // rook b7 is defended by the king, so the Scribe king has no move
+  SHJ.b[40] = SHJ.SH.P + 8;           // a blocked Scribe pawn on a6 keeps material on the board
+  SHJ.b[32] = SHJ.SH.P;
+  const r = SHJ.result(1);
+  assert.equal(r.winner, 0);
+});
+
+test('Shatranj: a bare king loses unless it can strip the other next move', () => {
+  SHJ.init(); SHJ.b.fill(0);
+  SHJ.b[0] = SHJ.SH.K; SHJ.b[63] = SHJ.SH.K + 8; SHJ.b[30] = SHJ.SH.R + 8; SHJ.b[29] = SHJ.SH.P + 8;
+  assert.equal(SHJ.result(0).winner, 1);
+  SHJ.b[29] = 0; SHJ.b[30] = 0; SHJ.b[9] = SHJ.SH.K; SHJ.b[0] = 0; SHJ.b[18] = SHJ.SH.R + 8; // lone rook next to the visitor's king
+  assert.equal(SHJ.result(0), null, 'the visitor can take the last piece');
+});
+
+test('Shatranj: AI-vs-AI games finish and the AI answers quickly', () => {
+  for (let n = 0; n < 3; n++) {
+    SHJ.init(); let pl = 0, turns = 0, slowest = 0, r;
+    while (!(r = SHJ.result(pl))) {
+      assert.ok(++turns < 600, 'game did not finish');
+      const t0 = Date.now(); const plan = SHJ.aiPlan(pl, 2); slowest = Math.max(slowest, Date.now() - t0);
+      plan.forEach(m => SHJ.apply(m)); pl = 1 - pl;
+    }
+    assert.ok([0, 1, -1].includes(r.winner));
+    assert.ok(slowest < 2500, `took ${slowest} ms`);
+  }
+});
