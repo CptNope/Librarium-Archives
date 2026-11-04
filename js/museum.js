@@ -1918,7 +1918,8 @@ async function aiTurn() {
     beginTurn(0);
     return;
   }
-  await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
+  // Let the 'thinking' message paint first, without depending on animation frames (paused in background tabs).
+  await new Promise(r => { requestAnimationFrame(() => setTimeout(r, 30)); setTimeout(r, 120); });
   const plan = g.aiPlan(1);
   if (tok !== play.token || !plan) return;
   let said = false;
