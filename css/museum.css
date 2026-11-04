@@ -30,6 +30,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
 .brand .mark{font-family:var(--f-display);color:var(--gold);font-size:26px;letter-spacing:.02em;text-shadow:0 2px 18px rgba(0,0,0,.8)}
 .brand .sub{font-family:var(--f-ui);font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--dust);margin-top:6px}
 
+.playing .brand{opacity:0}
+.brand{transition:opacity .3s}
 .iconbtn{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-family:var(--f-display);font-size:18px;color:var(--gold)}
 
 /* Placard */
@@ -61,6 +63,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
 .rail button{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:9px 14px 8px;min-height:52px;border:1px solid transparent;border-top:2px solid rgba(236,223,195,.18);background:none;text-align:left}
 .rail .t{font-family:var(--f-display);font-size:16px;color:var(--parchment);white-space:nowrap}
 .rail .d{font-family:var(--f-ui);font-size:10.5px;letter-spacing:.1em;color:var(--dust);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rail .wing{flex:0 0 auto;align-self:stretch;display:flex;align-items:center;padding:0 4px 0 12px;margin-left:6px;border-left:1px solid var(--line);font-family:var(--f-ui);font-size:9.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);white-space:nowrap}
+.rail .wing:first-child{margin-left:0;padding-left:0;border-left:0}
 .rail button.on{border-top-color:var(--gold)}
 .rail button.on .t{color:var(--gold)}
 .rail button:hover .t{color:var(--gold)}

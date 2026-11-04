@@ -164,7 +164,364 @@
     },
   };
 
-  const api = { DICE_P, ur: UR, senet: SENET };
+  // Race games roll dice and pick one move; mark them so the table shows a Throw button.
+  UR.dice = SENET.dice = true;
+  UR.first = SENET.first = 0;
+  UR.aiPlan = function (pl, moves) { return [this.ai(moves)]; };
+  SENET.aiPlan = UR.aiPlan;
+
+  /* Shared negamax search for the strategy games. Each game supplies
+   * snapshot/restore, turns(pl) (a list of move sequences), terminal(pl, depth)
+   * and evaluate(pl). */
+  function negamax(G, pl, depth, alpha, beta) {
+    const t = G.terminal(pl, depth);
+    if (t !== null) return t;
+    if (depth === 0) return G.evaluate(pl);
+    let best = -Infinity;
+    for (const seq of G.turns(pl)) {
+      const s = G.snapshot();
+      for (const m of seq) G.apply(m);
+      const v = -negamax(G, 1 - pl, depth - 1, -beta, -alpha);
+      G.restore(s);
+      if (v > best) best = v;
+      if (best > alpha) alpha = best;
+      if (alpha >= beta) break;
+    }
+    return best;
+  }
+  function bestPlan(G, pl, depth) {
+    let best = null, bv = -Infinity;
+    for (const seq of G.turns(pl)) {
+      const s = G.snapshot();
+      for (const m of seq) G.apply(m);
+      const v = -negamax(G, 1 - pl, depth - 1, -Infinity, Infinity) + Math.random() * 0.6;
+      G.restore(s);
+      if (v > bv) { bv = v; best = seq; }
+    }
+    return best;
+  }
+
+  /* --------------------------------------------------------- Nine Men's Morris
+   * 24 points on three nested squares. Each ring is numbered clockwise from its
+   * top-left corner: 0 TL, 1 top, 2 TR, 3 right, 4 BR, 5 bottom, 6 BL, 7 left;
+   * ring r adds 8*r (0 outer, 1 middle, 2 inner). */
+  const MORRIS_ADJ = (() => {
+    const adj = Array.from({ length: 24 }, () => []);
+    const link = (a, b) => { adj[a].push(b); adj[b].push(a); };
+    for (let r = 0; r < 3; r++) for (let k = 0; k < 8; k++) link(r * 8 + k, r * 8 + (k + 1) % 8);
+    for (const k of [1, 3, 5, 7]) { link(k, k + 8); link(k + 8, k + 16); }
+    return adj;
+  })();
+  const MORRIS_MILLS = (() => {
+    const m = [];
+    for (let r = 0; r < 3; r++) for (const k of [0, 2, 4, 6]) m.push([r * 8 + k, r * 8 + k + 1, r * 8 + (k + 2) % 8]);
+    for (const k of [1, 3, 5, 7]) m.push([k, k + 8, k + 16]);
+    return m;
+  })();
+  const MORRIS = {
+    id: 'morris', name: "Nine Men's Morris", dice: false, first: 0, N: 9,
+    rules: [
+      'Take turns placing your nine pieces on empty points.',
+      'Three of your pieces in a row along a drawn line make a mill. Each new mill lets you remove one of the Scribe\'s pieces. Pieces in a mill are protected unless every piece is in one.',
+      'Once every piece is placed, move one piece along a line to a neighboring empty point.',
+      'When you are down to three pieces, you may fly to any empty point.',
+      'You lose when you have two pieces left or cannot move. A long stretch with no captures is a draw.'
+    ],
+    source: 'Traditional rules, as played across Europe since the Middle Ages.',
+    followPrompt: 'Pick one of the Scribe\'s pieces to remove.',
+    ADJ: MORRIS_ADJ, MILLS: MORRIS_MILLS,
+    init() { this.board = Array(24).fill(-1); this.hand = [9, 9]; this.quiet = 0; },
+    onBoard(pl) { let n = 0; for (const v of this.board) if (v === pl) n++; return n; },
+    count(pl) { return this.hand[pl] + this.onBoard(pl); },
+    inMill(p, pl) { return MORRIS_MILLS.some(m => m.includes(p) && m.every(q => this.board[q] === pl)); },
+    legal(pl) {
+      const b = this.board, out = [];
+      if (this.hand[pl] > 0) { for (let p = 0; p < 24; p++) if (b[p] < 0) out.push({ type: 'place', pl, to: p }); return out; }
+      const fly = this.onBoard(pl) === 3;
+      for (let p = 0; p < 24; p++) {
+        if (b[p] !== pl) continue;
+        const targets = fly ? b.map((v, q) => (v < 0 ? q : -1)).filter(q => q >= 0) : MORRIS_ADJ[p].filter(q => b[q] < 0);
+        for (const q of targets) out.push({ type: 'move', pl, from: p, to: q, fly });
+      }
+      return out;
+    },
+    removals(pl) {
+      const opp = 1 - pl, pts = [];
+      for (let p = 0; p < 24; p++) if (this.board[p] === opp) pts.push(p);
+      const free = pts.filter(p => !this.inMill(p, opp));
+      return (free.length ? free : pts).map(p => ({ type: 'remove', pl, at: p }));
+    },
+    apply(m) {
+      const b = this.board;
+      if (m.type === 'remove') {
+        b[m.at] = -1; this.quiet = 0;
+        return { note: m.pl === 0 ? 'You remove one of the Scribe\'s pieces.' : 'The Scribe removes one of your pieces.' };
+      }
+      if (m.type === 'place') { b[m.to] = m.pl; this.hand[m.pl]--; } else { b[m.from] = -1; b[m.to] = m.pl; }
+      this.quiet++;
+      if (this.inMill(m.to, m.pl)) {
+        const f = this.removals(m.pl);
+        if (f.length) return { note: m.pl === 0 ? 'A mill.' : 'The Scribe makes a mill.', followUp: f };
+      }
+      return { note: '' };
+    },
+    result(pl) {
+      for (const p of [0, 1]) if (this.count(p) < 3) return { winner: 1 - p, text: p === 0 ? 'You are down to two pieces.' : 'The Scribe is down to two pieces.' };
+      if (!this.legal(pl).length) return { winner: 1 - pl, text: pl === 0 ? 'You have no legal move.' : 'The Scribe has no legal move.' };
+      if (this.quiet >= 120) return { winner: -1, text: 'A long stretch with no captures. The game is drawn.' };
+      return null;
+    },
+    snapshot() { return [this.board.slice(), this.hand.slice(), this.quiet]; },
+    restore(s) { this.board = s[0].slice(); this.hand = s[1].slice(); this.quiet = s[2]; },
+    turns(pl) {
+      const out = [];
+      for (const m of this.legal(pl)) {
+        const s = this.snapshot(); const r = this.apply(m); this.restore(s);
+        if (r.followUp) for (const f of r.followUp) out.push([m, f]); else out.push([m]);
+      }
+      // Mills and blocks first, so alpha-beta prunes more.
+      return out.sort((a, b) => b.length - a.length);
+    },
+    terminal(pl, depth) {
+      const r = this.result(pl);
+      if (!r) return null;
+      return r.winner === -1 ? 0 : r.winner === pl ? 1000 + depth : -1000 - depth;
+    },
+    evaluate(pl) {
+      const opp = 1 - pl;
+      let s = (this.count(pl) - this.count(opp)) * 12;
+      for (const mill of MORRIS_MILLS) {
+        let a = 0, o = 0, e = 0;
+        for (const q of mill) { const v = this.board[q]; if (v === pl) a++; else if (v === opp) o++; else e++; }
+        if (a === 2 && e === 1) s += 3; if (o === 2 && e === 1) s -= 3;
+        if (a === 3) s += 1; if (o === 3) s -= 1;
+      }
+      if (!this.hand[pl] && !this.hand[opp]) s += (this.legal(pl).length - this.legal(opp).length) * 0.4;
+      return s;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth || (this.hand[pl] > 0 ? 3 : 4)); },
+  };
+
+  /* --------------------------------------------------------------- Oware
+   * Pits 0-5 are the visitor's row (left to right as they sit), 6-11 the
+   * Scribe's row; sowing runs 0 → 11 and wraps (counterclockwise). */
+  const OWARE = {
+    id: 'oware', name: 'Oware', dice: false, first: 0, N: 25,
+    rules: [
+      'Take every seed from one of your six pits (the row nearest you) and sow them one at a time into the following pits, counterclockwise.',
+      'If a pit holds 12 or more seeds, skip the pit you emptied as you go around.',
+      'If your last seed lands in one of the Scribe\'s pits and makes 2 or 3, capture them, along with any unbroken run of 2s and 3s just before it on the Scribe\'s side.',
+      'A move that would capture every seed on the Scribe\'s side captures nothing.',
+      'If the Scribe\'s side is empty you must sow into it if you can. If you cannot, the game ends and you keep the seeds on your side.',
+      'The first to capture 25 seeds wins.'
+    ],
+    source: 'Abapa rules, the standard form of Oware played in competitions.',
+    init() { this.pits = Array(12).fill(4); this.store = [0, 0]; this.quiet = 0; this.over = null; },
+    side(pl) { let n = 0; for (let i = pl * 6; i < pl * 6 + 6; i++) n += this.pits[i]; return n; },
+    own(pl, i) { return (i < 6) === (pl === 0); },
+    feeds(pl, i) { return this.pits[i] >= (pl === 0 ? 6 - i : 12 - i); },
+    legal(pl) {
+      if (this.over) return [];
+      const must = this.side(1 - pl) === 0, out = [];
+      for (let i = pl * 6; i < pl * 6 + 6; i++) {
+        if (!this.pits[i]) continue;
+        if (must && !this.feeds(pl, i)) continue;
+        out.push({ pl, pit: i });
+      }
+      return out;
+    },
+    apply(m) {
+      const p = this.pits; let n = p[m.pit]; p[m.pit] = 0;
+      const path = []; let q = m.pit;
+      while (n > 0) { q = (q + 1) % 12; if (q === m.pit) continue; p[q]++; n--; path.push(q); }
+      let caps = []; let k = q;
+      while (!this.own(m.pl, k) && (p[k] === 2 || p[k] === 3)) { caps.push(k); k = (k + 11) % 12; }
+      let note = '';
+      if (caps.length) {
+        const total = caps.reduce((a, c) => a + p[c], 0);
+        if (total === this.side(1 - m.pl)) { caps = []; note = 'That would take every seed on the other side, so nothing is captured.'; }
+        else {
+          for (const c of caps) { this.store[m.pl] += p[c]; p[c] = 0; }
+          note = (m.pl === 0 ? 'You capture ' : 'The Scribe captures ') + total + ' seeds.';
+        }
+      }
+      this.quiet = caps.length ? 0 : this.quiet + 1;
+      return { path, caps, note };
+    },
+    result(pl) {
+      if (this.over) return this.over;
+      let r = null;
+      if (this.store[0] >= 25) r = { winner: 0, text: 'You captured ' + this.store[0] + ' seeds.' };
+      else if (this.store[1] >= 25) r = { winner: 1, text: 'The Scribe captured ' + this.store[1] + ' seeds.' };
+      else if (this.store[0] === 24 && this.store[1] === 24) r = { winner: -1, text: '24 seeds each. The game is drawn.' };
+      else if (!this.legal(pl).length || this.quiet >= 100) {
+        if (this.quiet >= 100) { this.store[0] += this.side(0); this.store[1] += this.side(1); }
+        else if (this.side(pl) === 0) this.store[1 - pl] += this.side(1 - pl);
+        else this.store[pl] += this.side(pl);
+        this.pits.fill(0);
+        const w = this.store[0] > this.store[1] ? 0 : this.store[1] > this.store[0] ? 1 : -1;
+        r = { winner: w, text: `The board is cleared. Final count: you ${this.store[0]}, the Scribe ${this.store[1]}.`, sweep: true };
+      }
+      if (r) this.over = r;
+      return r;
+    },
+    snapshot() { return [this.pits.slice(), this.store.slice(), this.quiet]; },
+    restore(s) { this.pits = s[0].slice(); this.store = s[1].slice(); this.quiet = s[2]; this.over = null; },
+    turns(pl) { return this.legal(pl).map(m => [m]); },
+    terminal(pl, depth) {
+      if (this.store[pl] >= 25) return 1000 + depth;
+      if (this.store[1 - pl] >= 25) return -1000 - depth;
+      if (!this.legal(pl).length) {
+        let a = this.store[pl], b = this.store[1 - pl];
+        if (this.side(pl) === 0) b += this.side(1 - pl); else a += this.side(pl);
+        return a > b ? 900 : a < b ? -900 : 0;
+      }
+      return null;
+    },
+    evaluate(pl) { return this.store[pl] - this.store[1 - pl]; },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth || 8); },
+  };
+
+  /* ------------------------------------------------------------- Brandubh
+   * 7x7 board, index r*7+c. 0 empty, 1 attacker, 2 defender, 3 king.
+   * Player 0 (the visitor) commands the king's side, player 1 the attackers. */
+  const BR_THRONE = 24, BR_CORNERS = [0, 6, 42, 48];
+  const BR_DIRS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  const BRANDUBH = {
+    id: 'brandubh', name: 'Brandubh', dice: false, first: 1,
+    rules: [
+      'The Scribe commands the eight attackers and moves first. You command the king and his four defenders.',
+      'Every piece moves like a chess rook: any distance in a straight line, without jumping.',
+      'Only the king may stop on the central throne or the four corners. Other pieces may pass over the empty throne.',
+      'Trap an enemy piece between two of yours to capture it. The corners and the empty throne count as an enemy to both sides, and the king can help capture.',
+      'The king is caught by two attackers on opposite sides, by three when he stands beside the throne, and by four on the throne.',
+      'You win when the king reaches a corner. The Scribe wins by capturing him.'
+    ],
+    source: 'A modern reconstruction. The ancient Irish rules did not survive.',
+    THRONE: BR_THRONE, CORNERS: BR_CORNERS,
+    init() {
+      const b = Array(49).fill(0);
+      [3, 10, 21, 22, 26, 27, 38, 45].forEach(i => { b[i] = 1; });
+      [17, 23, 25, 31].forEach(i => { b[i] = 2; });
+      b[BR_THRONE] = 3;
+      this.b = b; this.win = null; this.ply = 0;
+    },
+    owns(pl, v) { return pl === 1 ? v === 1 : v === 2 || v === 3; },
+    restricted(i) { return i === BR_THRONE || BR_CORNERS.includes(i); },
+    count(pl) { let n = 0; for (const v of this.b) if (this.owns(pl, v)) n++; return n; },
+    legal(pl) {
+      if (this.win) return [];
+      const b = this.b, out = [];
+      for (let i = 0; i < 49; i++) {
+        const v = b[i]; if (!this.owns(pl, v)) continue;
+        const r0 = (i / 7) | 0, c0 = i % 7;
+        for (const [dr, dc] of BR_DIRS) {
+          let r = r0 + dr, c = c0 + dc;
+          while (r >= 0 && r < 7 && c >= 0 && c < 7) {
+            const j = r * 7 + c;
+            if (b[j]) break;
+            if (this.restricted(j) && v !== 3) { if (j === BR_THRONE) { r += dr; c += dc; continue; } break; }
+            out.push({ pl, from: i, to: j });
+            r += dr; c += dc;
+          }
+        }
+      }
+      return out;
+    },
+    anvil(j, pl) { const v = this.b[j]; return this.owns(pl, v) || (v === 0 && this.restricted(j)); },
+    neighbors(k) {
+      const r = (k / 7) | 0, c = k % 7;
+      return BR_DIRS.map(([dr, dc]) => { const rr = r + dr, cc = c + dc; return rr < 0 || rr > 6 || cc < 0 || cc > 6 ? -1 : rr * 7 + cc; });
+    },
+    apply(m) {
+      const b = this.b, v = b[m.from];
+      b[m.from] = 0; b[m.to] = v; this.ply++;
+      const caps = [];
+      if (v === 3 && BR_CORNERS.includes(m.to)) { this.win = { winner: 0, text: 'The king reaches a corner and escapes.' }; return { caps, note: 'The king escapes.' }; }
+      const r = (m.to / 7) | 0, c = m.to % 7;
+      for (const [dr, dc] of BR_DIRS) {
+        const rr = r + dr, cc = c + dc;
+        if (rr < 0 || rr > 6 || cc < 0 || cc > 6) continue;
+        const n = rr * 7 + cc, t = b[n];
+        if (!t || this.owns(m.pl, t)) continue;
+        const fr = rr + dr, fc = cc + dc;
+        const far = fr < 0 || fr > 6 || fc < 0 || fc > 6 ? -1 : fr * 7 + fc;
+        if (t === 3) {
+          const nb = this.neighbors(n);
+          let caught;
+          if (n === BR_THRONE) caught = nb.every(j => j >= 0 && b[j] === 1);
+          else if (nb.includes(BR_THRONE)) caught = nb.every(j => j === BR_THRONE || (j >= 0 && b[j] === 1));
+          else caught = far >= 0 && this.anvil(far, m.pl);
+          if (caught) { b[n] = 0; caps.push(n); this.win = { winner: 1, text: 'The king is surrounded and captured.' }; }
+          continue;
+        }
+        if (far >= 0 && this.anvil(far, m.pl)) { b[n] = 0; caps.push(n); }
+      }
+      let note = '';
+      if (this.win) note = 'The king is captured.';
+      else if (caps.length) note = m.pl === 0
+        ? (caps.length > 1 ? `You capture ${caps.length} attackers.` : 'You capture an attacker.')
+        : (caps.length > 1 ? `The Scribe captures ${caps.length} of your pieces.` : 'The Scribe captures one of your pieces.');
+      return { caps, note };
+    },
+    result(pl) {
+      if (this.win) return this.win;
+      if (!this.legal(pl).length) return { winner: 1 - pl, text: pl === 0 ? 'You have no legal move.' : 'The Scribe has no legal move.' };
+      if (this.ply >= 200) return { winner: -1, text: 'Two hundred moves without a result. The game is drawn.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.win, this.ply]; },
+    restore(s) { this.b = s[0].slice(); this.win = s[1]; this.ply = s[2]; },
+    turns(pl) {
+      const ms = this.legal(pl).map(m => [m]);
+      const k = this.b.indexOf(3);
+      // Look at king moves and moves near the king first.
+      const near = m => { const a = m[0].to, kr = (k / 7) | 0, kc = k % 7; return Math.abs(((a / 7) | 0) - kr) + Math.abs((a % 7) - kc); };
+      return k < 0 ? ms : ms.sort((a, b) => near(a) - near(b));
+    },
+    terminal(pl, depth) {
+      if (this.win) return this.win.winner === pl ? 1000 + depth : -1000 - depth;
+      if (this.ply >= 200) return 0;
+      return null;
+    },
+    kingRuns() {
+      const k = this.b.indexOf(3); if (k < 0) return 0;
+      let n = 0; const r = (k / 7) | 0, c = k % 7;
+      for (const [dr, dc] of BR_DIRS) {
+        let rr = r + dr, cc = c + dc;
+        while (rr >= 0 && rr < 7 && cc >= 0 && cc < 7) {
+          const j = rr * 7 + cc;
+          if (this.b[j]) break;
+          if (BR_CORNERS.includes(j)) { n++; break; }
+          rr += dr; cc += dc;
+        }
+      }
+      return n;
+    },
+    evaluate(pl) {
+      const k = this.b.indexOf(3);
+      let s;
+      if (k < 0) s = -1000;
+      else {
+        let att = 0, def = 0; for (const v of this.b) { if (v === 1) att++; else if (v === 2) def++; }
+        const adj = this.neighbors(k).filter(j => j >= 0 && this.b[j] === 1).length;
+        const kr = (k / 7) | 0, kc = k % 7;
+        const dist = Math.min(...BR_CORNERS.map(q => Math.abs(((q / 7) | 0) - kr) + Math.abs((q % 7) - kc)));
+        // Attackers on the squares beside a corner shut that corner; a king with room to run is dangerous.
+        const guards = [1, 7, 5, 13, 35, 43, 41, 47].filter(j => this.b[j] === 1).length;
+        let kingMoves = 0;
+        for (const [dr, dc] of BR_DIRS) {
+          let rr = kr + dr, cc = kc + dc;
+          while (rr >= 0 && rr < 7 && cc >= 0 && cc < 7 && !this.b[rr * 7 + cc]) { kingMoves++; rr += dr; cc += dc; }
+        }
+        s = def * 3 - att * 2.5 + this.kingRuns() * 25 - adj * 6 - dist - guards * 3 + kingMoves * 0.8;
+      }
+      return pl === 0 ? s : -s;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth || 4); },
+  };
+
+  const api = { DICE_P, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);
