@@ -20,6 +20,13 @@ const root = $('#lm-app');
 if (!root) return; // no museum markup on this page
 const embedded = !!root.closest('.lm-embed');
 const hostSize = () => ({ w: root.clientWidth || window.innerWidth, h: root.clientHeight || window.innerHeight });
+const narrowHost = () => (root.clientWidth || window.innerWidth) <= 720;
+
+// Touch and zoom state (the handlers live in the input section).
+const joyEl = $('#lm-joy');
+const joy = { id: null, x: 0, y: 0 };
+let touchUI = coarse;                       // show touch controls; turns on at the first touch too
+const view = { zoom: 1, zoomTo: 1, panX: 0, panY: 0 };
 
 /* ------------------------------------------------------------------ renderer */
 const canvas = $('#lm-scene');
@@ -43,6 +50,7 @@ function resize() {
   camera.fov = camera.aspect < 0.8 ? 72 : 58;
   camera.updateProjectionMatrix();
   if (mode === 'play' && play.ex) flyToPlay(play.ex, 0.4);
+  updateJoy();
 }
 
 /* ------------------------------------------------------------- textures */
@@ -112,11 +120,12 @@ const MAT = {
  * entrance to z = -41, Wing II to z = -86, Wing III to the closed arch at
  * the far end. */
 const HALL = { half: 5, zNear: 4, zFar: -131, h: 5, dividers: [-41, -86] };
+let floorMesh = null;
 const wingOf = z => HALL.dividers.filter(d => z < d).length; // 0-based wing index
 function buildHall() {
   const len = HALL.zNear - HALL.zFar, midZ = (HALL.zNear + HALL.zFar) / 2;
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(HALL.half * 2, len), MAT.floor);
-  floor.rotation.x = -Math.PI / 2; floor.position.z = midZ; scene.add(floor);
+  floor.rotation.x = -Math.PI / 2; floor.position.z = midZ; scene.add(floor); floorMesh = floor;
   MAT.runner.map.repeat.set(1, 8 * len / 45);
   const runner = new THREE.Mesh(new THREE.PlaneGeometry(1.6, len - 6), MAT.runner);
   runner.rotation.x = -Math.PI / 2; runner.position.set(0, 0.005, midZ - 1); scene.add(runner);
@@ -1648,6 +1657,7 @@ function flyToPlay(stop, dur = 1.4) {
   dist = Math.max(dist, 0.62 / Math.tan(vf) * 1.1);
   const center = V3(0, TOP + 0.05, 0.02);
   const pos = center.clone().add(V3(0, Math.sin(elev) * dist, Math.cos(elev) * dist));
+  play.camDist = dist;
   return flyTo(g.localToWorld(pos), g.localToWorld(center.clone().add(V3(0, 0, -0.03))), dur);
 }
 
@@ -1713,7 +1723,7 @@ function renderPlacard(s) {
   }
 }
 let placardOpen = false;
-function showPlacard(on) { placardOpen = on; $('#lm-placard').classList.toggle('away', !on); }
+function showPlacard(on) { placardOpen = on; $('#lm-placard').classList.toggle('away', !on); updateJoy(); }
 // On phones the placard is a bottom sheet, so the picture slides up to stay visible above it.
 let viewShift = 0;
 function updateViewShift(dt) {
@@ -1735,7 +1745,7 @@ function goStop(i, fly = true) {
   setActive(i);
   if (!store.visited[STOPS[i].id]) { store.visited[STOPS[i].id] = true; save(); railButtons[i].classList.add('seen'); }
   renderPlacard(STOPS[i]); showPlacard(true);
-  if (fly) { const v = stopView(STOPS[i]); flyTo(v.pos, v.target); }
+  if (fly) { const v = stopView(STOPS[i]); view.zoomTo = 1; flyTo(v.pos, v.target); }
 }
 $('#lm-closeP').addEventListener('click', () => showPlacard(false));
 
@@ -1783,6 +1793,7 @@ async function startGame(ex) {
   g.init(); P.setup(ex);
   showPlacard(false); $('#lm-hint').style.opacity = 0; rail.hidden = true;
   root.classList.add('playing');
+  resetView(true); updateJoy();
   $('#lm-hud').hidden = false; $('#lm-win').hidden = true; $('#lm-rules').hidden = true;
   $('#lm-hudTitle').textContent = g.name;
   $('#lm-throwBtn').hidden = !g.dice; $('#lm-dice').hidden = !g.dice;
@@ -1809,6 +1820,7 @@ function leaveGame() {
   mode = 'gallery';
   $('#lm-hud').hidden = true; rail.hidden = false; $('#lm-hint').style.opacity = 1;
   root.classList.remove('playing');
+  resetView(false); updateJoy();
   goStop(STOPS.indexOf(play.ex));
 }
 $('#lm-leaveBtn').addEventListener('click', leaveGame);
@@ -2045,16 +2057,64 @@ function resolveTarget(hit) {
 }
 function galleryTargets() { return STOPS.filter(s => s.group).map(s => s.group.userData.hit); }
 function stopFromHit(o) { return STOPS.findIndex(s => s.group && s.group.userData.hit === o); }
-canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, moved: false }; canvas.setPointerCapture(e.pointerId); });
+/* ------------------------------------------------------------- touch & zoom
+ * One finger drags to look in the hall, or pans a zoomed-in table. Two
+ * fingers pinch to zoom (and pan at a table). The joystick walks: push up or
+ * down to go forward or back, left or right to turn. A tap on the floor walks
+ * to that spot. A mouse wheel or trackpad pinch zooms as well. */
+const ZOOM = { gallery: [0.8, 2.6], play: [1, 3.2] };
+const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
+function setZoom(z) { const [a, b] = ZOOM[mode === 'play' ? 'play' : 'gallery']; view.zoomTo = clampN(z, a, b); }
+function resetView(instant) { view.zoomTo = 1; view.panX = view.panY = 0; if (instant) view.zoom = 1; }
+function panLimit() { return (play.P ? play.P.camW : 1.5) * 0.5 * (1 - 1 / Math.max(1, view.zoom)); }
+function panBy(dx, dy) {
+  if (mode !== 'play') return;
+  // One pixel of finger movement moves the view by one pixel's worth of table.
+  const k = 2 * (play.camDist || 1.5) * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) / (view.zoom * hostSize().h);
+  const lim = panLimit();
+  view.panX = clampN(view.panX - dx * k, -lim, lim);
+  view.panY = clampN(view.panY + dy * k, -lim, lim);
+}
+
+const pointers = new Map();
+let pinch = null;
+function pinchState() {
+  const [a, b] = [...pointers.values()];
+  return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
+}
+canvas.addEventListener('pointerdown', e => {
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
+  if (e.pointerType === 'touch' && !touchUI) { touchUI = true; touchCopy(); updateJoy(); }
+  if (pointers.size === 1) { down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, moved: false }; return; }
+  if (pointers.size === 2) {
+    const st = pinchState();
+    pinch = { d0: st.d, z0: view.zoomTo, cx: st.cx, cy: st.cy };
+    camTween = null;
+    if (down) down.moved = true; // a pinch is never a tap
+  }
+});
 canvas.addEventListener('pointermove', e => {
-  if (down) {
+  const pt = pointers.get(e.pointerId);
+  if (pt) { pt.x = e.clientX; pt.y = e.clientY; }
+  if (pinch && pointers.size >= 2) {
+    const st = pinchState();
+    setZoom(pinch.z0 * st.d / pinch.d0);
+    panBy(st.cx - pinch.cx, st.cy - pinch.cy);
+    pinch.cx = st.cx; pinch.cy = st.cy;
+    return;
+  }
+  if (down && pt) {
     const dx = e.clientX - down.x, dy = e.clientY - down.y;
     if (!down.moved && Math.hypot(dx, dy) > 6) down.moved = true;
     const mx = e.clientX - down.lx, my = e.clientY - down.ly; down.lx = e.clientX; down.ly = e.clientY;
-    if (down.moved && mode === 'gallery') {
-      camTween = null;
-      cam.yaw += mx * 0.0042; cam.pitch += my * 0.0035;
-      cam.pitch = Math.max(-0.95, Math.min(0.7, cam.pitch));
+    if (down.moved) {
+      if (mode === 'gallery') {
+        camTween = null;
+        const k = 1 / view.zoom; // look more finely when zoomed in
+        cam.yaw += mx * 0.0042 * k; cam.pitch += my * 0.0035 * k;
+        cam.pitch = Math.max(-0.95, Math.min(0.7, cam.pitch));
+      } else if (view.zoom > 1.02) panBy(mx, my);
     }
     return;
   }
@@ -2066,9 +2126,22 @@ canvas.addEventListener('pointermove', e => {
     canvas.style.cursor = pickAt(e.clientX, e.clientY, galleryTargets()) ? 'pointer' : 'grab';
   }
 });
+// Returns true when the lifted finger was part of a pinch, so it must not count as a tap.
+function releasePointer(e) {
+  pointers.delete(e.pointerId);
+  if (!pinch) return false;
+  if (pointers.size < 2) {
+    pinch = null;
+    if (mode === 'play' && view.zoomTo < 1.05) resetView(false);
+    const [rest] = [...pointers.values()];
+    down = rest ? { x: rest.x, y: rest.y, lx: rest.x, ly: rest.y, moved: true } : null;
+  }
+  return true;
+}
 canvas.addEventListener('pointerup', e => {
+  if (releasePointer(e)) return;
   const d = down; down = null;
-  if (!d || d.moved) return;
+  if (!d || d.moved || pointers.size) return;
   if (mode === 'play') {
     if (play.phase !== 'choose') return;
     const t = resolveTarget(pickAt(e.clientX, e.clientY, playTargets()));
@@ -2080,9 +2153,76 @@ canvas.addEventListener('pointerup', e => {
     return;
   }
   const hit = pickAt(e.clientX, e.clientY, galleryTargets());
-  if (hit) { const i = stopFromHit(hit.object); if (i >= 0) goStop(i); }
+  if (hit) { const i = stopFromHit(hit.object); if (i >= 0) goStop(i); return; }
+  const floorHit = floorMesh && pickAt(e.clientX, e.clientY, [floorMesh]);
+  if (floorHit) walkTo(floorHit.point);
 });
-canvas.addEventListener('pointercancel', () => { down = null; });
+canvas.addEventListener('pointercancel', e => { releasePointer(e); pinch = pointers.size >= 2 ? pinch : null; down = null; });
+canvas.addEventListener('wheel', e => {
+  // Embedded in a page, a plain wheel scrolls the page; Ctrl + wheel (and a trackpad pinch) zooms.
+  if (embedded && !e.ctrlKey && document.fullscreenElement !== root) return;
+  e.preventDefault();
+  camTween = null;
+  setZoom(view.zoomTo * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)));
+}, { passive: false });
+// Stop Safari's own page zoom from fighting the museum's pinch.
+['gesturestart', 'gesturechange'].forEach(t => root.addEventListener(t, e => e.preventDefault()));
+
+// Tap the floor to walk there, keeping the way you face.
+function walkTo(p) {
+  const x = clampN(p.x, -1.3, 1.3), z = clampN(p.z, HALL.zFar + 3.2, HALL.zNear - 0.8);
+  if (Math.hypot(x - cam.pos.x, z - cam.pos.z) < 0.3) return;
+  const mark = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.9, depthWrite: false }));
+  mark.rotation.x = -Math.PI / 2; mark.position.set(p.x, 0.02, p.z); mark.scale.setScalar(3);
+  scene.add(mark);
+  tween(0.9, k => { mark.material.opacity = 0.9 * (1 - k); mark.scale.setScalar(3 + k * 2); }).then(() => { scene.remove(mark); mark.material.dispose(); });
+  const to = V3(x, 1.62, z), cp = Math.cos(cam.pitch);
+  $('#lm-hint').style.opacity = 0;
+  flyTo(to, to.clone().add(V3(-Math.sin(cam.yaw) * cp, Math.sin(cam.pitch), -Math.cos(cam.yaw) * cp)), 1.2).then(settleNearest);
+}
+
+// The walking joystick, shown on touch screens in the hall.
+function updateJoy() {
+  if (!joyEl) return;
+  joyEl.hidden = !(touchUI && mode === 'gallery' && !(narrowHost() && placardOpen));
+}
+if (joyEl) {
+  const knob = joyEl.querySelector('.knob');
+  const joyMove = e => {
+    const r = joyEl.getBoundingClientRect(), R = r.width / 2;
+    let x = (e.clientX - r.left - R) / R, y = (e.clientY - r.top - R) / R;
+    const m = Math.hypot(x, y); if (m > 1) { x /= m; y /= m; }
+    joy.x = x; joy.y = y;
+    knob.style.transform = `translate(${x * R * 0.55}px, ${y * R * 0.55}px)`;
+  };
+  joyEl.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    joy.id = e.pointerId;
+    try { joyEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    joyEl.classList.add('active'); camTween = null; joyMove(e);
+    $('#lm-hint').style.opacity = 0;
+  });
+  joyEl.addEventListener('pointermove', e => { if (e.pointerId === joy.id) joyMove(e); });
+  const joyEnd = e => {
+    if (e.pointerId !== joy.id) return;
+    joy.id = null; joy.x = joy.y = 0; knob.style.transform = ''; joyEl.classList.remove('active');
+    settleNearest();
+  };
+  joyEl.addEventListener('pointerup', joyEnd);
+  joyEl.addEventListener('pointercancel', joyEnd);
+}
+// Instructions that match the device in hand.
+function touchCopy() {
+  const hint = $('#lm-hint');
+  if (touchUI) {
+    hint.textContent = 'Drag to look · Joystick or tap the floor to walk · Pinch to zoom';
+    STOPS[0].facts = [['Look', 'Drag the view'], ['Walk', 'Use the joystick, or tap the floor'], ['Zoom', 'Pinch, here and at the tables'], ['Visit', 'Tap an exhibit or the timeline']];
+  } else {
+    hint.textContent = `Drag to look · WASD or arrows to walk · ${embedded ? 'Ctrl + scroll' : 'Scroll'} to zoom · Click an exhibit`;
+    STOPS[0].facts = [['Look', 'Drag the view'], ['Walk', 'WASD or arrow keys, or click the floor'], ['Zoom', embedded ? 'Ctrl + scroll, or pinch' : 'Scroll, or pinch'], ['Visit', 'Click an exhibit or use the timeline']];
+  }
+  if (current === 0 && placardOpen) renderPlacard(STOPS[0]);
+}
 const KEYMAP = { KeyW: 'f', ArrowUp: 'f', KeyS: 'b', ArrowDown: 'b', KeyA: 'l', ArrowLeft: 'l', KeyD: 'r', ArrowRight: 'r' };
 // On its own page the museum always takes the keyboard. Embedded, it only does so
 // while the pointer is over it or focus is inside it, so the host page still scrolls.
@@ -2110,7 +2250,13 @@ function settleNearest() {
     const v = stopView(s); const d = Math.hypot(v.target.x - cam.pos.x, v.target.z - cam.pos.z);
     if (d < bd) { bd = d; best = i; }
   });
-  if (best >= 0 && best !== current) { setActive(best); renderPlacard(STOPS[best]); showPlacard(true); }
+  if (best >= 0 && best !== current) {
+    setActive(best);
+    // On a narrow screen the placard would cover the view, so only light up the
+    // exhibit on the timeline until the visitor taps it.
+    if (narrowHost() && !placardOpen) return;
+    renderPlacard(STOPS[best]); showPlacard(true);
+  }
 }
 
 /* -------------------------------------------------------------- loop */
@@ -2129,15 +2275,28 @@ function step() {
     const tw = tweens[i]; tw.t += dt; const k = Math.min(1, tw.t / tw.dur);
     tw.fn(tw.e(k)); if (k >= 1) { tweens.splice(i, 1); tw.res(); }
   }
-  if (mode === 'gallery' && keys.size) {
+  let jf = 0, jt = 0;
+  if (joy.id !== null) {
+    const m = Math.hypot(joy.x, joy.y), dead = 0.14;
+    if (m > dead) { const k = (m - dead) / (1 - dead) / m; jf = -joy.y * k; jt = joy.x * k; }
+  }
+  if (mode === 'gallery' && (keys.size || jf || jt)) {
     const sp = 3.2 * dt, f = V3(-Math.sin(cam.yaw), 0, -Math.cos(cam.yaw)), r = V3(Math.cos(cam.yaw), 0, -Math.sin(cam.yaw));
     if (keys.has('f')) cam.pos.addScaledVector(f, sp); if (keys.has('b')) cam.pos.addScaledVector(f, -sp);
     if (keys.has('r')) cam.pos.addScaledVector(r, sp); if (keys.has('l')) cam.pos.addScaledVector(r, -sp);
+    if (jf) cam.pos.addScaledVector(f, sp * jf);
+    if (jt) cam.yaw -= jt * 1.7 * dt;
     cam.pos.x = Math.max(-1.3, Math.min(1.3, cam.pos.x)); cam.pos.z = Math.max(HALL.zFar + 3.2, Math.min(HALL.zNear - 0.8, cam.pos.z));
     cam.pos.y += (1.62 - cam.pos.y) * Math.min(1, dt * 4);
     $('#lm-hint').style.opacity = 0;
   }
+  view.zoom += (view.zoomTo - view.zoom) * Math.min(1, dt * 14);
+  if (Math.abs(view.zoom - view.zoomTo) < 1e-3) view.zoom = view.zoomTo;
+  if (camera.zoom !== view.zoom) { camera.zoom = view.zoom; camera.updateProjectionMatrix(); }
+  const lim = panLimit();
+  view.panX = clampN(view.panX, -lim, lim); view.panY = clampN(view.panY, -lim, lim);
   camera.position.copy(cam.pos); camera.rotation.set(cam.pitch, cam.yaw, 0);
+  if (view.panX || view.panY) { camera.translateX(view.panX); camera.translateY(view.panY); }
   updateViewShift(dt);
   updateLights(dt, t);
   if (!reduceMotion && dust) {
@@ -2189,7 +2348,7 @@ async function boot() {
   if (shop && /^https?:\/\//.test(shop)) STOPS.find(s => s.id === 'next').link[1] = shop;
   const v = stopView(STOPS[0]); const a = lookAngles(v.pos, v.target);
   cam.pos.copy(v.pos).add(V3(0, 0, 1.2)); cam.yaw = a.yaw; cam.pitch = a.pitch;
-  if (coarse) { $('#lm-hint').textContent = 'Drag to look · Tap an exhibit or the timeline'; STOPS[0].facts = [['Look', 'Drag the view'], ['Visit', 'Tap an exhibit or the timeline below']]; }
+  touchCopy(); updateJoy();
   frame();
   const startAt = STOPS.findIndex(s => s.id === root.dataset.start);
   setTimeout(() => {
@@ -2202,7 +2361,7 @@ async function boot() {
 // Inspect the live state from the console with ?debug in the address.
 if (/[?&]debug\b/.test(location.search)) {
   window.__museum = {
-    play, GAMES, PRES, STOPS, cam, choose, humanThrow, startGame, leaveGame, goStop,
+    play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop,
     // Render one frame and return a small JPEG of the 3D view.
     snap(w = 360) { step(); const c = document.createElement('canvas'); c.width = w; c.height = Math.round(w * canvas.height / canvas.width); c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.55); },
   };
