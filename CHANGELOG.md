@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0: Wing III
+
+- New wing, **Kings, Cards and Courts**, through a second open arch.
+- Two new playable tables: **Tables** (modern backgammon rules, without the cube) and **Shatranj** (medieval Islamic chess, with stalemate and bare-king wins).
+- Four new display exhibits: **Chaturanga** on an ashtapada board with elephants, chariots, horses and foot soldiers; simplified **Lewis Chessmen** figures; **Playing Cards** from China, Mamluk Egypt and early Europe; and gilded **Tarot** trumps. All card faces and figures are new designs, not copies of surviving pieces.
+- Dice games can now take several moves per throw, offered one die at a time, and the Scribe plays a whole turn as a plan.
+- Two-dice faces in the HUD, and Tables shows pip counts.
+- The hall's books are split into one mesh per wing so out-of-view wings are skipped.
+- Debug mode gains a fallback ticker for hidden tabs and a `snap()` helper.
+
 ## 0.2.0: Wing II
 
 - New wing, **Strategy Takes the Table**, through an open arch at the end of Wing I.
