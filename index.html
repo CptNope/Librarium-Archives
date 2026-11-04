@@ -33,6 +33,12 @@
     <div class="hudtop">
       <div class="hudtitle" id="hudTitle"></div>
       <div class="score" id="score"></div>
+      <div class="level" id="level" role="group" aria-label="How hard the Scribe plays">
+        <span>Scribe</span>
+        <button data-level="gentle" aria-pressed="false">Gentle</button>
+        <button data-level="fair" aria-pressed="true">Fair</button>
+        <button data-level="sharp" aria-pressed="false">Sharp</button>
+      </div>
       <button class="hudbtn" id="rulesBtn">Rules</button>
       <button class="hudbtn" id="leaveBtn">Leave the table</button>
     </div>
@@ -46,6 +52,7 @@
       <div class="card">
         <h3 id="winTitle"></h3>
         <p id="winText"></p>
+        <p class="winrec" id="winRecord"></p>
         <div class="row">
           <button class="btn primary" id="againBtn">Play again</button>
           <button class="btn" id="winLeave">Back to the hall</button>

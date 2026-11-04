@@ -419,3 +419,32 @@ test('Shatranj: AI-vs-AI games finish and the AI answers quickly', () => {
     assert.ok(slowest < 2500, `took ${slowest} ms`);
   }
 });
+
+/* ----------------------------------------------------------- Scribe levels */
+
+test('Levels: unknown names are ignored, known ones stick', () => {
+  assert.equal(rules.setLevel('sharp'), 'sharp');
+  assert.equal(rules.setLevel('nonsense'), 'sharp');
+  assert.equal(rules.setLevel('fair'), 'fair');
+});
+
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Levels: at ${level}, the Scribe stays within its thinking budget and leaves the board untouched`, () => {
+    rules.setLevel(level);
+    const limit = { gentle: 400, fair: 1100, sharp: 2200 }[level];
+    for (const G of [MORRIS, OWARE, BR, SHJ]) {
+      G.init();
+      let pl = G.first;
+      for (let k = 0; k < 6 && !G.result(pl); k++) {
+        const before = JSON.stringify(G.snapshot());
+        const t0 = Date.now();
+        const plan = G.aiPlan(pl);
+        const took = Date.now() - t0;
+        assert.equal(JSON.stringify(G.snapshot()), before, `${G.id} changed the board while thinking`);
+        assert.ok(took < limit, `${G.id} at ${level} took ${took} ms`);
+        plan.forEach(m => G.apply(m)); pl = 1 - pl;
+      }
+    }
+    rules.setLevel('fair');
+  });
+}
