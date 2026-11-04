@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Walk a candlelit hall of the oldest known board games and play Senet and the Royal Game of Ur. A Librarium Games project.">
+<!-- artifact:head -->
+<title>Librarium Museum of Play</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almendra+SC&family=Amethysta&family=Montserrat:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/museum.css">
+<!-- /artifact:head -->
+</head>
+<body>
+<!-- artifact:body -->
+<div id="app">
+  <canvas id="scene" tabindex="0" aria-label="3D museum hall. Use the timeline buttons below to visit each exhibit."></canvas>
+
+  <div class="brand"><div class="mark">Librarium</div><div class="sub">Museum of Play</div></div>
+  <button class="iconbtn" id="helpBtn" aria-label="How to explore">?</button>
+
+  <aside class="placard away" id="placard" aria-live="polite">
+    <button class="closeP" id="closeP" aria-label="Hide placard">×</button>
+    <div class="scroll" id="placardBody"></div>
+    <div class="actions" id="placardActions"></div>
+  </aside>
+
+  <div class="hint" id="hint">Drag to look · WASD or arrows to walk · Click an exhibit</div>
+  <nav class="rail" id="rail" aria-label="Exhibits in date order"></nav>
+
+  <section class="hud" id="hud" hidden>
+    <div class="hudtop">
+      <div class="hudtitle" id="hudTitle"></div>
+      <div class="score" id="score"></div>
+      <button class="hudbtn" id="rulesBtn">Rules</button>
+      <button class="hudbtn" id="leaveBtn">Leave the table</button>
+    </div>
+    <div class="rules" id="rules" hidden></div>
+    <div class="hudbottom">
+      <div class="dice" id="dice" aria-hidden="true"></div>
+      <div class="msg" id="msg" aria-live="polite"></div>
+      <button class="btn primary" id="throwBtn">Throw</button>
+    </div>
+    <div class="win" id="win" hidden>
+      <div class="card">
+        <h3 id="winTitle"></h3>
+        <p id="winText"></p>
+        <div class="row">
+          <button class="btn primary" id="againBtn">Play again</button>
+          <button class="btn" id="winLeave">Back to the hall</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="loader" id="loader"><div>Lighting the lamps…<small>Librarium Museum of Play</small></div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/museum.js"></script>
+<!-- /artifact:body -->
+</body>
+</html>
