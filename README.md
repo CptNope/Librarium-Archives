@@ -63,6 +63,35 @@ Kept in the visitor's browser only (`localStorage`, key `librarium.museum.v1`): 
 - **Esc** clears a selection, or leaves the table
 - **After the Scribe moves**, ember marks show where its last move came from and went to
 
+## WordPress plugin
+
+The museum ships as a WordPress plugin for librarium.games.
+
+1. Download `librarium-museum-plugin` from the latest successful **CI** run on GitHub (Actions tab), unzip it to get `librarium-museum.zip`, and upload that under **Plugins > Add New > Upload Plugin**.
+2. Add the museum to a page with the shortcode, or with the **Museum of Play** widget in Elementor:
+
+```
+[librarium_museum]
+[librarium_museum height="720px" start="tables" shop_url="https://librarium.games/"]
+```
+
+| Attribute | What it does | Default |
+| --- | --- | --- |
+| `height` | Height of the museum box: px, vh, svh, dvh, em, rem or % | `80vh` |
+| `start` | Exhibit to open on: `senet`, `ur`, `morris`, `oware`, `brandubh`, `tables`, `shatranj`, or any other exhibit id | the entrance |
+| `shop_url` | Where the "Visit Librarium Games" button at the end of the hall points | `https://librarium.games/` |
+
+How it behaves on a page:
+
+- **Embedded, not full-page.** The museum sits in its own box and scrolls with the page. A full-screen button (top right) expands it where the browser allows.
+- **Keyboard.** It only takes WASD and the arrow keys while the pointer is over it or focus is inside it, so the page keeps scrolling normally.
+- **Styles are scoped.** Every rule is scoped under `#lm-app` and every id is prefixed `lm-`, so the theme and the museum don't restyle each other. The phone layout responds to the box's width (a container query), not the window's.
+- **Assets load only where needed:** on pages whose content holds the shortcode (in the head), or when the widget or shortcode renders (in the footer). three.js r128 is bundled with the plugin; nothing loads from a CDN except Google Fonts.
+- **One per page.** A second copy renders nothing for visitors and a notice for editors.
+- **In the Elementor editor** the widget shows a placeholder; the 3D hall runs on the live page.
+
+`embed-demo.html` imitates a WordPress page with the museum embedded at 70vh; it is published with the site at `/embed-demo.html`.
+
 ## Project layout
 
 ```
@@ -72,6 +101,10 @@ js/rules.js              Pure rule engines for all five playable games, plus the
 js/museum.js             three.js hall, exhibit models, light pool, camera, placards, play table
 tests/rules.test.mjs     Rule tests, simulated AI-vs-AI games and AI timing checks
 tools/build-artifact.mjs Inlines everything into dist/artifact.html for Claude artifacts
+tools/build-wp.mjs       Builds the WordPress plugin into dist/librarium-museum.zip
+wordpress/               Plugin PHP (shortcode, Elementor widget) and readme.txt
+tests/plugin-render.test.php  Renders the shortcode with stubbed WordPress functions
+embed-demo.html          A stand-in WordPress page that embeds the museum
 ```
 
 There is no build step for the site itself. three.js r128 loads from cdnjs, and everything else is static, so the folder can be served as-is or dropped into WordPress.
@@ -81,7 +114,10 @@ There is no build step for the site itself. three.js r128 loads from cdnjs, and 
 ```bash
 npm test                 # rule tests and simulated games (Node 18+)
 npm run build:artifact   # writes dist/artifact.html
+npm run test:plugin      # builds the plugin zip and runs the PHP render tests (needs php and zip)
 ```
+
+Local plugin builds load three.js from cdnjs unless `vendor/three.min.js` exists; CI downloads it and bundles it.
 
 To preview locally, serve the folder with any static server, for example `npx serve .` or `python3 -m http.server`, then open the printed address. Add `?debug` to the address to expose the live state as `window.__museum` in the console, with `choose`, `humanThrow`, `startGame` and a `snap()` helper that returns a small JPEG of the 3D view. Debug mode also keeps the scene ticking when the browser pauses animation frames in a hidden tab.
 
@@ -95,7 +131,7 @@ To preview locally, serve the folder with any static server, for example `npx se
 ## Deployment
 
 - **GitHub Pages:** `.github/workflows/pages.yml` deploys `main` after the tests pass. In the repo's Settings > Pages, set **Source** to **GitHub Actions** once.
-- **CI:** `.github/workflows/ci.yml` runs syntax checks, the rule tests and the artifact build on every push and pull request.
+- **CI:** `.github/workflows/ci.yml` runs syntax checks, the rule tests and the artifact build on every push and pull request, and builds, lints and tests the WordPress plugin, uploading the zip as the `librarium-museum-plugin` artifact.
 
 ## Historical notes and sources
 
@@ -114,7 +150,7 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 
 ## Roadmap
 
-- [ ] WordPress plugin wrapper with a shortcode and an Elementor widget, loading the museum only on its own page
+- [x] WordPress plugin with a shortcode and an Elementor widget, loading the museum only where it is shown
 - [ ] Swap the type-set wordmark for Librarium's logo files
 - [x] Wing II: strategy games (Weiqi, Ludus latrunculorum, Nine Men's Morris, Oware, Brandubh)
 - [x] Wing III: kings, cards and courts (Tables, chaturanga, shatranj, Lewis chessmen, cards, tarot)

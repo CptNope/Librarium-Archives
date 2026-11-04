@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0: WordPress plugin
+
+- **WordPress plugin** (`librarium-museum.zip`, built by CI): `[librarium_museum]` shortcode with `height`, `start` and `shop_url`, a **Museum of Play** Elementor widget with the same settings, assets loaded only where the museum appears, and three.js bundled.
+- **Embedded mode:** the museum can live in a box inside any page. It sizes from its box, the phone layout follows the box width, it only takes the keyboard while in use, and the timeline no longer scrolls the host page.
+- **Full-screen button** on the standalone page and when embedded.
+- **Scoped styles:** every rule now lives under `#lm-app` and every id is prefixed `lm-`, so themes and the museum can't restyle each other.
+- `embed-demo.html`: a stand-in WordPress page for checking the embedded mode.
+- PHP render tests for the shortcode, including rejection of unsafe heights, unknown exhibits and `javascript:` links.
+
 ## 0.4.0: Refinements
 
 - **Scribe levels:** Gentle, Fair and Sharp, chosen from the table's HUD and remembered. Strategy games now search with iterative deepening inside a per-level time budget, and stop as soon as the budget is spent, so phones never stall.
