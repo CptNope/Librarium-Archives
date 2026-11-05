@@ -18,7 +18,7 @@ Visitors walk a candlelit library hall in three wings, read the history of each 
 * Wing II, Strategy Takes the Table: Nine Men's Morris, Oware and Brandubh (playable), Weiqi (Go), Ludus latrunculorum.
 * Wing III, Kings, Cards and Courts: Tables (backgammon) and Shatranj (playable), Chaturanga, the Lewis Chessmen, playing cards, tarot.
 
-The Scribe plays at three levels. Visitor progress (exhibits visited, records at each table) is kept in the visitor's own browser only; the plugin stores nothing on the server.
+Visitors walk with the arrow keys or WASD, or on phones and tablets with an on-screen joystick or by tapping the floor, and pinch to zoom. The Scribe plays at three levels. Visitor progress (exhibits visited, records at each table) is kept in the visitor's own browser only; the plugin stores nothing on the server.
 
 == Usage ==
 
@@ -42,6 +42,9 @@ Only one museum can appear on a page. Assets load only on pages that show it.
 * Fonts Almendra SC, Amethysta and Montserrat from Google Fonts (SIL Open Font License).
 
 == Changelog ==
+
+= 0.6.0 =
+* Touch controls: walking joystick, tap the floor to walk, pinch to zoom and pan at the tables.
 
 = 0.5.0 =
 * First WordPress release: shortcode, Elementor widget, embedded and full-screen modes.

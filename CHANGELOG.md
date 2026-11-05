@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0: Touch controls
+
+- **Walking joystick** on touch screens: push up or down to walk, left or right to turn.
+- **Tap (or click) the floor** to walk to that spot, with a ripple where you tapped.
+- **Pinch to zoom** in the hall and at every table. At a zoomed-in table, drag with one or two fingers to pan around the board; pieces stay tappable while zoomed and panned.
+- **Mouse wheel and trackpad pinch** zoom on desktop. Embedded in a page, a plain wheel still scrolls the page and Ctrl + wheel zooms.
+- Safari's own page zoom no longer fights the museum's pinch, and double-tap page zoom is off on the museum's buttons.
+- On phones, walking up to an exhibit lights it on the timeline instead of opening a card over the view.
+- Instructions on the entrance card and hint match the device: touch or mouse and keyboard.
+
 ## 0.5.0: WordPress plugin
 
 - **WordPress plugin** (`librarium-museum.zip`, built by CI): `[librarium_museum]` shortcode with `height`, `start` and `shop_url`, a **Museum of Play** Elementor widget with the same settings, assets loaded only where the museum appears, and three.js bundled.

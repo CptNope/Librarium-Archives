@@ -55,9 +55,16 @@ Kept in the visitor's browser only (`localStorage`, key `librarium.museum.v1`): 
 
 ## Controls
 
-- **Look:** drag the view
-- **Walk:** WASD or arrow keys (desktop)
-- **Visit an exhibit:** click it, or use the timeline along the bottom
+| | Touch screens | Mouse and keyboard |
+| --- | --- | --- |
+| **Look** | Drag with one finger | Drag |
+| **Walk** | Joystick at bottom left: up and down to walk, left and right to turn. Or tap the floor to walk there | WASD or arrow keys, or click the floor |
+| **Zoom** | Pinch, in the hall and at the tables | Scroll wheel or trackpad pinch (Ctrl + scroll when embedded in a page) |
+| **At a zoomed-in table** | Drag with one or two fingers to pan | Drag to pan |
+| **Visit an exhibit** | Tap it, or tap the timeline | Click it, or use the timeline |
+
+- The joystick appears on touch screens (and as soon as anyone touches the screen on a touch laptop). On a phone it hides while an exhibit card is open, so close the card to walk; walking up to an exhibit lights it on the timeline rather than covering the view, and a tap opens it.
+- Zoom eases back to normal when you travel to another exhibit or leave a table.
 - **Race games (Senet, Ur, Tables):** Throw (or Space), then click a glowing piece. In Tables each die is a separate move; when a checker can use either die, click it and then pick a ring
 - **Strategy games:** click a glowing piece, then one of its rings (in Morris placement and Oware, click the ring or pit directly)
 - **Esc** clears a selection, or leaves the table
