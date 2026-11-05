@@ -16,7 +16,7 @@ Visitors walk a candlelit library hall in five wings, read the history of each g
 
 * Wing I, The Dawn of Play: Senet and the Royal Game of Ur (playable), Mehen, the Başur Höyük pieces, the first dice, Hounds and Jackals.
 * Wing II, Strategy Takes the Table: Go, Nine Men's Morris, Oware, Alquerque and Brandubh (playable), Petteia, Liubo, Ludus latrunculorum, Patolli.
-* Wing III, Kings, Cards and Courts: Tables (backgammon), Shatranj and Xiangqi (playable), Chaturanga, the Lewis Chessmen, playing cards, tarot.
+* Wing III, Kings, Cards and Courts: Tables (backgammon), Shatranj, Xiangqi and tarocchi (playable), Chaturanga, the Lewis Chessmen, playing cards, painted tarot trumps.
 * Wing IV, Printed Boards and Parlour Tables: Fox and Geese, Draughts, the Game of the Goose and Snakes and Ladders (playable), the new chess queen, Pachisi, Mahjong.
 * Wing V, The Modern Board Game: Reversi, Halma and Dots and Boxes (playable), the Mansion of Happiness, the Checkered Game of Life, the Landlord's Game, and a lectern of Librarium's own games.
 
@@ -44,6 +44,9 @@ Only one museum can appear on a page. Assets load only on pages that show it.
 * Fonts Almendra SC, Amethysta and Montserrat from Google Fonts (SIL Open Font License).
 
 == Changelog ==
+
+= 0.10.0 =
+* Sound (synthesized, with a mute button), a playable tarocchi card game, and Dots and Boxes on a 5 × 5 grid.
 
 = 0.9.0 =
 * Playable Halma, 9 × 9 Go, Alquerque, Xiangqi and Snakes and Ladders, plus the first dice, Petteia, Liubo and Patolli on display.
