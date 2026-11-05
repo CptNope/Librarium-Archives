@@ -29,9 +29,28 @@
     <div class="actions" id="lm-placardActions"></div>
   </aside>
 
-  <div class="hint" id="lm-hint">Drag to look · WASD or arrows to walk · Click an exhibit</div>
+  <div class="hint" id="lm-hint">Drag to look · WASD or arrows to walk · [ and ] step between exhibits</div>
   <div class="joy" id="lm-joy" hidden aria-hidden="true"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 12l-7 9h14zM50 88l-7-9h14zM12 50l9-7v14zM88 50l-9-7v14z" fill="currentColor"/></svg><div class="knob"></div></div>
-  <nav class="rail" id="lm-rail" aria-label="Exhibits in date order"></nav>
+  <nav class="rail" id="lm-rail" aria-label="Museum navigation">
+    <div class="wings" id="lm-wings" role="group" aria-label="Wings"></div>
+    <button class="railstep" id="lm-prev" aria-label="Previous exhibit" title="Previous exhibit ( [ )"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+    <div class="stops" id="lm-stops"></div>
+    <button class="railstep" id="lm-next" aria-label="Next exhibit" title="Next exhibit ( ] )"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M7.5 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+    <button class="railindex" id="lm-indexBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="lm-index"><svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path d="M3 3h5v5H3zM12 3h5v5h-5zM3 12h5v5H3zM12 12h5v5h-5z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>All exhibits</span></button>
+  </nav>
+  <section class="index" id="lm-index" role="dialog" aria-labelledby="lm-indexTitle" hidden>
+    <header class="indexhead">
+      <h2 id="lm-indexTitle">All exhibits</h2>
+      <span class="indexcount" id="lm-indexCount"></span>
+      <input type="search" id="lm-indexSearch" placeholder="Find a game, a place, a date" aria-label="Find an exhibit" autocomplete="off">
+      <div class="chips" id="lm-indexChips" role="group" aria-label="Show">
+        <button data-f="all" aria-pressed="true">All</button><button data-f="play" aria-pressed="false">Playable</button><button data-f="new" aria-pressed="false">Not visited</button>
+      </div>
+      <button class="indexclose" id="lm-indexClose" aria-label="Close the index">×</button>
+    </header>
+    <div class="indexcols" id="lm-indexCols"></div>
+    <p class="indexnone" id="lm-indexNone" hidden>Nothing matches. Try another word.</p>
+  </section>
 
   <section class="hud" id="lm-hud" hidden>
     <div class="hudtop">

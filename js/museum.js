@@ -3146,18 +3146,105 @@ function recordText(id) {
 
 /* ------------------------------------------------------- UI: placard + rail */
 let mode = 'gallery', current = 0;
+/* ------------------------------------------------------------- navigation
+ * The bar along the bottom: wing tabs, the exhibits of the wing you are in,
+ * previous and next, and an index of every exhibit with search and filters. */
 const rail = $('#lm-rail');
-const railButtons = [];
-STOPS.forEach((s, i) => {
-  if (i === 0 || STOPS[i - 1].wing !== s.wing) {
-    const w = document.createElement('span'); w.className = 'wing'; w.textContent = ['', 'Wing I', 'Wing II', 'Wing III', 'Wing IV', 'Wing V'][s.wing]; rail.appendChild(w);
-  }
+const ROMAN_WINGS = ['', 'I', 'II', 'III', 'IV', 'V'];
+const WINGS = [1, 2, 3, 4, 5].map(n => {
+  const intro = STOPS.findIndex(x => x.wing === n && (x.id === 'hall' || x.id === 'wing' + n));
+  return { n, roman: ROMAN_WINGS[n], intro, title: STOPS[intro].title, dates: n === 1 ? 'c. 3100 – 2000 BCE' : STOPS[intro].date };
+});
+const railButtons = []; // one per stop, in STOPS order
+let railWing = 0;
+const wingTabs = WINGS.map(w => {
   const b = document.createElement('button');
-  b.innerHTML = '<span class="t"></span><span class="d"></span><span class="sr">, visited</span>';
-  b.querySelector('.t').textContent = s.rail; b.querySelector('.d').textContent = s.date;
+  b.className = 'wingtab'; b.textContent = w.roman;
+  b.setAttribute('aria-label', `Wing ${w.roman}: ${w.title}`); b.title = `Wing ${w.roman} · ${w.title}`;
+  b.addEventListener('click', () => goStop(w.intro));
+  $('#lm-wings').appendChild(b); return b;
+});
+STOPS.forEach((s, i) => {
+  const isIntro = WINGS.some(w => w.intro === i);
+  const b = document.createElement('button');
+  b.className = 'stop' + (isIntro ? ' intro' : '') + (s.game ? ' playable' : '');
+  b.innerHTML = '<span class="t"></span><span class="d"></span><span class="sr"></span>';
+  b.querySelector('.t').textContent = isIntro ? (s.id === 'hall' ? 'Entrance' : s.title) : s.rail;
+  b.querySelector('.d').textContent = isIntro ? `Wing ${ROMAN_WINGS[s.wing]}` : s.date;
+  b.querySelector('.sr').textContent = (s.game ? ', a table you can play' : '') + ', visited';
   if (store.visited[s.id]) b.classList.add('seen');
+  b.dataset.wing = s.wing;
   b.addEventListener('click', () => goStop(i));
-  rail.appendChild(b); railButtons.push(b);
+  $('#lm-stops').appendChild(b); railButtons.push(b);
+});
+function showRailWing(n) {
+  if (railWing === n) return;
+  railWing = n;
+  wingTabs.forEach((b, k) => { const on = k + 1 === n; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'true' : 'false'); });
+  railButtons.forEach(b => { b.hidden = +b.dataset.wing !== n; });
+  $('#lm-stops').scrollLeft = 0;
+}
+function stepStop(d) { if (mode !== 'gallery') return; const i = Math.max(0, Math.min(STOPS.length - 1, (current < 0 ? 0 : current) + d)); if (i !== current) goStop(i); }
+$('#lm-prev').addEventListener('click', () => stepStop(-1));
+$('#lm-next').addEventListener('click', () => stepStop(1));
+
+// The index: every exhibit, grouped by wing.
+const index = $('#lm-index'), indexBtn = $('#lm-indexBtn'), indexSearch = $('#lm-indexSearch');
+let indexFilter = 'all';
+function renderIndex() {
+  const q = indexSearch.value.trim().toLowerCase(), cols = $('#lm-indexCols');
+  cols.innerHTML = '';
+  let shown = 0;
+  const seenAll = STOPS.filter(s => store.visited[s.id]).length;
+  $('#lm-indexCount').textContent = `${seenAll} of ${STOPS.length} visited`;
+  for (const w of WINGS) {
+    const items = STOPS.map((s, i) => [s, i]).filter(([s]) => s.wing === w.n)
+      .filter(([s]) => indexFilter !== 'play' || s.game)
+      .filter(([s]) => indexFilter !== 'new' || !store.visited[s.id])
+      .filter(([s]) => !q || [s.title, s.short, s.rail, s.eyebrow, s.date, ...s.facts.flat()].join(' ').toLowerCase().includes(q));
+    if (!items.length) continue;
+    const col = document.createElement('section'); col.className = 'indexwing';
+    const seen = STOPS.filter(s => s.wing === w.n && store.visited[s.id]).length, total = STOPS.filter(s => s.wing === w.n).length;
+    const h = document.createElement('h3');
+    h.innerHTML = '<span class="r"></span><span class="n"></span><span class="dd"></span>';
+    h.querySelector('.r').textContent = w.roman; h.querySelector('.n').textContent = w.title;
+    h.querySelector('.dd').textContent = `${w.dates} · ${seen} of ${total} visited`;
+    col.appendChild(h);
+    const ul = document.createElement('ul');
+    for (const [s, i] of items) {
+      const li = document.createElement('li'), b = document.createElement('button');
+      b.className = (store.visited[s.id] ? 'seen' : '') + (i === current ? ' on' : '');
+      b.innerHTML = '<span class="t"></span><span class="d"></span>';
+      b.querySelector('.t').textContent = s.id === 'hall' ? 'Entrance' : s.title;
+      b.querySelector('.d').textContent = (s.id === 'hall' || s.id === 'wing' + s.wing) ? 'Wing introduction' : s.date;
+      if (s.game) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'Play'; b.appendChild(tag); }
+      if (store.visited[s.id]) { const sr = document.createElement('span'); sr.className = 'sr'; sr.textContent = ', visited'; b.appendChild(sr); }
+      b.addEventListener('click', () => { openIndex(false); goStop(i); });
+      li.appendChild(b); ul.appendChild(li); shown++;
+    }
+    col.appendChild(ul); cols.appendChild(col);
+  }
+  $('#lm-indexNone').hidden = shown > 0;
+}
+function openIndex(on) {
+  if (on && mode !== 'gallery') return;
+  index.hidden = !on; indexBtn.setAttribute('aria-expanded', String(on));
+  rail.classList.toggle('indexing', on);
+  if (on) { renderIndex(); indexSearch.focus({ preventScroll: true }); } else indexBtn.focus({ preventScroll: true });
+}
+indexBtn.addEventListener('click', () => openIndex(index.hidden));
+$('#lm-indexClose').addEventListener('click', () => openIndex(false));
+indexSearch.addEventListener('input', renderIndex);
+indexSearch.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); const first = $('#lm-indexCols button'); if (first) first.click(); }
+  if (e.key === 'Escape') { e.preventDefault(); openIndex(false); }
+  e.stopPropagation(); // typing here should not walk around the hall
+});
+$('#lm-indexChips').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  indexFilter = b.dataset.f;
+  $('#lm-indexChips').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  renderIndex();
 });
 function renderPlacard(s) {
   const body = $('#lm-placardBody'); body.innerHTML = '';
@@ -3209,10 +3296,12 @@ function updateViewShift(dt) {
 }
 function setActive(i) {
   current = i;
-  railButtons.forEach((b, k) => b.classList.toggle('on', k === i));
-  // Scroll the timeline sideways only; scrollIntoView would also scroll the host page.
-  const b = railButtons[i], left = b.offsetLeft - rail.clientWidth / 2 + b.offsetWidth / 2;
-  rail.scrollTo({ left: Math.max(0, left), behavior: reduceMotion ? 'auto' : 'smooth' });
+  showRailWing(STOPS[i].wing);
+  railButtons.forEach((b, k) => { b.classList.toggle('on', k === i); if (k === i) b.setAttribute('aria-current', 'location'); else b.removeAttribute('aria-current'); });
+  $('#lm-prev').disabled = i <= 0; $('#lm-next').disabled = i >= STOPS.length - 1;
+  // Scroll the strip sideways only; scrollIntoView would also scroll the host page.
+  const strip = $('#lm-stops'), b = railButtons[i], left = b.offsetLeft - strip.offsetLeft - strip.clientWidth / 2 + b.offsetWidth / 2;
+  strip.scrollTo({ left: Math.max(0, left), behavior: reduceMotion ? 'auto' : 'smooth' });
 }
 function goStop(i, fly = true) {
   if (mode !== 'gallery') return;
@@ -3377,7 +3466,7 @@ async function startGame(ex) {
   if (g.variants) g.setVariant((store.variants || {})[g.id] || g.variant);
   renderVariants(g);
   g.init(); P.setup(ex);
-  showPlacard(false); $('#lm-hint').style.opacity = 0; rail.hidden = true;
+  showPlacard(false); $('#lm-hint').style.opacity = 0; rail.hidden = true; index.hidden = true; indexBtn.setAttribute('aria-expanded', 'false');
   root.classList.add('playing');
   resetView(true); updateJoy();
   $('#lm-hud').hidden = false; $('#lm-win').hidden = true; $('#lm-rules').hidden = true;
@@ -3847,6 +3936,9 @@ root.addEventListener('pointerleave', () => { pointerInside = false; keys.clear(
 const keyboardOwned = () => !embedded || pointerInside || root.contains(document.activeElement) || document.fullscreenElement === root;
 window.addEventListener('keydown', e => {
   if (!keyboardOwned()) return;
+  if (!index.hidden && e.code === 'Escape') { openIndex(false); return; }
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  if (mode === 'gallery' && (e.code === 'BracketLeft' || e.code === 'BracketRight')) { stepStop(e.code === 'BracketLeft' ? -1 : 1); e.preventDefault(); return; }
   if (mode === 'play') {
     if (e.code === 'Space' && play.phase === 'throw' && document.activeElement !== $('#lm-throwBtn')) { e.preventDefault(); humanThrow(); }
     if (e.code === 'Escape') { if (play.selected) select(play.selected); else leaveGame(); }

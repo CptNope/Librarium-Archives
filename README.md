@@ -117,8 +117,12 @@ Kept in the visitor's browser only (`localStorage`, key `librarium.museum.v1`): 
 | **Walk** | Joystick at bottom left: up and down to walk, left and right to turn. Or tap the floor to walk there | WASD or arrow keys, or click the floor |
 | **Zoom** | Pinch, in the hall and at the tables | Scroll wheel or trackpad pinch (Ctrl + scroll when embedded in a page) |
 | **At a zoomed-in table** | Drag with one or two fingers to pan | Drag to pan |
-| **Visit an exhibit** | Tap it, or tap the timeline | Click it, or use the timeline |
+| **Visit an exhibit** | Tap it, or use the bar at the bottom | Click it, or use the bar at the bottom |
+| **Jump to a wing** | Tap I to V on the bar | Click I to V on the bar |
+| **Step through exhibits** | ‹ and › on the bar | ‹ and ›, or **[** and **]** |
+| **Find any exhibit** | All exhibits (the grid button) | All exhibits: type to search, Enter goes to the first match, Esc closes |
 
+- **The bar along the bottom** shows the wing you are in: its tabs (I to V) take you to each wing's entrance, the strip lists that wing's exhibits in date order (a gold triangle marks a table you can play, a green dot one you have visited), and it follows you as you walk. **All exhibits** opens an index of all 41, grouped by wing, with a search box and filters for playable tables and exhibits you have not visited yet. On a phone the bar takes two rows.
 - The joystick appears on touch screens (and as soon as anyone touches the screen on a touch laptop). On a phone it hides while an exhibit card is open, so close the card to walk; walking up to an exhibit lights it on the timeline rather than covering the view, and a tap opens it.
 - Zoom eases back to normal when you travel to another exhibit or leave a table.
 - **Race games (Senet, Ur, Tables):** Throw (or Space), then click a glowing piece. In Tables each die is a separate move; when a checker can use either die, click it and then pick a ring
