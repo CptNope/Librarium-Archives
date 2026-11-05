@@ -41,7 +41,7 @@ Through the second arch: chess travels from India to the far North, Rome's dice 
 | Xiangqi (Chinese chess) | c. 800 CE | Modern rules, settled by the Song dynasty | Playable |
 | The Lewis Chessmen | c. 1150–1200 CE | Medieval European chess | On display (simplified figures, not copies) |
 | Playing cards | c. 900–1400 CE | Earliest games lost | On display (new designs in old styles) |
-| Tarot (tarocchi) | c. 1440 CE | Still played as a card game | On display (new paintings in the Milan style) |
+| Tarot (tarocchi) | c. 1440 CE | Still played as a card game | Playable as a simplified tarocchi for two; trumps on display (new paintings in the Milan style) |
 
 ## Wing IV: Printed Boards and Parlour Tables (c. 1300–1900 CE)
 
@@ -72,7 +72,7 @@ Through the fourth arch: games become products, sold by publishers and protected
 | The Checkered Game of Life | 1860 CE | Survive in print | On display |
 | Reversi | 1883 CE | Survive in print; played today as Othello | Playable, from the Othello opening |
 | Halma | 1883–84 CE | Still played, as Chinese checkers | Playable, two players with 19 men each |
-| Dots and Boxes | late 19th century CE | Survive in print (Lucas's *pipopipette*) | Playable, on a 4 × 4 grid of boxes |
+| Dots and Boxes | late 19th century CE | Survive in print (Lucas's *pipopipette*) | Playable, on a 4 × 4 or 5 × 5 grid of boxes |
 | The Landlord's Game | 1904 CE | Survive in the patent | On display (a patent sheet; the drawn track is our own sketch) |
 
 Rule choices worth knowing:
@@ -80,8 +80,17 @@ Rule choices worth knowing:
 - **Reversi** starts from the four centre discs of Othello rather than the empty board of the 1880s. A player with no legal move passes; the game ends when neither can move.
 - **Dots and Boxes:** closing a box scores it and you must draw again. The Scribe plays the whole of its turn, so it may take several boxes in a row.
 - **Halma:** a man in the far camp may not leave it, and a full far camp with at least one of your men in it wins, so neither side can block by staying home. A museum rule ends the game after two hundred moves each.
+- **Tarocchi:** the rules of the first tarot games of the 1440s were never written down, so the table plays a simplified two-player game built on what every tarot game still shares: follow suit, trump if you cannot, and the Fool as an excuse. Thirteen cards each; kings 5, queens 4, knights 3, jacks 2, trumps I and XXI and the Fool 5, and 1 for each trick.
 
 The hall ends at a lectern featuring Librarium's own games, with links to Phoenix Farm, Calendra, The Great Chase and Royal Threadcount, under an arch signed *Different fables for different tables*.
+
+## Sound
+
+Every sound is made on the spot with the Web Audio API, so there are no audio files to license or load: Senet's sticks clatter, dice rattle, pieces knock, Go stones click, cards swish, and a low room tone with the odd candle crackle runs underneath. Nothing plays until the visitor's first click, tap or key, as browsers require, and the speaker button (top right) mutes everything and is remembered. Sound pauses while the tab is hidden.
+
+## Table variants
+
+A game can offer variants, shown as a picker beside the Scribe's level (for now, Dots and Boxes on 4 × 4 or 5 × 5). Choosing one restarts the game, and the choice is remembered. A rule engine opts in with `variants`, `variant` and `setVariant(id)`.
 
 ## The Scribe
 
@@ -91,6 +100,7 @@ The AI opponent has three levels, picked at any table and remembered: **Gentle**
 - **Tables** scores every legal full turn (pip count, safe points, exposed checkers). Gentle picks loosely among the good ones; Sharp always takes the best.
 - **Strategy games** (Morris, Oware, Alquerque, Brandubh, Shatranj, Xiangqi, Fox and Geese, Draughts, Reversi, Halma) use a negamax search with alpha-beta pruning and iterative deepening. Each level has a thinking budget (about 0.1, 0.6 and 1.5 seconds): the Scribe searches one move deeper at a time and stops the moment its budget runs out, so it plays as well as the visitor's device allows without stalling. In Fox and Geese it plays the geese, steering by how much room the fox has left to roam. In Reversi it weighs corners, edges and mobility, then counts discs exactly near the end.
 - **Go** has its own Scribe too: Monte Carlo tree search. Before each move it plays thousands of quick random games from the position (capturing whatever the last move left in atari when it can), and RAVE lets a move that won when played later in a game count a little toward playing it now. The same budgets apply, so Sharp simply plays out more games. After you pass, it passes too if the count already favours it.
+- **Tarocchi** has its own Scribe. Gentle plays a sensible card half the time and a random legal one otherwise. Fair plays by rule of thumb: it wins a trick worth taking as cheaply as it can, and otherwise throws its least useful card. Sharp deals the cards it cannot see at random, many times over, keeping to what you have shown (a suit you could not follow, say), plays each deal to the end, and picks the card that scores best on average.
 - **Dots and Boxes** has its own Scribe. Gentle takes free boxes but often hands them back; Fair and Sharp avoid giving boxes away, and once only risky lines are left they solve the rest of the game exactly (Sharp from 22 open lines, Fair from 15), giving boxes away on purpose to keep control of the long chains.
 
 In Brandubh the visitor's side still wins most games, even against Sharp.
@@ -221,10 +231,10 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 - [x] Wing IV: printed boards and parlour tables (Fox and Geese, the new queen, Draughts, Pachisi, the Goose, Mahjong)
 - [x] Wing V: the modern board game (Mansion of Happiness, Game of Life, Reversi, Halma, Dots and Boxes, the Landlord's Game)
 - [x] Playable Halma for two
-- [ ] Larger Dots and Boxes grids
-- [ ] A playable early card game, such as a simple tarocchi trick-taking game
+- [x] Larger Dots and Boxes grids (5 × 5, chosen at the table)
+- [x] A playable early card game: tarocchi for two
 - [x] Difficulty settings for the Scribe
 - [ ] A stronger Brandubh attacker
 - [x] Playable Go on a 9 × 9 board
 - [x] Backfill: the first dice, Petteia, Liubo, Patolli, Alquerque, Xiangqi, Snakes and Ladders
-- [ ] Sound: sticks, dice and room tone
+- [x] Sound: sticks, dice, pieces, cards and room tone, all synthesized in the browser, with a mute button

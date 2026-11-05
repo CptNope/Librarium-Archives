@@ -38,6 +38,8 @@
 #lm-app .brand{transition:opacity .3s}
 #lm-app .iconbtn{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-family:var(--f-display);font-size:18px;color:var(--gold)}
 #lm-app .fsbtn{right:calc(62px + env(safe-area-inset-right,0px));display:grid;place-items:center}
+#lm-app .soundbtn{right:calc(108px + env(safe-area-inset-right,0px));display:grid;place-items:center}
+#lm-app .soundbtn .mute{display:none}#lm-app .soundbtn.off .mute{display:inline}#lm-app .soundbtn.off .wave{display:none}#lm-app .soundbtn.off{color:var(--dust)}
 
 /* Placard */
 #lm-app .placard{position:absolute;top:calc(72px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(96px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100vw - 32px));display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:3px;box-shadow:0 20px 60px rgba(0,0,0,.55);backdrop-filter:blur(6px);transition:opacity .35s,transform .35s}

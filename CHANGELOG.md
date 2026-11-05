@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0: Sound, tarocchi and a bigger grid
+
+- **Sound**, all synthesized in the browser: throwing sticks, dice, pieces, Go stones, pencil lines, cards, a chime at the end of a game, and a soft room tone with candle crackle. A speaker button mutes it and is remembered.
+- **Tarocchi for two** is playable at the tarot exhibit in Wing III: follow suit, trump if you cannot, the Fool as an excuse, and points for court cards and the great trumps. The easel is put away while you play.
+- **Dots and Boxes** can be played on a 5 × 5 grid, using a new variant picker on the table.
+- Fixed: a move with no spot of its own no longer stops the table from showing the next prompt.
+
 ## 0.9.0: Halma, Go and a backfill of the wings
 
 - **Halma** is now playable: two players, 19 men each, with chains of leaps and the rule against blocking a camp.
