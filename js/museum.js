@@ -1093,6 +1093,7 @@ function buildCards(group) {
 function buildTarot(group) {
   const stand = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.04, 0.6), new THREE.MeshLambertMaterial({ color: 0x1d2a1a }));
   stand.position.y = TOP + 0.02; group.add(stand);
+  const before = group.children.length;
   const easel = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.24, 0.02), MAT.woodDark); easel.position.set(0, TOP + 0.13, -0.1); easel.rotation.x = -0.25; group.add(easel);
   const designs = [
     (g, w, h) => { g.fillStyle = '#c0392b'; g.beginPath(); g.arc(w / 2, h * 0.38, 46, 0, TAU); g.fill(); for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; g.strokeStyle = '#c0392b'; g.lineWidth = 6; g.beginPath(); g.moveTo(w / 2 + Math.cos(a) * 56, h * 0.38 + Math.sin(a) * 56); g.lineTo(w / 2 + Math.cos(a) * 80, h * 0.38 + Math.sin(a) * 80); g.stroke(); } },
@@ -1116,6 +1117,74 @@ function buildTarot(group) {
     m.position.set(-0.45 + k * 0.18, TOP + 0.16, -0.08); m.rotation.x = -0.25; m.rotation.z = rand(-0.03, 0.03); group.add(m);
   });
   glassCase(group, 1.25, 0.42, 0.7);
+  // The easel and its case are put away while a game of tarocchi is played on the stand.
+  group.userData.display = group.children.slice(before);
+  const baize = topPlane(group, 1.16, 0.56, TOP + 0.0405, tex(256, 128, (g, w, h) => {
+    g.fillStyle = '#1f3a24'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(0,0,0,${rand(0.03, 0.1)})`; g.fillRect(rand(0, w), rand(0, h), 1, 1); }
+  }), { roughness: 0.95 });
+  baize.visible = false; group.userData.baize = baize;
+  return TOP + 0.041;
+}
+/* --- Tarocchi cards for the table: original faces in an old Italian manner */
+const TC_W = 0.07, TC_H = 0.11;
+const tcGeo = new THREE.BoxGeometry(TC_W, 0.0016, TC_H);
+const tcEdgeMat = new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.7 });
+const TC_SUITS = ['coin', 'cup', 'sword', 'stick'];
+const TC_SUIT_COL = { coin: '#c48a1e', cup: '#a3301e', sword: '#2a4a7a', stick: '#3a6a2a' };
+const TC_TRUMPS = ['Il Bagatto', 'La Papessa', 'L\'Imperatrice', 'L\'Imperatore', 'Il Papa', 'Gli Amanti', 'Il Carro', 'La Giustizia', 'L\'Eremita', 'La Ruota', 'La Forza', 'L\'Appeso', 'La Morte', 'La Temperanza', 'Il Diavolo', 'La Torre', 'La Stella', 'La Luna', 'Il Sole', 'Il Giudizio', 'Il Mondo'];
+const ROMAN = n => ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'][n];
+const tcBackMat = new THREE.MeshStandardMaterial({ roughness: 0.6, map: cardTex((g, w, h) => {
+  g.fillStyle = '#6a1e14'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#d9b04a'; g.lineWidth = 6; g.strokeRect(8, 8, w - 16, h - 16);
+  g.lineWidth = 2; g.strokeStyle = 'rgba(217,176,74,.6)';
+  for (let k = -h; k < w + h; k += 22) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k + h, h); g.stroke(); g.beginPath(); g.moveTo(k + h, 0); g.lineTo(k, h); g.stroke(); }
+}, 140, 220) });
+const tcFaceCache = new Map();
+function tcFace(c) {
+  if (tcFaceCache.has(c)) return tcFaceCache.get(c);
+  const T = window.LibrariumRules.tarocchi, su = T.suit(c), rk = T.rank(c);
+  const map = cardTex((g, w, h) => {
+    if (su === 4 || c === T.FOOL) {
+      const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#ecd08a'); gr.addColorStop(1, '#c99a3e');
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.strokeStyle = '#6a4a14'; g.lineWidth = 6; g.strokeRect(6, 6, w - 12, h - 12);
+      g.fillStyle = '#3a2410'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = '600 40px "Amethysta",Georgia,serif'; g.fillText(c === T.FOOL ? '0' : ROMAN(rk), w / 2, 42);
+      // A simple emblem: a sun, a star or a circle, not a copy of any painted trump.
+      g.strokeStyle = '#7a2a1c'; g.fillStyle = 'rgba(122,42,28,.15)'; g.lineWidth = 4;
+      g.beginPath(); g.arc(w / 2, h * 0.52, 34, 0, TAU); g.fill(); g.stroke();
+      for (let i = 0; i < (rk % 8) + 4; i++) { const a = i / ((rk % 8) + 4) * TAU; g.beginPath(); g.moveTo(w / 2 + Math.cos(a) * 40, h * 0.52 + Math.sin(a) * 40); g.lineTo(w / 2 + Math.cos(a) * 52, h * 0.52 + Math.sin(a) * 52); g.stroke(); }
+      g.font = '17px "Amethysta",Georgia,serif'; g.fillStyle = '#3a2410';
+      g.fillText(c === T.FOOL ? 'Il Matto' : TC_TRUMPS[rk - 1], w / 2, h - 30, w - 20);
+      return;
+    }
+    const suit = TC_SUITS[su], col = TC_SUIT_COL[suit];
+    g.fillStyle = '#f2e8cf'; g.fillRect(0, 0, w, h); speckle(g, w, h, 200, ['#c9b68e'], 1.2);
+    g.strokeStyle = '#3a2a1a'; g.lineWidth = 5; g.strokeRect(6, 6, w - 12, h - 12);
+    g.fillStyle = col; g.textAlign = 'left'; g.textBaseline = 'top';
+    const label = rk > 10 ? ['F', 'C', 'D', 'R'][rk - 11] : String(rk); // fante, cavallo, donna, re
+    g.font = '700 30px "Montserrat",sans-serif'; g.fillText(label, 16, 14);
+    if (rk > 10) {
+      g.textAlign = 'center'; g.font = '600 26px "Amethysta",Georgia,serif';
+      g.fillText(['Fante', 'Cavallo', 'Regina', 'Re'][rk - 11], w / 2, h - 52);
+      suitMark(g, suit, w / 2, h * 0.45, 70, col);
+      g.strokeStyle = col; g.lineWidth = 3; g.beginPath(); g.moveTo(w / 2 - 40, h * 0.2); g.lineTo(w / 2 - 22, h * 0.13); g.lineTo(w / 2, h * 0.19); g.lineTo(w / 2 + 22, h * 0.13); g.lineTo(w / 2 + 40, h * 0.2); g.stroke();
+    } else {
+      const cols = rk > 3 ? 2 : 1, rows = Math.ceil(rk / cols);
+      for (let i = 0; i < rk; i++) {
+        const cx = cols === 2 ? w / 2 + (i % 2 ? 30 : -30) : w / 2, ry = cols === 2 ? (i / 2) | 0 : i;
+        suitMark(g, suit, cx, 70 + (ry + 0.5) * ((h - 100) / rows), Math.min(44, (h - 120) / rows), col);
+      }
+    }
+  }, 140, 220);
+  tcFaceCache.set(c, map); return map;
+}
+function tcCard(c) {
+  const face = new THREE.MeshStandardMaterial({ map: tcFace(c), roughness: 0.55 });
+  const m = new THREE.Mesh(tcGeo, [tcEdgeMat, tcEdgeMat, face, tcBackMat, tcEdgeMat, tcEdgeMat]);
+  m.userData.mats = [face]; // only this card's face glows, not the backs it shares with others
+  return m;
 }
 
 /* --- Wing IV: Fox and Geese, a pegged cross board */
@@ -2067,9 +2136,9 @@ const STOPS = [
     eyebrow: 'Wing III · Librarium Museum of Play', status: null, begin: 'tables',
     body: [
       'Board games became courtly pastimes. In this wing chess travels from India through Persia to the far North, the dice games of Rome and Persia settle into tables, and paper cards arrive from the East and change how Europe plays.',
-      'Three tables are open: Tables, the family of games that became backgammon; Shatranj, the chess of the caliphs\' courts; and Xiangqi, the chess of China. The Scribe is waiting at all three.'
+      'Four tables are open: Tables, the family of games that became backgammon; Shatranj, the chess of the caliphs\' courts; Xiangqi, the chess of China; and a game of tarocchi, the card game that tarot was made for.'
     ],
-    facts: [['Tables', 'Tables, Shatranj, Xiangqi'], ['Display', 'Chaturanga, Lewis chessmen, cards, tarot']],
+    facts: [['Tables', 'Tables, Shatranj, Xiangqi, Tarocchi'], ['Display', 'Chaturanga, Lewis chessmen, cards, tarot']],
   },
   { id: 'tables', wing: 3, title: 'Tables', short: 'Tables (Backgammon)', date: 'c. 480 CE onward', rail: 'Tables',
     eyebrow: 'Rome, Persia and medieval Europe', status: ['known', 'Rules survive in modern backgammon'], game: 'tables',
@@ -2124,8 +2193,8 @@ const STOPS = [
     facts: [['China', 'Recorded by 969 CE'], ['Egypt', 'Mamluk packs, 15th century'], ['Europe', 'From the 1370s'], ['Suits', 'Coins, cups, swords, batons']],
     build: buildCards },
   { id: 'tarot', wing: 3, title: 'Tarot (Tarocchi)', date: 'c. 1440 CE', rail: 'Tarot',
-    eyebrow: 'Northern Italy · 15th century', status: ['known', 'Still played as a card game'],
-    note: 'On display. These trumps are new paintings in the style of the gilded Milan decks.',
+    eyebrow: 'Northern Italy · 15th century', status: ['known', 'Still played as a card game'], game: 'tarocchi',
+    note: 'The trumps on the easel are new paintings in the style of the gilded Milan decks. At the table you can play a simplified game of tarocchi for two: the first rules were never written down.',
     body: [
       'Tarot began as a card game, not a way of telling fortunes. Around 1440 Italian courts added a fifth suit of picture cards, called trionfi or triumphs, that beat the ordinary suits as trumps. A Ferrara account book of 1442 records painted packs of trionfi, and the gilded decks made for the Visconti and Sforza dukes of Milan in the 1440s and 1450s are the oldest that survive.',
       'The game spread to France and Switzerland, where it is still played. Reading the cards came centuries later: Etteilla wrote about divination with tarot around 1770, Antoine Court de Gébelin claimed an ancient Egyptian origin in 1781, and the Rider-Waite deck followed in 1909.'
@@ -2323,7 +2392,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -2796,6 +2865,62 @@ const SNAKES = Object.assign(R.snakes, {
   score() { return [['You', 'square ' + this.pos[0][0]], ['Scribe', 'square ' + this.pos[1][0]], '· land on 100 to win']; },
   winText: pl => (pl === 0 ? 'You reached 100, liberation, first.' : 'The Scribe reached 100 first.'),
 });
+const TAROCCHI_P = {
+  camW: 1.18,
+  intro() { return 'You lead the first trick. ' + this.prompt(); },
+  prompt: () => (GAMES.tarocchi.trick.length ? 'Follow suit if you can, otherwise play a trump. The Fool may always be played.' : 'Choose a card to lead.'),
+  setup(ex) {
+    const G = GAMES.tarocchi, d = ex.group.userData;
+    d.display.forEach(m => { m.visible = false; }); d.baize.visible = true;
+    (ex.pieces || []).forEach(m => { ex.group.remove(m); });
+    ex.pieces = [];
+    this.ex = ex; this.mesh = new Map(); this.trick = []; this.pile = [0, 0];
+    for (const pl of [0, 1]) for (const c of G.hands[pl]) { const m = tcCard(c); ex.group.add(m); ex.pieces.push(m); this.mesh.set(c, m); }
+    this.layout(0, true); this.layout(1, true);
+  },
+  leave(ex) {
+    const d = ex.group.userData;
+    d.display.forEach(m => { m.visible = true; }); d.baize.visible = false;
+    (ex.pieces || []).forEach(m => { m.visible = false; });
+  },
+  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * 0.074, GAMES.tarocchi.surface + 0.001 + i * 0.0002, pl ? -0.205 : 0.205); },
+  trickSpot(pl) { return V3(pl ? 0.045 : -0.045, GAMES.tarocchi.surface + 0.004, pl ? -0.035 : 0.035); },
+  pileSpot(pl, k) { return V3(0.5, GAMES.tarocchi.surface + 0.002 + k * 0.0017, pl ? -0.16 : 0.16); },
+  layout(pl, instant) {
+    const hand = GAMES.tarocchi.hands[pl];
+    hand.forEach((c, i) => {
+      const m = this.mesh.get(c), to = this.handSpot(pl, i, hand.length);
+      m.rotation.set(0, 0, pl ? Math.PI : 0); // the Scribe's cards lie face down
+      if (instant) m.position.copy(to); else hop(m, to, 0.25, 0.01);
+    });
+  },
+  meshesFor(m) { return [this.mesh.get(m.card)]; },
+  ringFor: () => null,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.tarocchi, tok = play.token, mesh = this.mesh.get(m.card);
+    const res = G.apply(m);
+    this.trick.push({ pl: m.pl, card: m.card });
+    sfx.card();
+    if (m.pl === 1) tween(0.3, k => { mesh.rotation.z = Math.PI * (1 - k); });
+    await hop(mesh, this.trickSpot(m.pl), 0.32, 0.06);
+    if (tok !== play.token) return res;
+    this.layout(m.pl, false);
+    if (res.trick) {
+      await wait(900); if (tok !== play.token) return res;
+      // Both cards go face down to the winner's pile; the Fool goes back to whoever played it.
+      for (const t of this.trick) {
+        const to = t.card === G.FOOL ? t.pl : res.winner, cm = this.mesh.get(t.card);
+        tween(0.25, k => { cm.rotation.z = Math.PI * k; });
+        hop(cm, this.pileSpot(to, this.pile[to]++), 0.35, 0.05);
+      }
+      this.trick = [];
+      await wait(380);
+    }
+    return res;
+  },
+  score: () => { const G = GAMES.tarocchi; return [['You', G.score(0)], ['Scribe', G.score(1)], 'points']; },
+};
 const GO_P = {
   camW: 0.95, ringScale: 0.6, ringOpacity: 0.4,
   intro() { return 'You play black and move first. ' + this.prompt(); },
@@ -2954,7 +3079,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES) };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -3164,7 +3289,7 @@ const sfx = (() => {
     },
     // A piece set down: wood by default, stone for Go, a pencil stroke for Dots and Boxes.
     move(g, m, res) {
-      if (!ready() || !m || m.pass) return;
+      if (!ready() || !m || m.pass || g.id === 'tarocchi') return;
       const caps = (res && ((res.caps && res.caps.length) || (res.boxes && res.boxes.length))) || 0;
       if (g.id === 'go') { burst(0, { dur: 0.04, freq: 3200, q: 5, gain: 0.45 }); tone(0, { freq: 1900, dur: 0.05, gain: 0.08 }); }
       else if (g.id === 'dotsboxes') burst(0, { dur: 0.16, freq: 5000, q: 0.8, gain: 0.12, type: 'highpass' });
@@ -3489,11 +3614,12 @@ function markLastMove(from, to) {
   add(markFromGeo, from, 0.4); add(ringGeo, to, 0.75);
 }
 function addRing(m) {
-  const P = play.P;
+  const P = play.P, at = P.ringFor(m);
+  if (!at) return; // a move with no spot of its own, such as a card played from the hand
   const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR[P.ringTone ? P.ringTone(m) : 'gold'], transparent: true, opacity: P.ringOpacity || 0.85, depthWrite: false });
   const ring = new THREE.Mesh(ringGeo, mat);
   ring.rotation.x = -Math.PI / 2;
-  ring.position.copy(P.ringFor(m)); ring.position.y += 0.004;
+  ring.position.copy(at); ring.position.y += 0.004;
   ring.userData.move = m; ring.userData.base = P.ringScale || 1;
   ring.add(new THREE.Mesh(ringHitGeo, MAT.hit));
   play.ex.group.add(ring); play.rings.push(ring);

@@ -912,3 +912,50 @@ for (const id of ['alquerque', 'xiangqi']) for (const level of ['gentle', 'fair'
     rules.setLevel('fair');
   });
 }
+
+/* ----------------------------------------------------------------- Tarocchi */
+const { tarocchi: TC } = rules;
+const card = (suit, rank) => suit * 14 + rank - 1, trump = n => 55 + n;
+
+test('Tarocchi: you must follow suit, else trump, and the Fool is always allowed', () => {
+  TC.init(); TC.hands = [[card(0, 3), card(1, 9), trump(4), TC.FOOL], [card(0, 12)]]; TC.toMove = 1;
+  TC.apply({ pl: 1, card: card(0, 12) });
+  assert.deepEqual(TC.legal(0).map(m => m.card).sort((a, b) => a - b), [card(0, 3), TC.FOOL].sort((a, b) => a - b));
+  TC.init(); TC.hands = [[card(1, 9), trump(4), trump(9)], [card(0, 12)]]; TC.toMove = 1;
+  TC.apply({ pl: 1, card: card(0, 12) });
+  assert.deepEqual(TC.legal(0).map(m => m.card), [trump(4), trump(9)]);
+});
+
+test('Tarocchi: trumps win, the led suit beats a discard, and the Fool never wins', () => {
+  TC.init(); TC.hands = [[trump(1)], [card(2, 14)]]; TC.toMove = 1;
+  TC.apply({ pl: 1, card: card(2, 14) }); let r = TC.apply({ pl: 0, card: trump(1) });
+  assert.equal(r.winner, 0);
+  TC.init(); TC.hands = [[card(3, 14)], [card(2, 2)]]; TC.toMove = 1;
+  TC.apply({ pl: 1, card: card(2, 2) }); r = TC.apply({ pl: 0, card: card(3, 14) });
+  assert.equal(r.winner, 1, 'a king of another suit is only a discard');
+  TC.init(); TC.hands = [[TC.FOOL], [card(2, 2)]]; TC.toMove = 0;
+  TC.apply({ pl: 0, card: TC.FOOL }); r = TC.apply({ pl: 1, card: card(2, 2) });
+  assert.equal(r.winner, 1);
+  assert.ok(TC.won[0].includes(TC.FOOL), 'the Fool goes back to its owner');
+});
+
+test('Tarocchi: the winner of a trick leads the next, and the count adds card points and tricks', () => {
+  TC.init(); TC.hands = [[card(0, 14), card(1, 1)], [card(0, 2), card(1, 2)]]; TC.toMove = 0;
+  TC.apply({ pl: 0, card: card(0, 14) });
+  const r = TC.apply({ pl: 1, card: card(0, 2) });
+  assert.equal(r.winner, 0); assert.equal(TC.toMove, 0); assert.ok(TC.legal(0).length);
+  assert.equal(r.followUp, undefined, 'the leader won, so play passes back normally');
+  assert.equal(TC.score(0), 5 + 1);
+  assert.equal([...Array(78).keys()].reduce((n, c) => n + TC.points(c), 0), 71);
+});
+
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Tarocchi: at ${level}, a whole hand finishes and every Scribe turn stays in budget`, () => {
+    rules.setLevel(level);
+    TC.init(); let slowest = 0;
+    while (!TC.result()) { const pl = TC.toMove; const t0 = Date.now(); const plan = TC.aiPlan(pl); slowest = Math.max(slowest, Date.now() - t0); assert.ok(plan.length); plan.forEach(m => TC.apply(m)); }
+    assert.equal(TC.tricks[0] + TC.tricks[1], 13);
+    assert.ok(slowest < { gentle: 400, fair: 1100, sharp: 2200 }[level], `took ${slowest} ms`);
+    rules.setLevel('fair');
+  });
+}
