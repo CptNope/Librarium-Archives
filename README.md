@@ -10,6 +10,7 @@ A walkable 3D museum of the oldest known board games, built for [Librarium Games
 | Mehen | c. 3100–2300 BCE | Lost | On display |
 | Başur Höyük pieces | c. 3000 BCE | Game unknown | On display |
 | Royal Game of Ur | c. 2600–2400 BCE | Survive in writing (tablet, c. 177 BCE; Finkel) | Playable |
+| The first dice | c. 2800–1900 BCE | Still rolled | On display (Burnt City and Indus-style dice, newly made) |
 | Hounds and Jackals | c. 2000 BCE | Lost | On display |
 
 ## Wing II: Strategy Takes the Table (c. 500 BCE – 1000 CE)
@@ -18,10 +19,14 @@ Through the arch, luck drains out of the games.
 
 | Exhibit | Date | Rules | In the museum |
 | --- | --- | --- | --- |
-| Weiqi (Go) | by the 4th century BCE | Unbroken tradition | On display (17 × 17 Han-style board) |
+| Petteia | by 443 BCE | Mostly lost | On display (the board is our guess) |
+| Liubo | by the 4th century BCE | Lost; reconstructions only | On display (after the Mawangdui set) |
+| Weiqi (Go) | by the 4th century BCE | Unbroken tradition | Playable on a 9 × 9 board; the 17 × 17 Han-style board is on display |
 | Ludus latrunculorum | by the 1st century BCE | Uncertain, reconstructed | On display |
+| Patolli | by c. 300 CE | Partly known | On display (reed mat, beans and stones) |
 | Nine Men's Morris | Roman era onward | Survive in tradition | Playable |
 | Mancala (Oware) | c. 6th–7th century CE (Aksum) | Survive in tradition (abapa) | Playable |
+| Alquerque | by the 10th century CE | Reconstructed (R. C. Bell, from Alfonso X) | Playable |
 | Brandubh | c. 900–1000 CE (Ballinderry board) | Reconstructed | Playable, as the king's side |
 
 ## Wing III: Kings, Cards and Courts (c. 480–1450 CE)
@@ -33,6 +38,7 @@ Through the second arch: chess travels from India to the far North, Rome's dice 
 | Tables (backgammon) | c. 480 CE onward | Modern backgammon, no cube | Playable |
 | Chaturanga | by c. 600 CE | Partly lost (the elephant's move) | On display, on an ashtapada board |
 | Shatranj | c. 600–1200 CE | Survive in writing (al-Adli, as-Suli) | Playable |
+| Xiangqi (Chinese chess) | c. 800 CE | Modern rules, settled by the Song dynasty | Playable |
 | The Lewis Chessmen | c. 1150–1200 CE | Medieval European chess | On display (simplified figures, not copies) |
 | Playing cards | c. 900–1400 CE | Earliest games lost | On display (new designs in old styles) |
 | Tarot (tarocchi) | c. 1440 CE | Still played as a card game | On display (new paintings in the Milan style) |
@@ -48,6 +54,7 @@ Through the third arch: games are printed, sold and brought home.
 | Draughts | c. 1100s–1500s CE | English draughts (checkers) | Playable |
 | Pachisi (chaupar) | 16th century CE | Still played; ancestor of Ludo | On display (cloth cross, cowries) |
 | The Game of the Goose | c. 1575 CE | Survive in print | Playable |
+| Snakes and Ladders (gyan chaupar) | 18th–19th century CE | Still played | Playable, with virtues and vices from an old Indian board |
 | Mahjong | mid-1800s CE | Still played | On display (wall and hand of tiles) |
 
 Rule choices worth knowing:
@@ -64,7 +71,7 @@ Through the fourth arch: games become products, sold by publishers and protected
 | The Mansion of Happiness | 1843 CE | Survive in print | On display (a spiral of virtues and vices, with a teetotum) |
 | The Checkered Game of Life | 1860 CE | Survive in print | On display |
 | Reversi | 1883 CE | Survive in print; played today as Othello | Playable, from the Othello opening |
-| Halma | 1883–84 CE | Still played, as Chinese checkers | On display (16 × 16 board with two camps) |
+| Halma | 1883–84 CE | Still played, as Chinese checkers | Playable, two players with 19 men each |
 | Dots and Boxes | late 19th century CE | Survive in print (Lucas's *pipopipette*) | Playable, on a 4 × 4 grid of boxes |
 | The Landlord's Game | 1904 CE | Survive in the patent | On display (a patent sheet; the drawn track is our own sketch) |
 
@@ -72,6 +79,7 @@ Rule choices worth knowing:
 
 - **Reversi** starts from the four centre discs of Othello rather than the empty board of the 1880s. A player with no legal move passes; the game ends when neither can move.
 - **Dots and Boxes:** closing a box scores it and you must draw again. The Scribe plays the whole of its turn, so it may take several boxes in a row.
+- **Halma:** a man in the far camp may not leave it, and a full far camp with at least one of your men in it wins, so neither side can block by staying home. A museum rule ends the game after two hundred moves each.
 
 The hall ends at a lectern featuring Librarium's own games, with links to Phoenix Farm, Calendra, The Great Chase and Royal Threadcount, under an arch signed *Different fables for different tables*.
 
@@ -81,7 +89,8 @@ The AI opponent has three levels, picked at any table and remembered: **Gentle**
 
 - **Race games** (Senet, Ur) score each move. Gentle adds a lot of chance and sometimes just plays any legal move; Sharp plays its best move.
 - **Tables** scores every legal full turn (pip count, safe points, exposed checkers). Gentle picks loosely among the good ones; Sharp always takes the best.
-- **Strategy games** (Morris, Oware, Brandubh, Shatranj, Fox and Geese, Draughts) use a negamax search with alpha-beta pruning and iterative deepening. Each level has a thinking budget (about 0.1, 0.6 and 1.5 seconds): the Scribe searches one move deeper at a time and stops the moment its budget runs out, so it plays as well as the visitor's device allows without stalling. In Fox and Geese it plays the geese, steering by how much room the fox has left to roam. In Reversi it weighs corners, edges and mobility, then counts discs exactly near the end.
+- **Strategy games** (Morris, Oware, Alquerque, Brandubh, Shatranj, Xiangqi, Fox and Geese, Draughts, Reversi, Halma) use a negamax search with alpha-beta pruning and iterative deepening. Each level has a thinking budget (about 0.1, 0.6 and 1.5 seconds): the Scribe searches one move deeper at a time and stops the moment its budget runs out, so it plays as well as the visitor's device allows without stalling. In Fox and Geese it plays the geese, steering by how much room the fox has left to roam. In Reversi it weighs corners, edges and mobility, then counts discs exactly near the end.
+- **Go** has its own Scribe too: Monte Carlo tree search. Before each move it plays thousands of quick random games from the position (capturing whatever the last move left in atari when it can), and RAVE lets a move that won when played later in a game count a little toward playing it now. The same budgets apply, so Sharp simply plays out more games. After you pass, it passes too if the count already favours it.
 - **Dots and Boxes** has its own Scribe. Gentle takes free boxes but often hands them back; Fair and Sharp avoid giving boxes away, and once only risky lines are left they solve the rest of the game exactly (Sharp from 22 open lines, Fair from 15), giving boxes away on purpose to keep control of the long chains.
 
 In Brandubh the visitor's side still wins most games, even against Sharp.
@@ -199,6 +208,8 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 - Wikipedia: The Mansion of Happiness, The Checkered Game of Life, Reversi, Halma, Chinese checkers, Dots and boxes, The Landlord's Game
 - Google Patents: US 748,626, Elizabeth J. Magie, Game-board (1904)
 - Elwyn Berlekamp, *The Dots and Boxes Game: Sophisticated Child's Play* (2000)
+- Wikipedia: Dice, Polis (board game), Liubo, Patolli, Alquerque, Xiangqi, Snakes and ladders, Royal Game of Ur
+- Jacob Schmidt-Madsen, *The Game of Knowledge: Playing at Spiritual Liberation in 18th- and 19th-century Western India*
 - Librarium Games (librarium.games): Phoenix Farm, Calendra, The Great Chase, Royal Threadcount
 
 ## Roadmap
@@ -209,10 +220,11 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 - [x] Wing III: kings, cards and courts (Tables, chaturanga, shatranj, Lewis chessmen, cards, tarot)
 - [x] Wing IV: printed boards and parlour tables (Fox and Geese, the new queen, Draughts, Pachisi, the Goose, Mahjong)
 - [x] Wing V: the modern board game (Mansion of Happiness, Game of Life, Reversi, Halma, Dots and Boxes, the Landlord's Game)
-- [ ] Playable Halma for two
+- [x] Playable Halma for two
 - [ ] Larger Dots and Boxes grids
 - [ ] A playable early card game, such as a simple tarocchi trick-taking game
 - [x] Difficulty settings for the Scribe
 - [ ] A stronger Brandubh attacker
-- [ ] Playable Go on a 9 × 9 board
+- [x] Playable Go on a 9 × 9 board
+- [x] Backfill: the first dice, Petteia, Liubo, Patolli, Alquerque, Xiangqi, Snakes and Ladders
 - [ ] Sound: sticks, dice and room tone
