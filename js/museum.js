@@ -650,6 +650,10 @@ function woodGrain(g, w, h, base, line) {
 }
 
 /* --- Weiqi (Go): a 17 x 17 board like the Eastern Han stone board */
+const GO9_S = 0.08; // the 9 x 9 grid fills the same block as the 17 x 17 one
+function goCell(p) { const r = (p / 9) | 0, c = p % 9; return { x: (c - 4) * GO9_S, z: (4 - r) * GO9_S }; }
+const go9StoneGeo = new THREE.SphereGeometry(0.036, 24, 12);
+const GO9_MATS = [new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.32 }), new THREE.MeshStandardMaterial({ color: 0xefe9dc, roughness: 0.28 })];
 function buildGo(group) {
   const N = 17, S = 0.04, W = (N - 1) * S + 0.08;
   const kaya = new THREE.MeshStandardMaterial({ color: 0xc79a5c, roughness: 0.55 });
@@ -665,7 +669,22 @@ function buildGo(group) {
     g.fillStyle = '#1d140c';
     for (const a of [3, 8, 13]) for (const b of [3, 8, 13]) { g.beginPath(); g.arc(off + a * cell, off + b * cell, 6, 0, TAU); g.fill(); }
   });
-  topPlane(group, W, W, TOP + 0.1205, map);
+  const face17 = topPlane(group, W, W, TOP + 0.1205, map);
+  // The playing face: a 9 x 9 grid on the same block, shown only while a game is on.
+  const map9 = tex(px, px, (g) => {
+    woodGrain(g, px, px, '#d2a565', '#7a5226');
+    const c9 = px * GO9_S / W, o9 = px * 0.04 / W;
+    g.strokeStyle = '#1d140c'; g.lineWidth = 3;
+    for (let i = 0; i < 9; i++) {
+      g.beginPath(); g.moveTo(o9, o9 + i * c9); g.lineTo(o9 + 8 * c9, o9 + i * c9); g.stroke();
+      g.beginPath(); g.moveTo(o9 + i * c9, o9); g.lineTo(o9 + i * c9, o9 + 8 * c9); g.stroke();
+    }
+    g.fillStyle = '#1d140c';
+    for (const [a, b] of [[2, 2], [2, 6], [6, 2], [6, 6], [4, 4]]) { g.beginPath(); g.arc(o9 + a * c9, o9 + b * c9, 8, 0, TAU); g.fill(); }
+  });
+  const face9 = topPlane(group, W, W, TOP + 0.1206, map9); face9.visible = false;
+  const display = [];
+  group.userData.go = { face17, face9, display };
   const stoneGeo = new THREE.SphereGeometry(0.0185, 18, 10);
   const black = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.32 });
   const white = new THREE.MeshStandardMaterial({ color: 0xefe9dc, roughness: 0.28 });
@@ -675,7 +694,7 @@ function buildGo(group) {
     board.set(x + ',' + y, c);
     const s = new THREE.Mesh(stoneGeo, c ? white : black); s.scale.y = 0.42;
     s.position.set((x - (N - 1) / 2) * S + (R() - 0.5) * 0.004, TOP + 0.128, (y - (N - 1) / 2) * S + (R() - 0.5) * 0.004);
-    group.add(s); return true;
+    group.add(s); display.push(s); return true;
   };
   [[3, 3, 0], [13, 13, 1], [13, 3, 0], [3, 13, 1], [8, 8, 0]].forEach(([x, y, c]) => put(x, y, c));
   const steps = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [2, 0], [0, 2], [1, -1], [-2, 1]];
@@ -693,6 +712,7 @@ function buildGo(group) {
     const b = new THREE.Mesh(bowlGeo, bowlMat); b.position.set(s * (W / 2 + 0.14), TOP, s * 0.2); group.add(b);
     const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.066, 0.012, 28), bowlMat); lid.position.set(s * (W / 2 + 0.14), TOP + 0.006, s * 0.2 - s * 0.17); lid.rotation.x = 0.08; group.add(lid);
   }
+  return TOP + 0.1206;
 }
 
 /* --- Ludus latrunculorum: an incised stone board with glass counters */
@@ -1686,18 +1706,19 @@ const STOPS = [
     eyebrow: 'Wing II · Librarium Museum of Play', status: null, begin: 'go',
     body: [
       'The games in the first wing were races, and the dice or sticks had the final word. Here the luck drains away. These are games of position, where you win by surrounding, trapping or outthinking the person across from you.',
-      'Three tables are open: Nine Men\'s Morris, the mancala game Oware, and the Irish game Brandubh. The Scribe is waiting at each of them, and it plays these games much more carefully than it rolls dice.'
+      'Four tables are open: Go on a small board, Nine Men\'s Morris, the mancala game Oware, and the Irish game Brandubh. The Scribe is waiting at each of them, and it plays these games much more carefully than it rolls dice.'
     ],
-    facts: [['Tables', 'Morris, Oware, Brandubh'], ['Luck', 'None. Every move is a choice']],
+    facts: [['Tables', 'Go, Morris, Oware, Brandubh'], ['Luck', 'None. Every move is a choice']],
   },
   { id: 'go', wing: 2, side: -1, z: -50, title: 'Weiqi (Go)', date: 'by the 4th century BCE', rail: 'Weiqi (Go)',
     eyebrow: 'China · Zhou dynasty to Han', status: ['known', 'Still played today'],
-    note: 'On display. A Go table needs a stronger Scribe than this one, so it is planned for a later visit.',
+    game: 'go',
     body: [
       'Weiqi, known in the West by its Japanese name Go, is the oldest board game still played in much the same form. The Zuo Zhuan, a history compiled around the 4th century BCE, mentions it in a story set in 548 BCE, and both Confucius\'s Analects and the book of Mencius refer to it. Legend credits the sage-emperor Yao with inventing it to teach his son discipline.',
-      'The oldest complete board, carved in stone during the Eastern Han dynasty (25–220 CE) and found in Hebei province in 1954, has a 17 × 17 grid like this one. The 19 × 19 board was standard by the Tang dynasty. Go reached Korea and Japan by the 7th century, and it became one of the four arts expected of a cultivated scholar, alongside calligraphy, painting and the zither-like guqin.'
+      'The oldest complete board, carved in stone during the Eastern Han dynasty (25–220 CE) and found in Hebei province in 1954, has a 17 × 17 grid like this one. The 19 × 19 board was standard by the Tang dynasty. Go reached Korea and Japan by the 7th century, and it became one of the four arts expected of a cultivated scholar, alongside calligraphy, painting and the zither-like guqin.',
+      'At this table you play on the 9 × 9 board used today for quick games and teaching, with modern Chinese scoring. The Scribe plays Go differently from the other games: before each move it plays thousands of quick random games from the position and picks the move that wins most often.'
     ],
-    facts: [['Board', '17 × 17 here, 19 × 19 today'], ['Pieces', 'Black and white stones'], ['Goal', 'Surround more territory']],
+    facts: [['Board', '17 × 17 on display; 9 × 9 at the table'], ['Pieces', 'Black and white stones'], ['Goal', 'Surround more territory']],
     build: buildGo },
   { id: 'latrunculi', wing: 2, side: 1, z: -56, title: 'Ludus Latrunculorum', date: 'by the 1st century BCE', rail: 'Latrunculi',
     eyebrow: 'Rome · Late Republic to Empire', status: ['recon', 'Rules uncertain'],
@@ -1977,7 +1998,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -2372,6 +2393,49 @@ const GOOSE = Object.assign(R.goose, {
   score() { return [['You', 'square ' + this.pos[0][0]], ['Scribe', 'square ' + this.pos[1][0]], '· land on 63 to win']; },
   winText: pl => (pl === 0 ? 'You reached the garden at 63 first.' : 'The Scribe reached the garden at 63 first.'),
 });
+const GO_P = {
+  camW: 0.95, ringScale: 0.6, ringOpacity: 0.4,
+  intro() { return 'You play black and move first. ' + this.prompt(); },
+  prompt: () => 'Choose a ring to place a stone, or Pass when nothing useful is left.',
+  setup(ex) {
+    const G = GAMES.go, d = ex.group.userData.go;
+    d.face17.visible = false; d.display.forEach(m => { m.visible = false; }); d.face9.visible = true;
+    if (!ex.pieces) ex.pieces = [];
+    ex.pieces.forEach(m => { m.visible = false; });
+    this.ex = ex; this.cell = Array(81).fill(null); this.free = ex.pieces.slice();
+  },
+  leave(ex) {
+    const d = ex.group.userData.go;
+    d.face17.visible = true; d.display.forEach(m => { m.visible = true; }); d.face9.visible = false;
+    (ex.pieces || []).forEach(m => { m.visible = false; });
+  },
+  stone(pl) {
+    let m = this.free.findIndex(x => x.userData.pl === pl);
+    if (m >= 0) return this.free.splice(m, 1)[0];
+    const s = new THREE.Mesh(go9StoneGeo, GO9_MATS[pl]); s.scale.y = 0.42; s.userData.pl = pl;
+    this.ex.group.add(s); this.ex.pieces.push(s); return s;
+  },
+  pos(p) { const c = goCell(p); return V3(c.x, GAMES.go.surface + 0.012, c.z); },
+  meshesFor: () => [],
+  ringFor(m) { return m.pass ? null : this.pos(m.p); },
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.go;
+    const res = G.apply(m);
+    if (m.pass) return res;
+    const s = this.stone(m.pl); this.cell[m.p] = s;
+    const to = this.pos(m.p);
+    s.position.set(to.x, to.y + 0.08, to.z); s.visible = true;
+    await tween(0.18, k => { s.position.y = to.y + 0.08 * (1 - k); }, k => k * k);
+    if (res.caps.length) {
+      const gone = res.caps.map(p => { const g = this.cell[p]; this.cell[p] = null; return g; }).filter(Boolean);
+      await tween(0.3, k => { gone.forEach(g => { g.scale.set(1 - k * 0.9, 0.42 * (1 - k * 0.9), 1 - k * 0.9); }); });
+      gone.forEach(g => { g.visible = false; g.scale.set(1, 0.42, 1); this.free.push(g); });
+    }
+    return res;
+  },
+  score: () => { const G = GAMES.go; return [['You', G.count(0)], ['Scribe', G.count(1)], 'stones · komi 7']; },
+};
 const HALMA_P = {
   camW: 1.0, ringScale: 0.42,
   intro() { return 'You play red, from the near corner, and move first. ' + this.prompt(); },
@@ -2479,7 +2543,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], 'boxes of 16']; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -2671,6 +2735,7 @@ async function startGame(ex) {
   $('#lm-hud').hidden = false; $('#lm-win').hidden = true; $('#lm-rules').hidden = true;
   $('#lm-hudTitle').textContent = g.name;
   $('#lm-throwBtn').hidden = !g.dice; $('#lm-dice').hidden = !g.dice;
+  $('#lm-passBtn').hidden = !g.canPass; $('#lm-passBtn').disabled = true;
   renderRules(g);
   if (!store.rulesSeen[g.id]) { $('#lm-rules').hidden = false; store.rulesSeen[g.id] = true; save(); }
   clearLastMove();
@@ -2691,6 +2756,7 @@ function renderRules(g) {
 function leaveGame() {
   if (mode !== 'play') return;
   play.token++; clearHighlights(); clearLastMove();
+  if (play.P && play.P.leave) play.P.leave(play.ex);
   mode = 'gallery';
   $('#lm-hud').hidden = true; rail.hidden = false; $('#lm-hint').style.opacity = 1;
   root.classList.remove('playing');
@@ -2702,6 +2768,7 @@ $('#lm-winLeave').addEventListener('click', leaveGame);
 $('#lm-againBtn').addEventListener('click', () => { const ex = play.ex; play.token++; clearHighlights(); mode = 'gallery'; startGame(ex); });
 $('#lm-rulesBtn').addEventListener('click', () => { $('#lm-rules').hidden = !$('#lm-rules').hidden; });
 $('#lm-throwBtn').addEventListener('click', humanThrow);
+$('#lm-passBtn').addEventListener('click', () => { if (play.phase === 'choose' && play.game.canPass) choose({ pl: 0, pass: true }); });
 
 function setMsg(who, text) {
   const m = $('#lm-msg'); m.innerHTML = '';
@@ -2773,6 +2840,7 @@ function beginTurn(pl, first) {
 }
 function offer(moves, text) {
   play.moves = moves; play.phase = 'choose';
+  $('#lm-passBtn').disabled = false;
   highlight(moves);
   setMsg('Your turn', text);
 }
@@ -2800,6 +2868,7 @@ async function humanThrow() {
 async function choose(m) {
   if (play.phase !== 'choose') return;
   play.phase = 'anim'; clearHighlights(); clearLastMove();
+  $('#lm-passBtn').disabled = true;
   const g = play.game, tok = play.token;
   const res = await play.P.play(m);
   if (tok !== play.token) return;
@@ -2893,7 +2962,7 @@ function markLastMove(from, to) {
 }
 function addRing(m) {
   const P = play.P;
-  const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR[P.ringTone ? P.ringTone(m) : 'gold'], transparent: true, opacity: 0.85, depthWrite: false });
+  const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR[P.ringTone ? P.ringTone(m) : 'gold'], transparent: true, opacity: P.ringOpacity || 0.85, depthWrite: false });
   const ring = new THREE.Mesh(ringGeo, mat);
   ring.rotation.x = -Math.PI / 2;
   ring.position.copy(P.ringFor(m)); ring.position.y += 0.004;
