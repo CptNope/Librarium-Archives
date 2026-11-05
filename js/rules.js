@@ -1197,7 +1197,7 @@
       this.b[m.at] = m.pl + 1;
       for (const f of m.flips) this.b[f] = m.pl + 1;
       const n = m.flips.length;
-      return { note: m.pl === 0 ? `You flip ${n} disc${n === 1 ? '' : 's'}.` : `The Scribe flips ${n} of your disc${n === 1 ? '' : 's'}.` };
+      return { note: m.pl === 0 ? `You flip ${n} disc${n === 1 ? '' : 's'}.` : (n === 1 ? 'The Scribe flips one of your discs.' : `The Scribe flips ${n} of your discs.`) };
     },
     skipTurn(pl) {
       if (this.legal(pl).length || !this.legal(1 - pl).length) return '';
