@@ -683,3 +683,232 @@ for (const level of ['gentle', 'fair', 'sharp']) {
     rules.setLevel('fair');
   });
 }
+
+/* -------------------------------------------------------------------- Halma */
+const { halma: HM } = rules;
+const hm = (r, c) => r * 16 + c;
+
+test('Halma: each camp holds 19 men in its corner', () => {
+  HM.init();
+  assert.equal(HM.men(0).length, 19);
+  assert.equal(HM.men(1).length, 19);
+  assert.equal(HM.b[hm(0, 0)], 1);
+  assert.equal(HM.b[hm(15, 15)], 2);
+  assert.equal(HM.b[hm(4, 2)], 0); // the camp's rows run 5, 5, 4, 3, 2
+});
+
+test('Halma: a man steps to any empty neighbour, or leaps in a chain', () => {
+  HM.init(); HM.b.fill(0);
+  HM.b[hm(7, 7)] = 1;
+  assert.equal(HM.legal(0).length, 8);
+  HM.b[hm(8, 8)] = 2; HM.b[hm(10, 10)] = 1;
+  const far = HM.reach(hm(7, 7)).find(m => m.to === hm(11, 11));
+  assert.ok(far, 'two leaps in a row reach 11,11');
+  assert.deepEqual(far.path, [hm(9, 9), hm(11, 11)]);
+  assert.ok(!HM.reach(hm(7, 7)).some(m => m.to === hm(7, 7)), 'a chain never ends where it began');
+});
+
+test('Halma: a man in the far camp may not leave it', () => {
+  HM.init(); HM.b.fill(0);
+  HM.b[hm(15, 11)] = 1; // on the camp's edge (row 15 holds columns 11-15)
+  const outs = HM.legal(0).filter(m => !HM.GOAL[0][m.to]);
+  assert.equal(outs.length, 0);
+});
+
+test('Halma: filling the far camp wins, and so does a full camp with one of your men in it', () => {
+  HM.init(); HM.b.fill(0);
+  HM.CAMP[1].forEach(i => { HM.b[i] = 1; });
+  assert.equal(HM.result(1).winner, 0);
+  HM.init(); HM.b.fill(0);
+  HM.CAMP[1].forEach((i, k) => { HM.b[i] = k === 0 ? 1 : 2; });
+  HM.b[hm(8, 8)] = 1;
+  assert.equal(HM.result(0).winner, 0);
+});
+
+test('Halma: the museum rule ends a long game on men home', () => {
+  HM.init();
+  HM.ply = 400;
+  const r = HM.result(0);
+  assert.ok(r);
+  assert.equal(r.winner, -1);
+});
+
+test('Halma: the Scribe takes a long leap when one is open', () => {
+  rules.setLevel('fair');
+  HM.init(); HM.b.fill(0);
+  HM.CAMP[0].forEach(i => { HM.b[i] = 1; });
+  HM.b[hm(9, 9)] = 2; HM.b[hm(8, 8)] = 1; HM.b[hm(6, 6)] = 1; HM.b[hm(4, 4)] = 1;
+  HM.b[hm(15, 15)] = 2;
+  const [m] = HM.aiPlan(1, 1);
+  assert.equal(m.from, hm(9, 9));
+  assert.ok(m.path.length >= 3, 'leaps down the chain');
+});
+
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Halma: at ${level}, the Scribe moves within budget`, () => {
+    rules.setLevel(level);
+    HM.init(); let pl = 0, slowest = 0;
+    for (let k = 0; k < 24; k++) {
+      const t0 = Date.now(); const plan = HM.aiPlan(pl); slowest = Math.max(slowest, Date.now() - t0);
+      plan.forEach(m => HM.apply(m)); pl = 1 - pl;
+    }
+    assert.ok(slowest < { gentle: 400, fair: 1100, sharp: 2200 }[level], `took ${slowest} ms`);
+    rules.setLevel('fair');
+  });
+}
+
+/* ----------------------------------------------------------------------- Go */
+const { go: WEIQI } = rules;
+const gp = (r, c) => r * 9 + c;
+const goSet = (stones) => { WEIQI.init(); for (const [r, c, v] of stones) WEIQI.b[gp(r, c)] = v; };
+
+test('Go: surrounding a stone captures it', () => {
+  goSet([[4, 4, 2], [3, 4, 1], [5, 4, 1], [4, 3, 1]]);
+  const res = WEIQI.apply({ pl: 0, p: gp(4, 5) });
+  assert.deepEqual(res.caps, [gp(4, 4)]);
+  assert.equal(WEIQI.b[gp(4, 4)], 0);
+  assert.equal(WEIQI.caps[0], 1);
+});
+
+test('Go: suicide is illegal, but a move that captures is not', () => {
+  goSet([[0, 1, 2], [1, 0, 2]]);
+  assert.ok(!WEIQI.legal(0).some(m => m.p === gp(0, 0)), 'the corner is suicide for black');
+  goSet([[0, 1, 2], [1, 0, 2], [0, 2, 1], [1, 1, 1], [2, 0, 1]]);
+  assert.ok(WEIQI.legal(0).some(m => m.p === gp(0, 0)), 'filling the corner captures two white stones');
+});
+
+test('Go: ko forbids retaking straight away', () => {
+  // Black to capture at (4,5) inside a ko shape; white may not retake at (4,4) at once.
+  goSet([[4, 3, 1], [3, 4, 1], [5, 4, 1], [4, 4, 2], [3, 5, 2], [5, 5, 2], [4, 6, 2]]);
+  const res = WEIQI.apply({ pl: 0, p: gp(4, 5) });
+  assert.deepEqual(res.caps, [gp(4, 4)]);
+  assert.ok(!WEIQI.legal(1).some(m => m.p === gp(4, 4)), 'white may not retake the ko');
+  WEIQI.apply({ pl: 1, p: gp(0, 0) }); WEIQI.apply({ pl: 0, p: gp(8, 8) });
+  assert.ok(WEIQI.legal(1).some(m => m.p === gp(4, 4)), 'after a move elsewhere it may');
+});
+
+test('Go: two passes end the game and the board is counted with komi', () => {
+  WEIQI.init();
+  for (let r = 0; r < 9; r++) WEIQI.b[gp(r, 4)] = 1; // black owns a wall: 5 columns to the left with it, 4 to the right
+  for (let r = 0; r < 9; r++) WEIQI.b[gp(r, 5)] = 2;
+  WEIQI.apply({ pl: 0, pass: true });
+  assert.equal(WEIQI.result(), null);
+  WEIQI.apply({ pl: 1, pass: true });
+  const r = WEIQI.result();
+  assert.ok(r);
+  assert.match(r.text, /You 45, the Scribe 36 \+ 7 komi = 43/);
+  assert.equal(r.winner, 0);
+});
+
+test('Go: the Scribe captures a stone left in atari', () => {
+  rules.setLevel('fair');
+  goSet([[4, 4, 1], [3, 4, 2], [5, 4, 2], [4, 3, 2], [0, 0, 1], [8, 8, 2]]);
+  WEIQI.ply = 6;
+  const [m] = WEIQI.aiPlan(1, 600);
+  assert.equal(m.p, gp(4, 5));
+});
+
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Go: at ${level}, the Scribe moves within budget`, () => {
+    rules.setLevel(level);
+    WEIQI.init(); WEIQI.apply({ pl: 0, p: gp(4, 4) });
+    const t0 = Date.now(); const plan = WEIQI.aiPlan(1); const dt = Date.now() - t0;
+    assert.equal(plan.length, 1);
+    assert.ok(plan[0].pass || WEIQI.legal(1).some(m => m.p === plan[0].p));
+    assert.ok(dt < { gentle: 400, fair: 1100, sharp: 2200 }[level], `took ${dt} ms`);
+    rules.setLevel('fair');
+  });
+}
+
+/* ---------------------------------------------------------------- Alquerque */
+const { alquerque: AQ, snakes: SL, xiangqi: XQG } = rules;
+
+test('Alquerque: twelve pieces a side and the centre empty', () => {
+  AQ.init();
+  assert.equal(AQ.count(0), 12); assert.equal(AQ.count(1), 12);
+  assert.equal(AQ.b[12], 0);
+});
+
+test('Alquerque: pieces never step backwards, and diagonals only run through even points', () => {
+  AQ.init(); AQ.b.fill(0);
+  AQ.b[12] = 1; // centre: an even point with diagonals
+  const to = AQ.legal(0).map(m => m.to).sort((a, b) => a - b);
+  assert.deepEqual(to, [11, 13, 16, 17, 18]);
+  AQ.b.fill(0); AQ.b[7] = 1; // (1,2): odd, no diagonals
+  assert.deepEqual(AQ.legal(0).map(m => m.to).sort((a, b) => a - b), [6, 8, 12]);
+});
+
+test('Alquerque: capture is compulsory and chains', () => {
+  AQ.init(); AQ.b.fill(0);
+  AQ.b[0] = 1; AQ.b[6] = 2; AQ.b[18] = 2; AQ.b[20] = 1; // a free move is open to the piece on 20
+  const ms = AQ.legal(0);
+  assert.ok(ms.every(m => m.caps.length), 'only captures are offered');
+  const chain = ms.find(m => m.caps.length === 2);
+  assert.ok(chain); assert.deepEqual(chain.path, [12, 24]);
+});
+
+/* ------------------------------------------------------- Snakes and Ladders */
+test('Snakes and Ladders: ladders climb, snakes slide, and 100 needs an exact throw', () => {
+  SL.init();
+  SL.pos[0][0] = 9;
+  let [m] = SL.legal(0, 3, { faces: [3], value: 3 });
+  assert.equal(m.to, 31);
+  SL.pos[0][0] = 95;
+  [m] = SL.legal(0, 4, { faces: [4], value: 4 });
+  assert.equal(m.to, 61); // the snake of Lust at 99
+  [m] = SL.legal(0, 6, { faces: [6], value: 6 });
+  assert.equal(m.to, 95);
+  SL.pos[0][0] = 97;
+  [m] = SL.legal(0, 3, { faces: [3], value: 3 });
+  SL.apply(m); assert.ok(SL.done(0));
+});
+
+/* ------------------------------------------------------------------ Xiangqi */
+const xq = (r, c) => r * 9 + c;
+test('Xiangqi: red has 44 opening moves', () => {
+  XQG.init();
+  assert.equal(XQG.legal(0).length, 44);
+});
+
+test('Xiangqi: the generals may not face each other on an open file', () => {
+  XQG.init(); XQG.b.fill(0);
+  XQG.b[xq(0, 4)] = XQG.T.K; XQG.b[xq(9, 3)] = XQG.T.K + 8;
+  assert.ok(!XQG.legal(0).some(m => m.from === xq(0, 4) && m.to === xq(0, 3)), 'the red general may not step onto the black general\'s file');
+});
+
+test('Xiangqi: a cannon captures only over a screen, and a horse can be hobbled', () => {
+  XQG.init(); XQG.b.fill(0);
+  XQG.b[xq(0, 4)] = XQG.T.K; XQG.b[xq(9, 3)] = XQG.T.K + 8;
+  XQG.b[xq(4, 0)] = XQG.T.C; XQG.b[xq(4, 8)] = XQG.T.P + 8;
+  assert.ok(!XQG.legal(0).some(m => m.from === xq(4, 0) && m.to === xq(4, 8)), 'no screen, no capture');
+  XQG.b[xq(4, 4)] = XQG.T.P;
+  assert.ok(XQG.legal(0).some(m => m.from === xq(4, 0) && m.to === xq(4, 8)), 'over a screen it captures');
+  XQG.b.fill(0); XQG.b[xq(0, 4)] = XQG.T.K; XQG.b[xq(9, 3)] = XQG.T.K + 8;
+  XQG.b[xq(2, 2)] = XQG.T.H;
+  const free = XQG.legal(0).filter(m => m.from === xq(2, 2)).length;
+  XQG.b[xq(3, 2)] = XQG.T.P;
+  const hobbled = XQG.legal(0).filter(m => m.from === xq(2, 2)).length;
+  assert.equal(free, 8); assert.equal(hobbled, 6);
+});
+
+test('Xiangqi: elephants stay home and a general with no move loses', () => {
+  XQG.init(); XQG.b.fill(0);
+  XQG.b[xq(0, 4)] = XQG.T.K; XQG.b[xq(9, 3)] = XQG.T.K + 8;
+  XQG.b[xq(4, 2)] = XQG.T.E;
+  assert.ok(XQG.legal(0).filter(m => m.from === xq(4, 2)).every(m => m.to < 45));
+  // Two black chariots pin the red general in the corner of his palace.
+  XQG.b.fill(0); XQG.b[xq(0, 3)] = XQG.T.K; XQG.b[xq(9, 5)] = XQG.T.K + 8;
+  XQG.b[xq(9, 3)] = XQG.T.R + 8; XQG.b[xq(5, 4)] = XQG.T.R + 8;
+  const r = XQG.result(0);
+  assert.ok(r); assert.equal(r.winner, 1);
+});
+
+for (const id of ['alquerque', 'xiangqi']) for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`${id}: at ${level}, the Scribe moves within budget`, () => {
+    rules.setLevel(level);
+    const G = rules[id]; G.init(); let pl = 0, slowest = 0;
+    for (let k = 0; k < 8 && !G.result(pl); k++) { const t0 = Date.now(); const plan = G.aiPlan(pl); slowest = Math.max(slowest, Date.now() - t0); plan.forEach(m => G.apply(m)); pl = 1 - pl; }
+    assert.ok(slowest < { gentle: 400, fair: 1100, sharp: 2200 }[level], `took ${slowest} ms`);
+    rules.setLevel('fair');
+  });
+}

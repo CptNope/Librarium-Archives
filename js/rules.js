@@ -215,7 +215,7 @@
       for (const m of seq) G.apply(m);
       const v = -negamax(G, 1 - pl, depth - 1, -Infinity, Infinity) + Math.random() * pick(6, 0.6, 0.05);
       G.restore(s);
-      if (v > bv) { bv = v; best = seq; }
+      if (best === null || v > bv) { bv = v; best = seq; } // even when every move loses, pick one
     }
     return best;
   }
@@ -1237,6 +1237,664 @@
     aiPlan(pl, depth) { return bestPlan(this, pl, depth, 6); },
   };
 
+  /* --------------------------------------------------------------- Alquerque
+   * Points of a 5 x 5 grid, index r*5+c, row 0 nearest the visitor. Lines run
+   * across and up and down everywhere, and diagonally through the points where
+   * r + c is even. b: 0 empty, 1 visitor, 2 Scribe. */
+  const AQ_ADJ = Array.from({ length: 25 }, (_, i) => {
+    const r = (i / 5) | 0, c = i % 5, out = [];
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    if ((r + c) % 2 === 0) dirs.push([1, 1], [1, -1], [-1, 1], [-1, -1]);
+    for (const [dr, dc] of dirs) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < 5 && cc >= 0 && cc < 5) out.push([dr, dc]); }
+    return out;
+  });
+  const ALQUERQUE = {
+    id: 'alquerque', name: 'Alquerque', dice: false, first: 0, ADJ: AQ_ADJ,
+    rules: [
+      'You play the dark pieces and move first. A piece moves along a line to the next point, if it is empty.',
+      'Pieces never move backwards. A piece that reaches the far row may only move again to capture.',
+      'Capture by jumping along a line over an enemy piece to the empty point beyond, in any direction. Keep jumping while you can. If you can capture, you must.',
+      'You win when the Scribe has no pieces left, or none that can move.'
+    ],
+    source: 'The rules in Alfonso X\'s Libro de los juegos (1283) are incomplete; these follow R. C. Bell\'s widely used reconstruction, with compulsory capture instead of huffing.',
+    init() {
+      const b = Array(25).fill(0);
+      for (let i = 0; i < 10; i++) { b[i] = 1; b[24 - i] = 2; }
+      b[13] = 1; b[14] = 1; b[10] = 2; b[11] = 2;
+      this.b = b; this.quiet = 0; this.ply = 0;
+    },
+    count(pl) { let n = 0; for (const v of this.b) if (v === pl + 1) n++; return n; },
+    fwd: pl => (pl === 0 ? 1 : -1),
+    captures(pl) {
+      const out = [], me = pl + 1, them = 2 - pl;
+      for (let i = 0; i < 25; i++) {
+        if (this.b[i] !== me) continue;
+        const walk = (at, path, caps) => {
+          let extended = false; const r = (at / 5) | 0, c = at % 5;
+          for (const [dr, dc] of AQ_ADJ[at]) {
+            const lr = r + 2 * dr, lc = c + 2 * dc;
+            if (lr < 0 || lr > 4 || lc < 0 || lc > 4) continue;
+            const mid = (r + dr) * 5 + c + dc, land = lr * 5 + lc;
+            if (this.b[mid] !== them || caps.includes(mid) || (this.b[land] && land !== i)) continue;
+            extended = true;
+            walk(land, path.concat([land]), caps.concat([mid]));
+          }
+          if (!extended && caps.length) out.push({ pl, from: i, to: at, path, caps });
+        };
+        walk(i, [], []);
+      }
+      return out;
+    },
+    legal(pl) {
+      const caps = this.captures(pl);
+      if (caps.length) return caps;
+      const out = [], me = pl + 1, f = this.fwd(pl), back = pl === 0 ? 4 : 0;
+      for (let i = 0; i < 25; i++) {
+        if (this.b[i] !== me) continue;
+        const r = (i / 5) | 0, c = i % 5;
+        if (r === back) continue; // on the far row: captures only
+        for (const [dr, dc] of AQ_ADJ[i]) {
+          if (dr === -f) continue;
+          const j = (r + dr) * 5 + c + dc;
+          if (!this.b[j]) out.push({ pl, from: i, to: j, path: [j], caps: [] });
+        }
+      }
+      return out;
+    },
+    apply(m) {
+      const v = this.b[m.from]; this.b[m.from] = 0;
+      for (const c of m.caps) this.b[c] = 0;
+      this.b[m.to] = v; this.ply++;
+      this.quiet = m.caps.length ? 0 : this.quiet + 1;
+      const n = m.caps.length;
+      return { caps: m.caps.slice(), note: !n ? '' : m.pl === 0 ? `You take ${n > 1 ? n + ' pieces' : 'a piece'}.` : `The Scribe takes ${n > 1 ? n + ' of your pieces' : 'one of your pieces'}.` };
+    },
+    result(pl) {
+      if (!this.legal(pl).length) return { winner: 1 - pl, text: pl === 0 ? (this.count(0) ? 'None of your pieces can move.' : 'All your pieces are gone.') : (this.count(1) ? 'None of the Scribe\'s pieces can move.' : 'You have taken every one of the Scribe\'s pieces.') };
+      if (this.quiet >= 60) return { winner: -1, text: 'Thirty moves each with no capture. The game is drawn.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.quiet, this.ply]; },
+    restore(s) { this.b = s[0].slice(); this.quiet = s[1]; this.ply = s[2]; },
+    turns(pl) { return this.legal(pl).sort((a, b) => b.caps.length - a.caps.length).map(m => [m]); },
+    terminal(pl, depth) {
+      if (!this.legal(pl).length) return -1000 - depth;
+      if (this.quiet >= 60) return 0;
+      return null;
+    },
+    evaluate(pl) {
+      let s = 0;
+      for (let i = 0; i < 25; i++) {
+        const v = this.b[i]; if (!v) continue;
+        const o = v - 1, r = (i / 5) | 0;
+        // Pieces are worth most while they can still move; a piece pinned on the far row is nearly spent.
+        let val = 1 + 0.03 * (o === 0 ? r : 4 - r);
+        if (r === (o === 0 ? 4 : 0)) val -= 0.25;
+        if (r === (o === 0 ? 0 : 4)) val += 0.05; // a back row guard
+        s += o === pl ? val : -val;
+      }
+      return s * 10 + (this.legal(pl).length - this.legal(1 - pl).length) * 0.3;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 8); },
+  };
+
+  /* ------------------------------------------------------- Snakes and Ladders
+   * The Indian game of knowledge (gyan chaupar, or moksha patam): a 100-square
+   * track where virtues are ladders and vices are snakes. */
+  const SL_LADDERS = { 12: [31, 'Faith'], 51: [68, 'Reliability'], 57: [83, 'Generosity'], 76: [91, 'Knowledge'], 78: [97, 'Asceticism'] };
+  const SL_SNAKES = { 41: [20, 'Disobedience'], 52: [30, 'Theft'], 69: [47, 'Debt'], 73: [7, 'Murder'], 88: [46, 'Anger'], 99: [61, 'Lust'] };
+  const SNAKES = {
+    id: 'snakes', name: 'Snakes and Ladders', dice: true, pipDice: true, oneDie: true, autoMove: true, first: 0, N: 1,
+    LADDERS: SL_LADDERS, SNAKES: SL_SNAKES,
+    rules: [
+      'Throw the die and move your piece that many squares, along each row and up to the next.',
+      'Land at the foot of a ladder, a virtue, and you climb it. Land on a snake\'s head, a vice, and you slide down to its tail.',
+      'There are more snakes than ladders: the old boards taught that the way down is easier than the way up.',
+      'The first to land exactly on 100, liberation, wins. A throw that would go past 100 is lost.'
+    ],
+    source: 'The squares of Faith (12), Disobedience (41), Reliability (51), Theft (52), Generosity (57), Debt (69), Murder (73), Knowledge (76), Asceticism (78) and Lust (99) follow an old Indian board. The snake of Anger at 88, and where each ladder and snake ends, are our own.',
+    init() { this.pos = [[0], [0]]; },
+    roll() { const a = 1 + ((Math.random() * 6) | 0); return { faces: [a], value: a }; },
+    plan(pl, roll) {
+      const from = this.pos[pl][0], v = roll.value, notes = [], path = [];
+      const you = pl === 0 ? 'You' : 'The Scribe';
+      if (from + v > 100) {
+        notes.push(pl === 0 ? `You need exactly ${100 - from} to reach 100.` : `The Scribe needs exactly ${100 - from}.`);
+        return { pl, i: 0, from, to: from, path, notes };
+      }
+      for (let k = from + 1; k <= from + v; k++) path.push(k);
+      let at = from + v;
+      if (SL_LADDERS[at]) { const [top, name] = SL_LADDERS[at]; notes.push(`${you} climb${pl ? 's' : ''} the ladder of ${name} to ${top}.`); at = top; path.push(at); }
+      else if (SL_SNAKES[at]) { const [tail, name] = SL_SNAKES[at]; notes.push(`The snake of ${name}! ${you} slide${pl ? 's' : ''} down to ${tail}.`); at = tail; path.push(at); }
+      if (at === 100) notes.push(pl === 0 ? 'You reach 100: liberation.' : 'The Scribe reaches 100.');
+      return { pl, i: 0, from, to: at, path, notes };
+    },
+    legal(pl, value, roll) { return [this.plan(pl, roll || { faces: [value], value })]; },
+    steps(m) { return m.path; },
+    apply(m) { this.pos[m.pl][0] = m.to; return { moved: [], note: m.notes.join(' ') }; },
+    extra() { return false; },
+    extraNote: '',
+    done(pl) { return this.pos[pl][0] === 100; },
+    home(pl) { return this.pos[pl][0] === 100 ? 1 : 0; },
+    ai(moves) { return moves[0]; },
+    aiPlan(pl, moves) { return [moves[0]]; },
+  };
+
+  /* ------------------------------------------------------------------ Xiangqi
+   * 9 files x 10 ranks of points, index r*9+c, rank 0 nearest the visitor.
+   * A piece is its type, plus 8 for the Scribe's black pieces. The visitor plays red. */
+  const XQ = { K: 1, A: 2, E: 3, H: 4, R: 5, C: 6, P: 7 };
+  const XQ_VAL = [0, 0, 2, 2, 4, 9, 4.5, 1];
+  const XQ_ORTH = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const XQ_DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const XQ_HORSE = [[2, 1, 1, 0], [2, -1, 1, 0], [-2, 1, -1, 0], [-2, -1, -1, 0], [1, 2, 0, 1], [-1, 2, 0, 1], [1, -2, 0, -1], [-1, -2, 0, -1]];
+  const xqOwner = v => (v >= 8 ? 1 : 0), xqType = v => v & 7;
+  const xqPalace = (pl, r, c) => c >= 3 && c <= 5 && (pl === 0 ? r <= 2 : r >= 7);
+  const xqOwnSide = (pl, r) => (pl === 0 ? r <= 4 : r >= 5);
+  const XIANGQI = {
+    id: 'xiangqi', name: 'Xiangqi', dice: false, first: 0, T: XQ,
+    rules: [
+      'You play red and move first. Checkmate the Scribe\'s general to win. A player with no legal move also loses.',
+      'The general and his two advisors stay inside the palace, the square marked with a cross. The general steps one point along a line, an advisor one point diagonally. The two generals may never face each other on an open file.',
+      'Elephants move exactly two points diagonally, never across the river, and are stopped by a piece in between. Horses move one point straight and one diagonally outward, and are stopped by a piece next to them in the straight direction.',
+      'Chariots move any distance in a straight line. Cannons move the same way, but capture only by jumping exactly one piece, of either colour, on the way.',
+      'Soldiers step one point forward; once across the river they may also step sideways. They never retreat.',
+      'Museum rule: sixty moves each with no capture is a draw.'
+    ],
+    source: 'The modern rules, which have been settled since the Song dynasty. The rules against perpetual check are replaced here by the sixty-move rule.',
+    init() {
+      const b = Array(90).fill(0), back = [XQ.R, XQ.H, XQ.E, XQ.A, XQ.K, XQ.A, XQ.E, XQ.H, XQ.R];
+      back.forEach((t, c) => { b[c] = t; b[81 + c] = t + 8; });
+      for (const c of [1, 7]) { b[2 * 9 + c] = XQ.C; b[7 * 9 + c] = XQ.C + 8; }
+      for (const c of [0, 2, 4, 6, 8]) { b[3 * 9 + c] = XQ.P; b[6 * 9 + c] = XQ.P + 8; }
+      this.b = b; this.quiet = 0; this.ply = 0;
+    },
+    count(pl) { let n = 0; for (const v of this.b) if (v && xqOwner(v) === pl) n++; return n; },
+    general(pl) { const g = XQ.K + (pl ? 8 : 0); return this.b.indexOf(g); },
+    // Is pl's general attacked, or facing the other general?
+    inCheck(pl) {
+      const b = this.b, k = this.general(pl); if (k < 0) return true;
+      const r = (k / 9) | 0, c = k % 9, foe = pl ? 0 : 8;
+      for (const [dr, dc] of XQ_ORTH) {
+        let rr = r + dr, cc = c + dc, screens = 0;
+        while (rr >= 0 && rr < 10 && cc >= 0 && cc < 9) {
+          const v = b[rr * 9 + cc];
+          if (v) {
+            if (screens === 0) {
+              if (v === XQ.R + foe || (v === XQ.K + foe && dc === 0)) return true;
+              if (v === XQ.P + foe && rr === r + (pl ? -1 : 1) && cc === c) return true;
+              if (v === XQ.P + foe && rr === r && Math.abs(cc - c) === 1) return true;
+              screens = 1;
+            } else { if (v === XQ.C + foe) return true; break; }
+          }
+          rr += dr; cc += dc;
+        }
+      }
+      for (const [dr, dc, lr, lc] of XQ_HORSE) {
+        // A horse at k - (dr, dc) reaches k unless its leg, one step from the horse, is blocked.
+        const hr = r - dr, hc = c - dc;
+        if (hr < 0 || hr > 9 || hc < 0 || hc > 8 || b[hr * 9 + hc] !== XQ.H + foe) continue;
+        if (!b[(hr + lr) * 9 + hc + lc]) return true;
+      }
+      return false;
+    },
+    pseudo(pl) {
+      const b = this.b, out = [];
+      const add = (from, r, c) => {
+        if (r < 0 || r > 9 || c < 0 || c > 8) return false;
+        const to = r * 9 + c, v = b[to];
+        if (v && xqOwner(v) === pl) return false;
+        out.push({ pl, from, to, cap: v }); return !v;
+      };
+      for (let i = 0; i < 90; i++) {
+        const v = b[i]; if (!v || xqOwner(v) !== pl) continue;
+        const t = xqType(v), r = (i / 9) | 0, c = i % 9;
+        if (t === XQ.K) { for (const [dr, dc] of XQ_ORTH) if (xqPalace(pl, r + dr, c + dc)) add(i, r + dr, c + dc); }
+        else if (t === XQ.A) { for (const [dr, dc] of XQ_DIAG) if (xqPalace(pl, r + dr, c + dc)) add(i, r + dr, c + dc); }
+        else if (t === XQ.E) {
+          for (const [dr, dc] of XQ_DIAG) {
+            const rr = r + 2 * dr, cc = c + 2 * dc;
+            if (rr < 0 || rr > 9 || cc < 0 || cc > 8 || !xqOwnSide(pl, rr) || b[(r + dr) * 9 + c + dc]) continue;
+            add(i, rr, cc);
+          }
+        } else if (t === XQ.H) {
+          for (const [dr, dc, lr, lc] of XQ_HORSE) {
+            const rr = r + dr, cc = c + dc;
+            if (rr < 0 || rr > 9 || cc < 0 || cc > 8 || b[(r + lr) * 9 + c + lc]) continue;
+            add(i, rr, cc);
+          }
+        } else if (t === XQ.R) {
+          for (const [dr, dc] of XQ_ORTH) { let rr = r + dr, cc = c + dc; while (add(i, rr, cc)) { rr += dr; cc += dc; } }
+        } else if (t === XQ.C) {
+          for (const [dr, dc] of XQ_ORTH) {
+            let rr = r + dr, cc = c + dc;
+            while (rr >= 0 && rr < 10 && cc >= 0 && cc < 9 && !b[rr * 9 + cc]) { out.push({ pl, from: i, to: rr * 9 + cc, cap: 0 }); rr += dr; cc += dc; }
+            rr += dr; cc += dc; // jump the screen
+            while (rr >= 0 && rr < 10 && cc >= 0 && cc < 9) {
+              const w = b[rr * 9 + cc];
+              if (w) { if (xqOwner(w) !== pl) out.push({ pl, from: i, to: rr * 9 + cc, cap: w }); break; }
+              rr += dr; cc += dc;
+            }
+          }
+        } else if (t === XQ.P) {
+          const f = pl ? -1 : 1;
+          add(i, r + f, c);
+          if (!xqOwnSide(pl, r)) { add(i, r, c - 1); add(i, r, c + 1); }
+        }
+      }
+      return out;
+    },
+    legal(pl) {
+      const out = [];
+      for (const m of this.pseudo(pl)) {
+        const v = this.b[m.from]; this.b[m.to] = v; this.b[m.from] = 0;
+        if (!this.inCheck(pl)) out.push(m);
+        this.b[m.from] = v; this.b[m.to] = m.cap;
+      }
+      return out;
+    },
+    apply(m) {
+      const v = this.b[m.from]; this.b[m.from] = 0; this.b[m.to] = v;
+      this.ply++; this.quiet = m.cap ? 0 : this.quiet + 1;
+      const names = ['', 'general', 'advisor', 'elephant', 'horse', 'chariot', 'cannon', 'soldier'];
+      const parts = [];
+      if (m.cap) parts.push(m.pl === 0 ? `You take the Scribe's ${names[xqType(m.cap)]}.` : `The Scribe takes your ${names[xqType(m.cap)]}.`);
+      if (this.inCheck(1 - m.pl)) parts.push(m.pl === 0 ? 'Check.' : 'Check! Your general is attacked.');
+      return { caps: m.cap ? [m.to] : [], note: parts.join(' ') };
+    },
+    result(pl) {
+      if (!this.legal(pl).length) {
+        const mate = this.inCheck(pl);
+        return { winner: 1 - pl, text: pl === 0 ? (mate ? 'Checkmate. Your general is taken.' : 'You have no legal move, and in xiangqi that loses.') : (mate ? 'Checkmate! The Scribe\'s general cannot escape.' : 'The Scribe has no legal move, and in xiangqi that loses.') };
+      }
+      if (this.quiet >= 120) return { winner: -1, text: 'Sixty moves each with no capture. The game is drawn.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.quiet, this.ply]; },
+    restore(s) { this.b = s[0].slice(); this.quiet = s[1]; this.ply = s[2]; },
+    turns(pl) { return this.legal(pl).sort((a, b) => (b.cap ? XQ_VAL[xqType(b.cap)] * 10 - XQ_VAL[xqType(this.b[b.from])] : 0) - (a.cap ? XQ_VAL[xqType(a.cap)] * 10 - XQ_VAL[xqType(this.b[a.from])] : 0)).map(m => [m]); },
+    terminal(pl, depth) {
+      // A side with no move is found by the search itself (no turns: the worst score).
+      return this.quiet >= 120 ? 0 : null;
+    },
+    evaluate(pl) {
+      let s = 0;
+      for (let i = 0; i < 90; i++) {
+        const v = this.b[i]; if (!v) continue;
+        const o = xqOwner(v), t = xqType(v), r = (i / 9) | 0, c = i % 9;
+        let val = XQ_VAL[t];
+        if (t === XQ.P && !xqOwnSide(o, r)) val = c >= 2 && c <= 6 ? 2.2 : 1.8;
+        if (t === XQ.H || t === XQ.C) val += 0.1 * (4 - Math.abs(c - 4)) / 4;
+        if (t === XQ.R && !xqOwnSide(o, r)) val += 0.3;
+        s += o === pl ? val : -val;
+      }
+      if (this.inCheck(1 - pl)) s += 0.3;
+      return s;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 4); },
+  };
+
+  /* ----------------------------------------------------------------------- Go
+   * A 9 x 9 board, index r*9+c, row 0 nearest the visitor. b holds 0 empty,
+   * 1 black (the visitor, who plays first) and 2 white (the Scribe). Chinese
+   * area scoring with a komi of 7 for white. The Scribe searches with Monte
+   * Carlo tree search: thousands of random games from the position, steered
+   * by RAVE (moves that won when played anywhere later count a little too). */
+  const GO_N = 9, GO_KOMI = 7, GO_LIMIT = 300;
+  const GO_NB = [], GO_DG = [];
+  for (let p = 0; p < 81; p++) {
+    const r = (p / 9) | 0, c = p % 9, nb = [], dg = [];
+    if (r > 0) nb.push(p - 9); if (r < 8) nb.push(p + 9); if (c > 0) nb.push(p - 1); if (c < 8) nb.push(p + 1);
+    for (const [dr, dc] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < 9 && cc >= 0 && cc < 9) dg.push(rr * 9 + cc); }
+    GO_NB.push(nb); GO_DG.push(dg);
+  }
+  const goMark = new Int32Array(81), goLibMark = new Int32Array(81), goStack = new Int32Array(81), goEmpty = new Int32Array(81);
+  let goStamp = 0, goLibAt = -1;
+  // Liberties of the group on p, counted up to max. The last one found is left in goLibAt.
+  function goLibs(b, p, max) {
+    if (goStamp > 2e9) { goStamp = 0; goMark.fill(0); goLibMark.fill(0); } // the marks are 32-bit
+    const col = b[p], s = ++goStamp; let sp = 0, libs = 0;
+    goStack[sp++] = p; goMark[p] = s;
+    while (sp) {
+      const nb = GO_NB[goStack[--sp]];
+      for (let k = 0; k < nb.length; k++) {
+        const n = nb[k], v = b[n];
+        if (v === 0) { if (goLibMark[n] !== s) { goLibMark[n] = s; goLibAt = n; if (++libs >= max) return libs; } }
+        else if (v === col && goMark[n] !== s) { goMark[n] = s; goStack[sp++] = n; }
+      }
+    }
+    return libs;
+  }
+  function goRemove(b, p, out) {
+    const col = b[p]; let sp = 0, n = 1;
+    goStack[sp++] = p; b[p] = 0; if (out) out.push(p);
+    while (sp) {
+      const nb = GO_NB[goStack[--sp]];
+      for (let k = 0; k < nb.length; k++) { const q = nb[k]; if (b[q] === col) { b[q] = 0; n++; if (out) out.push(q); goStack[sp++] = q; } }
+    }
+    return n;
+  }
+  // Is it legal for col to play p? Not occupied, not the ko point, and not suicide.
+  function goLegal(b, col, p, ko) {
+    if (b[p] || p === ko) return false;
+    const nb = GO_NB[p];
+    for (let k = 0; k < nb.length; k++) {
+      const v = b[nb[k]];
+      if (!v) return true;
+      if (v === col ? goLibs(b, nb[k], 2) >= 2 : goLibs(b, nb[k], 2) === 1) return true;
+    }
+    return false;
+  }
+  // Plays a legal move. Returns the new ko point, or -1.
+  function goPlay(b, col, p, caps) {
+    const opp = 3 - col, nb = GO_NB[p];
+    b[p] = col;
+    let taken = 0, at = -1;
+    for (let k = 0; k < nb.length; k++) { const n = nb[k]; if (b[n] === opp && goLibs(b, n, 1) === 0) { taken += goRemove(b, n, caps); at = n; } }
+    if (taken === 1 && goLibs(b, p, 2) === 1) { for (let k = 0; k < nb.length; k++) if (b[nb[k]] === col) return -1; return at; }
+    return -1;
+  }
+  // A point col should never fill: surrounded by its own stones, and not a false eye.
+  function goEye(b, p, col) {
+    const nb = GO_NB[p];
+    for (let k = 0; k < nb.length; k++) if (b[nb[k]] !== col) return false;
+    const dg = GO_DG[p]; let bad = 0;
+    for (let k = 0; k < dg.length; k++) if (b[dg[k]] === 3 - col) bad++;
+    return dg.length < 4 ? bad === 0 : bad < 2;
+  }
+  // Area score for black minus white, before komi, of a finished random game.
+  function goArea(b) {
+    let s = 0;
+    for (let p = 0; p < 81; p++) {
+      const v = b[p];
+      if (v) { s += v === 1 ? 1 : -1; continue; }
+      let bl = 0, wh = 0; const nb = GO_NB[p];
+      for (let k = 0; k < nb.length; k++) { if (b[nb[k]] === 1) bl++; else if (b[nb[k]] === 2) wh++; }
+      if (bl && !wh) s++; else if (wh && !bl) s--;
+    }
+    return s;
+  }
+  // Plays random moves to the end. Captures a group left in atari by the last move when it can.
+  function goPlayout(b, col, ko, passes, last, firstT, firstC, t) {
+    while (passes < 2 && t < GO_LIMIT) {
+      let p = -1;
+      if (last >= 0 && b[last] === 3 - col && goLibs(b, last, 2) === 1) {
+        const lib = goLibAt; // goLegal overwrites goLibAt, so keep the liberty first
+        if (goLegal(b, col, lib, ko) && Math.random() < 0.9) p = lib;
+      }
+      if (p < 0) {
+        let ne = 0;
+        for (let q = 0; q < 81; q++) if (!b[q]) goEmpty[ne++] = q;
+        while (ne) {
+          const k = (Math.random() * ne) | 0, q = goEmpty[k]; goEmpty[k] = goEmpty[--ne];
+          if (!goEye(b, q, col) && goLegal(b, col, q, ko)) { p = q; break; }
+        }
+      }
+      if (p < 0) { passes++; ko = -1; last = -1; }
+      else {
+        ko = goPlay(b, col, p, null); passes = 0; last = p;
+        if (firstT && firstT[p] < 0) { firstT[p] = t; firstC[p] = col; }
+      }
+      col = 3 - col; t++;
+    }
+    return goArea(b) - GO_KOMI;
+  }
+  function goSearch(st, col, budget) {
+    const root = { p: -2, col: 3 - col, n: 0, w: 0, rn: 0, rw: 0, kids: null };
+    const b = new Int8Array(81), firstT = new Int16Array(81), firstC = new Int8Array(81);
+    const t0 = Date.now(); let sims = 0;
+    const select = node => {
+      let best = null, bv = -Infinity; const ln = Math.log(node.n + 1);
+      for (const c of node.kids) {
+        let v;
+        if (!c.n) v = (c.rn ? c.rw / c.rn : 0.5) + 0.1;
+        else {
+          const beta = c.rn / (c.rn + c.n + c.rn * c.n * 0.0005);
+          v = (1 - beta) * (c.w / c.n) + beta * (c.rn ? c.rw / c.rn : 0) + 0.08 * Math.sqrt(ln / c.n);
+        }
+        if (c.p === -1) v -= 0.05; // pass only when nothing else is worth playing
+        if (v > bv) { bv = v; best = c; }
+      }
+      return best;
+    };
+    const expand = (node, toMove, ko) => {
+      node.kids = [];
+      for (let p = 0; p < 81; p++) if (!goEye(b, p, toMove) && goLegal(b, toMove, p, ko)) node.kids.push({ p, col: toMove, n: 0, w: 0, rn: 0, rw: 0, kids: null });
+      node.kids.push({ p: -1, col: toMove, n: 0, w: 0, rn: 0, rw: 0, kids: null });
+    };
+    do {
+      b.set(st.b); firstT.fill(-1);
+      let ko = st.ko, passes = st.passes, toMove = col, last = st.last, node = root, depth = 0;
+      const path = [root];
+      for (;;) {
+        if (passes >= 2) break;
+        if (!node.kids) { if (node !== root && node.n < 2) break; expand(node, toMove, ko); }
+        node = select(node);
+        if (node.p >= 0) {
+          ko = goPlay(b, toMove, node.p, null); passes = 0; last = node.p;
+          if (firstT[node.p] < 0) { firstT[node.p] = depth; firstC[node.p] = toMove; }
+        } else { passes++; ko = -1; last = -1; }
+        toMove = 3 - toMove; depth++; path.push(node);
+      }
+      const score = passes >= 2 ? goArea(b) - GO_KOMI : goPlayout(b, toMove, ko, passes, last, firstT, firstC, depth + st.ply);
+      const winner = score > 0 ? 1 : 2;
+      for (let i = path.length - 1; i >= 0; i--) {
+        const nd = path[i];
+        nd.n++; if (nd.col === winner) nd.w++;
+        if (nd.kids) for (const c of nd.kids) if (c.p >= 0 && firstC[c.p] === c.col && firstT[c.p] >= i) { c.rn++; if (c.col === winner) c.rw++; }
+      }
+      sims++;
+    } while ((sims & 7) || Date.now() - t0 < budget);
+    return { root, sims };
+  }
+  const GO = {
+    id: 'go', name: 'Go', dice: false, first: 0, canPass: true, N: GO_N, KOMI: GO_KOMI,
+    rules: [
+      'You play black and move first. Take turns placing a stone on an empty point where the lines cross. Stones never move.',
+      'A stone or a chain of stones joined along the lines is captured when the other side fills every empty point next to it.',
+      'You may not play a stone that would have no empty point next to it, unless it captures. Ko: you may not take back a single stone straight away if that would repeat the board.',
+      'Use Pass when there is nothing useful left to play. When both players pass in a row, the game ends.',
+      'Each side scores its stones plus the empty points it alone surrounds. Stones that could not escape capture are counted as captured. White adds 7 points (komi) for moving second; the higher total wins.'
+    ],
+    source: 'Modern rules: Chinese area scoring on the 9 × 9 board used for quick games, with a komi of 7.',
+    init() { this.b = new Int8Array(81); this.ko = -1; this.passes = 0; this.ply = 0; this.last = -1; this.caps = [0, 0]; this.final = null; },
+    count(pl) { let n = 0; for (const v of this.b) if (v === pl + 1) n++; return n; },
+    over() { return this.passes >= 2 || this.ply >= GO_LIMIT; },
+    legal(pl) {
+      if (this.over()) return [];
+      const out = [];
+      for (let p = 0; p < 81; p++) if (goLegal(this.b, pl + 1, p, this.ko)) out.push({ pl, p });
+      return out;
+    },
+    apply(m) {
+      this.ply++; this.final = null;
+      if (m.pass) {
+        this.passes++; this.ko = -1; this.last = -1;
+        const end = this.passes >= 2;
+        return { caps: [], note: m.pl === 0 ? (end ? 'You pass too, so the game ends.' : 'You pass.') : (end ? 'The Scribe passes too, so the game ends.' : 'The Scribe passes. Pass as well to end the game and count the board.') };
+      }
+      const caps = [];
+      this.ko = goPlay(this.b, m.pl + 1, m.p, caps); this.passes = 0; this.last = m.p;
+      this.caps[m.pl] += caps.length;
+      const n = caps.length;
+      return { caps, note: !n ? '' : m.pl === 0 ? `You capture ${n === 1 ? 'a stone' : n + ' stones'}.` : `The Scribe captures ${n === 1 ? 'one of your stones' : n + ' of your stones'}.` };
+    },
+    // Who owns each point at the end: plays the position out many times and keeps the clear majorities.
+    // Returns +1 (black), -1 (white) or 0 per point.
+    ownership(runs = 300) {
+      const tally = new Int16Array(81), b = new Int8Array(81);
+      for (let k = 0; k < runs; k++) {
+        b.set(this.b);
+        goPlayout(b, this.ply % 2 ? 2 : 1, this.ko, 0, this.last, null, null, 0);
+        for (let p = 0; p < 81; p++) {
+          let v = b[p];
+          if (!v) { let bl = 0, wh = 0; for (const n of GO_NB[p]) { if (b[n] === 1) bl++; else if (b[n] === 2) wh++; } v = bl && !wh ? 1 : wh && !bl ? 2 : 0; }
+          if (v === 1) tally[p]++; else if (v === 2) tally[p]--;
+        }
+      }
+      return Array.from(tally, t => (t > runs * 0.3 ? 1 : t < -runs * 0.3 ? -1 : 0));
+    },
+    tally() {
+      const own = this.ownership();
+      let black = 0, white = 0;
+      own.forEach(o => { if (o > 0) black++; else if (o < 0) white++; });
+      return { black, white, dead: this.b.reduce((n, v, p) => n + (v && own[p] && (own[p] > 0 ? 1 : 2) !== v ? 1 : 0), 0) };
+    },
+    result() {
+      if (!this.over()) return null;
+      if (!this.final) {
+        const { black, white, dead } = this.tally(), w = white + GO_KOMI, d = black - w;
+        const why = this.passes >= 2 ? '' : 'Three hundred moves played. ';
+        const deadNote = dead ? ` ${dead} stone${dead === 1 ? '' : 's'} that could not escape count${dead === 1 ? 's' : ''} as captured.` : '';
+        this.final = { winner: d > 0 ? 0 : 1, text: `${why}You ${black}, the Scribe ${white} + 7 komi = ${w}. ${d > 0 ? `You win by ${d}.` : `The Scribe wins by ${-d}.`}${deadNote}` };
+      }
+      return this.final;
+    },
+    snapshot() { return [this.b.slice(), this.ko, this.passes, this.ply, this.last, this.caps.slice()]; },
+    restore(s) { this.b = s[0].slice(); this.ko = s[1]; this.passes = s[2]; this.ply = s[3]; this.last = s[4]; this.caps = s[5].slice(); this.final = null; },
+    aiPlan(pl, budget) {
+      const col = pl + 1, pass = [{ pl, pass: true }];
+      // After the visitor passes, pass too if the count already favours the Scribe.
+      if (this.passes === 1) { const { black, white } = this.tally(); if ((col === 2 ? white + GO_KOMI - black : black - white - GO_KOMI) > 0) return pass; }
+      const { root } = goSearch(this, col, budget || BUDGET_MS[LEVEL.name]);
+      const kids = root.kids.filter(c => c.n).sort((a, b) => b.n - a.n);
+      if (!kids.length) return pass;
+      let pick0 = kids[0];
+      // Gentle chooses loosely among its better candidates.
+      if (LEVEL.name === 'gentle' && kids.length > 1 && Math.random() < 0.35) pick0 = kids[1 + ((Math.random() * Math.min(3, kids.length - 1)) | 0)];
+      if (pick0.p < 0) return pass;
+      return [{ pl, p: pick0.p }];
+    },
+  };
+
+  /* -------------------------------------------------------------------- Halma
+   * A 16 x 16 board, index r*16+c, row 0 nearest the visitor. Each camp is the
+   * 19 squares of a corner (rows of 5, 5, 4, 3 and 2): the visitor's at (0, 0),
+   * the Scribe's at (15, 15). b holds 0 empty, 1 visitor, 2 Scribe. */
+  const HM_N = 16, HM_MEN = 19;
+  const HM_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const HM_CAMP = [[], []];
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (r + c <= 5) { HM_CAMP[0].push(r * HM_N + c); HM_CAMP[1].push((15 - r) * HM_N + (15 - c)); }
+  // HM_GOAL[pl][i] is 1 when square i is in the camp pl is racing to.
+  const HM_GOAL = [0, 1].map(pl => { const a = new Uint8Array(256); HM_CAMP[1 - pl].forEach(i => { a[i] = 1; }); return a; });
+  // How far square i is from pl's far corner, counted in diagonal rows.
+  const hmDist = (pl, i) => { const r = i >> 4, c = i & 15; return pl === 0 ? 30 - r - c : r + c; };
+  const HM_LIMIT = 400; // plies: two hundred moves each
+  const HALMA = {
+    id: 'halma', name: 'Halma', dice: false, first: 0, N: HM_N, CAMP: HM_CAMP, GOAL: HM_GOAL,
+    rules: [
+      'You play red and move first. Move all 19 of your men into the Scribe\'s camp in the far corner before the Scribe fills yours.',
+      'A man steps to any empty square next to it, across, up or down, or diagonally.',
+      'Or it leaps: over one piece next to it, of either colour, onto the empty square just beyond. Nothing is captured, and a man may keep leaping in the same turn, as far as the chain goes.',
+      'A man that reaches the far camp may move inside it but may not leave it again.',
+      'You win when all your men are in the far camp. If the far camp is full and at least one man in it is yours, you win too, so no one can block a camp by staying home.',
+      'Museum rule: after two hundred moves each, whoever has more men home wins, then whoever is closer overall.'
+    ],
+    source: 'Two-player Halma as published by George Howard Monks in 1884, with the modern rule against blocking a camp.',
+    init() {
+      const b = new Uint8Array(256);
+      HM_CAMP[0].forEach(i => { b[i] = 1; }); HM_CAMP[1].forEach(i => { b[i] = 2; });
+      this.b = b; this.ply = 0;
+    },
+    home(pl) { let n = 0; for (const i of HM_CAMP[1 - pl]) if (this.b[i] === pl + 1) n++; return n; },
+    men(pl) { const out = []; for (let i = 0; i < 256; i++) if (this.b[i] === pl + 1) out.push(i); return out; },
+    // Every square the man on i can end on, with the path that gets there.
+    reach(i) {
+      const b = this.b, pl = b[i] - 1, locked = HM_GOAL[pl][i], out = [];
+      const r0 = i >> 4, c0 = i & 15;
+      for (const [dr, dc] of HM_DIRS) {
+        const r = r0 + dr, c = c0 + dc;
+        if (r < 0 || r > 15 || c < 0 || c > 15) continue;
+        const j = r * 16 + c;
+        if (!b[j] && (!locked || HM_GOAL[pl][j])) out.push({ pl, from: i, to: j, path: [j] });
+      }
+      // Leaps: a search over landing squares, with the man lifted off its square.
+      b[i] = 0;
+      const seen = new Set([i]), queue = [[i, []]];
+      while (queue.length) {
+        const [at, path] = queue.shift(), r1 = at >> 4, c1 = at & 15;
+        for (const [dr, dc] of HM_DIRS) {
+          const mr = r1 + dr, mc = c1 + dc, lr = r1 + 2 * dr, lc = c1 + 2 * dc;
+          if (lr < 0 || lr > 15 || lc < 0 || lc > 15) continue;
+          const land = lr * 16 + lc;
+          if (!b[mr * 16 + mc] || b[land] || seen.has(land)) continue;
+          seen.add(land);
+          const np = path.concat([land]);
+          if (!locked || HM_GOAL[pl][land]) out.push({ pl, from: i, to: land, path: np });
+          queue.push([land, np]);
+        }
+      }
+      b[i] = pl + 1;
+      return out;
+    },
+    legal(pl) {
+      if (this.winner() !== null) return [];
+      const out = [];
+      for (const i of this.men(pl)) out.push(...this.reach(i));
+      return out;
+    },
+    apply(m) {
+      if (m.pass) { this.ply++; return { note: '' }; }
+      const wasHome = HM_GOAL[m.pl][m.from];
+      this.b[m.from] = 0; this.b[m.to] = m.pl + 1; this.ply++;
+      const leaps = Math.max(Math.abs((m.path[0] >> 4) - (m.from >> 4)), Math.abs((m.path[0] & 15) - (m.from & 15))) === 2 ? m.path.length : 0;
+      const parts = [];
+      if (leaps > 1) parts.push(m.pl === 0 ? `You leap ${leaps} times.` : `The Scribe leaps ${leaps} times.`);
+      if (!wasHome && HM_GOAL[m.pl][m.to]) {
+        const n = this.home(m.pl);
+        parts.push(m.pl === 0 ? `${n} of your men ${n === 1 ? 'is' : 'are'} home.` : `${n} of the Scribe's men ${n === 1 ? 'is' : 'are'} home.`);
+      }
+      return { note: parts.join(' ') };
+    },
+    winner() {
+      for (const pl of [0, 1]) {
+        const n = this.home(pl);
+        if (n === HM_MEN) return pl;
+        if (n && HM_CAMP[1 - pl].every(i => this.b[i])) return pl;
+      }
+      return null;
+    },
+    total(pl) { let d = 0; for (const i of this.men(pl)) d += hmDist(pl, i); return d; },
+    skipTurn(pl) {
+      if (this.winner() !== null || this.legal(pl).length || !this.legal(1 - pl).length) return '';
+      return pl === 0 ? 'Your men are boxed in, so you pass.' : 'The Scribe\'s men are boxed in, and it passes.';
+    },
+    result() {
+      const w = this.winner();
+      if (w !== null) return { winner: w, text: w === 0 ? (this.home(0) === HM_MEN ? 'All your men reached the Scribe\'s camp.' : 'The Scribe\'s camp is full, and your men are in it.') : (this.home(1) === HM_MEN ? 'All the Scribe\'s men reached your camp.' : 'Your camp is full, and the Scribe\'s men are in it.') };
+      if (this.ply >= HM_LIMIT || (!this.legal(0).length && !this.legal(1).length)) {
+        const a = this.home(0), b = this.home(1), da = this.total(0), db = this.total(1);
+        const winner = a !== b ? (a > b ? 0 : 1) : da !== db ? (da < db ? 0 : 1) : -1;
+        const text = a !== b ? `Two hundred moves each. Men home: you ${a}, the Scribe ${b}.` : winner < 0 ? 'Two hundred moves each, dead level. The game is drawn.' : `Two hundred moves each, ${a} men home apiece; ${winner === 0 ? 'yours are' : 'the Scribe\'s are'} closer to home.`;
+        return { winner, text };
+      }
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.ply]; },
+    restore(s) { this.b = s[0].slice(); this.ply = s[1]; },
+    turns(pl) {
+      const ms = this.legal(pl);
+      if (!ms.length) return [[{ pl, pass: true }]];
+      const gain = m => hmDist(pl, m.from) - hmDist(pl, m.to) + (HM_GOAL[pl][m.to] && !HM_GOAL[pl][m.from] ? 2 : 0);
+      ms.sort((x, y) => gain(y) - gain(x));
+      return ms.slice(0, 36).map(m => [m]);
+    },
+    terminal(pl, depth) {
+      const w = this.winner();
+      if (w !== null) return w === pl ? 1000 + depth : -1000 - depth;
+      if (this.ply >= HM_LIMIT) { const d = this.home(pl) - this.home(1 - pl); return d * 50 + (this.total(1 - pl) - this.total(pl)); }
+      return null;
+    },
+    // Distance still to travel, squared a little so no man is left behind.
+    score(pl) {
+      let s = 0;
+      for (let i = 0; i < 256; i++) if (this.b[i] === pl + 1) { const d = hmDist(pl, i); s -= d + 0.05 * d * d; if (HM_GOAL[pl][i]) s += 3; }
+      return s;
+    },
+    evaluate(pl) { return this.score(pl) - this.score(1 - pl); },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 3); },
+  };
+
   /* ------------------------------------------------------------ Dots and Boxes
    * A 4 x 4 grid of boxes between 5 x 5 dots. Edges 0-19 are horizontal (row r
    * of dots 0-4, column c 0-3, index r*4+c); 20-39 are vertical (box row r 0-3,
@@ -1356,7 +2014,7 @@
     },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES };
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);

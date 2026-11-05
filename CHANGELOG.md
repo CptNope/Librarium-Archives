@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.0: Halma, Go and a backfill of the wings
+
+- **Halma** is now playable: two players, 19 men each, with chains of leaps and the rule against blocking a camp.
+- **Go** is playable on a 9 × 9 board, with Chinese area scoring and a komi of 7. The Scribe plays it with Monte Carlo tree search, and the table has a Pass button. The Han-style 17 × 17 board returns when you leave.
+- Seven new exhibits fill gaps in the wings:
+  - Wing I: **the first dice**, from the Burnt City and the Indus Valley.
+  - Wing II: **Petteia**, **Liubo** and **Patolli** on display, and **Alquerque**, the parent of draughts, to play.
+  - Wing III: **Xiangqi** (Chinese chess), to play.
+  - Wing IV: **Snakes and Ladders**, the Indian game of knowledge, to play.
+- The hall now lays itself out: exhibits are spaced by their order in each wing, so new games no longer need hand-placed positions.
+
 ## 0.8.0: Wing V
 
 - New wing, **The Modern Board Game** (c. 1840 to today), through a fourth open arch.
