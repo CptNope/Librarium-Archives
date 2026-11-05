@@ -119,7 +119,7 @@ const MAT = {
  * One long gallery split into wings by open arches: Wing I runs from the
  * entrance to z = -41, Wing II to z = -86, Wing III to the closed arch at
  * the far end. */
-const HALL = { half: 5, zNear: 4, zFar: -176, h: 5, dividers: [-41, -86, -131] };
+const HALL = { half: 5, zNear: 4, zFar: -221, h: 5, dividers: [-41, -86, -131, -176] };
 let floorMesh = null;
 const wingOf = z => HALL.dividers.filter(d => z < d).length; // 0-based wing index
 function buildHall() {
@@ -148,11 +148,13 @@ function buildHall() {
   buildDivider(HALL.dividers[0], 'Wing II', 'STRATEGY TAKES THE TABLE');
   buildDivider(HALL.dividers[1], 'Wing III', 'KINGS, CARDS AND COURTS');
   buildDivider(HALL.dividers[2], 'Wing IV', 'PRINTED BOARDS AND PARLOUR TABLES');
+  buildDivider(HALL.dividers[3], 'Wing V', 'THE MODERN BOARD GAME');
   buildEndArch();
   buildBanner(-2.6, 'The Dawn of Play', 'Wing I  ·  c. 3100 – 2000 BCE');
   buildBanner(HALL.dividers[0] - 3.6, 'Strategy Takes the Table', 'Wing II  ·  c. 500 BCE – 1000 CE');
   buildBanner(HALL.dividers[1] - 3.6, 'Kings, Cards and Courts', 'Wing III  ·  c. 480 – 1450 CE');
   buildBanner(HALL.dividers[2] - 3.6, 'Printed Boards and Parlour Tables', 'Wing IV  ·  c. 1300 – 1900 CE');
+  buildBanner(HALL.dividers[3] - 3.6, 'The Modern Board Game', 'Wing V  ·  c. 1840 CE – today');
 }
 
 function buildShelves(len, midZ) {
@@ -251,7 +253,7 @@ function buildEndArch() {
   archFrame(z + 0.05);
   const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 2.4, 8), new THREE.MeshLambertMaterial({ color: 0x6a1a12 }));
   rope.rotation.z = Math.PI / 2; rope.position.set(0, 0.95, z + 0.6); scene.add(rope);
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.45), new THREE.MeshBasicMaterial({ map: signTex('Wing V', 'IN PREPARATION') }));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.45), new THREE.MeshBasicMaterial({ map: signTex('Librarium Games', 'DIFFERENT FABLES FOR DIFFERENT TABLES') }));
   sign.position.set(0, 1.55, z + 0.3); scene.add(sign);
 }
 
@@ -1371,6 +1373,222 @@ function buildMahjong(group) {
   glassCase(group, 1.25, 0.3, 0.85);
 }
 
+/* --- Wing V: shared pieces */
+// A teetotum: the numbered spinning top that moral games used instead of gambling dice.
+function teetotum(color = 0xd8c49a) {
+  const g = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color, roughness: 0.5 });
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.012, 8), [wood, wood, new THREE.MeshStandardMaterial({ map: tex(128, 128, (c, w) => {
+    c.fillStyle = '#e8d6ac'; c.fillRect(0, 0, w, w);
+    c.fillStyle = '#3a2412'; c.font = '20px Georgia, serif'; c.textAlign = 'center';
+    for (let k = 0; k < 8; k++) { const a = (k + 0.5) / 8 * TAU; c.fillText(String(k + 1), w / 2 + Math.cos(a) * 44, w / 2 + Math.sin(a) * 44 + 7); }
+    c.strokeStyle = '#3a2412'; for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; c.beginPath(); c.moveTo(w / 2, w / 2); c.lineTo(w / 2 + Math.cos(a) * 62, w / 2 + Math.sin(a) * 62); c.stroke(); }
+  }) })]);
+  top.rotation.y = Math.PI / 8; top.position.y = 0.03; g.add(top);
+  const spindle = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.05, 8), wood); spindle.position.y = 0.05; g.add(spindle);
+  const point = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.024, 8), wood); point.rotation.x = Math.PI; point.position.y = 0.012; g.add(point);
+  g.rotation.z = 0.35; // resting on its side, as it fell
+  return g;
+}
+function paperSheet(group, w, d, map, y = TOP + 0.003) {
+  const m = topPlane(group, w, d, y, map, { roughness: 0.9 });
+  return m;
+}
+function agedPaper(g, w, h) {
+  g.fillStyle = '#ecdcb4'; g.fillRect(0, 0, w, h);
+  speckle(g, w, h, 3000, ['#c9b07c', '#f8ecd0', '#b89a68'], 1.6);
+  const gr = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.7);
+  gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(110,70,20,.35)');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+}
+
+/* --- Wing V: The Mansion of Happiness (display) */
+function buildMansion(group) {
+  const W = 0.78;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W + 0.04, 0.02, W + 0.04), new THREE.MeshStandardMaterial({ color: 0x3a2312, roughness: 0.6 }));
+  board.position.y = TOP + 0.01; group.add(board);
+  const px = 1024;
+  topPlane(group, W, W, TOP + 0.0205, tex(px, px, (g) => {
+    agedPaper(g, px, px);
+    const cx = px / 2, cy = px / 2, R = px * 0.46, turns = 3.2, n = 60;
+    // Hand-coloured squares along a spiral, virtues in green and gold, vices in red.
+    for (let k = 0; k < n; k++) {
+      const t = k / n, a = t * turns * TAU, r = R * (1 - t * 0.78);
+      const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+      g.save(); g.translate(x, y); g.rotate(a + Math.PI / 2);
+      const s = 44 * (1 - t * 0.45);
+      g.fillStyle = k % 7 === 3 ? '#b8432e' : k % 5 === 1 ? '#6a8a3a' : k % 4 === 0 ? '#d4a23a' : '#e9d9b0';
+      g.fillRect(-s / 2, -s / 2, s, s); g.strokeStyle = '#4a2c14'; g.lineWidth = 2; g.strokeRect(-s / 2, -s / 2, s, s);
+      g.restore();
+    }
+    // The mansion at the centre.
+    g.fillStyle = '#d9c08a'; g.fillRect(cx - 52, cy - 20, 104, 64);
+    g.fillStyle = '#8a3a22'; g.beginPath(); g.moveTo(cx - 64, cy - 20); g.lineTo(cx, cy - 66); g.lineTo(cx + 64, cy - 20); g.fill();
+    g.fillStyle = '#4a2c14'; g.fillRect(cx - 10, cy + 10, 20, 34);
+    for (const dx of [-34, 24]) g.fillRect(cx + dx, cy - 6, 12, 14);
+    g.fillStyle = '#3a2412'; g.font = 'italic 34px Georgia, serif'; g.textAlign = 'center';
+    g.fillText('An Instructive, Moral and Entertaining Amusement', cx, px - 36, px - 80);
+  }), { roughness: 0.85 });
+  const tt = teetotum(); tt.position.set(W / 2 + 0.12, TOP, 0.1); group.add(tt);
+  const pawn = c => { const m = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.04, 12), new THREE.MeshStandardMaterial({ color: c, roughness: 0.5 })); m.position.y = 0.02; const g = new THREE.Group(); g.add(m); return g; };
+  [0x8a1e1e, 0x1e3a7a].forEach((c, k) => { const p = pawn(c); p.position.set(W / 2 + 0.1 + k * 0.05, TOP, -0.12); group.add(p); });
+}
+
+/* --- Wing V: The Checkered Game of Life (display) */
+function buildCheckeredLife(group) {
+  const W = 0.78;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W + 0.04, 0.02, W + 0.04), new THREE.MeshStandardMaterial({ color: 0x2a1a10, roughness: 0.6 }));
+  board.position.y = TOP + 0.01; group.add(board);
+  const px = 1024, cs = px / 8;
+  topPlane(group, W, W, TOP + 0.0205, tex(px, px, (g) => {
+    agedPaper(g, px, px);
+    const R = seeded(1860);
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      const x = c * cs, y = r * cs;
+      if ((r + c) % 2) { g.fillStyle = '#7a2a1c'; g.fillRect(x, y, cs, cs); continue; }
+      g.fillStyle = '#efe0b8'; g.fillRect(x, y, cs, cs);
+      // Small coloured vignettes stand for the virtues and vices on the squares.
+      if (R() < 0.6) {
+        g.fillStyle = ['#6a8a3a', '#d4a23a', '#2a4a7a', '#8a3a22'][(R() * 4) | 0];
+        g.beginPath(); g.arc(x + cs / 2, y + cs / 2 - 8, cs * 0.18, 0, TAU); g.fill();
+        g.fillStyle = '#3a2412'; g.fillRect(x + cs * 0.25, y + cs * 0.72, cs * 0.5, 4); g.fillRect(x + cs * 0.32, y + cs * 0.8, cs * 0.36, 3);
+      }
+    }
+    g.strokeStyle = '#3a2412'; g.lineWidth = 6; g.strokeRect(3, 3, px - 6, px - 6);
+  }), { roughness: 0.85 });
+  const tt = teetotum(0xcdb98a); tt.position.set(W / 2 + 0.12, TOP, -0.05); group.add(tt);
+}
+
+/* --- Wing V: Reversi */
+const RV_S = 0.09;
+function rvCell(i) { const r = i >> 3, c = i & 7; return { x: (c - 3.5) * RV_S, z: (3.5 - r) * RV_S }; }
+function buildReversiBoard(group) {
+  const W = 8 * RV_S + 0.07;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, W), new THREE.MeshStandardMaterial({ color: 0x1e140c, roughness: 0.5 }));
+  frame.position.y = TOP + 0.02; group.add(frame);
+  const px = 1024, sc = px / W, c0 = px / 2 - 4 * RV_S * sc;
+  topPlane(group, W, W, TOP + 0.0405, tex(px, px, (g) => {
+    g.fillStyle = '#1e140c'; g.fillRect(0, 0, px, px);
+    g.fillStyle = '#2f6a3e'; g.fillRect(c0, c0, 8 * RV_S * sc, 8 * RV_S * sc);
+    speckle(g, px, px, 3000, ['#24563a', '#3a7a4a'], 1.2);
+    g.strokeStyle = '#173a22'; g.lineWidth = 4;
+    for (let i = 0; i <= 8; i++) {
+      g.beginPath(); g.moveTo(c0, c0 + i * RV_S * sc); g.lineTo(c0 + 8 * RV_S * sc, c0 + i * RV_S * sc); g.stroke();
+      g.beginPath(); g.moveTo(c0 + i * RV_S * sc, c0); g.lineTo(c0 + i * RV_S * sc, c0 + 8 * RV_S * sc); g.stroke();
+    }
+    g.fillStyle = '#173a22'; for (const a of [2, 6]) for (const b of [2, 6]) { g.beginPath(); g.arc(c0 + a * RV_S * sc, c0 + b * RV_S * sc, 7, 0, TAU); g.fill(); }
+  }), { roughness: 0.8 });
+  return TOP + 0.041;
+}
+// A two-coloured disc: dark on top for the visitor, flipped over for the Scribe.
+const rvDiscGeo = new THREE.CylinderGeometry(0.038, 0.038, 0.012, 32);
+const RV_MATS = [new THREE.MeshStandardMaterial({ color: 0x1a1512, roughness: 0.35 }), new THREE.MeshStandardMaterial({ color: 0xeee6d6, roughness: 0.35 })];
+function rvDisc() { const m = new THREE.Mesh(rvDiscGeo, [new THREE.MeshStandardMaterial({ color: 0x7a6a5a, roughness: 0.5 }), RV_MATS[0], RV_MATS[1]]); return m; }
+
+/* --- Wing V: Halma (display) */
+function buildHalma(group) {
+  const S = 0.05, W = 16 * S + 0.05;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, W), new THREE.MeshStandardMaterial({ color: 0x2a1a10, roughness: 0.55 }));
+  frame.position.y = TOP + 0.015; group.add(frame);
+  const px = 1024, sc = px / W, c0 = px / 2 - 8 * S * sc, cs = S * sc;
+  // The 19-square camp in each corner: rows of 5, 5, 4, 3 and 2. Returns 1-4 for the corner, 0 elsewhere.
+  const inCamp = (r, c) => {
+    const a = Math.min(r, 15 - r), b = Math.min(c, 15 - c);
+    if (a > 4 || b > 4 || a + b > 5) return 0;
+    return r < 8 ? (c < 8 ? 1 : 2) : (c < 8 ? 3 : 4);
+  };
+  topPlane(group, W, W, TOP + 0.0305, tex(px, px, (g) => {
+    g.fillStyle = '#2a1a10'; g.fillRect(0, 0, px, px);
+    for (let r = 0; r < 16; r++) for (let c = 0; c < 16; c++) {
+      const k = inCamp(r, c);
+      g.fillStyle = (r + c) % 2 ? '#c9b38a' : '#e9dcbc';
+      if (k === 1 || k === 4) g.fillStyle = (r + c) % 2 ? '#b98a52' : '#d4a86e';
+      g.fillRect(c0 + c * cs, c0 + r * cs, cs, cs);
+    }
+    g.strokeStyle = '#7a2a1c'; g.lineWidth = 4;
+    g.strokeRect(c0, c0, 16 * cs, 16 * cs);
+  }), { roughness: 0.6 });
+  // Two-player Halma: 19 men each in opposite corners, a few already on the move.
+  const men = [new THREE.MeshStandardMaterial({ color: 0x8a1e1e, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0x1e3a6a, roughness: 0.4 })];
+  const manGeo = new THREE.LatheGeometry([[0, 0], [0.015, 0], [0.016, 0.004], [0.008, 0.012], [0.006, 0.026], [0.011, 0.032], [0.007, 0.04], [0, 0.042]].map(([a, b]) => new THREE.Vector2(a, b)), 16);
+  const R = seeded(1883);
+  const at = (r, c) => V3((c - 7.5) * S, TOP + 0.031, (r - 7.5) * S);
+  const placed = new Set();
+  for (let r = 0; r < 16; r++) for (let c = 0; c < 16; c++) {
+    const k = inCamp(r, c); if (k !== 1 && k !== 4) continue;
+    let rr = r, cc = c;
+    if (R() < 0.18) { const d = k === 1 ? 1 : -1; rr += d * (2 + ((R() * 3) | 0)); cc += d * (2 + ((R() * 3) | 0)); }
+    const key = rr * 16 + cc; if (placed.has(key) || rr < 0 || rr > 15 || cc < 0 || cc > 15) continue; placed.add(key);
+    const m = new THREE.Mesh(manGeo, men[k === 1 ? 0 : 1]); m.position.copy(at(rr, cc)); group.add(m);
+  }
+}
+
+/* --- Wing V: Dots and Boxes, on a writing slope */
+const DB_S = 0.155;
+function dbDot(r, c) { return V3((c - 2) * DB_S, 0, (r - 2) * DB_S); }
+function dbEdgeMid(e) {
+  const N = 4;
+  if (e < N * (N + 1)) { const r = (e / N) | 0, c = e % N; const a = dbDot(r, c), b = dbDot(r, c + 1); return { pos: a.add(b).multiplyScalar(0.5), horiz: true }; }
+  const k = e - N * (N + 1), r = (k / (N + 1)) | 0, c = k % (N + 1); const a = dbDot(r, c), b = dbDot(r + 1, c); return { pos: a.add(b).multiplyScalar(0.5), horiz: false };
+}
+function buildDotsBoard(group) {
+  const W = 0.86;
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(W + 0.06, 0.03, W + 0.06), new THREE.MeshStandardMaterial({ color: 0x3a2312, roughness: 0.55 }));
+  desk.position.y = TOP + 0.015; group.add(desk);
+  const px = 1024, sc = px / W;
+  topPlane(group, W, W, TOP + 0.0305, tex(px, px, (g) => {
+    g.fillStyle = '#f2ead6'; g.fillRect(0, 0, px, px);
+    speckle(g, px, px, 1500, ['#d8ccb0'], 1.2);
+    g.strokeStyle = 'rgba(70,110,170,.25)'; g.lineWidth = 2;
+    for (let y = 40; y < px; y += 34) { g.beginPath(); g.moveTo(0, y); g.lineTo(px, y); g.stroke(); }
+    g.strokeStyle = 'rgba(190,60,60,.35)'; g.beginPath(); g.moveTo(90, 0); g.lineTo(90, px); g.stroke();
+    g.fillStyle = '#1d1a16';
+    for (let r = 0; r <= 4; r++) for (let c = 0; c <= 4; c++) { g.beginPath(); g.arc(px / 2 + (c - 2) * DB_S * sc, px / 2 + (r - 2) * DB_S * sc, 9, 0, TAU); g.fill(); }
+  }), { roughness: 0.9 });
+  // An inkwell and a pencil beside the sheet.
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.034, 0.045, 18), new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.15, metalness: 0.2 }));
+  glass.position.set(W / 2 + 0.1, TOP + 0.0225, -0.22); group.add(glass);
+  const pencil = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.18, 6), new THREE.MeshStandardMaterial({ color: 0xd4a23a, roughness: 0.5 }));
+  pencil.rotation.z = Math.PI / 2; pencil.rotation.y = 0.4; pencil.position.set(W / 2 + 0.1, TOP + 0.005, 0.15); group.add(pencil);
+  return TOP + 0.031;
+}
+const dbLineGeo = new THREE.BoxGeometry(DB_S - 0.02, 0.004, 0.008);
+const dbLineMats = [new THREE.MeshStandardMaterial({ color: 0x8a5a12, roughness: 0.6 }), new THREE.MeshStandardMaterial({ color: 0x2a3a5a, roughness: 0.6 })];
+const dbBoxGeo = new THREE.PlaneGeometry(DB_S - 0.03, DB_S - 0.03);
+
+/* --- Wing V: The Landlord's Game, as its patent drawing (display) */
+function buildLandlord(group) {
+  const W = 0.62, D = 0.82;
+  const blotter = new THREE.Mesh(new THREE.BoxGeometry(W + 0.12, 0.015, D + 0.08), new THREE.MeshStandardMaterial({ color: 0x2a3a2a, roughness: 0.9 }));
+  blotter.position.y = TOP + 0.0075; group.add(blotter);
+  const px = 768, py = Math.round(768 * D / W);
+  topPlane(group, W, D, TOP + 0.0158, tex(px, py, (g, w, h) => {
+    g.fillStyle = '#f1ead8'; g.fillRect(0, 0, w, h); speckle(g, w, h, 1200, ['#d8ccb0'], 1.1);
+    g.fillStyle = '#2a2a2a'; g.textAlign = 'center';
+    g.font = '26px Georgia, serif'; g.fillText('No. 748,626.', w / 2, 56);
+    g.font = '20px Georgia, serif'; g.fillText('PATENTED JAN. 5, 1904.', w / 2, 86);
+    g.font = 'italic 24px Georgia, serif'; g.fillText('GAME BOARD.', w / 2, 120);
+    // A square track of spaces around the edge, drawn in a patent draughtsman's ink.
+    const x0 = 80, y0 = 160, size = w - 160, n = 10, s = size / (n + 1);
+    g.strokeStyle = '#2a2a2a'; g.lineWidth = 2;
+    g.strokeRect(x0, y0, size, size);
+    g.strokeRect(x0 + s, y0 + s, size - 2 * s, size - 2 * s);
+    for (let k = 1; k <= n; k++) {
+      g.beginPath(); g.moveTo(x0 + k * s, y0); g.lineTo(x0 + k * s, y0 + s); g.stroke();
+      g.beginPath(); g.moveTo(x0 + k * s, y0 + size - s); g.lineTo(x0 + k * s, y0 + size); g.stroke();
+      g.beginPath(); g.moveTo(x0, y0 + k * s); g.lineTo(x0 + s, y0 + k * s); g.stroke();
+      g.beginPath(); g.moveTo(x0 + size - s, y0 + k * s); g.lineTo(x0 + size, y0 + k * s); g.stroke();
+    }
+    for (const [cx, cy] of [[x0, y0], [x0 + size - s, y0], [x0, y0 + size - s], [x0 + size - s, y0 + size - s]]) { g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + s, cy + s); g.stroke(); }
+    g.font = '15px Georgia, serif'; g.fillText('Fig. 1.', w / 2, y0 + size + 34);
+    g.textAlign = 'right'; g.font = 'italic 17px Georgia, serif';
+    g.fillText('Inventor', w - 70, h - 70);
+    g.strokeStyle = '#2a2a2a'; g.beginPath(); g.moveTo(w - 260, h - 50); g.bezierCurveTo(w - 220, h - 80, w - 160, h - 30, w - 90, h - 55); g.stroke();
+  }), { roughness: 0.9 });
+  const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.004, 0.16, 8), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3 }));
+  pen.rotation.z = Math.PI / 2; pen.rotation.y = -0.5; pen.position.set(W / 2 + 0.1, TOP + 0.02, 0.2); group.add(pen);
+}
+
 /* --- Finale lectern */
 let lectern;
 function buildLectern(z) {
@@ -1624,11 +1842,76 @@ const STOPS = [
     ],
     facts: [['Tiles', '136, or 144 with flowers'], ['Suits', 'Circles, bamboo, characters'], ['Players', 'Four']],
     build: buildMahjong },
-  { id: 'next', wing: 4, title: 'From These Tables to Yours', short: 'Librarium', date: 'Today', rail: 'Today',
+  { id: 'wing5', wing: 5, title: 'The Modern Board Game', short: 'Wing V', date: 'c. 1840 CE – today', rail: 'Wing V',
+    eyebrow: 'Wing V · Librarium Museum of Play', status: null, begin: 'mansion',
+    body: [
+      'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
+      'Two tables are open: Reversi, and Dots and Boxes.'
+    ],
+    facts: [['Tables', 'Reversi, Dots and Boxes'], ['Display', 'Mansion of Happiness, Game of Life, Halma, the Landlord\'s Game']],
+  },
+  { id: 'mansion', wing: 5, side: -1, z: -183, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
+    eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'],
+    note: 'On display. Note the teetotum: dice were thought too close to gambling.',
+    body: [
+      'In 1843 W. & S. B. Ives of Salem, Massachusetts, published The Mansion of Happiness, "an instructive, moral and entertaining amusement". The Library of Congress calls it possibly the first board game published in the United States. It was close to a copy of an English game of 1800, and who adapted it is uncertain: Anne Abbott, who designed other games for the same publisher, has often been credited.',
+      'Players spun a numbered top called a teetotum and moved along a spiral. Virtues such as temperance and generosity carried them toward the mansion at the centre; vices such as idleness sent them back toward the pillory.'
+    ],
+    facts: [['Publisher', 'W. & S. B. Ives, Salem'], ['Moves', 'A spinning teetotum'], ['Goal', 'Reach the mansion at the centre']],
+    build: buildMansion },
+  { id: 'lifegame', wing: 5, side: 1, z: -188.5, title: 'The Checkered Game of Life', short: 'Checkered Game of Life', date: '1860 CE', rail: 'Game of Life',
+    eyebrow: 'Springfield, Massachusetts', status: ['known', 'Rules survive in print'],
+    note: 'On display.',
+    body: [
+      'Milton Bradley had just set up a colour lithography shop in Springfield, Massachusetts, when he printed The Checkered Game of Life in the winter of 1860. He sold the first few hundred copies himself on a two-day trip to New York, and by 1861 buyers had taken more than 45,000.',
+      'Like the Mansion of Happiness it was a moral journey, played with a teetotum. Its squares held the virtues and dangers of a life, from Influence and Fat Office to Poverty, Prison and Ruin. The company Bradley founded later grew it into The Game of Life.'
+    ],
+    facts: [['Maker', 'Milton Bradley'], ['Moves', 'A teetotum'], ['Sold', 'Over 45,000 by 1861']],
+    build: buildCheckeredLife },
+  { id: 'reversi', wing: 5, side: -1, z: -194, title: 'Reversi', date: '1883 CE', rail: 'Reversi',
+    eyebrow: 'Victorian England', status: ['known', 'Rules survive in print'], game: 'reversi',
+    body: [
+      'Two Englishmen, Lewis Waterman and John W. Mollett, each claimed to have invented reversi in 1883, and each called the other a fraud. Whoever was first, the game of flipping discs caught on: the Saturday Review mentioned it in 1886, and the German publisher Ravensburger was making it by 1893.',
+      'In 1971 the Japanese salesman Goro Hasegawa patented Othello, which starts from four discs in the centre instead of an empty board. Othello is the version played in tournaments today, and its opening is the one we use here.'
+    ],
+    facts: [['Board', '8 × 8'], ['Pieces', '64 two-sided discs'], ['Win', 'Most discs showing']],
+    build: buildReversiBoard },
+  { id: 'halma', wing: 5, side: 1, z: -199.5, title: 'Halma', date: '1883–84 CE', rail: 'Halma',
+    eyebrow: 'Massachusetts and Germany', status: ['known', 'Still played, as Chinese checkers'],
+    note: 'On display.',
+    body: [
+      'Halma, from the Greek for "leap", was invented in 1883 or 1884 by George Howard Monks, a surgeon at Harvard Medical School, who drew on an English game called Hoppity. Each player starts with a camp of men in one corner of a 16 × 16 board and races to move them all into the opposite corner, stepping, or leaping over any piece in chains of jumps.',
+      'In 1892 a version on a six-pointed star was published as Stern-Halma, "star Halma". Sold in America under a more exotic name, it became Chinese checkers: a game with no link to China, and none to checkers.'
+    ],
+    facts: [['Board', '16 × 16'], ['Players', 'Two or four'], ['Moves', 'A step, or chains of leaps'], ['Descendant', 'Chinese checkers']],
+    build: buildHalma },
+  { id: 'dotsboxes', wing: 5, side: -1, z: -205, title: 'Dots and Boxes', date: 'late 19th century CE', rail: 'Dots and Boxes',
+    eyebrow: 'France', status: ['known', 'Rules survive in print'], game: 'dotsboxes',
+    body: [
+      'Dots and Boxes needs only a pencil and paper. The French mathematician Édouard Lucas, best known for the Tower of Hanoi puzzle, published it in the late 19th century as la pipopipette, and it has gone by many names since, from boxes to pigs in a pen.',
+      'It looks simple, but it hides deep strategy. Strong players count the chains of boxes forming on the board and give a few boxes away on purpose, to force their opponent to open the long chains. The mathematician Elwyn Berlekamp wrote a whole book about it in 2000.'
+    ],
+    facts: [['Grid', '4 × 4 boxes'], ['Score', 'Close a box, draw again'], ['Win', 'Most boxes']],
+    build: buildDotsBoard },
+  { id: 'landlord', wing: 5, side: 1, z: -210.5, title: 'The Landlord\'s Game', date: '1904 CE', rail: 'Landlord\'s Game',
+    eyebrow: 'United States', status: ['known', 'Rules survive in the patent'],
+    note: 'On display, as a patent sheet. The track drawn here is our own sketch, not a copy of the patent figure.',
+    body: [
+      'Lizzie Magie was granted U.S. Patent 748,626 for The Landlord\'s Game on January 5, 1904. She meant it as a lesson. A follower of the economist Henry George, she wanted players to feel how land monopoly enriches landlords and ruins everyone else, and she gave the game two sets of rules: one that rewarded monopoly, and one that rewarded shared prosperity.',
+      'For years players made their own boards, adding the streets of their own towns; Quakers in Atlantic City gave it theirs. In 1935 Parker Brothers bought a version from Charles Darrow, published it as Monopoly and credited him as its inventor. Magie\'s part came back to light in the 1970s, when Ralph Anspach dug up her patents while fighting Parker Brothers in court over his game Anti-Monopoly.'
+    ],
+    facts: [['Patent', 'U.S. 748,626, 1904'], ['Inventor', 'Lizzie Magie'], ['Descendant', 'Monopoly (1935)']],
+    build: buildLandlord },
+  { id: 'next', wing: 5, title: 'From These Tables to Yours', short: 'Librarium', date: 'Today', rail: 'Today',
     eyebrow: 'Librarium Games', status: null,
     body: [
-      'Thousands of years after Senet and Ur, people still gather to throw dice, shuffle tiles and corner each other\'s kings. Librarium Games carries the tradition on with tables of its own, from Calendra, a Celtic game of runes and seasons, to Phoenix Farm.',
-      'Wing V is in preparation. Until it opens, the Librarium\'s own games are waiting in the Tavern.'
+      'From Senet to the Landlord\'s Game, every table in this hall began with someone deciding how a game should feel. Five thousand years on, people still gather to throw dice, shuffle tiles and corner each other\'s kings, and Librarium Games carries the tradition on with tables of its own.'
+    ],
+    games: [
+      { name: 'Phoenix Farm', url: 'https://librarium.games/phoenix-farm/', text: 'Raise magical firebirds and harvest their feathers for gold. For 1 to 6 players.' },
+      { name: 'Calendra', url: 'https://librarium.games/calendra/', text: 'A Celtic game of runes, about controlling the seasons through deception.' },
+      { name: 'The Great Chase', url: 'https://librarium.games/the-great-chase/', text: 'A cooperative game for 1 to 6 players that tests your teamwork.' },
+      { name: 'Royal Threadcount', url: 'https://librarium.games/royal-threadcount/', text: 'Also playable online on Tabletopia.' },
     ],
     facts: [],
     link: ['Visit Librarium Games', 'https://librarium.games/'] },
@@ -1680,7 +1963,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -2075,7 +2358,80 @@ const GOOSE = Object.assign(R.goose, {
   score() { return [['You', 'square ' + this.pos[0][0]], ['Scribe', 'square ' + this.pos[1][0]], '· land on 63 to win']; },
   winText: pl => (pl === 0 ? 'You reached the garden at 63 first.' : 'The Scribe reached the garden at 63 first.'),
 });
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE) };
+const REVERSI_P = {
+  camW: 1.06,
+  intro() { return 'You play the dark discs and move first. ' + this.prompt(); },
+  prompt: () => 'Choose a ring to place a disc. Every Scribe disc you trap in a line flips to dark.',
+  setup(ex) {
+    const G = GAMES.reversi;
+    if (!ex.pieces) ex.pieces = Array.from({ length: 64 }, () => { const d = rvDisc(); d.visible = false; ex.group.add(d); return d; });
+    this.ex = ex; this.cell = Array(64).fill(null); this.free = ex.pieces.slice();
+    ex.pieces.forEach(d => { d.visible = false; });
+    for (let i = 0; i < 64; i++) if (G.b[i]) this.put(i, G.b[i] - 1, false);
+  },
+  pos(i) { const c = rvCell(i); return V3(c.x, GAMES.reversi.surface + 0.006, c.z); },
+  face: pl => (pl === 0 ? 0 : Math.PI),
+  put(i, pl) { const d = this.free.pop(); d.visible = true; d.position.copy(this.pos(i)); d.rotation.set(this.face(pl), 0, 0); this.cell[i] = d; return d; },
+  meshesFor() { return []; },
+  ringFor(m) { return m.pass ? null : this.pos(m.at); },
+  async play(m) {
+    const G = GAMES.reversi, tok = play.token;
+    if (m.pass) return G.apply(m);
+    const res = G.apply(m);
+    const d = this.put(m.at, m.pl);
+    const to = d.position.clone(); d.position.y += 0.12;
+    await tween(0.22, k => { d.position.y = to.y + 0.12 * (1 - k); });
+    for (const f of m.flips) {
+      if (tok !== play.token) return res;
+      const disc = this.cell[f], base = disc.position.y, a0 = disc.rotation.x, a1 = this.face(m.pl);
+      await tween(0.16, k => { disc.rotation.x = a0 + (a1 - a0) * k; disc.position.y = base + Math.sin(k * Math.PI) * 0.03; });
+    }
+    return res;
+  },
+  score: () => { const G = GAMES.reversi; return [['You', G.count(0)], ['Scribe', G.count(1)], 'discs']; },
+};
+
+const DOTS_P = {
+  camW: 0.98, ringScale: 0.9,
+  intro() { return this.prompt(); },
+  prompt: () => 'Choose a ring to draw a line between two dots.',
+  setup(ex) {
+    const G = GAMES.dotsboxes;
+    if (!ex.pieces) {
+      ex.pieces = {
+        lines: Array.from({ length: G.EDGES }, (_, e) => {
+          const m = new THREE.Mesh(dbLineGeo, dbLineMats[0]); const mid = dbEdgeMid(e);
+          m.position.copy(mid.pos); m.position.y = G.surface + 0.002; if (!mid.horiz) m.rotation.y = Math.PI / 2;
+          m.visible = false; ex.group.add(m); return m;
+        }),
+        boxes: Array.from({ length: G.N * G.N }, (_, b) => {
+          const r = (b / G.N) | 0, c = b % G.N;
+          const m = new THREE.Mesh(dbBoxGeo, new THREE.MeshBasicMaterial({ color: 0xd4a23a, transparent: true, opacity: 0, depthWrite: false }));
+          m.rotation.x = -Math.PI / 2; m.position.set((c - 1.5) * DB_S, G.surface + 0.001, (r - 1.5) * DB_S);
+          m.visible = false; ex.group.add(m); return m;
+        }),
+      };
+    }
+    this.ex = ex;
+    ex.pieces.lines.forEach(l => { l.visible = false; });
+    ex.pieces.boxes.forEach(b => { b.visible = false; b.material.opacity = 0; });
+  },
+  meshesFor() { return []; },
+  ringFor(m) { const p = dbEdgeMid(m.e).pos; return V3(p.x, GAMES.dotsboxes.surface, p.z); },
+  async play(m) {
+    const G = GAMES.dotsboxes, P = this.ex.pieces;
+    const res = G.apply(m);
+    const line = P.lines[m.e]; line.material = dbLineMats[m.pl]; line.visible = true;
+    await tween(0.2, k => { line.scale.set(Math.max(0.01, k), 1, 1); });
+    for (const b of res.boxes) {
+      const f = P.boxes[b]; f.visible = true; f.material.color.setHex(m.pl === 0 ? 0xd4a23a : 0x5a7aaa);
+      await tween(0.3, k => { f.material.opacity = 0.55 * k; });
+    }
+    return res;
+  },
+  score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], 'boxes of 16']; },
+};
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -2146,7 +2502,7 @@ const rail = $('#lm-rail');
 const railButtons = [];
 STOPS.forEach((s, i) => {
   if (i === 0 || STOPS[i - 1].wing !== s.wing) {
-    const w = document.createElement('span'); w.className = 'wing'; w.textContent = ['', 'Wing I', 'Wing II', 'Wing III', 'Wing IV'][s.wing]; rail.appendChild(w);
+    const w = document.createElement('span'); w.className = 'wing'; w.textContent = ['', 'Wing I', 'Wing II', 'Wing III', 'Wing IV', 'Wing V'][s.wing]; rail.appendChild(w);
   }
   const b = document.createElement('button');
   b.innerHTML = '<span class="t"></span><span class="d"></span><span class="sr">, visited</span>';
@@ -2163,6 +2519,15 @@ function renderPlacard(s) {
   el('div', 'date', s.date);
   if (s.status) el('div', 'status ' + s.status[0], s.status[1]);
   s.body.forEach(p => el('p', '', p));
+  if (s.games) {
+    const ul = el('ul', 'gamelist');
+    for (const gm of s.games) {
+      const li = document.createElement('li'), a = document.createElement('a');
+      a.href = gm.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = gm.name;
+      const p = document.createElement('span'); p.textContent = gm.text;
+      li.append(a, p); ul.appendChild(li);
+    }
+  }
   if (s.facts.length) {
     const dl = el('dl', 'facts');
     s.facts.forEach(([k, v]) => { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); });

@@ -586,3 +586,100 @@ test('Goose: 500 two-player games finish', () => {
     }
   }
 });
+
+/* ----------------------------------------------------------------- Reversi */
+const { reversi: RV, dotsboxes: DB } = rules;
+
+test('Reversi: four centre discs, four opening moves, each flipping one', () => {
+  RV.init();
+  assert.equal(RV.count(0), 2); assert.equal(RV.count(1), 2);
+  const ms = RV.legal(0);
+  assert.equal(ms.length, 4);
+  assert.ok(ms.every(m => m.flips.length === 1));
+});
+
+test('Reversi: flips run in every direction that is closed off', () => {
+  RV.init(); RV.b.fill(0);
+  RV.b[0] = 1; RV.b[1] = 2; RV.b[2] = 2; // along row 0: dark, light, light, then the empty square 3
+  RV.b[3 * 8 + 3] = 1; RV.b[2 * 8 + 3] = 2; // and up column 3: light at row 2, dark at row 3
+  const m = RV.legal(0).find(x => x.at === 3);
+  assert.deepEqual(m.flips.sort((a, b) => a - b), [1, 2]);
+  const both = RV.legal(0).find(x => x.at === 1 * 8 + 3);
+  assert.deepEqual(both.flips, [2 * 8 + 3], 'the column flip is found too');
+  RV.apply(m);
+  assert.equal(RV.count(1), 1);
+});
+
+test('Reversi: a player with no move passes; the game ends when neither can move', () => {
+  RV.init(); RV.b.fill(0); RV.b[0] = 1; RV.b[1] = 2;
+  assert.ok(RV.skipTurn(1), 'light has no flipping move but dark does');
+  RV.b.fill(1); RV.b[63] = 2;
+  const r = RV.result(0);
+  assert.equal(r.winner, 0);
+});
+
+test('Reversi: AI-vs-AI games finish within the thinking budget', () => {
+  rules.setLevel('fair');
+  RV.init(); let pl = 0, n = 0, r, slowest = 0;
+  while (!(r = RV.result(pl))) {
+    if (RV.skipTurn(pl)) { pl = 1 - pl; continue; }
+    const t0 = Date.now(); RV.aiPlan(pl).forEach(m => RV.apply(m)); slowest = Math.max(slowest, Date.now() - t0);
+    pl = 1 - pl; assert.ok(++n < 100);
+  }
+  assert.equal(RV.count(0) + RV.count(1) <= 64, true);
+  assert.ok(slowest < 1100, `took ${slowest} ms`);
+});
+
+/* ---------------------------------------------------------- Dots and Boxes */
+
+test('Dots and Boxes: 40 lines and 16 boxes; each inner line borders two boxes', () => {
+  DB.init();
+  assert.equal(DB.legal(0).length, 40);
+  assert.equal(DB.EDGE_BOXES.filter(b => b.length === 2).length, 24);
+  assert.equal(DB.EDGE_BOXES.filter(b => b.length === 1).length, 16);
+});
+
+test('Dots and Boxes: closing a box scores it and gives another turn', () => {
+  DB.init();
+  const [t, b, l, r] = DB.BOX_EDGES[0];
+  [t, b, l].forEach(e => DB.apply({ pl: 1, e }));
+  const res = DB.apply({ pl: 0, e: r });
+  assert.deepEqual(res.boxes, [0]);
+  assert.equal(DB.score[0], 1);
+  assert.ok(res.followUp && res.followUp.length, 'the same player draws again');
+});
+
+test('Dots and Boxes: one line can close two boxes', () => {
+  DB.init();
+  const shared = DB.BOX_EDGES[0][3]; // right side of box 0 = left side of box 1
+  for (const box of [0, 1]) for (const e of DB.BOX_EDGES[box]) if (e !== shared) DB.drawn[e] = true;
+  const res = DB.apply({ pl: 0, e: shared });
+  assert.equal(res.boxes.length, 2);
+});
+
+test('Dots and Boxes: the endgame solver finds the right move in a two-chain ending', () => {
+  // Every box except two corner dominoes already belongs to someone; whoever must open a domino loses it.
+  DB.init();
+  DB.drawn.fill(true);
+  // Reopen the lines inside and around two separate 2-box chains: boxes 0,1 and 14,15.
+  for (const box of [0, 1, 14, 15]) DB.owner[box] = -1;
+  const open = new Set([DB.BOX_EDGES[0][3], DB.BOX_EDGES[0][2], DB.BOX_EDGES[1][3], DB.BOX_EDGES[14][3], DB.BOX_EDGES[14][2], DB.BOX_EDGES[15][3]]);
+  open.forEach(e => { DB.drawn[e] = false; });
+  const e = DB.solve(2000);
+  assert.ok(open.has(e));
+});
+
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Dots and Boxes: at ${level}, a whole game finishes and every turn stays in budget`, () => {
+    rules.setLevel(level);
+    DB.init(); let pl = 0, slowest = 0;
+    while (!DB.result(pl)) {
+      const t0 = Date.now(); const plan = DB.aiPlan(pl); slowest = Math.max(slowest, Date.now() - t0);
+      assert.ok(plan.length > 0);
+      plan.forEach(m => DB.apply(m)); pl = 1 - pl;
+    }
+    assert.equal(DB.score[0] + DB.score[1], 16);
+    assert.ok(slowest < { gentle: 400, fair: 1100, sharp: 2200 }[level], `took ${slowest} ms`);
+    rules.setLevel('fair');
+  });
+}

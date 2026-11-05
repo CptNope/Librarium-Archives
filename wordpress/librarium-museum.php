@@ -54,6 +54,13 @@ function librarium_museum_exhibits() {
 		'pachisi'    => __( 'Pachisi', 'librarium-museum' ),
 		'goose'      => __( 'The Game of the Goose', 'librarium-museum' ),
 		'mahjong'    => 'Mahjong',
+		'wing5'      => __( 'Wing V: The Modern Board Game', 'librarium-museum' ),
+		'mansion'    => __( 'The Mansion of Happiness', 'librarium-museum' ),
+		'lifegame'   => __( 'The Checkered Game of Life', 'librarium-museum' ),
+		'reversi'    => 'Reversi',
+		'halma'      => 'Halma',
+		'dotsboxes'  => __( 'Dots and Boxes', 'librarium-museum' ),
+		'landlord'   => __( "The Landlord's Game", 'librarium-museum' ),
 		'next'       => __( 'Librarium lectern', 'librarium-museum' ),
 	);
 }

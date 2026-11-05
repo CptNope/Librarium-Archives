@@ -1148,7 +1148,215 @@
     aiPlan(pl, moves) { return [moves[0]]; },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE };
+  /* ----------------------------------------------------------------- Reversi
+   * 8x8, index r*8+c with row 0 nearest the visitor. 0 empty, 1 the visitor's
+   * dark discs, 2 the Scribe's light discs. Dark moves first. */
+  const RV_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const RV_W = [
+    100, -20, 10, 5, 5, 10, -20, 100,
+    -20, -50, -2, -2, -2, -2, -50, -20,
+    10, -2, 1, 1, 1, 1, -2, 10,
+    5, -2, 1, 0, 0, 1, -2, 5,
+    5, -2, 1, 0, 0, 1, -2, 5,
+    10, -2, 1, 1, 1, 1, -2, 10,
+    -20, -50, -2, -2, -2, -2, -50, -20,
+    100, -20, 10, 5, 5, 10, -20, 100,
+  ];
+  const REVERSI = {
+    id: 'reversi', name: 'Reversi', dice: false, first: 0,
+    rules: [
+      'You play the dark discs and move first.',
+      'Place a disc so that it traps a straight line of the Scribe\'s discs, across, up or down, or diagonally, between your new disc and one of yours. Every trapped disc flips to your colour.',
+      'A move must flip at least one disc. If you cannot move, you pass.',
+      'The game ends when neither player can move. Whoever has more discs showing wins.'
+    ],
+    source: 'The standard rules, starting from the four centre discs as Othello (1971) made standard. Early reversi began with an empty board.',
+    init() {
+      const b = Array(64).fill(0);
+      b[3 * 8 + 3] = 2; b[4 * 8 + 4] = 2; b[3 * 8 + 4] = 1; b[4 * 8 + 3] = 1;
+      this.b = b;
+    },
+    count(pl) { const v = pl + 1; let n = 0; for (const x of this.b) if (x === v) n++; return n; },
+    flips(pl, i) {
+      if (this.b[i]) return [];
+      const me = pl + 1, them = 2 - pl, r0 = i >> 3, c0 = i & 7, out = [];
+      for (const [dr, dc] of RV_DIRS) {
+        const line = []; let r = r0 + dr, c = c0 + dc;
+        while (r >= 0 && r < 8 && c >= 0 && c < 8 && this.b[r * 8 + c] === them) { line.push(r * 8 + c); r += dr; c += dc; }
+        if (line.length && r >= 0 && r < 8 && c >= 0 && c < 8 && this.b[r * 8 + c] === me) out.push(...line);
+      }
+      return out;
+    },
+    legal(pl) {
+      const out = [];
+      for (let i = 0; i < 64; i++) { const f = this.flips(pl, i); if (f.length) out.push({ pl, at: i, flips: f }); }
+      return out;
+    },
+    apply(m) {
+      if (m.pass) return { note: '' };
+      this.b[m.at] = m.pl + 1;
+      for (const f of m.flips) this.b[f] = m.pl + 1;
+      const n = m.flips.length;
+      return { note: m.pl === 0 ? `You flip ${n} disc${n === 1 ? '' : 's'}.` : `The Scribe flips ${n} of your disc${n === 1 ? '' : 's'}.` };
+    },
+    skipTurn(pl) {
+      if (this.legal(pl).length || !this.legal(1 - pl).length) return '';
+      return pl === 0 ? 'You have no move that flips a disc, so you pass.' : 'The Scribe has no move that flips a disc, and passes.';
+    },
+    result() {
+      if (this.legal(0).length || this.legal(1).length) return null;
+      const a = this.count(0), b = this.count(1);
+      return { winner: a > b ? 0 : b > a ? 1 : -1, text: a === b ? `${a} discs each. The game is drawn.` : `Final count: you ${a}, the Scribe ${b}.` };
+    },
+    snapshot() { return this.b.slice(); },
+    restore(s) { this.b = s.slice(); },
+    turns(pl) {
+      const ms = this.legal(pl);
+      if (!ms.length) return [[{ pl, pass: true }]];
+      return ms.sort((x, y) => RV_W[y.at] - RV_W[x.at]).map(m => [m]);
+    },
+    terminal(pl, depth) {
+      if (this.legal(0).length || this.legal(1).length) return null;
+      const d = this.count(pl) - this.count(1 - pl);
+      return d > 0 ? 1000 + d : d < 0 ? -1000 + d : 0;
+    },
+    evaluate(pl) {
+      const me = pl + 1, them = 2 - pl;
+      let empty = 0, pos = 0, discs = 0;
+      for (let i = 0; i < 64; i++) {
+        const v = this.b[i];
+        if (!v) { empty++; continue; }
+        // Squares next to a corner stop being dangerous once the corner is taken.
+        let w = RV_W[i];
+        if (w < 0) { const r = i >> 3, c = i & 7, cr = r < 4 ? 0 : 7, cc = c < 4 ? 0 : 7; if (this.b[cr * 8 + cc]) w = 4; }
+        pos += v === me ? w : -w; discs += v === me ? 1 : -1;
+      }
+      if (empty <= 10) return discs * 10 + pos * 0.2;
+      return pos + (this.legal(pl).length - this.legal(1 - pl).length) * 4;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 6); },
+  };
+
+  /* ------------------------------------------------------------ Dots and Boxes
+   * A 4 x 4 grid of boxes between 5 x 5 dots. Edges 0-19 are horizontal (row r
+   * of dots 0-4, column c 0-3, index r*4+c); 20-39 are vertical (box row r 0-3,
+   * dot column c 0-4, index 20 + r*5+c). Box (r, c) is index r*4+c. */
+  const DB_N = 4;
+  const dbH = (r, c) => r * DB_N + c, dbV = (r, c) => DB_N * (DB_N + 1) + r * (DB_N + 1) + c;
+  const DB_EDGES = 2 * DB_N * (DB_N + 1);
+  const DB_BOX_EDGES = [];
+  for (let r = 0; r < DB_N; r++) for (let c = 0; c < DB_N; c++) DB_BOX_EDGES.push([dbH(r, c), dbH(r + 1, c), dbV(r, c), dbV(r, c + 1)]);
+  const DB_EDGE_BOXES = Array.from({ length: DB_EDGES }, () => []);
+  DB_BOX_EDGES.forEach((es, b) => es.forEach(e => DB_EDGE_BOXES[e].push(b)));
+  const DOTSBOXES = {
+    id: 'dotsboxes', name: 'Dots and Boxes', dice: false, first: 0, N: DB_N, EDGES: DB_EDGES,
+    BOX_EDGES: DB_BOX_EDGES, EDGE_BOXES: DB_EDGE_BOXES,
+    rules: [
+      'Take turns drawing a line between two neighbouring dots, across or up and down.',
+      'Close the fourth side of a box and it is yours: you score it and draw again.',
+      'When every line is drawn, the player with more boxes wins.',
+      'A tip: try not to draw the third side of a box, unless you have to.'
+    ],
+    source: 'The rules Édouard Lucas published as "la pipopipette", here on a grid of sixteen boxes.',
+    followPrompt: 'You closed a box, so draw another line.',
+    init() { this.drawn = Array(DB_EDGES).fill(false); this.owner = Array(DB_N * DB_N).fill(-1); this.score = [0, 0]; },
+    sides(b) { let n = 0; for (const e of DB_BOX_EDGES[b]) if (this.drawn[e]) n++; return n; },
+    gain(e) { let n = 0; for (const b of DB_EDGE_BOXES[e]) if (this.sides(b) === 3) n++; return n; },
+    gift(e) { let n = 0; for (const b of DB_EDGE_BOXES[e]) if (this.sides(b) === 2) n++; return n; },
+    left() { let n = 0; for (const d of this.drawn) if (!d) n++; return n; },
+    legal(pl) { const out = []; for (let e = 0; e < DB_EDGES; e++) if (!this.drawn[e]) out.push({ pl, e }); return out; },
+    apply(m) {
+      this.drawn[m.e] = true;
+      const boxes = [];
+      for (const b of DB_EDGE_BOXES[m.e]) if (this.sides(b) === 4 && this.owner[b] < 0) { this.owner[b] = m.pl; this.score[m.pl]++; boxes.push(b); }
+      let note = '';
+      if (boxes.length) note = m.pl === 0 ? (boxes.length > 1 ? 'Two boxes for you.' : 'A box for you.') : (boxes.length > 1 ? 'The Scribe closes two boxes.' : 'The Scribe closes a box.');
+      const followUp = boxes.length && this.left() ? this.legal(m.pl) : null;
+      return { boxes, note, followUp };
+    },
+    result() {
+      if (this.left()) return null;
+      const [a, b] = this.score;
+      return { winner: a > b ? 0 : b > a ? 1 : -1, text: a === b ? `${a} boxes each. The game is drawn.` : `Final count: you ${a} boxes, the Scribe ${b}.` };
+    },
+    snapshot() { return [this.drawn.slice(), this.owner.slice(), this.score.slice()]; },
+    restore(s) { this.drawn = s[0].slice(); this.owner = s[1].slice(); this.score = s[2].slice(); },
+    // Exact endgame: the best final margin for the player to move, over the remaining edges.
+    solve(budgetMs) {
+      const edges = []; for (let e = 0; e < DB_EDGES; e++) if (!this.drawn[e]) edges.push(e);
+      const k = edges.length, memo = new Map(), stop = Date.now() + budgetMs;
+      const sides = this.drawn.slice();
+      const gainOf = (e) => { let n = 0; for (const b of DB_EDGE_BOXES[e]) { let s = 0; for (const x of DB_BOX_EDGES[b]) if (sides[x]) s++; if (s === 3) n++; } return n; };
+      let nodes = 0;
+      const f = (mask) => {
+        if (mask === (1 << k) - 1) return 0;
+        const hit = memo.get(mask); if (hit !== undefined) return hit;
+        if ((++nodes & 1023) === 0 && Date.now() > stop) throw OUT_OF_TIME;
+        let best = -Infinity;
+        for (let j = 0; j < k; j++) {
+          if (mask & (1 << j)) continue;
+          const e = edges[j], g = gainOf(e);
+          sides[e] = true;
+          const v = g ? g + f(mask | (1 << j)) : -f(mask | (1 << j));
+          sides[e] = false;
+          if (v > best) best = v;
+        }
+        memo.set(mask, best); return best;
+      };
+      // Pick the edge with the best value, preferring captures on ties.
+      let pickE = -1, pickV = -Infinity;
+      for (let j = 0; j < k; j++) {
+        const e = edges[j], g = gainOf(e);
+        sides[e] = true;
+        const v = g ? g + f(1 << j) : -f(1 << j);
+        sides[e] = false;
+        if (v > pickV || (v === pickV && g)) { pickV = v; pickE = e; }
+      }
+      return pickE;
+    },
+    // One move for the player to move, by level.
+    pickEdge(budget = BUDGET_MS[LEVEL.name]) {
+      const free = []; for (let e = 0; e < DB_EDGES; e++) if (!this.drawn[e]) free.push(e);
+      const rnd = a => a[(Math.random() * a.length) | 0];
+      const takes = free.filter(e => this.gain(e) > 0), safe = free.filter(e => !this.gain(e) && !this.gift(e));
+      if (LEVEL.name === 'gentle') {
+        if (takes.length && Math.random() < 0.75) return rnd(takes);
+        if (safe.length && Math.random() < 0.7) return rnd(safe);
+        return rnd(free);
+      }
+      const limit = LEVEL.name === 'sharp' ? 22 : 15;
+      if (free.length <= limit && !safe.length && budget > 40) {
+        try { return this.solve(budget); } catch (e) { if (e !== OUT_OF_TIME) throw e; }
+      }
+      if (takes.length) return takes[0];
+      if (safe.length) return rnd(safe);
+      // Every line gives boxes away: give away as few as possible.
+      let best = free[0], bestLoss = Infinity;
+      for (const e of free) {
+        const s = this.snapshot(); this.drawn[e] = true;
+        let loss = 0, again = true;
+        while (again) { again = false; for (let x = 0; x < DB_EDGES; x++) if (!this.drawn[x] && this.gain(x)) { loss += this.gain(x); this.drawn[x] = true; again = true; } }
+        this.restore(s);
+        if (loss < bestLoss) { bestLoss = loss; best = e; }
+      }
+      return best;
+    },
+    aiPlan(pl) {
+      const s = this.snapshot(), plan = [], t0 = Date.now(), budget = BUDGET_MS[LEVEL.name];
+      for (;;) {
+        if (!this.left()) break;
+        // Every line in a turn shares the level's thinking budget.
+        const m = { pl, e: this.pickEdge(budget - (Date.now() - t0)) };
+        plan.push(m);
+        const r = this.apply(m);
+        if (!r.followUp) break;
+      }
+      this.restore(s);
+      return plan;
+    },
+  };
+
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);
