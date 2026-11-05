@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.8.0: Wing V
+
+- New wing, **The Modern Board Game** (c. 1840 to today), through a fourth open arch.
+- Two new playable tables:
+  - **Reversi**: the disc-flipping game of 1883, from the Othello opening. Passes are automatic.
+  - **Dots and Boxes**: a 4 × 4 grid of boxes. Close a box to draw again. The Scribe solves the endgame exactly at Fair and Sharp.
+- Four new display exhibits: **The Mansion of Happiness** (1843), **The Checkered Game of Life** (1860), **Halma** and **the Landlord's Game** (Lizzie Magie's 1904 patent).
+- The closing lectern now lists Librarium's own games with links, and the end arch reads *Different fables for different tables*.
+
+## 0.7.0: Wing IV
+
+- New wing, **Printed Boards and Parlour Tables** (c. 1300–1900), through a third open arch.
+- Three new playable tables:
+  - **Fox and Geese**: you are the fox, the Scribe herds 13 geese. Includes a museum rule so every game ends.
+  - **Draughts**: English draughts, with compulsory multi-jump captures and crowning.
+  - **The Game of the Goose**: a 63-square spiral race with geese, the Bridge, Inn, Well, Maze, Prison and Death.
+- Three new display exhibits: **The New Queen** (chess after c. 1475, with the old firzan beside the new queen), **Pachisi** on a cloth cross with cowrie shells, and **Mahjong** tiles.
+- The table can now skip a player's turn (the Goose's Inn, Well and Prison), moves the piece automatically when a throw allows only one move, and shows a lone piece's rings straight away.
+- Longer move notes stay on screen long enough to read.
+
 ## 0.6.0: Touch controls
 
 - **Walking joystick** on touch screens: push up or down to walk, left or right to turn.

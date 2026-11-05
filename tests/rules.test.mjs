@@ -448,3 +448,238 @@ for (const level of ['gentle', 'fair', 'sharp']) {
     rules.setLevel('fair');
   });
 }
+
+/* ---------------------------------------------------------- Fox and Geese */
+const { foxgeese: FG, draughts: DRA, goose: GO } = rules;
+
+test('Fox and Geese: 33 points, 13 geese, the fox in the centre, geese first', () => {
+  FG.init();
+  assert.equal(FG.geese(), 13);
+  assert.equal(FG.fox(), 24);
+  assert.equal(FG.first, 1);
+  let points = 0; for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) if ((r >= 2 && r <= 4) || (c >= 2 && c <= 4)) points++;
+  assert.equal(points, 33);
+});
+
+test('Fox and Geese: geese never move back toward their side', () => {
+  FG.init();
+  assert.ok(FG.legal(1).every(m => ((m.to / 7) | 0) >= ((m.from / 7) | 0)));
+});
+
+test('Fox and Geese: the fox jumps geese and may chain jumps', () => {
+  FG.init(); FG.b.fill(0);
+  FG.b[24] = 1; FG.b[31] = 2; FG.b[45] = 2; // geese at (4,3) and (6,3)
+  const jumps = FG.legal(0).filter(m => m.caps.length);
+  assert.deepEqual(jumps.map(m => m.to), [38]);
+  FG.b.fill(0); FG.b[17] = 1; FG.b[24] = 2; FG.b[38] = 2; FG.b[31] = 0; FG.b[2] = 2;
+  const chain = FG.legal(0).find(m => m.caps.length === 2);
+  assert.ok(chain, 'a double jump is offered');
+  FG.apply(chain);
+  assert.equal(FG.geese(), 1);
+});
+
+test('Fox and Geese: penning the fox wins for the geese; a thin flock loses', () => {
+  FG.init(); FG.b.fill(0);
+  FG.b[2] = 1; FG.b[3] = 2; FG.b[4] = 2; FG.b[9] = 2; FG.b[16] = 2; FG.b[10] = 2; FG.b[11] = 2; FG.b[17] = 2;
+  assert.equal(FG.result(0).winner, 1, 'fox in the top corner with no move or jump');
+  FG.init(); FG.b.fill(0); FG.b[24] = 1; [2, 3, 4, 9, 10, 11].forEach(i => { FG.b[i] = 2; });
+  assert.equal(FG.result(1).winner, 0);
+});
+
+test('Fox and Geese: the geese lose if they stop advancing', () => {
+  FG.init(); FG.stall = FG.STALL;
+  assert.equal(FG.result(1).winner, 0);
+});
+
+/* ---------------------------------------------------------------- Draughts */
+
+test('Draughts: 12 pieces each on dark squares; seven opening moves', () => {
+  DRA.init();
+  assert.equal(DRA.count(0), 12); assert.equal(DRA.count(1), 12);
+  assert.ok(DRA.b.every((v, i) => !v || (((i >> 3) + (i & 7)) % 2 === 1)));
+  assert.equal(DRA.legal(0).length, 7);
+});
+
+test('Draughts: capture is compulsory and chains continue', () => {
+  DRA.init(); DRA.b.fill(0);
+  DRA.b[2 * 8 + 1] = 1;            // man at (2,1)
+  DRA.b[3 * 8 + 2] = 3;            // enemy at (3,2)
+  DRA.b[5 * 8 + 4] = 3;            // enemy at (5,4)
+  DRA.b[0 * 8 + 7] = 1;            // another man with a quiet move available
+  const ms = DRA.legal(0);
+  assert.ok(ms.every(m => m.caps.length), 'only captures are legal');
+  assert.equal(ms[0].caps.length, 2, 'the double jump is taken in one move');
+  assert.equal(ms[0].to, 6 * 8 + 5);
+});
+
+test('Draughts: men crown on the far row and the capture stops there', () => {
+  DRA.init(); DRA.b.fill(0);
+  DRA.b[5 * 8 + 0] = 1; DRA.b[6 * 8 + 1] = 3; DRA.b[6 * 8 + 3] = 3; DRA.b[0] = 0; DRA.b[1 * 8 + 0] = 3;
+  const m = DRA.legal(0).find(x => x.caps.length);
+  assert.ok(m.crown); assert.equal(m.caps.length, 1, 'a man crowned mid-capture stops');
+  DRA.apply(m);
+  assert.equal(DRA.b[7 * 8 + 2], 2);
+});
+
+test('Draughts: kings move backwards; men do not', () => {
+  DRA.init(); DRA.b.fill(0);
+  DRA.b[3 * 8 + 4] = 1; DRA.b[7 * 8 + 0] = 3;
+  assert.ok(DRA.legal(0).every(m => (m.to >> 3) > 3));
+  DRA.b[3 * 8 + 4] = 2;
+  assert.ok(DRA.legal(0).some(m => (m.to >> 3) < 3));
+});
+
+/* ------------------------------------------------------- Game of the Goose */
+
+test('Goose: a 9 from the start goes to 26 or 53, never straight home', () => {
+  GO.init();
+  assert.equal(GO.legal(0, 9, { faces: [6, 3], value: 9 })[0].to, 26);
+  assert.equal(GO.legal(0, 9, { faces: [4, 5], value: 9 })[0].to, 53);
+  GO.fresh = [false, false]; // back at the start after Death: the rule still applies
+  assert.equal(GO.legal(0, 9, { faces: [3, 6], value: 9 })[0].to, 26);
+});
+
+test('Goose: geese fly on by the same throw', () => {
+  GO.init(); GO.pos[0][0] = 1;
+  assert.equal(GO.legal(0, 4, { faces: [2, 2], value: 4 })[0].to, 13, '1 + 4 = 5 (goose), 9 (goose), 13');
+});
+
+test('Goose: the Bridge, the Maze and Death', () => {
+  GO.init(); GO.pos[0][0] = 3;
+  assert.equal(GO.legal(0, 3, { faces: [1, 2], value: 3 })[0].to, 12);
+  GO.pos[0][0] = 38;
+  assert.equal(GO.legal(0, 4, { faces: [1, 3], value: 4 })[0].to, 39);
+  GO.pos[0][0] = 55;
+  assert.equal(GO.legal(0, 3, { faces: [1, 2], value: 3 })[0].to, 0);
+});
+
+test('Goose: exact landing on 63, and a bounce back', () => {
+  GO.init(); GO.pos[0][0] = 57;
+  assert.equal(GO.legal(0, 6, { faces: [3, 3], value: 6 })[0].to, 63);
+  GO.pos[0][0] = 60; // 61, 62, 63, back to 59: a goose while bouncing, so back 7 more, to the Prison
+  const m = GO.legal(0, 7, { faces: [3, 4], value: 7 })[0];
+  assert.equal(m.to, 52); assert.equal(m.skip, 3);
+});
+
+test('Goose: the Inn costs a turn, and landing on the other player swaps', () => {
+  GO.init(); GO.fresh = [false, false];
+  GO.pos[0][0] = 16; GO.pos[1][0] = 30;
+  const inn = GO.legal(0, 3, { faces: [1, 2], value: 3 })[0];
+  GO.apply(inn);
+  assert.equal(GO.pos[0][0], 19); assert.ok(GO.skipTurn(0)); assert.equal(GO.skipTurn(0), '');
+  GO.pos[0][0] = 26;
+  const sw = GO.legal(0, 4, { faces: [1, 3], value: 4 })[0];
+  assert.ok(sw.swap);
+  GO.apply(sw);
+  assert.deepEqual([GO.pos[0][0], GO.pos[1][0]], [30, 26]);
+});
+
+test('Goose: 500 two-player games finish', () => {
+  for (let n = 0; n < 500; n++) {
+    GO.init(); let pl = 0, t = 0;
+    while (!GO.done(0) && !GO.done(1)) {
+      assert.ok(++t < 3000, 'game did not finish');
+      if (GO.skipTurn(pl)) { pl = 1 - pl; continue; }
+      const r = GO.roll(); GO.apply(GO.legal(pl, r.value, r)[0]);
+      for (const p of [0, 1]) assert.ok(GO.pos[p][0] >= 0 && GO.pos[p][0] <= 63);
+      if (!GO.done(pl)) pl = 1 - pl;
+    }
+  }
+});
+
+/* ----------------------------------------------------------------- Reversi */
+const { reversi: RV, dotsboxes: DB } = rules;
+
+test('Reversi: four centre discs, four opening moves, each flipping one', () => {
+  RV.init();
+  assert.equal(RV.count(0), 2); assert.equal(RV.count(1), 2);
+  const ms = RV.legal(0);
+  assert.equal(ms.length, 4);
+  assert.ok(ms.every(m => m.flips.length === 1));
+});
+
+test('Reversi: flips run in every direction that is closed off', () => {
+  RV.init(); RV.b.fill(0);
+  RV.b[0] = 1; RV.b[1] = 2; RV.b[2] = 2; // along row 0: dark, light, light, then the empty square 3
+  RV.b[3 * 8 + 3] = 1; RV.b[2 * 8 + 3] = 2; // and up column 3: light at row 2, dark at row 3
+  const m = RV.legal(0).find(x => x.at === 3);
+  assert.deepEqual(m.flips.sort((a, b) => a - b), [1, 2]);
+  const both = RV.legal(0).find(x => x.at === 1 * 8 + 3);
+  assert.deepEqual(both.flips, [2 * 8 + 3], 'the column flip is found too');
+  RV.apply(m);
+  assert.equal(RV.count(1), 1);
+});
+
+test('Reversi: a player with no move passes; the game ends when neither can move', () => {
+  RV.init(); RV.b.fill(0); RV.b[0] = 1; RV.b[1] = 2;
+  assert.ok(RV.skipTurn(1), 'light has no flipping move but dark does');
+  RV.b.fill(1); RV.b[63] = 2;
+  const r = RV.result(0);
+  assert.equal(r.winner, 0);
+});
+
+test('Reversi: AI-vs-AI games finish within the thinking budget', () => {
+  rules.setLevel('fair');
+  RV.init(); let pl = 0, n = 0, r, slowest = 0;
+  while (!(r = RV.result(pl))) {
+    if (RV.skipTurn(pl)) { pl = 1 - pl; continue; }
+    const t0 = Date.now(); RV.aiPlan(pl).forEach(m => RV.apply(m)); slowest = Math.max(slowest, Date.now() - t0);
+    pl = 1 - pl; assert.ok(++n < 100);
+  }
+  assert.equal(RV.count(0) + RV.count(1) <= 64, true);
+  assert.ok(slowest < 1100, `took ${slowest} ms`);
+});
+
+/* ---------------------------------------------------------- Dots and Boxes */
+
+test('Dots and Boxes: 40 lines and 16 boxes; each inner line borders two boxes', () => {
+  DB.init();
+  assert.equal(DB.legal(0).length, 40);
+  assert.equal(DB.EDGE_BOXES.filter(b => b.length === 2).length, 24);
+  assert.equal(DB.EDGE_BOXES.filter(b => b.length === 1).length, 16);
+});
+
+test('Dots and Boxes: closing a box scores it and gives another turn', () => {
+  DB.init();
+  const [t, b, l, r] = DB.BOX_EDGES[0];
+  [t, b, l].forEach(e => DB.apply({ pl: 1, e }));
+  const res = DB.apply({ pl: 0, e: r });
+  assert.deepEqual(res.boxes, [0]);
+  assert.equal(DB.score[0], 1);
+  assert.ok(res.followUp && res.followUp.length, 'the same player draws again');
+});
+
+test('Dots and Boxes: one line can close two boxes', () => {
+  DB.init();
+  const shared = DB.BOX_EDGES[0][3]; // right side of box 0 = left side of box 1
+  for (const box of [0, 1]) for (const e of DB.BOX_EDGES[box]) if (e !== shared) DB.drawn[e] = true;
+  const res = DB.apply({ pl: 0, e: shared });
+  assert.equal(res.boxes.length, 2);
+});
+
+test('Dots and Boxes: the endgame solver finds the right move in a two-chain ending', () => {
+  // Every box except two corner dominoes already belongs to someone; whoever must open a domino loses it.
+  DB.init();
+  DB.drawn.fill(true);
+  // Reopen the lines inside and around two separate 2-box chains: boxes 0,1 and 14,15.
+  for (const box of [0, 1, 14, 15]) DB.owner[box] = -1;
+  const open = new Set([DB.BOX_EDGES[0][3], DB.BOX_EDGES[0][2], DB.BOX_EDGES[1][3], DB.BOX_EDGES[14][3], DB.BOX_EDGES[14][2], DB.BOX_EDGES[15][3]]);
+  open.forEach(e => { DB.drawn[e] = false; });
+  const e = DB.solve(2000);
+  assert.ok(open.has(e));
+});
+
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Dots and Boxes: at ${level}, a whole game finishes and every turn stays in budget`, () => {
+    rules.setLevel(level);
+    DB.init(); let pl = 0, slowest = 0;
+    while (!DB.result(pl)) {
+      const t0 = Date.now(); const plan = DB.aiPlan(pl); slowest = Math.max(slowest, Date.now() - t0);
+      assert.ok(plan.length > 0);
+      plan.forEach(m => DB.apply(m)); pl = 1 - pl;
+    }
+    assert.equal(DB.score[0] + DB.score[1], 16);
+    assert.ok(slowest < { gentle: 400, fair: 1100, sharp: 2200 }[level], `took ${slowest} ms`);
+    rules.setLevel('fair');
+  });
+}

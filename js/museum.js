@@ -119,7 +119,7 @@ const MAT = {
  * One long gallery split into wings by open arches: Wing I runs from the
  * entrance to z = -41, Wing II to z = -86, Wing III to the closed arch at
  * the far end. */
-const HALL = { half: 5, zNear: 4, zFar: -131, h: 5, dividers: [-41, -86] };
+const HALL = { half: 5, zNear: 4, zFar: -221, h: 5, dividers: [-41, -86, -131, -176] };
 let floorMesh = null;
 const wingOf = z => HALL.dividers.filter(d => z < d).length; // 0-based wing index
 function buildHall() {
@@ -147,10 +147,14 @@ function buildHall() {
   buildShelves(len, midZ);
   buildDivider(HALL.dividers[0], 'Wing II', 'STRATEGY TAKES THE TABLE');
   buildDivider(HALL.dividers[1], 'Wing III', 'KINGS, CARDS AND COURTS');
+  buildDivider(HALL.dividers[2], 'Wing IV', 'PRINTED BOARDS AND PARLOUR TABLES');
+  buildDivider(HALL.dividers[3], 'Wing V', 'THE MODERN BOARD GAME');
   buildEndArch();
   buildBanner(-2.6, 'The Dawn of Play', 'Wing I  ·  c. 3100 – 2000 BCE');
   buildBanner(HALL.dividers[0] - 3.6, 'Strategy Takes the Table', 'Wing II  ·  c. 500 BCE – 1000 CE');
   buildBanner(HALL.dividers[1] - 3.6, 'Kings, Cards and Courts', 'Wing III  ·  c. 480 – 1450 CE');
+  buildBanner(HALL.dividers[2] - 3.6, 'Printed Boards and Parlour Tables', 'Wing IV  ·  c. 1300 – 1900 CE');
+  buildBanner(HALL.dividers[3] - 3.6, 'The Modern Board Game', 'Wing V  ·  c. 1840 CE – today');
 }
 
 function buildShelves(len, midZ) {
@@ -167,7 +171,7 @@ function buildShelves(len, midZ) {
     }
   }
   const colors = ['#5a2a1c', '#3f1d16', '#2f3a2a', '#253042', '#6b4a2a', '#4a2f1d', '#7a5a2c', '#211b17', '#6e2f22', '#3d3324', '#542a33'].map(c => new THREE.Color(c));
-  const buckets = [0, 1, 2].map(() => ({ mats: [], cols: [] }));
+  const buckets = HALL.dividers.concat([0]).map(() => ({ mats: [], cols: [] }));
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(), p = new THREE.Vector3();
   for (const s of [-1, 1]) {
     for (const y of rows) {
@@ -249,7 +253,7 @@ function buildEndArch() {
   archFrame(z + 0.05);
   const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 2.4, 8), new THREE.MeshLambertMaterial({ color: 0x6a1a12 }));
   rope.rotation.z = Math.PI / 2; rope.position.set(0, 0.95, z + 0.6); scene.add(rope);
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.45), new THREE.MeshBasicMaterial({ map: signTex('Wing IV', 'IN PREPARATION') }));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.45), new THREE.MeshBasicMaterial({ map: signTex('Librarium Games', 'DIFFERENT FABLES FOR DIFFERENT TABLES') }));
   sign.position.set(0, 1.55, z + 0.3); scene.add(sign);
 }
 
@@ -1075,6 +1079,516 @@ function buildTarot(group) {
   glassCase(group, 1.25, 0.42, 0.7);
 }
 
+/* --- Wing IV: Fox and Geese, a pegged cross board */
+const FG_S = 0.118;
+function fgCell(i) { const r = (i / 7) | 0, c = i % 7; return { x: (c - 3) * FG_S, z: (r - 3) * FG_S }; }
+const fgOnBoard = (r, c) => r >= 0 && r < 7 && c >= 0 && c < 7 && ((r >= 2 && r <= 4) || (c >= 2 && c <= 4));
+function buildFoxGeeseBoard(group) {
+  const arm = 3 * FG_S + 0.07, len = 7 * FG_S + 0.05;
+  const oak = new THREE.MeshStandardMaterial({ color: 0x6a4424, roughness: 0.6 });
+  for (const [w, d] of [[len, arm], [arm, len]]) {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, d), oak); b.position.y = TOP + 0.025; group.add(b);
+  }
+  const px = 1024, W = len, sc = px / W, c0 = px / 2;
+  const map = tex(px, px, (g) => {
+    g.fillStyle = '#0000'; g.clearRect(0, 0, px, px);
+    // Only the cross is drawn; the corners stay transparent over the plinth.
+    g.save(); g.beginPath();
+    const a = arm / 2 * sc, l = len / 2 * sc;
+    g.rect(c0 - l, c0 - a, 2 * l, 2 * a); g.rect(c0 - a, c0 - l, 2 * a, 2 * l); g.clip();
+    woodGrain(g, px, px, '#7a5030', '#2a1508');
+    g.strokeStyle = '#e8d6ac'; g.lineWidth = 6; g.lineCap = 'round';
+    for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) {
+      if (!fgOnBoard(r, c)) continue;
+      const x = c0 + (c - 3) * FG_S * sc, y = c0 + (r - 3) * FG_S * sc;
+      if (fgOnBoard(r, c + 1)) { g.beginPath(); g.moveTo(x, y); g.lineTo(x + FG_S * sc, y); g.stroke(); }
+      if (fgOnBoard(r + 1, c)) { g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + FG_S * sc); g.stroke(); }
+    }
+    for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) {
+      if (!fgOnBoard(r, c)) continue;
+      const x = c0 + (c - 3) * FG_S * sc, y = c0 + (r - 3) * FG_S * sc;
+      g.fillStyle = '#e8d6ac'; g.beginPath(); g.arc(x, y, 15, 0, TAU); g.fill();
+      g.fillStyle = '#2a1508'; g.beginPath(); g.arc(x, y, 8, 0, TAU); g.fill();
+    }
+    g.restore();
+  });
+  topPlane(group, W, W, TOP + 0.0505, map, { roughness: 0.55, transparent: true });
+  return TOP + 0.051;
+}
+function foxPiece() {
+  const g = new THREE.Group();
+  const fur = new THREE.MeshStandardMaterial({ color: 0xb4521e, roughness: 0.55 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xf0e6d2, roughness: 0.5 });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 12), fur); body.scale.set(1.25, 0.85, 0.9); body.position.y = 0.03; g.add(body);
+  const head = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.05, 12), fur); head.rotation.z = -Math.PI / 2; head.position.set(0.045, 0.045, 0); g.add(head);
+  for (const s of [-1, 1]) { const ear = new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.022, 8), fur); ear.position.set(0.03, 0.068, s * 0.01); g.add(ear); }
+  const tail = new THREE.Mesh(new THREE.SphereGeometry(0.018, 12, 10), fur); tail.scale.set(1.8, 0.8, 0.8); tail.position.set(-0.045, 0.035, 0); g.add(tail);
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.01, 10, 8), white); tip.position.set(-0.07, 0.038, 0); g.add(tip);
+  g.userData.mats = [fur];
+  return g;
+}
+function goosePiece() {
+  const g = new THREE.Group();
+  const feather = new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.45 });
+  const beak = new THREE.MeshStandardMaterial({ color: 0xe08a1e, roughness: 0.5 });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.026, 16, 12), feather); body.scale.set(1.3, 0.85, 0.9); body.position.y = 0.026; g.add(body);
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.008, 0.038, 8), feather); neck.position.set(0.024, 0.05, 0); neck.rotation.z = -0.35; g.add(neck);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.01, 10, 8), feather); head.position.set(0.032, 0.07, 0); g.add(head);
+  const bill = new THREE.Mesh(new THREE.ConeGeometry(0.004, 0.016, 8), beak); bill.rotation.z = -Math.PI / 2; bill.position.set(0.046, 0.069, 0); g.add(bill);
+  g.userData.mats = [feather];
+  return g;
+}
+
+/* --- Wing IV: Draughts */
+const DR_S = 0.094;
+function drCell(i) { const r = i >> 3, c = i & 7; return { x: (c - 3.5) * DR_S, z: (3.5 - r) * DR_S }; }
+function buildDraughtsBoard(group) {
+  const W = 8 * DR_S + 0.08;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, W), new THREE.MeshStandardMaterial({ color: 0x2a170b, roughness: 0.5 }));
+  frame.position.y = TOP + 0.02; group.add(frame);
+  const px = 1024, sc = px / W, c0 = px / 2 - 4 * DR_S * sc;
+  const map = tex(px, px, (g) => {
+    g.fillStyle = '#2a170b'; g.fillRect(0, 0, px, px);
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      const dark = (r + c) % 2 === 1; // dark squares match the rules' (r + c) odd, seen from the visitor's side
+      const x = c0 + c * DR_S * sc, y = c0 + (7 - r) * DR_S * sc;
+      g.fillStyle = dark ? '#3d5a3a' : '#e6d4ac'; g.fillRect(x, y, DR_S * sc, DR_S * sc);
+    }
+    g.strokeStyle = '#c9a24e'; g.lineWidth = 5; g.strokeRect(c0 - 4, c0 - 4, 8 * DR_S * sc + 8, 8 * DR_S * sc + 8);
+  });
+  topPlane(group, W, W, TOP + 0.0405, map, { roughness: 0.5 });
+  return TOP + 0.041;
+}
+const drManGeo = new THREE.LatheGeometry([[0, 0], [0.038, 0], [0.04, 0.004], [0.04, 0.012], [0.035, 0.016], [0.02, 0.016], [0.018, 0.014], [0, 0.014]].map(([a, b]) => new THREE.Vector2(a, b)), 30);
+
+/* --- Wing IV: the Game of the Goose, a printed spiral */
+const GS_S = 0.104;
+// Squares 0 (the start) to 63 follow a clockwise spiral of an 8 x 8 grid, from the
+// visitor's near-left corner inward, so 63 lands near the middle.
+const GOOSE_CELLS = (() => {
+  const cells = []; let top = 0, left = 0, bottom = 7, right = 7;
+  while (top <= bottom && left <= right) {
+    for (let c = left; c <= right; c++) cells.push([bottom, c]); bottom--;
+    for (let r = bottom; r >= top; r--) cells.push([r, right]); right--;
+    if (top <= bottom) { for (let c = right; c >= left; c--) cells.push([top, c]); top++; }
+    if (left <= right) { for (let r = top; r <= bottom; r++) cells.push([r, left]); left++; }
+  }
+  return cells;
+})();
+function gsCell(n) { const [r, c] = GOOSE_CELLS[n]; return { x: (c - 3.5) * GS_S, z: (r - 3.5) * GS_S }; }
+const GOOSE_MARKS = { 6: 'bridge', 19: 'inn', 31: 'well', 42: 'maze', 52: 'prison', 58: 'death', 63: 'garden' };
+function drawGooseIcon(g, kind, x, y, s) {
+  g.save(); g.translate(x, y); g.lineWidth = s * 0.07; g.strokeStyle = '#3a2412'; g.fillStyle = '#3a2412';
+  if (kind === 'goose' || kind === 'garden') {
+    g.fillStyle = kind === 'garden' ? '#fffaf0' : '#ffffff'; g.strokeStyle = '#3a2412';
+    g.beginPath(); g.ellipse(-s * 0.05, s * 0.12, s * 0.28, s * 0.17, 0, 0, TAU); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(s * 0.15, s * 0.05); g.quadraticCurveTo(s * 0.26, -s * 0.18, s * 0.16, -s * 0.28); g.stroke();
+    g.beginPath(); g.arc(s * 0.16, -s * 0.3, s * 0.07, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = '#e08a1e'; g.beginPath(); g.moveTo(s * 0.22, -s * 0.31); g.lineTo(s * 0.34, -s * 0.28); g.lineTo(s * 0.22, -s * 0.26); g.fill();
+  } else if (kind === 'bridge') {
+    g.beginPath(); g.arc(0, s * 0.2, s * 0.32, Math.PI, 0); g.stroke(); g.fillRect(-s * 0.36, s * 0.2, s * 0.72, s * 0.06);
+  } else if (kind === 'inn') {
+    g.fillStyle = '#8a3a22'; g.beginPath(); g.moveTo(-s * 0.3, 0); g.lineTo(0, -s * 0.3); g.lineTo(s * 0.3, 0); g.fill();
+    g.fillStyle = '#c9a26e'; g.fillRect(-s * 0.24, 0, s * 0.48, s * 0.3); g.fillStyle = '#3a2412'; g.fillRect(-s * 0.06, s * 0.1, s * 0.12, s * 0.2);
+  } else if (kind === 'well') {
+    g.beginPath(); g.ellipse(0, s * 0.1, s * 0.3, s * 0.12, 0, 0, TAU); g.stroke(); g.fillStyle = '#2a4a7a'; g.fill();
+    g.beginPath(); g.moveTo(-s * 0.28, s * 0.08); g.lineTo(-s * 0.28, -s * 0.28); g.lineTo(s * 0.28, -s * 0.28); g.lineTo(s * 0.28, s * 0.08); g.stroke();
+  } else if (kind === 'maze') {
+    for (let k = 1; k <= 3; k++) { const d = s * 0.11 * k; g.strokeRect(-d, -d, 2 * d, 2 * d); }
+  } else if (kind === 'prison') {
+    g.strokeRect(-s * 0.28, -s * 0.28, s * 0.56, s * 0.56);
+    for (let k = -1; k <= 1; k++) { g.beginPath(); g.moveTo(k * s * 0.13, -s * 0.28); g.lineTo(k * s * 0.13, s * 0.28); g.stroke(); }
+  } else if (kind === 'death') {
+    g.fillStyle = '#f0e6d2'; g.beginPath(); g.arc(0, -s * 0.06, s * 0.22, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = '#3a2412'; for (const sx of [-1, 1]) { g.beginPath(); g.arc(sx * s * 0.08, -s * 0.08, s * 0.05, 0, TAU); g.fill(); }
+    g.fillRect(-s * 0.12, s * 0.12, s * 0.24, s * 0.1);
+  }
+  g.restore();
+}
+function buildGooseBoard(group) {
+  const W = 8 * GS_S + 0.08;
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, W), new THREE.MeshStandardMaterial({ color: 0x4a2c16, roughness: 0.55 }));
+  panel.position.y = TOP + 0.015; group.add(panel);
+  const px = 1024, sc = px / W, c0 = px / 2 - 4 * GS_S * sc, cs = GS_S * sc;
+  const geese = new Set([5, 9, 14, 18, 23, 27, 32, 36, 41, 45, 50, 54, 59]);
+  const map = tex(px, px, (g) => {
+    g.fillStyle = '#efe1bd'; g.fillRect(0, 0, px, px);
+    speckle(g, px, px, 2500, ['#c9b383', '#fff8e4'], 1.4);
+    for (let n = 0; n <= 63; n++) {
+      const [r, c] = GOOSE_CELLS[n], x = c0 + c * cs, y = c0 + r * cs;
+      const special = GOOSE_MARKS[n];
+      g.fillStyle = n === 0 ? '#d9c08a' : special === 'death' ? '#bfa88a' : special ? '#e8cf9a' : (n % 2 ? '#f4e8c8' : '#ead9b0');
+      if (n === 63) g.fillStyle = '#e6c25e';
+      g.fillRect(x + 2, y + 2, cs - 4, cs - 4);
+      g.strokeStyle = '#7a5a30'; g.lineWidth = 2; g.strokeRect(x + 2, y + 2, cs - 4, cs - 4);
+      if (geese.has(n)) drawGooseIcon(g, 'goose', x + cs / 2, y + cs / 2 + 6, cs * 0.8);
+      else if (special) drawGooseIcon(g, special, x + cs / 2, y + cs / 2 + 6, cs * 0.75);
+      g.fillStyle = '#3a2412'; g.font = `${Math.round(cs * 0.24)}px "Almendra SC", Georgia, serif`; g.textAlign = 'left';
+      g.fillText(n === 0 ? 'Start' : String(n), x + 7, y + cs * 0.26);
+    }
+    g.strokeStyle = '#7a5a30'; g.lineWidth = 6; g.strokeRect(c0 - 8, c0 - 8, 8 * cs + 16, 8 * cs + 16);
+  });
+  topPlane(group, W, W, TOP + 0.0305, map, { roughness: 0.75 });
+  return TOP + 0.031;
+}
+function goosePawn(color) {
+  const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.55, roughness: 0.3 });
+  const m = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [0.024, 0], [0.025, 0.006], [0.014, 0.012], [0.011, 0.04], [0.017, 0.046], [0.012, 0.058], [0, 0.062]].map(([a, b]) => new THREE.Vector2(a, b)), 24), mat);
+  m.userData.mats = [mat];
+  return m;
+}
+
+/* --- Wing IV: chess with the new queen (display) */
+function buildNewChess(group) {
+  const S = 0.085, W = 8 * S + 0.07;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, W), new THREE.MeshStandardMaterial({ color: 0x2a170b, roughness: 0.5 }));
+  frame.position.y = TOP + 0.02; group.add(frame);
+  const px = 1024, sc = px / W, c0 = px / 2 - 4 * S * sc;
+  topPlane(group, W, W, TOP + 0.0405, tex(px, px, (g) => {
+    g.fillStyle = '#2a170b'; g.fillRect(0, 0, px, px);
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { g.fillStyle = (r + c) % 2 ? '#6b3f24' : '#e3cfa2'; g.fillRect(c0 + c * S * sc, c0 + r * S * sc, S * sc, S * sc); }
+  }), { roughness: 0.5 });
+  const y0 = TOP + 0.041;
+  const mats = [new THREE.MeshStandardMaterial({ color: 0xeee0c0, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0x241810, roughness: 0.35 })];
+  const lathe = (pts, m) => new THREE.Mesh(new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), 22), m);
+  const base = [[0, 0], [0.024, 0], [0.025, 0.006], [0.017, 0.012]];
+  const shapes = {
+    p: m => lathe([...base, [0.009, 0.028], [0.013, 0.032], [0.012, 0.042], [0, 0.046]], m),
+    r: m => lathe([...base, [0.015, 0.05], [0.019, 0.054], [0.019, 0.064], [0.014, 0.064], [0, 0.062]], m),
+    b: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.01, 0.045], [0.015, 0.052], [0.012, 0.068], [0.004, 0.076], [0, 0.078]], m)); return g; },
+    n: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.014, 0.022], [0, 0.024]], m)); const h = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.045, 0.016), m); h.position.set(0.004, 0.044, 0); h.rotation.z = -0.25; g.add(h); const sn = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.014, 0.014), m); sn.position.set(0.016, 0.06, 0); g.add(sn); return g; },
+    q: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.01, 0.06], [0.018, 0.07], [0.016, 0.084], [0, 0.084]], m)); for (let k = 0; k < 8; k++) { const a = k / 8 * TAU, ball = new THREE.Mesh(new THREE.SphereGeometry(0.004, 8, 6), m); ball.position.set(Math.cos(a) * 0.015, 0.088, Math.sin(a) * 0.015); g.add(ball); } return g; },
+    k: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.011, 0.064], [0.018, 0.074], [0.014, 0.088], [0, 0.088]], m)); const c1 = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.026, 0.005), m); c1.position.y = 0.1; g.add(c1); const c2 = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.005, 0.005), m); c2.position.y = 0.104; g.add(c2); return g; },
+  };
+  // A position from a fast attacking game: the queen has swept out early.
+  const layout = [
+    [0, 0, 'r', 0], [0, 4, 'k', 0], [0, 5, 'b', 0], [0, 7, 'r', 0], [1, 0, 'p', 0], [1, 1, 'p', 0], [1, 5, 'p', 0], [1, 6, 'p', 0], [1, 7, 'p', 0], [2, 2, 'n', 0], [3, 3, 'p', 0], [3, 4, 'p', 0], [2, 5, 'n', 0],
+    [4, 7, 'q', 0], [3, 2, 'b', 0],
+    [7, 0, 'r', 1], [7, 2, 'b', 1], [7, 3, 'q', 1], [7, 4, 'k', 1], [7, 7, 'r', 1], [6, 0, 'p', 1], [6, 1, 'p', 1], [6, 2, 'p', 1], [6, 3, 'p', 1], [5, 5, 'n', 1], [6, 6, 'p', 1], [6, 7, 'p', 1], [4, 4, 'p', 1], [5, 2, 'n', 1], [4, 1, 'b', 1],
+  ];
+  for (const [r, c, t, side] of layout) {
+    const o = shapes[t](mats[side]); o.position.set((c - 3.5) * S, y0, (3.5 - r) * S); o.rotation.y = side ? -Math.PI / 2 : Math.PI / 2; group.add(o);
+  }
+  // A small gilded crown beside the board marks the piece that changed.
+  const gold = new THREE.MeshStandardMaterial({ color: 0xd4a23a, metalness: 0.8, roughness: 0.3 });
+  const q = shapes.q(gold); q.scale.setScalar(1.6); q.position.set(W / 2 + 0.11, TOP, -0.12); group.add(q);
+  const old = sjPiece(2, new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 0.5 })); old.scale.setScalar(1.6); old.position.set(W / 2 + 0.11, TOP, 0.12); group.add(old);
+}
+
+/* --- Wing IV: Pachisi (display) */
+function buildPachisi(group) {
+  const sq = 0.046, armLen = 8 * sq, armW = 3 * sq, ctr = 3 * sq;
+  const total = ctr + 2 * armLen;
+  const px = 1024, sc = px / total, c0 = px / 2;
+  const map = tex(px, px, (g) => {
+    g.clearRect(0, 0, px, px);
+    const a = armW / 2 * sc, l = total / 2 * sc;
+    g.save(); g.beginPath(); g.rect(c0 - l, c0 - a, 2 * l, 2 * a); g.rect(c0 - a, c0 - l, 2 * a, 2 * l); g.clip();
+    g.fillStyle = '#8a1e1e'; g.fillRect(0, 0, px, px);
+    speckle(g, px, px, 6000, ['#5a0e0e', '#b23a2a'], 1.4);
+    const s = sq * sc, colours = ['#e8b23a', '#2a6a4a', '#1e3a7a', '#e8e0c8'];
+    for (let arm = 0; arm < 4; arm++) {
+      g.save(); g.translate(c0, c0); g.rotate(arm * Math.PI / 2);
+      for (let k = 0; k < 8; k++) for (let j = -1; j <= 1; j++) {
+        const x = j * s - s / 2, y = ctr / 2 * sc + k * s;
+        g.strokeStyle = '#f0d58a'; g.lineWidth = 2.5; g.strokeRect(x + 2, y + 2, s - 4, s - 4);
+        if ((k === 3 && j !== 0) || (k === 7 && j === 0)) { g.strokeStyle = '#f0d58a'; g.beginPath(); g.moveTo(x + 8, y + 8); g.lineTo(x + s - 8, y + s - 8); g.moveTo(x + s - 8, y + 8); g.lineTo(x + 8, y + s - 8); g.stroke(); }
+      }
+      g.fillStyle = colours[arm]; g.globalAlpha = 0.55; g.fillRect(-s * 1.5, ctr / 2 * sc + 8 * s - 10, s * 3, 10); g.globalAlpha = 1;
+      g.restore();
+    }
+    g.fillStyle = '#5a0e0e'; g.fillRect(c0 - ctr / 2 * sc, c0 - ctr / 2 * sc, ctr * sc, ctr * sc);
+    g.strokeStyle = '#f0d58a'; g.lineWidth = 4; g.strokeRect(c0 - ctr / 2 * sc + 6, c0 - ctr / 2 * sc + 6, ctr * sc - 12, ctr * sc - 12);
+    g.restore();
+  });
+  topPlane(group, total, total, TOP + 0.004, map, { roughness: 0.95, transparent: true });
+  // Cowrie shells, a few mouth up, and beehive-shaped pawns in four colours.
+  const shellMat = new THREE.MeshStandardMaterial({ color: 0xf2ead8, roughness: 0.35 });
+  const slit = new THREE.MeshStandardMaterial({ color: 0x5a4a3a });
+  const R = seeded(25);
+  for (let k = 0; k < 7; k++) {
+    const sh = new THREE.Group();
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.012, 12, 10), shellMat); b.scale.set(1.4, 0.7, 1); sh.add(b);
+    if (k % 2) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.002, 0.002), slit); l.position.y = 0.0085; sh.add(l); }
+    sh.position.set(0.1 + R() * 0.12, TOP + 0.012, 0.1 + R() * 0.12); sh.rotation.y = R() * TAU; group.add(sh);
+  }
+  const pawn = new THREE.LatheGeometry([[0, 0], [0.016, 0], [0.017, 0.004], [0.015, 0.016], [0.01, 0.028], [0.004, 0.034], [0, 0.035]].map(([a, b]) => new THREE.Vector2(a, b)), 20);
+  [0xe8b23a, 0x2a6a4a, 0x1e3a7a, 0xe8e0c8].forEach((col, arm) => {
+    const m = new THREE.MeshStandardMaterial({ color: col, roughness: 0.4 });
+    for (let k = 0; k < 4; k++) {
+      const p = new THREE.Mesh(pawn, m);
+      const along = ctr / 2 + (k === 3 ? 5.5 : 0.5 + k) * sq, across = (k % 2 ? 1 : -1) * sq;
+      const ang = arm * Math.PI / 2, x = Math.sin(ang) * along + Math.cos(ang) * across, z = Math.cos(ang) * along - Math.sin(ang) * across;
+      p.position.set(x, TOP + 0.005, z); group.add(p);
+    }
+  });
+}
+
+/* --- Wing IV: Mahjong (display) */
+function mjFace(kind, n) {
+  return tex(128, 172, (g, w, h) => {
+    g.fillStyle = '#f6f1e4'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#d8cfb8'; g.lineWidth = 6; g.strokeRect(3, 3, w - 6, h - 6);
+    const cols = ['#1e5a8a', '#2a7a3a', '#b23a2a'];
+    if (kind === 'dots') {
+      const grid = { 1: [[0.5, 0.5]], 2: [[0.5, 0.3], [0.5, 0.7]], 3: [[0.3, 0.25], [0.5, 0.5], [0.7, 0.75]], 4: [[0.3, 0.3], [0.7, 0.3], [0.3, 0.7], [0.7, 0.7]], 5: [[0.3, 0.27], [0.7, 0.27], [0.5, 0.5], [0.3, 0.73], [0.7, 0.73]], 6: [[0.3, 0.22], [0.7, 0.22], [0.3, 0.5], [0.7, 0.5], [0.3, 0.78], [0.7, 0.78]] }[n];
+      grid.forEach(([x, y], k) => { const r = n === 1 ? 38 : 16; g.fillStyle = cols[k % 3]; g.beginPath(); g.arc(x * w, y * h, r, 0, TAU); g.fill(); g.fillStyle = '#f6f1e4'; g.beginPath(); g.arc(x * w, y * h, r * 0.45, 0, TAU); g.fill(); });
+    } else if (kind === 'bamboo') {
+      for (let k = 0; k < n; k++) {
+        const col = k % 3, row = (k / 3) | 0, x = w * (0.28 + 0.22 * col), y = h * (0.2 + 0.3 * row);
+        g.fillStyle = k === 0 && n === 1 ? '#b23a2a' : '#2a7a3a'; g.fillRect(x - 7, y, 14, h * 0.24);
+        g.fillStyle = '#f6f1e4'; g.fillRect(x - 7, y + h * 0.11, 14, 3);
+      }
+    } else if (kind === 'white') {
+      g.strokeStyle = '#1e5a8a'; g.lineWidth = 7; g.strokeRect(w * 0.2, h * 0.18, w * 0.6, h * 0.64);
+    } else if (kind === 'flower') {
+      for (let k = 0; k < 5; k++) { const a = k / 5 * TAU; g.fillStyle = '#b23a2a'; g.beginPath(); g.ellipse(w / 2 + Math.cos(a) * 20, h / 2 + Math.sin(a) * 20, 16, 10, a, 0, TAU); g.fill(); }
+      g.fillStyle = '#e8b23a'; g.beginPath(); g.arc(w / 2, h / 2, 12, 0, TAU); g.fill();
+      g.strokeStyle = '#2a7a3a'; g.lineWidth = 5; g.beginPath(); g.moveTo(w / 2, h / 2 + 18); g.lineTo(w / 2 - 10, h * 0.9); g.stroke();
+    }
+  });
+}
+function buildMahjong(group) {
+  const felt = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.02, 0.8), new THREE.MeshLambertMaterial({ color: 0x1e4a32 }));
+  felt.position.y = TOP + 0.01; group.add(felt);
+  const tw = 0.034, th = 0.046, td = 0.024;
+  const bone = new THREE.MeshStandardMaterial({ color: 0xf2ecdc, roughness: 0.3 });
+  const back = new THREE.MeshStandardMaterial({ color: 0x2a7a5a, roughness: 0.35 });
+  const geo = new THREE.BoxGeometry(tw, td, th);
+  // The wall: two layers of face-down tiles along the back.
+  for (let layer = 0; layer < 2; layer++) for (let k = 0; k < 17; k++) {
+    const t = new THREE.Mesh(geo, [bone, bone, back, bone, bone, bone]);
+    t.position.set((k - 8) * (tw + 0.002), TOP + 0.02 + td / 2 + layer * td, -0.26); group.add(t);
+  }
+  // A hand of fourteen face-up tiles at the front, standing on edge.
+  const hand = [['dots', 1], ['dots', 2], ['dots', 3], ['bamboo', 4], ['bamboo', 5], ['bamboo', 6], ['dots', 5], ['dots', 5], ['dots', 5], ['white', 0], ['white', 0], ['white', 0], ['bamboo', 1], ['bamboo', 1]];
+  hand.forEach(([kind, n], k) => {
+    const face = new THREE.MeshStandardMaterial({ map: mjFace(kind, n), roughness: 0.3 });
+    const t = new THREE.Mesh(new THREE.BoxGeometry(tw, th, td), [bone, bone, bone, bone, face, back]);
+    t.position.set((k - 6.5) * (tw + 0.003), TOP + 0.02 + th / 2, 0.2); t.rotation.x = -0.12; group.add(t);
+  });
+  const flower = new THREE.Mesh(new THREE.BoxGeometry(tw, td, th), [bone, bone, new THREE.MeshStandardMaterial({ map: mjFace('flower', 0), roughness: 0.3 }), bone, bone, bone]);
+  flower.position.set(0.42, TOP + 0.02 + td / 2, 0.05); flower.rotation.y = 0.3; group.add(flower);
+  for (let k = 0; k < 2; k++) { const d = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.018, 0.018), new THREE.MeshStandardMaterial({ color: 0xf6f1e4, roughness: 0.3 })); d.position.set(-0.4 + k * 0.035, TOP + 0.029, 0.04); d.rotation.y = k * 0.6; group.add(d); }
+  glassCase(group, 1.25, 0.3, 0.85);
+}
+
+/* --- Wing V: shared pieces */
+// A teetotum: the numbered spinning top that moral games used instead of gambling dice.
+function teetotum(color = 0xd8c49a) {
+  const g = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color, roughness: 0.5 });
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.012, 8), [wood, wood, new THREE.MeshStandardMaterial({ map: tex(128, 128, (c, w) => {
+    c.fillStyle = '#e8d6ac'; c.fillRect(0, 0, w, w);
+    c.fillStyle = '#3a2412'; c.font = '20px Georgia, serif'; c.textAlign = 'center';
+    for (let k = 0; k < 8; k++) { const a = (k + 0.5) / 8 * TAU; c.fillText(String(k + 1), w / 2 + Math.cos(a) * 44, w / 2 + Math.sin(a) * 44 + 7); }
+    c.strokeStyle = '#3a2412'; for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; c.beginPath(); c.moveTo(w / 2, w / 2); c.lineTo(w / 2 + Math.cos(a) * 62, w / 2 + Math.sin(a) * 62); c.stroke(); }
+  }) })]);
+  top.rotation.y = Math.PI / 8; top.position.y = 0.03; g.add(top);
+  const spindle = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.05, 8), wood); spindle.position.y = 0.05; g.add(spindle);
+  const point = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.024, 8), wood); point.rotation.x = Math.PI; point.position.y = 0.012; g.add(point);
+  g.rotation.z = 0.35; // resting on its side, as it fell
+  return g;
+}
+function paperSheet(group, w, d, map, y = TOP + 0.003) {
+  const m = topPlane(group, w, d, y, map, { roughness: 0.9 });
+  return m;
+}
+function agedPaper(g, w, h) {
+  g.fillStyle = '#ecdcb4'; g.fillRect(0, 0, w, h);
+  speckle(g, w, h, 3000, ['#c9b07c', '#f8ecd0', '#b89a68'], 1.6);
+  const gr = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.7);
+  gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(110,70,20,.35)');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+}
+
+/* --- Wing V: The Mansion of Happiness (display) */
+function buildMansion(group) {
+  const W = 0.78;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W + 0.04, 0.02, W + 0.04), new THREE.MeshStandardMaterial({ color: 0x3a2312, roughness: 0.6 }));
+  board.position.y = TOP + 0.01; group.add(board);
+  const px = 1024;
+  topPlane(group, W, W, TOP + 0.0205, tex(px, px, (g) => {
+    agedPaper(g, px, px);
+    const cx = px / 2, cy = px / 2, R = px * 0.46, turns = 3.2, n = 60;
+    // Hand-coloured squares along a spiral, virtues in green and gold, vices in red.
+    for (let k = 0; k < n; k++) {
+      const t = k / n, a = t * turns * TAU, r = R * (1 - t * 0.78);
+      const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+      g.save(); g.translate(x, y); g.rotate(a + Math.PI / 2);
+      const s = 44 * (1 - t * 0.45);
+      g.fillStyle = k % 7 === 3 ? '#b8432e' : k % 5 === 1 ? '#6a8a3a' : k % 4 === 0 ? '#d4a23a' : '#e9d9b0';
+      g.fillRect(-s / 2, -s / 2, s, s); g.strokeStyle = '#4a2c14'; g.lineWidth = 2; g.strokeRect(-s / 2, -s / 2, s, s);
+      g.restore();
+    }
+    // The mansion at the centre.
+    g.fillStyle = '#d9c08a'; g.fillRect(cx - 52, cy - 20, 104, 64);
+    g.fillStyle = '#8a3a22'; g.beginPath(); g.moveTo(cx - 64, cy - 20); g.lineTo(cx, cy - 66); g.lineTo(cx + 64, cy - 20); g.fill();
+    g.fillStyle = '#4a2c14'; g.fillRect(cx - 10, cy + 10, 20, 34);
+    for (const dx of [-34, 24]) g.fillRect(cx + dx, cy - 6, 12, 14);
+    g.fillStyle = '#3a2412'; g.font = 'italic 34px Georgia, serif'; g.textAlign = 'center';
+    g.fillText('An Instructive, Moral and Entertaining Amusement', cx, px - 36, px - 80);
+  }), { roughness: 0.85 });
+  const tt = teetotum(); tt.position.set(W / 2 + 0.12, TOP, 0.1); group.add(tt);
+  const pawn = c => { const m = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.04, 12), new THREE.MeshStandardMaterial({ color: c, roughness: 0.5 })); m.position.y = 0.02; const g = new THREE.Group(); g.add(m); return g; };
+  [0x8a1e1e, 0x1e3a7a].forEach((c, k) => { const p = pawn(c); p.position.set(W / 2 + 0.1 + k * 0.05, TOP, -0.12); group.add(p); });
+}
+
+/* --- Wing V: The Checkered Game of Life (display) */
+function buildCheckeredLife(group) {
+  const W = 0.78;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W + 0.04, 0.02, W + 0.04), new THREE.MeshStandardMaterial({ color: 0x2a1a10, roughness: 0.6 }));
+  board.position.y = TOP + 0.01; group.add(board);
+  const px = 1024, cs = px / 8;
+  topPlane(group, W, W, TOP + 0.0205, tex(px, px, (g) => {
+    agedPaper(g, px, px);
+    const R = seeded(1860);
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      const x = c * cs, y = r * cs;
+      if ((r + c) % 2) { g.fillStyle = '#7a2a1c'; g.fillRect(x, y, cs, cs); continue; }
+      g.fillStyle = '#efe0b8'; g.fillRect(x, y, cs, cs);
+      // Small coloured vignettes stand for the virtues and vices on the squares.
+      if (R() < 0.6) {
+        g.fillStyle = ['#6a8a3a', '#d4a23a', '#2a4a7a', '#8a3a22'][(R() * 4) | 0];
+        g.beginPath(); g.arc(x + cs / 2, y + cs / 2 - 8, cs * 0.18, 0, TAU); g.fill();
+        g.fillStyle = '#3a2412'; g.fillRect(x + cs * 0.25, y + cs * 0.72, cs * 0.5, 4); g.fillRect(x + cs * 0.32, y + cs * 0.8, cs * 0.36, 3);
+      }
+    }
+    g.strokeStyle = '#3a2412'; g.lineWidth = 6; g.strokeRect(3, 3, px - 6, px - 6);
+  }), { roughness: 0.85 });
+  const tt = teetotum(0xcdb98a); tt.position.set(W / 2 + 0.12, TOP, -0.05); group.add(tt);
+}
+
+/* --- Wing V: Reversi */
+const RV_S = 0.09;
+function rvCell(i) { const r = i >> 3, c = i & 7; return { x: (c - 3.5) * RV_S, z: (3.5 - r) * RV_S }; }
+function buildReversiBoard(group) {
+  const W = 8 * RV_S + 0.07;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, W), new THREE.MeshStandardMaterial({ color: 0x1e140c, roughness: 0.5 }));
+  frame.position.y = TOP + 0.02; group.add(frame);
+  const px = 1024, sc = px / W, c0 = px / 2 - 4 * RV_S * sc;
+  topPlane(group, W, W, TOP + 0.0405, tex(px, px, (g) => {
+    g.fillStyle = '#1e140c'; g.fillRect(0, 0, px, px);
+    g.fillStyle = '#2f6a3e'; g.fillRect(c0, c0, 8 * RV_S * sc, 8 * RV_S * sc);
+    speckle(g, px, px, 3000, ['#24563a', '#3a7a4a'], 1.2);
+    g.strokeStyle = '#173a22'; g.lineWidth = 4;
+    for (let i = 0; i <= 8; i++) {
+      g.beginPath(); g.moveTo(c0, c0 + i * RV_S * sc); g.lineTo(c0 + 8 * RV_S * sc, c0 + i * RV_S * sc); g.stroke();
+      g.beginPath(); g.moveTo(c0 + i * RV_S * sc, c0); g.lineTo(c0 + i * RV_S * sc, c0 + 8 * RV_S * sc); g.stroke();
+    }
+    g.fillStyle = '#173a22'; for (const a of [2, 6]) for (const b of [2, 6]) { g.beginPath(); g.arc(c0 + a * RV_S * sc, c0 + b * RV_S * sc, 7, 0, TAU); g.fill(); }
+  }), { roughness: 0.8 });
+  return TOP + 0.041;
+}
+// A two-coloured disc: dark on top for the visitor, flipped over for the Scribe.
+const rvDiscGeo = new THREE.CylinderGeometry(0.038, 0.038, 0.012, 32);
+const RV_MATS = [new THREE.MeshStandardMaterial({ color: 0x1a1512, roughness: 0.35 }), new THREE.MeshStandardMaterial({ color: 0xeee6d6, roughness: 0.35 })];
+function rvDisc() { const m = new THREE.Mesh(rvDiscGeo, [new THREE.MeshStandardMaterial({ color: 0x7a6a5a, roughness: 0.5 }), RV_MATS[0], RV_MATS[1]]); return m; }
+
+/* --- Wing V: Halma (display) */
+function buildHalma(group) {
+  const S = 0.05, W = 16 * S + 0.05;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, W), new THREE.MeshStandardMaterial({ color: 0x2a1a10, roughness: 0.55 }));
+  frame.position.y = TOP + 0.015; group.add(frame);
+  const px = 1024, sc = px / W, c0 = px / 2 - 8 * S * sc, cs = S * sc;
+  // The 19-square camp in each corner: rows of 5, 5, 4, 3 and 2. Returns 1-4 for the corner, 0 elsewhere.
+  const inCamp = (r, c) => {
+    const a = Math.min(r, 15 - r), b = Math.min(c, 15 - c);
+    if (a > 4 || b > 4 || a + b > 5) return 0;
+    return r < 8 ? (c < 8 ? 1 : 2) : (c < 8 ? 3 : 4);
+  };
+  topPlane(group, W, W, TOP + 0.0305, tex(px, px, (g) => {
+    g.fillStyle = '#2a1a10'; g.fillRect(0, 0, px, px);
+    for (let r = 0; r < 16; r++) for (let c = 0; c < 16; c++) {
+      const k = inCamp(r, c);
+      g.fillStyle = (r + c) % 2 ? '#c9b38a' : '#e9dcbc';
+      if (k === 1 || k === 4) g.fillStyle = (r + c) % 2 ? '#b98a52' : '#d4a86e';
+      g.fillRect(c0 + c * cs, c0 + r * cs, cs, cs);
+    }
+    g.strokeStyle = '#7a2a1c'; g.lineWidth = 4;
+    g.strokeRect(c0, c0, 16 * cs, 16 * cs);
+  }), { roughness: 0.6 });
+  // Two-player Halma: 19 men each in opposite corners, a few already on the move.
+  const men = [new THREE.MeshStandardMaterial({ color: 0x8a1e1e, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0x1e3a6a, roughness: 0.4 })];
+  const manGeo = new THREE.LatheGeometry([[0, 0], [0.015, 0], [0.016, 0.004], [0.008, 0.012], [0.006, 0.026], [0.011, 0.032], [0.007, 0.04], [0, 0.042]].map(([a, b]) => new THREE.Vector2(a, b)), 16);
+  const R = seeded(1883);
+  const at = (r, c) => V3((c - 7.5) * S, TOP + 0.031, (r - 7.5) * S);
+  const placed = new Set();
+  for (let r = 0; r < 16; r++) for (let c = 0; c < 16; c++) {
+    const k = inCamp(r, c); if (k !== 1 && k !== 4) continue;
+    let rr = r, cc = c;
+    if (R() < 0.18) { const d = k === 1 ? 1 : -1; rr += d * (2 + ((R() * 3) | 0)); cc += d * (2 + ((R() * 3) | 0)); }
+    const key = rr * 16 + cc; if (placed.has(key) || rr < 0 || rr > 15 || cc < 0 || cc > 15) continue; placed.add(key);
+    const m = new THREE.Mesh(manGeo, men[k === 1 ? 0 : 1]); m.position.copy(at(rr, cc)); group.add(m);
+  }
+}
+
+/* --- Wing V: Dots and Boxes, on a writing slope */
+const DB_S = 0.155;
+function dbDot(r, c) { return V3((c - 2) * DB_S, 0, (r - 2) * DB_S); }
+function dbEdgeMid(e) {
+  const N = 4;
+  if (e < N * (N + 1)) { const r = (e / N) | 0, c = e % N; const a = dbDot(r, c), b = dbDot(r, c + 1); return { pos: a.add(b).multiplyScalar(0.5), horiz: true }; }
+  const k = e - N * (N + 1), r = (k / (N + 1)) | 0, c = k % (N + 1); const a = dbDot(r, c), b = dbDot(r + 1, c); return { pos: a.add(b).multiplyScalar(0.5), horiz: false };
+}
+function buildDotsBoard(group) {
+  const W = 0.86;
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(W + 0.06, 0.03, W + 0.06), new THREE.MeshStandardMaterial({ color: 0x3a2312, roughness: 0.55 }));
+  desk.position.y = TOP + 0.015; group.add(desk);
+  const px = 1024, sc = px / W;
+  topPlane(group, W, W, TOP + 0.0305, tex(px, px, (g) => {
+    g.fillStyle = '#f2ead6'; g.fillRect(0, 0, px, px);
+    speckle(g, px, px, 1500, ['#d8ccb0'], 1.2);
+    g.strokeStyle = 'rgba(70,110,170,.25)'; g.lineWidth = 2;
+    for (let y = 40; y < px; y += 34) { g.beginPath(); g.moveTo(0, y); g.lineTo(px, y); g.stroke(); }
+    g.strokeStyle = 'rgba(190,60,60,.35)'; g.beginPath(); g.moveTo(90, 0); g.lineTo(90, px); g.stroke();
+    g.fillStyle = '#1d1a16';
+    for (let r = 0; r <= 4; r++) for (let c = 0; c <= 4; c++) { g.beginPath(); g.arc(px / 2 + (c - 2) * DB_S * sc, px / 2 + (r - 2) * DB_S * sc, 9, 0, TAU); g.fill(); }
+  }), { roughness: 0.9 });
+  // An inkwell and a pencil beside the sheet.
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.034, 0.045, 18), new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.15, metalness: 0.2 }));
+  glass.position.set(W / 2 + 0.1, TOP + 0.0225, -0.22); group.add(glass);
+  const pencil = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.18, 6), new THREE.MeshStandardMaterial({ color: 0xd4a23a, roughness: 0.5 }));
+  pencil.rotation.z = Math.PI / 2; pencil.rotation.y = 0.4; pencil.position.set(W / 2 + 0.1, TOP + 0.005, 0.15); group.add(pencil);
+  return TOP + 0.031;
+}
+const dbLineGeo = new THREE.BoxGeometry(DB_S - 0.02, 0.004, 0.008);
+const dbLineMats = [new THREE.MeshStandardMaterial({ color: 0x8a5a12, roughness: 0.6 }), new THREE.MeshStandardMaterial({ color: 0x2a3a5a, roughness: 0.6 })];
+const dbBoxGeo = new THREE.PlaneGeometry(DB_S - 0.03, DB_S - 0.03);
+
+/* --- Wing V: The Landlord's Game, as its patent drawing (display) */
+function buildLandlord(group) {
+  const W = 0.62, D = 0.82;
+  const blotter = new THREE.Mesh(new THREE.BoxGeometry(W + 0.12, 0.015, D + 0.08), new THREE.MeshStandardMaterial({ color: 0x2a3a2a, roughness: 0.9 }));
+  blotter.position.y = TOP + 0.0075; group.add(blotter);
+  const px = 768, py = Math.round(768 * D / W);
+  topPlane(group, W, D, TOP + 0.0158, tex(px, py, (g, w, h) => {
+    g.fillStyle = '#f1ead8'; g.fillRect(0, 0, w, h); speckle(g, w, h, 1200, ['#d8ccb0'], 1.1);
+    g.fillStyle = '#2a2a2a'; g.textAlign = 'center';
+    g.font = '26px Georgia, serif'; g.fillText('No. 748,626.', w / 2, 56);
+    g.font = '20px Georgia, serif'; g.fillText('PATENTED JAN. 5, 1904.', w / 2, 86);
+    g.font = 'italic 24px Georgia, serif'; g.fillText('GAME BOARD.', w / 2, 120);
+    // A square track of spaces around the edge, drawn in a patent draughtsman's ink.
+    const x0 = 80, y0 = 160, size = w - 160, n = 10, s = size / (n + 1);
+    g.strokeStyle = '#2a2a2a'; g.lineWidth = 2;
+    g.strokeRect(x0, y0, size, size);
+    g.strokeRect(x0 + s, y0 + s, size - 2 * s, size - 2 * s);
+    for (let k = 1; k <= n; k++) {
+      g.beginPath(); g.moveTo(x0 + k * s, y0); g.lineTo(x0 + k * s, y0 + s); g.stroke();
+      g.beginPath(); g.moveTo(x0 + k * s, y0 + size - s); g.lineTo(x0 + k * s, y0 + size); g.stroke();
+      g.beginPath(); g.moveTo(x0, y0 + k * s); g.lineTo(x0 + s, y0 + k * s); g.stroke();
+      g.beginPath(); g.moveTo(x0 + size - s, y0 + k * s); g.lineTo(x0 + size, y0 + k * s); g.stroke();
+    }
+    for (const [cx, cy] of [[x0, y0], [x0 + size - s, y0], [x0, y0 + size - s], [x0 + size - s, y0 + size - s]]) { g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + s, cy + s); g.stroke(); }
+    g.font = '15px Georgia, serif'; g.fillText('Fig. 1.', w / 2, y0 + size + 34);
+    g.textAlign = 'right'; g.font = 'italic 17px Georgia, serif';
+    g.fillText('Inventor', w - 70, h - 70);
+    g.strokeStyle = '#2a2a2a'; g.beginPath(); g.moveTo(w - 260, h - 50); g.bezierCurveTo(w - 220, h - 80, w - 160, h - 30, w - 90, h - 55); g.stroke();
+  }), { roughness: 0.9 });
+  const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.004, 0.16, 8), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3 }));
+  pen.rotation.z = Math.PI / 2; pen.rotation.y = -0.5; pen.position.set(W / 2 + 0.1, TOP + 0.02, 0.2); group.add(pen);
+}
+
 /* --- Finale lectern */
 let lectern;
 function buildLectern(z) {
@@ -1266,11 +1780,138 @@ const STOPS = [
     ],
     facts: [['Pack', 'Four suits, 21 trumps and the Fool'], ['Played', 'Trick-taking games'], ['Fortune-telling', 'From about 1770']],
     build: buildTarot },
-  { id: 'next', wing: 3, title: 'From These Tables to Yours', short: 'Librarium', date: 'Today', rail: 'Today',
+  { id: 'wing4', wing: 4, title: 'Printed Boards and Parlour Tables', short: 'Wing IV', date: 'c. 1300 – 1900 CE', rail: 'Wing IV',
+    eyebrow: 'Wing IV · Librarium Museum of Play', status: null, begin: 'foxgeese',
+    body: [
+      'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
+      'Three tables are open: Fox and Geese, where you play the fox; Draughts; and the Game of the Goose, a race of pure luck.'
+    ],
+    facts: [['Tables', 'Fox and Geese, Draughts, the Goose'], ['Display', 'The new queen, Pachisi, Mahjong']],
+  },
+  { id: 'foxgeese', wing: 4, side: -1, z: -138, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
+    eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
+    body: [
+      'Fox and Geese is a hunt: one fox against a whole flock. Its likely ancestor is halatafl, the "tail board" game named in the Icelandic Grettis saga, which was written down in the 14th century. It is a cousin of the tafl games in Wing II.',
+      'The household accounts of Edward IV of England, who reigned from 1461 to 1483, record silver-gilt pieces for the game: two foxes and 26 hounds, enough for two sets. Boards scratched into cloister benches show that monks played it too, and Queen Victoria is said to have enjoyed it.',
+      'Rules varied from place to place. We play a common English form, with one museum rule added so that every game ends.'
+    ],
+    facts: [['Board', '33 points on a cross'], ['Pieces', '1 fox, 13 geese'], ['You play', 'The fox'], ['Win', 'Thin the flock, or slip away']],
+    build: buildFoxGeeseBoard },
+  { id: 'newqueen', wing: 4, side: 1, z: -143.5, title: 'The New Queen', date: 'c. 1475 CE', rail: 'The New Queen',
+    eyebrow: 'Valencia · late 15th century', status: ['known', 'Rules survive in writing'],
+    note: 'On display. Play shatranj in Wing III to feel how slow the old queen was.',
+    body: [
+      'For six centuries the piece beside the king was the firzan, a counsellor who stepped a single square diagonally. Then, in late 15th-century Spain, she became the strongest piece on the board, free to sweep any distance in any direction. The bishop gained its long diagonal move at the same time.',
+      'The earliest record of the new rules is Scachs d\'amor, a Catalan poem written in Valencia around 1475 by Francí de Castellví, Narcís Vinyoles and Bernat Fenollar, which plays out a game of chess as a courtship. Luis de Lucena\'s book on the game, printed in Salamanca around 1497, spread the new rules further, and the faster game soon replaced the old one across Europe.',
+      'On the case: the old firzan, left, and the new queen, right.'
+    ],
+    facts: [['Queen', 'Any distance, any direction'], ['Bishop', 'Any distance diagonally'], ['First record', 'Scachs d\'amor, c. 1475']],
+    build: buildNewChess },
+  { id: 'draughts', wing: 4, side: -1, z: -149, title: 'Draughts', date: 'c. 1100s – 1500s CE', rail: 'Draughts',
+    eyebrow: 'France, Spain and England', status: ['known', 'Rules survive in tradition'], game: 'draughts',
+    body: [
+      'Draughts was born when someone moved the pieces of alquerque, an Arabic game played on a grid of lines, onto a chessboard. When is disputed: the historian H. J. R. Murray thought the 12th century, while David Parlett finds the first possible reference in England in 1380. Early players called it fierges or ferses, after the medieval chess queen, and later dames.',
+      'Around 1535 the French made capturing compulsory, which turned a pleasant pastime into a sharp game of forced sacrifices. The first book on it was printed in Valencia in 1547, and in 1756 the London mathematician William Payne wrote the first in English. In America it is called checkers.'
+    ],
+    facts: [['Board', '8 × 8, dark squares only'], ['Pieces', '12 each'], ['Capture', 'Compulsory, by jumping'], ['Win', 'Take or block every enemy piece']],
+    build: buildDraughtsBoard },
+  { id: 'pachisi', wing: 4, side: 1, z: -154.5, title: 'Pachisi (Chaupar)', date: '16th century CE', rail: 'Pachisi',
+    eyebrow: 'India · Mughal court', status: ['known', 'Still played, and the ancestor of Ludo'],
+    note: 'On display. It is played by four, so the Scribe sits this one out.',
+    body: [
+      'Pachisi and its close relative chaupar are race games played on a cross of cloth with four arms of squares. Instead of dice, players throw cowrie shells and count how many land mouth up; the name comes from the Hindi for twenty-five, the highest throw.',
+      'How old it is is hard to pin down. A relief in the Ellora caves, carved between the 6th and 8th centuries, is often read as a game of this kind. The most famous board is a courtyard at Fatehpur Sikri, the city the Mughal emperor Akbar built in the 1570s, laid out in red and white stone; accounts say people stood in as the pieces.',
+      'British players took the game home. Simplified, with a single die and a square board, it was sold in England as Ludo from 1896, and in America as Parcheesi.'
+    ],
+    facts: [['Board', 'A cross of four arms'], ['Throws', 'Cowrie shells'], ['Pieces', '4 each, in four colours'], ['Descendants', 'Ludo, Parcheesi']],
+    build: buildPachisi },
+  { id: 'goose', wing: 4, side: -1, z: -160, title: 'The Game of the Goose', short: 'Game of the Goose', date: 'c. 1575 CE', rail: 'The Goose',
+    eyebrow: 'Italy and Europe · 16th century', status: ['known', 'Rules survive in print'], game: 'goose',
+    body: [
+      'The Game of the Goose is often called the first board game made to be sold. Francesco I de\' Medici, Grand Duke of Tuscany, sent one to Philip II of Spain sometime between 1574 and 1587, and in June 1597 the London printer John Wolfe registered "the newe and most pleasant game of the goose".',
+      'It is pure luck: two dice, a spiral of 63 squares, and a goose about every nine squares that sends you flying on. Printed sheets made it cheap, and from a French game of chronology in 1638 onwards, publishers borrowed its spiral to teach history and geography.'
+    ],
+    facts: [['Board', '63 squares in a spiral'], ['Dice', 'Two'], ['Skill', 'None at all'], ['Win', 'Land exactly on 63']],
+    build: buildGooseBoard },
+  { id: 'mahjong', wing: 4, side: 1, z: -165.5, title: 'Mahjong', date: 'mid-1800s CE', rail: 'Mahjong',
+    eyebrow: 'China · Qing dynasty', status: ['known', 'Still played today'],
+    note: 'On display. A full table needs four players, so the Scribe sits this one out.',
+    body: [
+      'Mahjong took shape in the Shanghai region in the middle or later years of the 19th century, during the Qing dynasty. It grew out of older Chinese card games and keeps their money suits: circles, bamboo and characters, joined by winds and dragons. A full set has 136 tiles, or 144 with the flowers and seasons.',
+      'After the First World War an American living in Shanghai, Joseph P. Babcock, simplified the rules, added English labels and coined the name mah-jongg. In the mid-1920s it became a craze in the United States, Britain and Australia, and in 1937 players in New York founded the National Mah Jongg League.'
+    ],
+    facts: [['Tiles', '136, or 144 with flowers'], ['Suits', 'Circles, bamboo, characters'], ['Players', 'Four']],
+    build: buildMahjong },
+  { id: 'wing5', wing: 5, title: 'The Modern Board Game', short: 'Wing V', date: 'c. 1840 CE – today', rail: 'Wing V',
+    eyebrow: 'Wing V · Librarium Museum of Play', status: null, begin: 'mansion',
+    body: [
+      'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
+      'Two tables are open: Reversi, and Dots and Boxes.'
+    ],
+    facts: [['Tables', 'Reversi, Dots and Boxes'], ['Display', 'Mansion of Happiness, Game of Life, Halma, the Landlord\'s Game']],
+  },
+  { id: 'mansion', wing: 5, side: -1, z: -183, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
+    eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'],
+    note: 'On display. Note the teetotum: dice were thought too close to gambling.',
+    body: [
+      'In 1843 W. & S. B. Ives of Salem, Massachusetts, published The Mansion of Happiness, "an instructive, moral and entertaining amusement". The Library of Congress calls it possibly the first board game published in the United States. It was close to a copy of an English game of 1800, and who adapted it is uncertain: Anne Abbott, who designed other games for the same publisher, has often been credited.',
+      'Players spun a numbered top called a teetotum and moved along a spiral. Virtues such as temperance and generosity carried them toward the mansion at the centre; vices such as idleness sent them back toward the pillory.'
+    ],
+    facts: [['Publisher', 'W. & S. B. Ives, Salem'], ['Moves', 'A spinning teetotum'], ['Goal', 'Reach the mansion at the centre']],
+    build: buildMansion },
+  { id: 'lifegame', wing: 5, side: 1, z: -188.5, title: 'The Checkered Game of Life', short: 'Checkered Game of Life', date: '1860 CE', rail: 'Game of Life',
+    eyebrow: 'Springfield, Massachusetts', status: ['known', 'Rules survive in print'],
+    note: 'On display.',
+    body: [
+      'Milton Bradley had just set up a colour lithography shop in Springfield, Massachusetts, when he printed The Checkered Game of Life in the winter of 1860. He sold the first few hundred copies himself on a two-day trip to New York, and by 1861 buyers had taken more than 45,000.',
+      'Like the Mansion of Happiness it was a moral journey, played with a teetotum. Its squares held the virtues and dangers of a life, from Influence and Fat Office to Poverty, Prison and Ruin. The company Bradley founded later grew it into The Game of Life.'
+    ],
+    facts: [['Maker', 'Milton Bradley'], ['Moves', 'A teetotum'], ['Sold', 'Over 45,000 by 1861']],
+    build: buildCheckeredLife },
+  { id: 'reversi', wing: 5, side: -1, z: -194, title: 'Reversi', date: '1883 CE', rail: 'Reversi',
+    eyebrow: 'Victorian England', status: ['known', 'Rules survive in print'], game: 'reversi',
+    body: [
+      'Two Englishmen, Lewis Waterman and John W. Mollett, each claimed to have invented reversi in 1883, and each called the other a fraud. Whoever was first, the game of flipping discs caught on: the Saturday Review mentioned it in 1886, and the German publisher Ravensburger was making it by 1893.',
+      'In 1971 the Japanese salesman Goro Hasegawa patented Othello, which starts from four discs in the centre instead of an empty board. Othello is the version played in tournaments today, and its opening is the one we use here.'
+    ],
+    facts: [['Board', '8 × 8'], ['Pieces', '64 two-sided discs'], ['Win', 'Most discs showing']],
+    build: buildReversiBoard },
+  { id: 'halma', wing: 5, side: 1, z: -199.5, title: 'Halma', date: '1883–84 CE', rail: 'Halma',
+    eyebrow: 'Massachusetts and Germany', status: ['known', 'Still played, as Chinese checkers'],
+    note: 'On display.',
+    body: [
+      'Halma, from the Greek for "leap", was invented in 1883 or 1884 by George Howard Monks, a surgeon at Harvard Medical School, who drew on an English game called Hoppity. Each player starts with a camp of men in one corner of a 16 × 16 board and races to move them all into the opposite corner, stepping, or leaping over any piece in chains of jumps.',
+      'In 1892 a version on a six-pointed star was published as Stern-Halma, "star Halma". Sold in America under a more exotic name, it became Chinese checkers: a game with no link to China, and none to checkers.'
+    ],
+    facts: [['Board', '16 × 16'], ['Players', 'Two or four'], ['Moves', 'A step, or chains of leaps'], ['Descendant', 'Chinese checkers']],
+    build: buildHalma },
+  { id: 'dotsboxes', wing: 5, side: -1, z: -205, title: 'Dots and Boxes', date: 'late 19th century CE', rail: 'Dots and Boxes',
+    eyebrow: 'France', status: ['known', 'Rules survive in print'], game: 'dotsboxes',
+    body: [
+      'Dots and Boxes needs only a pencil and paper. The French mathematician Édouard Lucas, best known for the Tower of Hanoi puzzle, published it in the late 19th century as la pipopipette, and it has gone by many names since, from boxes to pigs in a pen.',
+      'It looks simple, but it hides deep strategy. Strong players count the chains of boxes forming on the board and give a few boxes away on purpose, to force their opponent to open the long chains. The mathematician Elwyn Berlekamp wrote a whole book about it in 2000.'
+    ],
+    facts: [['Grid', '4 × 4 boxes'], ['Score', 'Close a box, draw again'], ['Win', 'Most boxes']],
+    build: buildDotsBoard },
+  { id: 'landlord', wing: 5, side: 1, z: -210.5, title: 'The Landlord\'s Game', date: '1904 CE', rail: 'Landlord\'s Game',
+    eyebrow: 'United States', status: ['known', 'Rules survive in the patent'],
+    note: 'On display, as a patent sheet. The track drawn here is our own sketch, not a copy of the patent figure.',
+    body: [
+      'Lizzie Magie was granted U.S. Patent 748,626 for The Landlord\'s Game on January 5, 1904. She meant it as a lesson. A follower of the economist Henry George, she wanted players to feel how land monopoly enriches landlords and ruins everyone else, and she gave the game two sets of rules: one that rewarded monopoly, and one that rewarded shared prosperity.',
+      'For years players made their own boards, adding the streets of their own towns; Quakers in Atlantic City gave it theirs. In 1935 Parker Brothers bought a version from Charles Darrow, published it as Monopoly and credited him as its inventor. Magie\'s part came back to light in the 1970s, when Ralph Anspach dug up her patents while fighting Parker Brothers in court over his game Anti-Monopoly.'
+    ],
+    facts: [['Patent', 'U.S. 748,626, 1904'], ['Inventor', 'Lizzie Magie'], ['Descendant', 'Monopoly (1935)']],
+    build: buildLandlord },
+  { id: 'next', wing: 5, title: 'From These Tables to Yours', short: 'Librarium', date: 'Today', rail: 'Today',
     eyebrow: 'Librarium Games', status: null,
     body: [
-      'Thousands of years after Senet, Ur and Weiqi, people still gather to throw dice, shuffle cards and corner each other\'s kings. Librarium Games carries the tradition on with tables of its own, from Calendra, a Celtic game of runes and seasons, to Phoenix Farm.',
-      'Wing IV is in preparation. Until it opens, the Librarium\'s own games are waiting in the Tavern.'
+      'From Senet to the Landlord\'s Game, every table in this hall began with someone deciding how a game should feel. Five thousand years on, people still gather to throw dice, shuffle tiles and corner each other\'s kings, and Librarium Games carries the tradition on with tables of its own.'
+    ],
+    games: [
+      { name: 'Phoenix Farm', url: 'https://librarium.games/phoenix-farm/', text: 'Raise magical firebirds and harvest their feathers for gold. For 1 to 6 players.' },
+      { name: 'Calendra', url: 'https://librarium.games/calendra/', text: 'A Celtic game of runes, about controlling the seasons through deception.' },
+      { name: 'The Great Chase', url: 'https://librarium.games/the-great-chase/', text: 'A cooperative game for 1 to 6 players that tests your teamwork.' },
+      { name: 'Royal Threadcount', url: 'https://librarium.games/royal-threadcount/', text: 'Also playable online on Tabletopia.' },
     ],
     facts: [],
     link: ['Visit Librarium Games', 'https://librarium.games/'] },
@@ -1322,7 +1963,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -1346,7 +1987,7 @@ async function hop(mesh, to, dur = 0.17, h = 0.05) {
  *   prompt()        what to tell the visitor on their turn */
 function racePresenter(G) {
   return {
-    camW: G.id === 'senet' ? 1.62 : 1.78,
+    camW: G.camW || (G.id === 'senet' ? 1.62 : 1.78),
     intro: () => `You play the ${G.sides[0]}, nearest to you. Throw to begin.`,
     setup(ex) {
       if (!ex.pieces) ex.pieces = G.makePieces(ex.group);
@@ -1377,7 +2018,7 @@ function racePresenter(G) {
       }
       return res;
     },
-    score: () => [['You', G.home(0) + '/' + G.N], ['Scribe', G.home(1) + '/' + G.N], 'borne off'],
+    score: () => (G.score ? G.score() : [['You', G.home(0) + '/' + G.N], ['Scribe', G.home(1) + '/' + G.N], 'borne off']),
     prompt: () => 'Throw when you are ready.',
   };
 }
@@ -1614,7 +2255,183 @@ const SHATRANJ_P = {
   },
   score: () => { const G = GAMES.shatranj; return [['You', G.material(0) + 1], ['Scribe', G.material(1) + 1], 'pieces']; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P };
+const FOXGEESE_P = {
+  camW: 1.0,
+  intro() { return 'You are the fox, in the centre. The geese move first.'; },
+  prompt: () => 'Choose a ring to move the fox. A ring beyond a goose is a jump.',
+  setup(ex) {
+    const G = GAMES.foxgeese;
+    if (!ex.pieces) ex.pieces = { fox: foxPiece(), geese: Array.from({ length: G.GEESE }, () => goosePiece()) };
+    ex.pieces.fox.parent || ex.group.add(ex.pieces.fox);
+    ex.pieces.geese.forEach(g => { g.parent || ex.group.add(g); g.visible = true; g.rotation.set(0, Math.PI / 2, 0); });
+    this.ex = ex; this.cell = Array(49).fill(null); this.lost = 0;
+    let k = 0;
+    for (let i = 0; i < 49; i++) {
+      const v = G.b[i]; if (!v) continue;
+      const m = v === 1 ? ex.pieces.fox : ex.pieces.geese[k++];
+      this.cell[i] = m; m.position.copy(this.pos(i));
+    }
+    ex.pieces.fox.rotation.set(0, Math.PI / 2, 0);
+  },
+  pos(i) { const c = fgCell(i); return V3(c.x, GAMES.foxgeese.surface, c.z); },
+  lostSpot(k) { return V3(0.5 + (k % 2) * 0.07, TOP, -0.34 + ((k / 2) | 0) * 0.07); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.foxgeese, tok = play.token;
+    const mesh = this.cell[m.from]; this.cell[m.from] = null;
+    const victims = m.caps.map(c => this.cell[c]);
+    m.caps.forEach(c => { this.cell[c] = null; });
+    this.cell[m.to] = mesh;
+    const res = G.apply(m);
+    let k = 0;
+    for (const sq of m.path) {
+      if (tok !== play.token) return res;
+      const to = this.pos(sq), from = mesh.position.clone();
+      mesh.rotation.y = Math.atan2(-(to.z - from.z), to.x - from.x);
+      await hop(mesh, to, m.caps.length ? 0.3 : 0.24, m.caps.length ? 0.09 : 0.03);
+      const v = victims[k++];
+      if (v) hop(v, this.lostSpot(this.lost++), 0.4, 0.14);
+    }
+    await wait(150);
+    return res;
+  },
+  score: () => { const G = GAMES.foxgeese; return [['Geese left', G.geese()], ['Fox wins at', G.FOX_WINS_AT], '']; },
+};
+
+const DRAUGHTS_P = {
+  camW: 1.1,
+  intro() { return 'You play the dark pieces and move first. ' + this.prompt(); },
+  prompt: () => 'Pick a piece, then a ring. If a capture is possible, you must take it.',
+  setup(ex) {
+    const G = GAMES.draughts;
+    if (!ex.pieces) {
+      ex.pieces = [0, 1].map(pl => Array.from({ length: 12 }, () => {
+        const mat = new THREE.MeshStandardMaterial({ color: pl ? 0xe8dcc0 : 0x3a1f12, roughness: 0.4 });
+        const m = new THREE.Mesh(drManGeo, mat); m.userData.mats = [mat];
+        const crown = new THREE.Mesh(drManGeo, mat); crown.position.y = 0.016; crown.visible = false; m.add(crown); m.userData.crown = crown;
+        const band = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.003, 6, 24), MAT.brass); band.rotation.x = Math.PI / 2; band.position.y = 0.024; band.visible = false; m.add(band); m.userData.band = band;
+        ex.group.add(m); return m;
+      }));
+    }
+    this.ex = ex; this.cell = Array(64).fill(null); this.lost = [0, 0];
+    const k = [0, 0];
+    ex.pieces.flat().forEach(m => { m.visible = true; this.crown(m, false); });
+    for (let i = 0; i < 64; i++) {
+      const v = G.b[i]; if (!v) continue;
+      const pl = G.owner(v), m = ex.pieces[pl][k[pl]++];
+      this.cell[i] = m; m.position.copy(this.pos(i));
+    }
+  },
+  crown(m, on) { m.userData.crown.visible = on; m.userData.band.visible = on; },
+  pos(i) { const c = drCell(i); return V3(c.x, GAMES.draughts.surface, c.z); },
+  lostSpot(owner, k) { return V3((owner === 1 ? 0.5 : -0.5), TOP + (k % 6) * 0.0165, -0.3 + ((k / 6) | 0) * 0.09); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.draughts, tok = play.token;
+    const mesh = this.cell[m.from]; this.cell[m.from] = null;
+    const victims = m.caps.map(c => this.cell[c]);
+    m.caps.forEach(c => { this.cell[c] = null; });
+    this.cell[m.to] = mesh;
+    const res = G.apply(m);
+    let k = 0;
+    for (const sq of m.path) {
+      if (tok !== play.token) return res;
+      await hop(mesh, this.pos(sq), m.caps.length ? 0.3 : 0.26, m.caps.length ? 0.08 : 0.025);
+      const v = victims[k++];
+      if (v) { const owner = 1 - m.pl; hop(v, this.lostSpot(owner, this.lost[owner]++), 0.4, 0.14); }
+    }
+    if (m.crown) { this.crown(mesh, true); await tween(0.3, q => { mesh.userData.crown.scale.setScalar(Math.max(0.01, q)); }); }
+    return res;
+  },
+  score: () => { const G = GAMES.draughts; return [['You', G.count(0)], ['Scribe', G.count(1)], 'pieces']; },
+};
+
+// The Goose is a race game: it borrows the race presenter, with its own pieces and spiral.
+const GOOSE = Object.assign(R.goose, {
+  camW: 1.12, pieceH: 0,
+  makePieces(group) { return [[goosePawn(0xd4a23a)], [goosePawn(0xc8ccd2)]].map(a => { a.forEach(m => group.add(m)); return a; }); },
+  local(pl, sq) { const c = gsCell(sq); return V3(c.x + (pl ? 0.022 : -0.022), this.surface, c.z + (pl ? 0.016 : -0.016)); },
+  score() { return [['You', 'square ' + this.pos[0][0]], ['Scribe', 'square ' + this.pos[1][0]], '· land on 63 to win']; },
+  winText: pl => (pl === 0 ? 'You reached the garden at 63 first.' : 'The Scribe reached the garden at 63 first.'),
+});
+const REVERSI_P = {
+  camW: 1.06,
+  intro() { return 'You play the dark discs and move first. ' + this.prompt(); },
+  prompt: () => 'Choose a ring to place a disc. Every Scribe disc you trap in a line flips to dark.',
+  setup(ex) {
+    const G = GAMES.reversi;
+    if (!ex.pieces) ex.pieces = Array.from({ length: 64 }, () => { const d = rvDisc(); d.visible = false; ex.group.add(d); return d; });
+    this.ex = ex; this.cell = Array(64).fill(null); this.free = ex.pieces.slice();
+    ex.pieces.forEach(d => { d.visible = false; });
+    for (let i = 0; i < 64; i++) if (G.b[i]) this.put(i, G.b[i] - 1, false);
+  },
+  pos(i) { const c = rvCell(i); return V3(c.x, GAMES.reversi.surface + 0.006, c.z); },
+  face: pl => (pl === 0 ? 0 : Math.PI),
+  put(i, pl) { const d = this.free.pop(); d.visible = true; d.position.copy(this.pos(i)); d.rotation.set(this.face(pl), 0, 0); this.cell[i] = d; return d; },
+  meshesFor() { return []; },
+  ringFor(m) { return m.pass ? null : this.pos(m.at); },
+  async play(m) {
+    const G = GAMES.reversi, tok = play.token;
+    if (m.pass) return G.apply(m);
+    const res = G.apply(m);
+    const d = this.put(m.at, m.pl);
+    const to = d.position.clone(); d.position.y += 0.12;
+    await tween(0.22, k => { d.position.y = to.y + 0.12 * (1 - k); });
+    for (const f of m.flips) {
+      if (tok !== play.token) return res;
+      const disc = this.cell[f], base = disc.position.y, a0 = disc.rotation.x, a1 = this.face(m.pl);
+      await tween(0.16, k => { disc.rotation.x = a0 + (a1 - a0) * k; disc.position.y = base + Math.sin(k * Math.PI) * 0.03; });
+    }
+    return res;
+  },
+  score: () => { const G = GAMES.reversi; return [['You', G.count(0)], ['Scribe', G.count(1)], 'discs']; },
+};
+
+const DOTS_P = {
+  camW: 0.98, ringScale: 0.9,
+  intro() { return this.prompt(); },
+  prompt: () => 'Choose a ring to draw a line between two dots.',
+  setup(ex) {
+    const G = GAMES.dotsboxes;
+    if (!ex.pieces) {
+      ex.pieces = {
+        lines: Array.from({ length: G.EDGES }, (_, e) => {
+          const m = new THREE.Mesh(dbLineGeo, dbLineMats[0]); const mid = dbEdgeMid(e);
+          m.position.copy(mid.pos); m.position.y = G.surface + 0.002; if (!mid.horiz) m.rotation.y = Math.PI / 2;
+          m.visible = false; ex.group.add(m); return m;
+        }),
+        boxes: Array.from({ length: G.N * G.N }, (_, b) => {
+          const r = (b / G.N) | 0, c = b % G.N;
+          const m = new THREE.Mesh(dbBoxGeo, new THREE.MeshBasicMaterial({ color: 0xd4a23a, transparent: true, opacity: 0, depthWrite: false }));
+          m.rotation.x = -Math.PI / 2; m.position.set((c - 1.5) * DB_S, G.surface + 0.001, (r - 1.5) * DB_S);
+          m.visible = false; ex.group.add(m); return m;
+        }),
+      };
+    }
+    this.ex = ex;
+    ex.pieces.lines.forEach(l => { l.visible = false; });
+    ex.pieces.boxes.forEach(b => { b.visible = false; b.material.opacity = 0; });
+  },
+  meshesFor() { return []; },
+  ringFor(m) { const p = dbEdgeMid(m.e).pos; return V3(p.x, GAMES.dotsboxes.surface, p.z); },
+  async play(m) {
+    const G = GAMES.dotsboxes, P = this.ex.pieces;
+    const res = G.apply(m);
+    const line = P.lines[m.e]; line.material = dbLineMats[m.pl]; line.visible = true;
+    await tween(0.2, k => { line.scale.set(Math.max(0.01, k), 1, 1); });
+    for (const b of res.boxes) {
+      const f = P.boxes[b]; f.visible = true; f.material.color.setHex(m.pl === 0 ? 0xd4a23a : 0x5a7aaa);
+      await tween(0.3, k => { f.material.opacity = 0.55 * k; });
+    }
+    return res;
+  },
+  score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], 'boxes of 16']; },
+};
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -1639,8 +2456,8 @@ function flyTo(pos, target, dur = 1.6) {
 }
 function stopView(stop) {
   if (stop.id === 'hall') return { pos: V3(0, 1.62, 2.4), target: V3(0, 1.75, -12) };
-  if (stop.id === 'wing2' || stop.id === 'wing3') {
-    const d = HALL.dividers[stop.id === 'wing2' ? 0 : 1];
+  if (/^wing\d$/.test(stop.id)) {
+    const d = HALL.dividers[+stop.id.slice(4) - 2];
     return { pos: V3(0, 1.62, d - 1.2), target: V3(0, 1.85, d - 14) };
   }
   if (stop.id === 'next') return { pos: V3(0, 1.62, lectern.position.z + 3), target: V3(0, 1.15, lectern.position.z) };
@@ -1685,7 +2502,7 @@ const rail = $('#lm-rail');
 const railButtons = [];
 STOPS.forEach((s, i) => {
   if (i === 0 || STOPS[i - 1].wing !== s.wing) {
-    const w = document.createElement('span'); w.className = 'wing'; w.textContent = ['', 'Wing I', 'Wing II', 'Wing III'][s.wing]; rail.appendChild(w);
+    const w = document.createElement('span'); w.className = 'wing'; w.textContent = ['', 'Wing I', 'Wing II', 'Wing III', 'Wing IV', 'Wing V'][s.wing]; rail.appendChild(w);
   }
   const b = document.createElement('button');
   b.innerHTML = '<span class="t"></span><span class="d"></span><span class="sr">, visited</span>';
@@ -1702,6 +2519,15 @@ function renderPlacard(s) {
   el('div', 'date', s.date);
   if (s.status) el('div', 'status ' + s.status[0], s.status[1]);
   s.body.forEach(p => el('p', '', p));
+  if (s.games) {
+    const ul = el('ul', 'gamelist');
+    for (const gm of s.games) {
+      const li = document.createElement('li'), a = document.createElement('a');
+      a.href = gm.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = gm.name;
+      const p = document.createElement('span'); p.textContent = gm.text;
+      li.append(a, p); ul.appendChild(li);
+    }
+  }
   if (s.facts.length) {
     const dl = el('dl', 'facts');
     s.facts.forEach(([k, v]) => { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); });
@@ -1841,11 +2667,11 @@ function updateScore() {
 }
 function renderDice(g, r, shaking = false) {
   const d = $('#lm-dice'); d.innerHTML = ''; d.classList.toggle('shake', shaking);
-  const faces = r ? r.faces : g.id === 'tables' ? [1, 1] : [0, 0, 0, 0];
+  const faces = r ? r.faces : g.pipDice ? [1, 1] : [0, 0, 0, 0];
   faces.forEach(f => {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', '0 0 30 30');
-    if (g.id === 'tables') {
+    if (g.pipDice) {
       const p = document.createElementNS(ns, 'rect'); p.setAttribute('x', '3'); p.setAttribute('y', '3'); p.setAttribute('width', '24'); p.setAttribute('height', '24'); p.setAttribute('rx', '5');
       p.setAttribute('fill', '#ecdfc3'); p.setAttribute('stroke', '#a8977a'); p.setAttribute('stroke-width', '1.2'); svg.appendChild(p);
       const pips = { 1: [[15, 15]], 2: [[9, 9], [21, 21]], 3: [[9, 9], [15, 15], [21, 21]], 4: [[9, 9], [21, 9], [9, 21], [21, 21]], 5: [[9, 9], [21, 9], [15, 15], [9, 21], [21, 21]], 6: [[9, 8], [21, 8], [9, 15], [21, 15], [9, 22], [21, 22]] }[r ? f : 1];
@@ -1862,7 +2688,8 @@ function renderDice(g, r, shaking = false) {
     d.appendChild(svg);
   });
 }
-function rollText(g, r) { return g.id === 'tables' ? (r.faces[0] === r.faces[1] ? `double ${r.faces[0]}s` : `${r.faces[0]} and ${r.faces[1]}`) : String(r.value); }
+const readTime = note => Math.min(2800, 700 + note.length * 22);
+function rollText(g, r) { return g.pipDice ? (r.faces[0] === r.faces[1] ? `double ${r.faces[0]}s` : `${r.faces[0]} and ${r.faces[1]}`) : String(r.value); }
 async function showRoll(r) {
   const g = play.game, tok = play.token;
   for (let k = 0; k < (reduceMotion ? 1 : 5); k++) { renderDice(g, g.roll(), true); await wait(90); if (tok !== play.token) return false; }
@@ -1874,6 +2701,16 @@ function beginTurn(pl, first) {
   const g = play.game, P = play.P;
   updateScore();
   if (!g.dice) { const r = g.result(pl); if (r) return finish(r); }
+  if (g.skipTurn) {
+    const why = g.skipTurn(pl);
+    if (why) {
+      play.phase = 'skip'; $('#lm-throwBtn').disabled = true;
+      setMsg(pl === 0 ? 'Your turn' : 'The Scribe', why);
+      const tok = play.token;
+      setTimeout(() => { if (tok === play.token) beginTurn(1 - pl); }, 1800);
+      return;
+    }
+  }
   if (pl === 0) {
     if (g.dice) {
       play.phase = 'throw'; $('#lm-throwBtn').disabled = false;
@@ -1904,6 +2741,12 @@ async function humanThrow() {
     await wait(1500); if (tok !== play.token) return;
     beginTurn(1); return;
   }
+  if (g.autoMove && moves.length === 1) {
+    setMsg('Your turn', `You threw ${rollText(g, r)}.`);
+    play.moves = moves; play.phase = 'choose';
+    await wait(400); if (tok !== play.token) return;
+    return choose(moves[0]);
+  }
   offer(moves, `You threw ${rollText(g, r)}. Choose a glowing piece${moves.length === 1 ? ' (only one can move)' : ''}.`);
 }
 async function choose(m) {
@@ -1915,13 +2758,13 @@ async function choose(m) {
   updateScore();
   if (res.followUp && res.followUp.length) { offer(res.followUp, (res.note ? res.note + ' ' : '') + g.followPrompt); return; }
   if (g.dice) {
-    if (g.done(0)) return finish({ winner: 0 });
+    if (g.done(0)) return finish({ winner: 0, text: g.winText ? g.winText(0) : '' });
     if (g.extra(m, play.roll.value)) {
       setMsg('Your turn', (res.note ? res.note + ' ' : '') + g.extraNote);
       play.phase = 'throw'; $('#lm-throwBtn').disabled = false; return;
     }
   }
-  if (res.note) { setMsg('Your turn', res.note); await wait(850); if (tok !== play.token) return; }
+  if (res.note) { setMsg('Your turn', res.note); await wait(readTime(res.note)); if (tok !== play.token) return; }
   beginTurn(1);
 }
 async function aiTurn() {
@@ -1950,9 +2793,9 @@ async function aiTurn() {
       updateScore();
       if (res.note) setMsg('The Scribe', res.note);
     }
-    if (g.done(1)) return finish({ winner: 1 });
+    if (g.done(1)) return finish({ winner: 1, text: g.winText ? g.winText(1) : '' });
     if (g.extra(m, r.value)) { setMsg('The Scribe', (res.note ? res.note + ' ' : '') + 'The Scribe throws again.'); await wait(900); if (tok !== play.token) return; aiTurn(); return; }
-    if (res.note) { setMsg('The Scribe', res.note); await wait(1100); if (tok !== play.token) return; }
+    if (res.note) { setMsg('The Scribe', res.note); await wait(readTime(res.note) + 250); if (tok !== play.token) return; }
     beginTurn(0);
     return;
   }
@@ -2022,6 +2865,7 @@ function highlight(moves) {
   play.twoStep = [...play.byMesh.values()].some(a => a.length > 1);
   play.byMesh.forEach((_, ms) => play.glowing.add(ms));
   for (const m of moves) if (!play.twoStep || !P.meshesFor(m).some(Boolean)) addRing(m);
+  if (play.twoStep && play.byMesh.size === 1) select([...play.byMesh.keys()][0]);
 }
 function dropRings(keep) {
   play.rings = play.rings.filter(r => { if (keep(r)) return true; r.parent && r.parent.remove(r); r.material.dispose(); return false; });
@@ -2246,7 +3090,7 @@ window.addEventListener('blur', () => keys.clear());
 function settleNearest() {
   let best = -1, bd = 3.4;
   STOPS.forEach((s, i) => {
-    if (s.id === 'hall' || s.id === 'wing2' || s.id === 'wing3') return;
+    if (s.id === 'hall' || /^wing\d$/.test(s.id)) return;
     const v = stopView(s); const d = Math.hypot(v.target.x - cam.pos.x, v.target.z - cam.pos.z);
     if (d < bd) { bd = d; best = i; }
   });
@@ -2362,6 +3206,12 @@ async function boot() {
 if (/[?&]debug\b/.test(location.search)) {
   window.__museum = {
     play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop,
+    // Put the camera at an exhibit straight away, without the glide (for slow test machines).
+    jump(id) {
+      const i = STOPS.findIndex(x => x.id === id); goStop(i, false); showPlacard(false);
+      const v = stopView(STOPS[i]), a = lookAngles(v.pos, v.target);
+      camTween = null; cam.pos.copy(v.pos); cam.yaw = a.yaw; cam.pitch = a.pitch; step();
+    },
     // Render one frame and return a small JPEG of the 3D view.
     snap(w = 360) { step(); const c = document.createElement('canvas'); c.width = w; c.height = Math.round(w * canvas.height / canvas.width); c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.55); },
   };
