@@ -20,6 +20,7 @@
 
   <div class="brand"><div class="mark">Librarium</div><div class="sub">Museum of Play</div></div>
   <button class="iconbtn" id="lm-helpBtn" aria-label="How to explore">?</button>
+  <button class="iconbtn soundbtn" id="lm-soundBtn" aria-label="Sound on. Mute" aria-pressed="true"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 8h3l4-3v10l-4-3H3z" fill="currentColor"/><path class="wave" d="M13 7.2a4 4 0 0 1 0 5.6M15.2 5a7 7 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path class="mute" d="M13 7.5l5 5M18 7.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   <button class="iconbtn fsbtn" id="lm-fsBtn" aria-label="Full screen"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 8V3h5M12 3h5v5M17 12v5h-5M8 17H3v-5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
 
   <aside class="placard away" id="lm-placard" aria-live="polite">
@@ -42,6 +43,7 @@
         <button data-level="fair" aria-pressed="true">Fair</button>
         <button data-level="sharp" aria-pressed="false">Sharp</button>
       </div>
+      <div class="level" id="lm-variant" role="group" aria-label="Game variant" hidden></div>
       <button class="hudbtn" id="lm-rulesBtn">Rules</button>
       <button class="hudbtn" id="lm-leaveBtn">Leave the table</button>
     </div>

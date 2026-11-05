@@ -1577,10 +1577,25 @@ function buildHalma(group) {
 }
 
 /* --- Wing V: Dots and Boxes, on a writing slope */
-const DB_S = 0.155;
-function dbDot(r, c) { return V3((c - 2) * DB_S, 0, (r - 2) * DB_S); }
+// The dots span the same 0.62 m whatever the grid size; DB_S is the gap for the current size.
+const DB_SPAN = 0.62;
+let DB_S = DB_SPAN / 4;
+function dbN() { return window.LibrariumRules.dotsboxes.N; }
+function dbDot(r, c) { const h = dbN() / 2; return V3((c - h) * DB_S, 0, (r - h) * DB_S); }
+function dbPaper(n) {
+  const W = 0.86, px = 1024, sc = px / W, s = DB_SPAN / n;
+  return tex(px, px, (g) => {
+    g.fillStyle = '#f2ead6'; g.fillRect(0, 0, px, px);
+    speckle(g, px, px, 1500, ['#d8ccb0'], 1.2);
+    g.strokeStyle = 'rgba(70,110,170,.25)'; g.lineWidth = 2;
+    for (let y = 40; y < px; y += 34) { g.beginPath(); g.moveTo(0, y); g.lineTo(px, y); g.stroke(); }
+    g.strokeStyle = 'rgba(190,60,60,.35)'; g.beginPath(); g.moveTo(90, 0); g.lineTo(90, px); g.stroke();
+    g.fillStyle = '#1d1a16';
+    for (let r = 0; r <= n; r++) for (let c = 0; c <= n; c++) { g.beginPath(); g.arc(px / 2 + (c - n / 2) * s * sc, px / 2 + (r - n / 2) * s * sc, 9, 0, TAU); g.fill(); }
+  });
+}
 function dbEdgeMid(e) {
-  const N = 4;
+  const N = dbN();
   if (e < N * (N + 1)) { const r = (e / N) | 0, c = e % N; const a = dbDot(r, c), b = dbDot(r, c + 1); return { pos: a.add(b).multiplyScalar(0.5), horiz: true }; }
   const k = e - N * (N + 1), r = (k / (N + 1)) | 0, c = k % (N + 1); const a = dbDot(r, c), b = dbDot(r + 1, c); return { pos: a.add(b).multiplyScalar(0.5), horiz: false };
 }
@@ -1588,16 +1603,8 @@ function buildDotsBoard(group) {
   const W = 0.86;
   const desk = new THREE.Mesh(new THREE.BoxGeometry(W + 0.06, 0.03, W + 0.06), new THREE.MeshStandardMaterial({ color: 0x3a2312, roughness: 0.55 }));
   desk.position.y = TOP + 0.015; group.add(desk);
-  const px = 1024, sc = px / W;
-  topPlane(group, W, W, TOP + 0.0305, tex(px, px, (g) => {
-    g.fillStyle = '#f2ead6'; g.fillRect(0, 0, px, px);
-    speckle(g, px, px, 1500, ['#d8ccb0'], 1.2);
-    g.strokeStyle = 'rgba(70,110,170,.25)'; g.lineWidth = 2;
-    for (let y = 40; y < px; y += 34) { g.beginPath(); g.moveTo(0, y); g.lineTo(px, y); g.stroke(); }
-    g.strokeStyle = 'rgba(190,60,60,.35)'; g.beginPath(); g.moveTo(90, 0); g.lineTo(90, px); g.stroke();
-    g.fillStyle = '#1d1a16';
-    for (let r = 0; r <= 4; r++) for (let c = 0; c <= 4; c++) { g.beginPath(); g.arc(px / 2 + (c - 2) * DB_S * sc, px / 2 + (r - 2) * DB_S * sc, 9, 0, TAU); g.fill(); }
-  }), { roughness: 0.9 });
+  const paper = topPlane(group, W, W, TOP + 0.0305, dbPaper(4), { roughness: 0.9 });
+  group.userData.dots = { paper, maps: { 4: paper.material.map } };
   // An inkwell and a pencil beside the sheet.
   const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.034, 0.045, 18), new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.15, metalness: 0.2 }));
   glass.position.set(W / 2 + 0.1, TOP + 0.0225, -0.22); group.add(glass);
@@ -1605,9 +1612,7 @@ function buildDotsBoard(group) {
   pencil.rotation.z = Math.PI / 2; pencil.rotation.y = 0.4; pencil.position.set(W / 2 + 0.1, TOP + 0.005, 0.15); group.add(pencil);
   return TOP + 0.031;
 }
-const dbLineGeo = new THREE.BoxGeometry(DB_S - 0.02, 0.004, 0.008);
 const dbLineMats = [new THREE.MeshStandardMaterial({ color: 0x8a5a12, roughness: 0.6 }), new THREE.MeshStandardMaterial({ color: 0x2a3a5a, roughness: 0.6 })];
-const dbBoxGeo = new THREE.PlaneGeometry(DB_S - 0.03, DB_S - 0.03);
 
 /* --- Wing V: The Landlord's Game, as its patent drawing (display) */
 function buildLandlord(group) {
@@ -2902,22 +2907,30 @@ const REVERSI_P = {
 };
 
 const DOTS_P = {
-  camW: 0.98, ringScale: 0.9,
+  camW: 0.98, get ringScale() { return 0.9 * 4 / dbN(); },
   intro() { return this.prompt(); },
   prompt: () => 'Choose a ring to draw a line between two dots.',
   setup(ex) {
-    const G = GAMES.dotsboxes;
+    const G = GAMES.dotsboxes, n = G.N, d = ex.group.userData.dots;
+    DB_S = DB_SPAN / n;
+    d.maps[n] = d.maps[n] || dbPaper(n); d.paper.material.map = d.maps[n]; d.paper.material.needsUpdate = true;
+    if (ex.pieces && ex.pieces.n !== n) { // a new grid size: throw away the old lines and boxes
+      [...ex.pieces.lines, ...ex.pieces.boxes].forEach(m => { ex.group.remove(m); m.geometry.dispose(); });
+      ex.pieces = null;
+    }
     if (!ex.pieces) {
+      const lineGeo = new THREE.BoxGeometry(DB_S - 0.02, 0.004, 0.008), boxGeo = new THREE.PlaneGeometry(DB_S - 0.03, DB_S - 0.03);
       ex.pieces = {
+        n,
         lines: Array.from({ length: G.EDGES }, (_, e) => {
-          const m = new THREE.Mesh(dbLineGeo, dbLineMats[0]); const mid = dbEdgeMid(e);
+          const m = new THREE.Mesh(lineGeo, dbLineMats[0]); const mid = dbEdgeMid(e);
           m.position.copy(mid.pos); m.position.y = G.surface + 0.002; if (!mid.horiz) m.rotation.y = Math.PI / 2;
           m.visible = false; ex.group.add(m); return m;
         }),
         boxes: Array.from({ length: G.N * G.N }, (_, b) => {
           const r = (b / G.N) | 0, c = b % G.N;
-          const m = new THREE.Mesh(dbBoxGeo, new THREE.MeshBasicMaterial({ color: 0xd4a23a, transparent: true, opacity: 0, depthWrite: false }));
-          m.rotation.x = -Math.PI / 2; m.position.set((c - 1.5) * DB_S, G.surface + 0.001, (r - 1.5) * DB_S);
+          const m = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({ color: 0xd4a23a, transparent: true, opacity: 0, depthWrite: false }));
+          m.rotation.x = -Math.PI / 2; m.position.set((c - (n - 1) / 2) * DB_S, G.surface + 0.001, (r - (n - 1) / 2) * DB_S);
           m.visible = false; ex.group.add(m); return m;
         }),
       };
@@ -2939,7 +2952,7 @@ const DOTS_P = {
     }
     return res;
   },
-  score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], 'boxes of 16']; },
+  score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
 const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES) };
 
@@ -3086,6 +3099,100 @@ function goStop(i, fly = true) {
 $('#lm-closeP').addEventListener('click', () => showPlacard(false));
 
 // Full screen, where the browser allows it (a phone or an embedded viewer may not).
+/* ------------------------------------------------------------- sound
+ * Every sound is made on the spot with the Web Audio API, so there are no
+ * audio files to license or load. Nothing plays until the visitor's first
+ * click, tap or key, as browsers require; the speaker button mutes it all. */
+const sfx = (() => {
+  let ctx = null, master = null, noiseBuf = null, room = null, crackle = null;
+  let on = store.sound !== false;
+  function make() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    ctx = new AC();
+    master = ctx.createGain(); master.gain.value = 0.8; master.connect(ctx.destination);
+    noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return ctx;
+  }
+  function ready() { if (!on) return false; if (!ctx && !make()) return false; if (ctx.state === 'suspended') ctx.resume(); return true; }
+  // A filtered burst of noise: knocks, clicks and rattles.
+  function burst(t, { dur = 0.05, freq = 2000, q = 3, gain = 0.4, type = 'bandpass' } = {}) {
+    const src = ctx.createBufferSource(); src.buffer = noiseBuf;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+    const g = ctx.createGain(); const at = ctx.currentTime + t;
+    g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(gain, at + 0.002); g.gain.exponentialRampToValueAtTime(0.0008, at + dur);
+    src.connect(f); f.connect(g); g.connect(master);
+    src.start(at, Math.random() * 1.5); src.stop(at + dur + 0.02);
+  }
+  // A short pitched note with a fast decay: wood, stone, bells.
+  function tone(t, { freq = 440, dur = 0.25, gain = 0.2, type = 'sine', bend = 1 } = {}) {
+    const o = ctx.createOscillator(); o.type = type;
+    const g = ctx.createGain(); const at = ctx.currentTime + t;
+    o.frequency.setValueAtTime(freq, at); if (bend !== 1) o.frequency.exponentialRampToValueAtTime(freq * bend, at + dur);
+    g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(gain, at + 0.004); g.gain.exponentialRampToValueAtTime(0.0008, at + dur);
+    o.connect(g); g.connect(master); o.start(at); o.stop(at + dur + 0.02);
+  }
+  // Room tone: a low hush, with now and then a candle crackling.
+  function startRoom() {
+    if (room || !ready()) return;
+    const src = ctx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320;
+    const g = ctx.createGain(); g.gain.value = 0;
+    g.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 2.5);
+    src.connect(lp); lp.connect(g); g.connect(master); src.start();
+    room = { src, g };
+    const tick = () => {
+      if (!room) return;
+      if (on && !document.hidden) { const n = 1 + ((Math.random() * 3) | 0); for (let k = 0; k < n; k++) burst(k * 0.03 + Math.random() * 0.02, { dur: 0.02, freq: 2500 + Math.random() * 2500, q: 1, gain: 0.025 }); }
+      crackle = setTimeout(tick, 900 + Math.random() * 3200);
+    };
+    tick();
+  }
+  function stopRoom() { if (!room) return; const r = room; room = null; clearTimeout(crackle); r.g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4); setTimeout(() => { try { r.src.stop(); } catch (e) { /* already stopped */ } }, 500); }
+  const api = {
+    get on() { return on; },
+    unlock() { if (on) startRoom(); },
+    set(v) { on = v; store.sound = v; save(); if (v) startRoom(); else stopRoom(); },
+    // Senet's throwing sticks clatter; dice rattle and settle.
+    roll(g) {
+      if (!ready()) return;
+      if (g.id === 'senet') { for (let k = 0; k < 4; k++) { burst(k * 0.045 + Math.random() * 0.02, { dur: 0.07, freq: 1500 + Math.random() * 600, q: 6, gain: 0.5 }); tone(k * 0.045, { freq: 380 + Math.random() * 120, dur: 0.06, gain: 0.08, type: 'triangle' }); } return; }
+      const n = g.id === 'ur' ? 5 : 8;
+      for (let k = 0; k < n; k++) burst(k * 0.035 + Math.random() * 0.02, { dur: 0.03, freq: 2800 + Math.random() * 1600, q: 4, gain: 0.35 });
+      burst(n * 0.04, { dur: 0.08, freq: 900, q: 2, gain: 0.35 });
+    },
+    // A piece set down: wood by default, stone for Go, a pencil stroke for Dots and Boxes.
+    move(g, m, res) {
+      if (!ready() || !m || m.pass) return;
+      const caps = (res && ((res.caps && res.caps.length) || (res.boxes && res.boxes.length))) || 0;
+      if (g.id === 'go') { burst(0, { dur: 0.04, freq: 3200, q: 5, gain: 0.45 }); tone(0, { freq: 1900, dur: 0.05, gain: 0.08 }); }
+      else if (g.id === 'dotsboxes') burst(0, { dur: 0.16, freq: 5000, q: 0.8, gain: 0.12, type: 'highpass' });
+      else if (g.id === 'reversi') { tone(0, { freq: 520, dur: 0.07, gain: 0.12, type: 'triangle' }); burst(0, { dur: 0.03, freq: 2600, q: 3, gain: 0.25 }); }
+      else { tone(0, { freq: 210 + Math.random() * 40, dur: 0.12, gain: 0.22, type: 'triangle', bend: 0.8 }); burst(0, { dur: 0.03, freq: 1800, q: 2, gain: 0.25 }); }
+      if (caps) for (let k = 0; k < Math.min(caps, 4); k++) { tone(0.14 + k * 0.09, { freq: 300, dur: 0.1, gain: 0.16, type: 'triangle', bend: 0.7 }); burst(0.14 + k * 0.09, { dur: 0.03, freq: 1400, q: 2, gain: 0.2 }); }
+    },
+    card() { if (ready()) burst(0, { dur: 0.12, freq: 3500, q: 0.7, gain: 0.18, type: 'highpass' }); },
+    // Three rising bell notes for a win, two falling for a loss, one for a draw.
+    end(winner) {
+      if (!ready()) return;
+      const notes = winner === 0 ? [523, 659, 784] : winner === 1 ? [392, 330] : [440];
+      notes.forEach((f, k) => { tone(k * 0.16, { freq: f, dur: 0.9, gain: 0.12 }); tone(k * 0.16, { freq: f * 2.76, dur: 0.4, gain: 0.03 }); });
+    },
+  };
+  document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on) ctx.resume(); });
+  return api;
+})();
+const soundBtn = $('#lm-soundBtn');
+function renderSoundBtn() {
+  soundBtn.setAttribute('aria-pressed', String(sfx.on));
+  soundBtn.setAttribute('aria-label', sfx.on ? 'Sound on. Mute' : 'Sound off. Turn on');
+  soundBtn.classList.toggle('off', !sfx.on);
+}
+soundBtn.addEventListener('click', () => { sfx.set(!sfx.on); renderSoundBtn(); });
+renderSoundBtn();
+// Browsers allow sound only after the visitor does something on the page.
+['pointerdown', 'keydown'].forEach(t => root.addEventListener(t, () => sfx.unlock(), { once: true, capture: true }));
 const fsBtn = $('#lm-fsBtn');
 if (!document.fullscreenEnabled || !root.requestFullscreen) fsBtn.hidden = true;
 fsBtn.addEventListener('click', () => {
@@ -3108,6 +3215,22 @@ function setScribeLevel(name) {
 }
 levelButtons.forEach(b => b.addEventListener('click', () => setScribeLevel(b.dataset.level)));
 setScribeLevel(store.level || 'fair');
+// Some tables offer variants (a bigger grid, say). Choosing one restarts the game.
+function renderVariants(g) {
+  const box = $('#lm-variant'); box.innerHTML = '';
+  box.hidden = !g.variants;
+  if (!g.variants) return;
+  const label = document.createElement('span'); label.textContent = g.variantLabel || 'Size'; box.appendChild(label);
+  for (const v of g.variants) {
+    const b = document.createElement('button'); b.textContent = v.label; b.setAttribute('aria-pressed', String(v.id === g.variant));
+    b.addEventListener('click', () => {
+      if (v.id === g.variant) return;
+      store.variants = Object.assign(store.variants || {}, { [g.id]: v.id }); save();
+      const ex = play.ex; play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex);
+    });
+    box.appendChild(b);
+  }
+}
 $('#lm-helpBtn').addEventListener('click', () => { if (mode === 'gallery') goStop(0); else $('#lm-rules').hidden = !$('#lm-rules').hidden; });
 
 /* ------------------------------------------------------------- play table */
@@ -3126,6 +3249,8 @@ async function startGame(ex) {
   const g = GAMES[ex.game], P = PRES[ex.game];
   play.ex = ex; play.game = g; play.P = P; play.token++;
   g.surface = ex.surface;
+  if (g.variants) g.setVariant((store.variants || {})[g.id] || g.variant);
+  renderVariants(g);
   g.init(); P.setup(ex);
   showPlacard(false); $('#lm-hint').style.opacity = 0; rail.hidden = true;
   root.classList.add('playing');
@@ -3205,6 +3330,7 @@ const readTime = note => Math.min(2800, 700 + note.length * 22);
 function rollText(g, r) { return g.pipDice && r.faces.length === 1 ? String(r.faces[0]) : g.pipDice ? (r.faces[0] === r.faces[1] ? `double ${r.faces[0]}s` : `${r.faces[0]} and ${r.faces[1]}`) : String(r.value); }
 async function showRoll(r) {
   const g = play.game, tok = play.token;
+  sfx.roll(g);
   for (let k = 0; k < (reduceMotion ? 1 : 5); k++) { renderDice(g, g.roll(), true); await wait(90); if (tok !== play.token) return false; }
   renderDice(g, r, false);
   return tok === play.token;
@@ -3270,6 +3396,7 @@ async function choose(m) {
   const g = play.game, tok = play.token;
   const res = await play.P.play(m);
   if (tok !== play.token) return;
+  sfx.move(g, m, res);
   updateScore();
   if (res.followUp && res.followUp.length) { offer(res.followUp, (res.note ? res.note + ' ' : '') + g.followPrompt); return; }
   if (g.dice) {
@@ -3303,6 +3430,7 @@ async function aiTurn() {
     for (const step of plan) {
       const from = P.fromFor ? P.fromFor(step) : null, to = P.ringFor(step);
       res = await P.play(step);
+      sfx.move(g, step, res);
       markLastMove(from, to);
       if (tok !== play.token) return;
       updateScore();
@@ -3325,6 +3453,7 @@ async function aiTurn() {
     const res = await P.play(m);
     markLastMove(from, to);
     if (tok !== play.token) return;
+    sfx.move(g, m, res);
     updateScore();
     if (res.note) { setMsg('The Scribe', res.note); said = true; }
   }
@@ -3333,6 +3462,7 @@ async function aiTurn() {
 }
 function finish(res) {
   play.phase = 'over'; clearHighlights();
+  sfx.end(res.winner);
   const g = play.game, P = play.P;
   if (P.onFinish) P.onFinish(res);
   updateScore();

@@ -1899,16 +1899,28 @@
    * A 4 x 4 grid of boxes between 5 x 5 dots. Edges 0-19 are horizontal (row r
    * of dots 0-4, column c 0-3, index r*4+c); 20-39 are vertical (box row r 0-3,
    * dot column c 0-4, index 20 + r*5+c). Box (r, c) is index r*4+c. */
-  const DB_N = 4;
-  const dbH = (r, c) => r * DB_N + c, dbV = (r, c) => DB_N * (DB_N + 1) + r * (DB_N + 1) + c;
-  const DB_EDGES = 2 * DB_N * (DB_N + 1);
-  const DB_BOX_EDGES = [];
-  for (let r = 0; r < DB_N; r++) for (let c = 0; c < DB_N; c++) DB_BOX_EDGES.push([dbH(r, c), dbH(r + 1, c), dbV(r, c), dbV(r, c + 1)]);
-  const DB_EDGE_BOXES = Array.from({ length: DB_EDGES }, () => []);
-  DB_BOX_EDGES.forEach((es, b) => es.forEach(e => DB_EDGE_BOXES[e].push(b)));
+  // The grid size can change (4 x 4 or 5 x 5 boxes), so these tables are rebuilt by dbBuild().
+  let DB_N, DB_EDGES, DB_BOX_EDGES, DB_EDGE_BOXES;
+  function dbBuild(n) {
+    DB_N = n;
+    const dbH = (r, c) => r * n + c, dbV = (r, c) => n * (n + 1) + r * (n + 1) + c;
+    DB_EDGES = 2 * n * (n + 1);
+    DB_BOX_EDGES = [];
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) DB_BOX_EDGES.push([dbH(r, c), dbH(r + 1, c), dbV(r, c), dbV(r, c + 1)]);
+    DB_EDGE_BOXES = Array.from({ length: DB_EDGES }, () => []);
+    DB_BOX_EDGES.forEach((es, b) => es.forEach(e => DB_EDGE_BOXES[e].push(b)));
+  }
+  dbBuild(4);
   const DOTSBOXES = {
     id: 'dotsboxes', name: 'Dots and Boxes', dice: false, first: 0, N: DB_N, EDGES: DB_EDGES,
     BOX_EDGES: DB_BOX_EDGES, EDGE_BOXES: DB_EDGE_BOXES,
+    variants: [{ id: '4', label: '4 × 4' }, { id: '5', label: '5 × 5' }],
+    variant: '4',
+    setVariant(id) {
+      const n = id === '5' ? 5 : 4;
+      dbBuild(n); this.variant = String(n);
+      this.N = DB_N; this.EDGES = DB_EDGES; this.BOX_EDGES = DB_BOX_EDGES; this.EDGE_BOXES = DB_EDGE_BOXES;
+    },
     rules: [
       'Take turns drawing a line between two neighbouring dots, across or up and down.',
       'Close the fourth side of a box and it is yours: you score it and draw again.',
