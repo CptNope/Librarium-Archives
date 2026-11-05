@@ -1486,41 +1486,55 @@ const RV_MATS = [new THREE.MeshStandardMaterial({ color: 0x1a1512, roughness: 0.
 function rvDisc() { const m = new THREE.Mesh(rvDiscGeo, [new THREE.MeshStandardMaterial({ color: 0x7a6a5a, roughness: 0.5 }), RV_MATS[0], RV_MATS[1]]); return m; }
 
 /* --- Wing V: Halma (display) */
+const HM_S = 0.05;
+// Row 0 is nearest the visitor; the visitor's camp is the near-left corner.
+function hmCell(i) { const r = i >> 4, c = i & 15; return { x: (c - 7.5) * HM_S, z: (7.5 - r) * HM_S }; }
+const hmManGeo = new THREE.LatheGeometry([[0, 0], [0.015, 0], [0.016, 0.004], [0.008, 0.012], [0.006, 0.026], [0.011, 0.032], [0.007, 0.04], [0, 0.042]].map(([a, b]) => new THREE.Vector2(a, b)), 16);
+const hmHitGeo = new THREE.CylinderGeometry(0.023, 0.023, 0.046, 10);
+function halmaMan(pl) {
+  const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x1e3a6a : 0x8a1e1e, roughness: 0.4 });
+  const m = new THREE.Mesh(hmManGeo, mat); m.userData.mats = [mat];
+  const hit = new THREE.Mesh(hmHitGeo, MAT.hit); hit.position.y = 0.023; m.add(hit); // small men are easy to miss
+  return m;
+}
 function buildHalma(group) {
-  const S = 0.05, W = 16 * S + 0.05;
+  const S = HM_S, W = 16 * S + 0.05;
   const frame = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, W), new THREE.MeshStandardMaterial({ color: 0x2a1a10, roughness: 0.55 }));
   frame.position.y = TOP + 0.015; group.add(frame);
   const px = 1024, sc = px / W, c0 = px / 2 - 8 * S * sc, cs = S * sc;
-  // The 19-square camp in each corner: rows of 5, 5, 4, 3 and 2. Returns 1-4 for the corner, 0 elsewhere.
-  const inCamp = (r, c) => {
-    const a = Math.min(r, 15 - r), b = Math.min(c, 15 - c);
-    if (a > 4 || b > 4 || a + b > 5) return 0;
-    return r < 8 ? (c < 8 ? 1 : 2) : (c < 8 ? 3 : 4);
-  };
+  const G = window.LibrariumRules.halma;
+  const camp = i => (G.CAMP[0].includes(i) ? 1 : G.CAMP[1].includes(i) ? 2 : 0);
   topPlane(group, W, W, TOP + 0.0305, tex(px, px, (g) => {
     g.fillStyle = '#2a1a10'; g.fillRect(0, 0, px, px);
     for (let r = 0; r < 16; r++) for (let c = 0; c < 16; c++) {
-      const k = inCamp(r, c);
-      g.fillStyle = (r + c) % 2 ? '#c9b38a' : '#e9dcbc';
-      if (k === 1 || k === 4) g.fillStyle = (r + c) % 2 ? '#b98a52' : '#d4a86e';
-      g.fillRect(c0 + c * cs, c0 + r * cs, cs, cs);
+      const k = camp(r * 16 + c), odd = (r + c) % 2;
+      g.fillStyle = k === 1 ? (odd ? '#b07a5a' : '#cf9c7a') : k === 2 ? (odd ? '#7f8ea4' : '#a3b0c2') : (odd ? '#c9b38a' : '#e9dcbc');
+      g.fillRect(c0 + c * cs, c0 + (15 - r) * cs, cs, cs);
+    }
+    g.strokeStyle = '#2a1a10'; g.lineWidth = 3;
+    for (const k of [1, 2]) for (let r = 0; r < 16; r++) for (let c = 0; c < 16; c++) {
+      if (camp(r * 16 + c) !== k) continue;
+      const x = c0 + c * cs, y = c0 + (15 - r) * cs, nb = (rr, cc) => rr >= 0 && rr < 16 && cc >= 0 && cc < 16 && camp(rr * 16 + cc) === k;
+      g.beginPath();
+      if (!nb(r + 1, c)) { g.moveTo(x, y); g.lineTo(x + cs, y); }
+      if (!nb(r - 1, c)) { g.moveTo(x, y + cs); g.lineTo(x + cs, y + cs); }
+      if (!nb(r, c - 1)) { g.moveTo(x, y); g.lineTo(x, y + cs); }
+      if (!nb(r, c + 1)) { g.moveTo(x + cs, y); g.lineTo(x + cs, y + cs); }
+      g.stroke();
     }
     g.strokeStyle = '#7a2a1c'; g.lineWidth = 4;
     g.strokeRect(c0, c0, 16 * cs, 16 * cs);
   }), { roughness: 0.6 });
-  // Two-player Halma: 19 men each in opposite corners, a few already on the move.
-  const men = [new THREE.MeshStandardMaterial({ color: 0x8a1e1e, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0x1e3a6a, roughness: 0.4 })];
-  const manGeo = new THREE.LatheGeometry([[0, 0], [0.015, 0], [0.016, 0.004], [0.008, 0.012], [0.006, 0.026], [0.011, 0.032], [0.007, 0.04], [0, 0.042]].map(([a, b]) => new THREE.Vector2(a, b)), 16);
-  const R = seeded(1883);
-  const at = (r, c) => V3((c - 7.5) * S, TOP + 0.031, (r - 7.5) * S);
-  const placed = new Set();
-  for (let r = 0; r < 16; r++) for (let c = 0; c < 16; c++) {
-    const k = inCamp(r, c); if (k !== 1 && k !== 4) continue;
-    let rr = r, cc = c;
-    if (R() < 0.18) { const d = k === 1 ? 1 : -1; rr += d * (2 + ((R() * 3) | 0)); cc += d * (2 + ((R() * 3) | 0)); }
-    const key = rr * 16 + cc; if (placed.has(key) || rr < 0 || rr > 15 || cc < 0 || cc > 15) continue; placed.add(key);
-    const m = new THREE.Mesh(manGeo, men[k === 1 ? 0 : 1]); m.position.copy(at(rr, cc)); group.add(m);
+  // On display: a game a few moves in. The table replaces these men when play starts.
+  const R = seeded(1883), display = [], placed = new Set();
+  for (const pl of [0, 1]) for (const i of G.CAMP[pl]) {
+    let r = i >> 4, c = i & 15;
+    if (R() < 0.18) { const d = pl ? -1 : 1; r += d * (2 + ((R() * 3) | 0)); c += d * (2 + ((R() * 3) | 0)); }
+    const key = r * 16 + c; if (placed.has(key) || r < 0 || r > 15 || c < 0 || c > 15) continue; placed.add(key);
+    const m = halmaMan(pl), p = hmCell(key); m.position.set(p.x, TOP + 0.031, p.z); group.add(m); display.push(m);
   }
+  group.userData.display = display;
+  return TOP + 0.031;
 }
 
 /* --- Wing V: Dots and Boxes, on a writing slope */
@@ -1846,9 +1860,9 @@ const STOPS = [
     eyebrow: 'Wing V · Librarium Museum of Play', status: null, begin: 'mansion',
     body: [
       'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
-      'Two tables are open: Reversi, and Dots and Boxes.'
+      'Three tables are open: Reversi, Halma, and Dots and Boxes.'
     ],
-    facts: [['Tables', 'Reversi, Dots and Boxes'], ['Display', 'Mansion of Happiness, Game of Life, Halma, the Landlord\'s Game']],
+    facts: [['Tables', 'Reversi, Halma, Dots and Boxes'], ['Display', 'Mansion of Happiness, Game of Life, the Landlord\'s Game']],
   },
   { id: 'mansion', wing: 5, side: -1, z: -183, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
     eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'],
@@ -1877,11 +1891,11 @@ const STOPS = [
     facts: [['Board', '8 × 8'], ['Pieces', '64 two-sided discs'], ['Win', 'Most discs showing']],
     build: buildReversiBoard },
   { id: 'halma', wing: 5, side: 1, z: -199.5, title: 'Halma', date: '1883–84 CE', rail: 'Halma',
-    eyebrow: 'Massachusetts and Germany', status: ['known', 'Still played, as Chinese checkers'],
-    note: 'On display.',
+    eyebrow: 'Massachusetts and Germany', status: ['known', 'Still played, as Chinese checkers'], game: 'halma',
     body: [
       'Halma, from the Greek for "leap", was invented in 1883 or 1884 by George Howard Monks, a surgeon at Harvard Medical School, who drew on an English game called Hoppity. Each player starts with a camp of men in one corner of a 16 × 16 board and races to move them all into the opposite corner, stepping, or leaping over any piece in chains of jumps.',
-      'In 1892 a version on a six-pointed star was published as Stern-Halma, "star Halma". Sold in America under a more exotic name, it became Chinese checkers: a game with no link to China, and none to checkers.'
+      'In 1892 a version on a six-pointed star was published as Stern-Halma, "star Halma". Sold in America under a more exotic name, it became Chinese checkers: a game with no link to China, and none to checkers.',
+      'At this table you play the two-player game, 19 men a side. Long chains of leaps are the whole art: build ladders of your own men, and borrow the Scribe\'s.'
     ],
     facts: [['Board', '16 × 16'], ['Players', 'Two or four'], ['Moves', 'A step, or chains of leaps'], ['Descendant', 'Chinese checkers']],
     build: buildHalma },
@@ -1963,7 +1977,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -2358,6 +2372,40 @@ const GOOSE = Object.assign(R.goose, {
   score() { return [['You', 'square ' + this.pos[0][0]], ['Scribe', 'square ' + this.pos[1][0]], '· land on 63 to win']; },
   winText: pl => (pl === 0 ? 'You reached the garden at 63 first.' : 'The Scribe reached the garden at 63 first.'),
 });
+const HALMA_P = {
+  camW: 1.0, ringScale: 0.42,
+  intro() { return 'You play red, from the near corner, and move first. ' + this.prompt(); },
+  prompt: () => 'Pick a man, then a ring. Rings beyond a neighbouring piece are leaps.',
+  setup(ex) {
+    const G = GAMES.halma;
+    (ex.group.userData.display || []).forEach(m => { m.visible = false; });
+    if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 19 }, () => { const m = halmaMan(pl); ex.group.add(m); return m; }));
+    this.cell = Array(256).fill(null);
+    const k = [0, 0];
+    for (let i = 0; i < 256; i++) {
+      if (!G.b[i]) continue;
+      const pl = G.b[i] - 1, m = ex.pieces[pl][k[pl]++];
+      this.cell[i] = m; m.position.copy(this.pos(i));
+    }
+  },
+  pos(i) { const c = hmCell(i); return V3(c.x, GAMES.halma.surface, c.z); },
+  meshesFor(m) { return m.pass ? [] : [this.cell[m.from]]; },
+  ringFor(m) { return m.pass ? null : this.pos(m.to); },
+  fromFor(m) { return m.pass ? null : this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.halma, tok = play.token;
+    if (m.pass) return G.apply(m);
+    const mesh = this.cell[m.from]; this.cell[m.from] = null; this.cell[m.to] = mesh;
+    const leap = Math.abs((m.path[0] >> 4) - (m.from >> 4)) === 2 || Math.abs((m.path[0] & 15) - (m.from & 15)) === 2;
+    const res = G.apply(m);
+    for (const sq of m.path) {
+      if (tok !== play.token) return res;
+      await hop(mesh, this.pos(sq), leap ? 0.22 : 0.18, leap ? 0.05 : 0.02);
+    }
+    return res;
+  },
+  score: () => { const G = GAMES.halma; return [['You', G.home(0)], ['Scribe', G.home(1)], 'men home of 19']; },
+};
 const REVERSI_P = {
   camW: 1.06,
   intro() { return 'You play the dark discs and move first. ' + this.prompt(); },
@@ -2431,7 +2479,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], 'boxes of 16']; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
