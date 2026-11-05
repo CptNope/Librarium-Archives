@@ -3179,7 +3179,7 @@ function updateScore() {
 }
 function renderDice(g, r, shaking = false) {
   const d = $('#lm-dice'); d.innerHTML = ''; d.classList.toggle('shake', shaking);
-  const faces = r ? r.faces : g.pipDice ? [1, 1] : [0, 0, 0, 0];
+  const faces = r ? r.faces : g.pipDice ? (g.oneDie ? [1] : [1, 1]) : [0, 0, 0, 0];
   faces.forEach(f => {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', '0 0 30 30');

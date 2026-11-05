@@ -1344,7 +1344,7 @@
   const SL_LADDERS = { 12: [31, 'Faith'], 51: [68, 'Reliability'], 57: [83, 'Generosity'], 76: [91, 'Knowledge'], 78: [97, 'Asceticism'] };
   const SL_SNAKES = { 41: [20, 'Disobedience'], 52: [30, 'Theft'], 69: [47, 'Debt'], 73: [7, 'Murder'], 88: [46, 'Anger'], 99: [61, 'Lust'] };
   const SNAKES = {
-    id: 'snakes', name: 'Snakes and Ladders', dice: true, pipDice: true, autoMove: true, first: 0, N: 1,
+    id: 'snakes', name: 'Snakes and Ladders', dice: true, pipDice: true, oneDie: true, autoMove: true, first: 0, N: 1,
     LADDERS: SL_LADDERS, SNAKES: SL_SNAKES,
     rules: [
       'Throw the die and move your piece that many squares, along each row and up to the next.',
