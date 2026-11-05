@@ -119,7 +119,26 @@ const MAT = {
  * One long gallery split into wings by open arches: Wing I runs from the
  * entrance to z = -41, Wing II to z = -86, Wing III to the closed arch at
  * the far end. */
-const HALL = { half: 5, zNear: 4, zFar: -221, h: 5, dividers: [-41, -86, -131, -176] };
+// zFar and the dividers between wings are worked out from the exhibits by layoutHall().
+const HALL = { half: 5, zNear: 4, zFar: -221, h: 5, dividers: [] };
+const LAYOUT = { first: 12, step: 5.5, toArch: 10.5, afterArch: 7 };
+/* Exhibits stand in STOPS order down the hall, alternating sides LAYOUT.step
+ * apart. Each wing's arch comes LAYOUT.toArch after its last exhibit, and the
+ * next wing starts LAYOUT.afterArch beyond it, so adding a game is one entry. */
+function layoutHall() {
+  let z = HALL.zNear - LAYOUT.first + LAYOUT.step, wing = 1, k = 0;
+  HALL.dividers = [];
+  for (const s of STOPS) {
+    if (!s.build) continue;
+    if (s.wing !== wing) {
+      const arch = z - LAYOUT.toArch;
+      for (let w = wing; w < s.wing; w++) HALL.dividers.push(arch);
+      z = arch - LAYOUT.afterArch + LAYOUT.step; wing = s.wing; k = 0;
+    }
+    z -= LAYOUT.step; s.z = z; s.side = k++ % 2 ? 1 : -1;
+  }
+  HALL.zFar = z - LAYOUT.toArch;
+}
 let floorMesh = null;
 const wingOf = z => HALL.dividers.filter(d => z < d).length; // 0-based wing index
 function buildHall() {
@@ -1623,6 +1642,133 @@ function buildLandlord(group) {
   pen.rotation.z = Math.PI / 2; pen.rotation.y = -0.5; pen.position.set(W / 2 + 0.1, TOP + 0.02, 0.2); group.add(pen);
 }
 
+/* --- Backfill displays: early dice, petteia, liubo and patolli */
+function pipFace(n, base, dot) {
+  return tex(128, 128, (g, w) => {
+    g.fillStyle = base; g.fillRect(0, 0, w, w);
+    g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, 0, w, 6); g.fillRect(0, 0, 6, w);
+    const P = { 1: [[64, 64]], 2: [[34, 34], [94, 94]], 3: [[30, 30], [64, 64], [98, 98]], 4: [[34, 34], [94, 34], [34, 94], [94, 94]], 5: [[32, 32], [96, 32], [64, 64], [32, 96], [96, 96]], 6: [[36, 28], [92, 28], [36, 64], [92, 64], [36, 100], [92, 100]] }[n];
+    g.fillStyle = dot;
+    for (const [x, y] of P) { g.beginPath(); g.arc(x, y, 11, 0, TAU); g.fill(); }
+  });
+}
+function cubeDie(size, base, dot) {
+  // Faces in BoxGeometry order (+x, -x, +y, -y, +z, -z), opposite faces adding to seven.
+  const mats = [1, 6, 2, 5, 3, 4].map(n => new THREE.MeshStandardMaterial({ map: pipFace(n, base, dot), roughness: 0.75 }));
+  return new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mats);
+}
+function buildDice(group) {
+  topPlane(group, 0.86, 0.6, TOP + 0.002, tex(512, 360, (g, w, h) => {
+    g.fillStyle = '#5a3a24'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 1400; i++) { g.fillStyle = `rgba(${rand(20, 60) | 0},${rand(10, 30) | 0},5,.25)`; g.fillRect(rand(0, w), rand(0, h), rand(1, 4), rand(1, 3)); }
+  }), { roughness: 0.95 });
+  // Terracotta dice in the Indus manner, and darker ones like those from the Burnt City.
+  const R = seeded(2500);
+  const put = (d, x, z) => { d.position.set(x, TOP + d.geometry.parameters.height / 2 + 0.002, z); d.rotation.y = R() * TAU; group.add(d); };
+  put(cubeDie(0.06, '#b8693a', '#3a1a0a'), -0.24, 0.06);
+  put(cubeDie(0.052, '#a95e33', '#2e1408'), -0.12, -0.08);
+  put(cubeDie(0.056, '#c27a48', '#3a1a0a'), -0.02, 0.1);
+  put(cubeDie(0.045, '#3c2a1c', '#e8d8b0'), 0.16, -0.06);
+  put(cubeDie(0.045, '#45301f', '#e8d8b0'), 0.25, 0.07);
+  const counter = new THREE.ConeGeometry(0.018, 0.04, 14);
+  const cm = new THREE.MeshStandardMaterial({ color: 0x2a201a, roughness: 0.5 });
+  for (let i = 0; i < 6; i++) { const c = new THREE.Mesh(counter, cm); c.position.set(0.12 + (i % 3) * 0.05, TOP + 0.022, 0.18 + ((i / 3) | 0) * 0.05); group.add(c); }
+}
+function buildPetteia(group) {
+  // The board's size is unknown: this is a guess, a stone slab cut into an 8 x 8 grid.
+  const W = 0.62;
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(W, 0.05, W), new THREE.MeshStandardMaterial({ color: 0xb8ad98, roughness: 0.9 }));
+  slab.position.y = TOP + 0.025; group.add(slab);
+  topPlane(group, W, W, TOP + 0.0505, tex(512, 512, (g, w) => {
+    g.fillStyle = '#bdb29c'; g.fillRect(0, 0, w, w);
+    for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(80,70,55,${rand(0.03, 0.12)})`; g.fillRect(rand(0, w), rand(0, w), rand(1, 6), rand(1, 6)); }
+    g.strokeStyle = 'rgba(60,50,38,.75)'; g.lineWidth = 3;
+    const m = 36, c = (w - 2 * m) / 8;
+    for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(m, m + i * c); g.lineTo(w - m, m + i * c); g.stroke(); g.beginPath(); g.moveTo(m + i * c, m); g.lineTo(m + i * c, w - m); g.stroke(); }
+  }), { roughness: 0.9 });
+  const peb = new THREE.SphereGeometry(0.022, 14, 10);
+  const mats = [new THREE.MeshStandardMaterial({ color: 0xe8e2d4, roughness: 0.45 }), new THREE.MeshStandardMaterial({ color: 0x2a2622, roughness: 0.45 })];
+  const R = seeded(442);
+  const at = (r, cc) => [(cc - 3.5) * (W - 0.088) / 8, (r - 3.5) * (W - 0.088) / 8];
+  const taken = new Set();
+  for (const [pl, rows] of [[0, [6, 7]], [1, [0, 1]]]) for (const r of rows) for (let k = 0; k < 8; k++) {
+    let rr = r, cc = k;
+    if (R() < 0.22) { rr += pl ? 2 + ((R() * 2) | 0) : -2 - ((R() * 2) | 0); }
+    if (taken.has(rr * 8 + cc) || R() < 0.12) continue; taken.add(rr * 8 + cc);
+    const m = new THREE.Mesh(peb, mats[pl]); m.scale.y = 0.55; const [x, z] = at(rr, cc);
+    m.position.set(x + (R() - 0.5) * 0.008, TOP + 0.062, z + (R() - 0.5) * 0.008); group.add(m);
+  }
+}
+function buildLiubo(group) {
+  const W = 0.56;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W, 0.06, W), new THREE.MeshStandardMaterial({ color: 0x1c100c, roughness: 0.35 }));
+  board.position.y = TOP + 0.03; group.add(board);
+  topPlane(group, W, W, TOP + 0.0605, tex(512, 512, (g, w) => {
+    g.fillStyle = '#1c100c'; g.fillRect(0, 0, w, w);
+    g.strokeStyle = '#b8402a'; g.lineWidth = 7; g.lineCap = 'square';
+    const m = 40, inner = 150;
+    g.strokeRect(m, m, w - 2 * m, w - 2 * m);
+    g.strokeRect(inner, inner, w - 2 * inner, w - 2 * inner);
+    const c = w / 2;
+    // T marks on the central square, L marks on the edges, V marks at the corners.
+    for (let k = 0; k < 4; k++) {
+      g.save(); g.translate(c, c); g.rotate(k * Math.PI / 2);
+      g.beginPath(); g.moveTo(0, -(c - inner)); g.lineTo(0, -(c - inner) - 34); g.moveTo(-24, -(c - inner) - 34); g.lineTo(24, -(c - inner) - 34); g.stroke();
+      g.beginPath(); g.moveTo(-26, -(c - m)); g.lineTo(-26, -(c - m) + 34); g.lineTo(8, -(c - m) + 34); g.stroke();
+      g.beginPath(); g.moveTo(-(c - m) + 30, -(c - m) + 74); g.lineTo(-(c - m) + 30, -(c - m) + 30); g.lineTo(-(c - m) + 74, -(c - m) + 30); g.stroke();
+      g.restore();
+    }
+    g.fillStyle = '#b8402a'; for (const [x, y] of [[c - 60, c - 60], [c + 60, c - 60], [c - 60, c + 60], [c + 60, c + 60]]) { g.beginPath(); g.arc(x, y, 9, 0, TAU); g.fill(); }
+  }), { roughness: 0.3 });
+  const piece = new THREE.BoxGeometry(0.03, 0.026, 0.022);
+  const mats = [new THREE.MeshStandardMaterial({ color: 0xe6dcc4, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0x141010, roughness: 0.35 })];
+  for (const [pl, z] of [[0, 0.2], [1, -0.2]]) for (let k = 0; k < 6; k++) {
+    const m = new THREE.Mesh(piece, mats[pl]); m.position.set((k - 2.5) * 0.06, TOP + 0.074, z + (k % 2 ? 0.012 : -0.012)); group.add(m);
+  }
+  // One piece stood on end: an 'owl'.
+  const owl = new THREE.Mesh(piece, mats[0]); owl.rotation.z = Math.PI / 2; owl.position.set(0.05, TOP + 0.076, 0.06); group.add(owl);
+  const stick = new THREE.CylinderGeometry(0.008, 0.008, 0.16, 10, 1, false, 0, Math.PI);
+  const sm = new THREE.MeshStandardMaterial({ color: 0xa8783a, roughness: 0.6 });
+  for (let k = 0; k < 6; k++) { const st = new THREE.Mesh(stick, sm); st.rotation.set(Math.PI / 2, 0, k % 2 ? Math.PI : 0); st.rotation.order = 'YXZ'; st.rotation.y = 0.2 * (k - 2.5); st.position.set(W / 2 + 0.1, TOP + 0.006, -0.12 + k * 0.045); group.add(st); }
+}
+function buildPatolli(group) {
+  const W = 0.84;
+  const px = 1024;
+  topPlane(group, W, W, TOP + 0.004, tex(px, px, (g, w) => {
+    // A reed mat, with the X-shaped track of 52 houses painted on it.
+    g.fillStyle = '#c8a86a'; g.fillRect(0, 0, w, w);
+    for (let y = 0; y < w; y += 10) { g.fillStyle = y % 20 ? 'rgba(120,85,40,.25)' : 'rgba(255,240,200,.12)'; g.fillRect(0, y, w, 5); }
+    for (let x = 0; x < w; x += 64) { g.fillStyle = 'rgba(90,60,25,.25)'; g.fillRect(x, 0, 3, w); }
+    const c = w / 2, sq = 38;
+    g.save(); g.translate(c, c); g.rotate(Math.PI / 4);
+    g.strokeStyle = '#2a1a0a'; g.lineWidth = 4;
+    const cell = (x, y, fill) => { if (fill) { g.fillStyle = fill; g.fillRect(x, y, sq, sq); } g.strokeRect(x, y, sq, sq); };
+    for (let k = 0; k < 4; k++) {
+      g.save(); g.rotate(k * Math.PI / 2);
+      for (let i = 1; i <= 6; i++) for (const j of [-1, 0]) {
+        const fill = i === 6 ? '#8a2a1c' : i === 4 ? '#2a1a0a' : null;
+        cell(j * sq, i * sq, fill);
+      }
+      g.restore();
+    }
+    for (const j of [-1, 0]) for (const i of [-1, 0]) cell(j * sq, i * sq, '#d8b878');
+    g.restore();
+  }), { roughness: 0.95 });
+  const bean = new THREE.SphereGeometry(0.014, 12, 8);
+  const bm = new THREE.MeshStandardMaterial({ color: 0x1a120c, roughness: 0.5 }), wm = new THREE.MeshStandardMaterial({ color: 0xf0e8d8, roughness: 0.5 });
+  const R = seeded(1521);
+  for (let k = 0; k < 5; k++) {
+    const b = new THREE.Mesh(bean, bm); b.scale.set(1.3, 0.6, 0.9); b.position.set(0.3 + R() * 0.08, TOP + 0.013, 0.24 + k * 0.03); b.rotation.y = R() * TAU; group.add(b);
+    if (R() < 0.5) { const dot = new THREE.Mesh(new THREE.CircleGeometry(0.005, 10), wm); dot.rotation.x = -Math.PI / 2; dot.position.set(b.position.x, TOP + 0.022, b.position.z); group.add(dot); }
+  }
+  const stone = new THREE.SphereGeometry(0.016, 12, 8);
+  const sm = [new THREE.MeshStandardMaterial({ color: 0xa8322a, roughness: 0.45 }), new THREE.MeshStandardMaterial({ color: 0x2a4a8a, roughness: 0.45 })];
+  for (let pl = 0; pl < 2; pl++) for (let k = 0; k < 6; k++) {
+    const m = new THREE.Mesh(stone, sm[pl]); m.scale.y = 0.6;
+    m.position.set((pl ? 0.33 : -0.33) + (k % 2) * 0.035, TOP + 0.014, -0.3 + ((k / 2) | 0) * 0.035); group.add(m);
+  }
+}
+
 /* --- Finale lectern */
 let lectern;
 function buildLectern(z) {
@@ -1658,7 +1804,7 @@ const STOPS = [
     ],
     facts: [['Look', 'Drag the view'], ['Walk', 'WASD or arrow keys'], ['Visit', 'Click an exhibit or use the timeline']],
   },
-  { id: 'senet', wing: 1, side: -1, z: -8, title: 'Senet', date: 'c. 3100 BCE', rail: 'Senet',
+  { id: 'senet', wing: 1, title: 'Senet', date: 'c. 3100 BCE', rail: 'Senet',
     eyebrow: 'Egypt · Early Dynastic period', status: ['recon', 'Rules reconstructed'], game: 'senet',
     body: [
       'Pieces of what may be Senet boards turn up in First Dynasty burials around 3100 BCE, and the first unmistakable painting of the game appears in the tomb of Hesy-Re, about 2620 BCE. It is one of the oldest board games we know by name.',
@@ -1667,7 +1813,7 @@ const STOPS = [
     ],
     facts: [['Board', '30 houses, 3 rows of 10'], ['Pieces', '5 each, spools and cones'], ['Moves', '4 throw sticks, 1 to 5'], ['Goal', 'Bear every piece off the board']],
     build: buildSenetBoard },
-  { id: 'mehen', wing: 1, side: 1, z: -14, title: 'Mehen', date: 'c. 3100–2300 BCE', rail: 'Mehen',
+  { id: 'mehen', wing: 1, title: 'Mehen', date: 'c. 3100–2300 BCE', rail: 'Mehen',
     eyebrow: 'Egypt · Early Dynastic to Old Kingdom', status: ['lost', 'Rules lost'],
     body: [
       'The Mehen board is a snake coiled around itself, with its head at the center and its tail at the rim. It shares its name with a serpent god who wrapped around the sun god Ra to protect him on his night journey.',
@@ -1675,7 +1821,7 @@ const STOPS = [
     ],
     facts: [['Board', 'Coiled serpent, segmented'], ['Pieces', 'Lions and marbles'], ['Players', 'Up to six'], ['Rules', 'Unknown']],
     build: buildMehen },
-  { id: 'basur', wing: 1, side: -1, z: -20, title: 'The Başur Höyük Pieces', short: 'Başur Höyük Pieces', date: 'c. 3000 BCE', rail: 'Başur Höyük',
+  { id: 'basur', wing: 1, title: 'The Başur Höyük Pieces', short: 'Başur Höyük Pieces', date: 'c. 3000 BCE', rail: 'Başur Höyük',
     eyebrow: 'Southeast Turkey · Early Bronze Age', status: ['lost', 'Game unknown'],
     note: 'On display. No board survives to play on.',
     body: [
@@ -1684,7 +1830,7 @@ const STOPS = [
     ],
     facts: [['Found', '2013, in a burial mound'], ['Pieces', 'Pyramids, tokens, animals'], ['Board', 'None survives']],
     build: buildTokens },
-  { id: 'ur', wing: 1, side: 1, z: -26, title: 'The Royal Game of Ur', short: 'Royal Game of Ur', date: 'c. 2600–2400 BCE', rail: 'Royal Game of Ur',
+  { id: 'ur', wing: 1, title: 'The Royal Game of Ur', short: 'Royal Game of Ur', date: 'c. 2600–2400 BCE', rail: 'Royal Game of Ur',
     eyebrow: 'Mesopotamia · Sumer', status: ['known', 'Rules survive in writing'], game: 'ur',
     body: [
       'Sir Leonard Woolley found five of these boards while excavating the Royal Cemetery at Ur between 1922 and 1934. The finest are inlaid with shell, red limestone and lapis lazuli. The game, also called Twenty Squares, spread across the ancient Near East, and more than a hundred boards have been found since.',
@@ -1693,7 +1839,16 @@ const STOPS = [
     ],
     facts: [['Board', '20 squares, 5 rosettes'], ['Pieces', '7 each'], ['Moves', '4 four-sided dice, 0 to 4'], ['Goal', 'Race every piece home']],
     build: buildUrBoard },
-  { id: 'hounds', wing: 1, side: -1, z: -32, title: 'Hounds and Jackals', date: 'c. 2000 BCE', rail: 'Hounds and Jackals',
+  { id: 'dice', wing: 1, title: 'The First Dice', short: 'The First Dice', date: 'c. 2800–1900 BCE', rail: 'The First Dice',
+    eyebrow: 'Iran and the Indus Valley', status: ['known', 'Still rolled today'],
+    note: 'On display. The dice are new, made in the old manner.',
+    body: [
+      'Cubic dice are nearly as old as board games. Possibly the oldest yet found come from the Burnt City, Shahr-e Sukhteh in eastern Iran, buried with a set for a race game that has been dated to between 2800 and 2500 BCE.',
+      'Graves at Mohenjo-daro in the Indus Valley held terracotta dice from 2500 to 1900 BCE. On one of them the opposite faces add up to seven, as they do on dice today. Players elsewhere threw other things: Senet\'s sticks and Ur\'s four-sided pyramids are on the tables in this wing.'
+    ],
+    facts: [['Oldest', 'Burnt City, Iran, c. 2800–2500 BCE'], ['Indus', 'Mohenjo-daro, 2500–1900 BCE'], ['Faces', 'Opposites adding to seven, on one Indus die']],
+    build: buildDice },
+  { id: 'hounds', wing: 1, title: 'Hounds and Jackals', date: 'c. 2000 BCE', rail: 'Hounds and Jackals',
     eyebrow: 'Egypt · Middle Kingdom', status: ['lost', 'Rules lost'],
     body: [
       'Howard Carter, later famous for Tutankhamun\'s tomb, found a complete set of this game in a Theban tomb in 1910. It is now at the Metropolitan Museum of Art in New York. Ten slender pins fit its holes: five topped with hound heads and five with jackals.',
@@ -1710,7 +1865,25 @@ const STOPS = [
     ],
     facts: [['Tables', 'Go, Morris, Oware, Brandubh'], ['Luck', 'None. Every move is a choice']],
   },
-  { id: 'go', wing: 2, side: -1, z: -50, title: 'Weiqi (Go)', date: 'by the 4th century BCE', rail: 'Weiqi (Go)',
+  { id: 'petteia', wing: 2, title: 'Petteia', date: 'by 443 BCE', rail: 'Petteia',
+    eyebrow: 'Classical Greece', status: ['recon', 'Rules mostly lost'],
+    note: 'On display. The 8 × 8 slab is our guess: no petteia board has been securely identified.',
+    body: [
+      'Petteia, "pebbles", was the board game of classical Greece. The comic poet Cratinus mentions it in 443 or 442 BCE, and Plato and Aristotle both use it to make a point. The board, Julius Pollux wrote much later, was called the polis, the city, and the pieces were called dogs.',
+      'Each player had pieces of one colour, and a piece was captured by enclosing it between two enemies, so the art was never to leave a piece alone. Beyond that, the size of the board, the opening position and most of the rules are lost. The Roman game of soldiers, further down this wing, may descend from it.'
+    ],
+    facts: [['Board', 'The polis, or city'], ['Capture', 'Enclose a piece between two'], ['Rules', 'Mostly lost']],
+    build: buildPetteia },
+  { id: 'liubo', wing: 2, title: 'Liubo', date: 'by the 4th century BCE', rail: 'Liubo',
+    eyebrow: 'China · Warring States to Han', status: ['lost', 'Rules lost'],
+    note: 'On display. The board, pieces and sticks are new, after the Mawangdui set.',
+    body: [
+      'Liubo, "six sticks", was the great board game of Han dynasty China, played by emperors and buried with nobles. The oldest boards come from a 4th-century BCE tomb at Pingshan in Hebei, and a complete set in a lacquer box was found in 1973 in a 2nd-century BCE tomb at Mawangdui.',
+      'Each player had six pieces, moved by throws of six sticks, and a piece that reached a certain place was stood on end and became an "owl". The board\'s T, L and V marks also appear on bronze mirrors of the time. After the Han the game faded, perhaps losing out to weiqi, and by the 14th century no one knew how to play it. More than a thousand bamboo slips with its rules were found in the tomb of the Marquis of Haihun in 2019; until they are fully read, every modern version is a reconstruction.'
+    ],
+    facts: [['Pieces', 'Six a side'], ['Moves', 'Six throwing sticks'], ['Rules', 'Lost; reconstructions only']],
+    build: buildLiubo },
+  { id: 'go', wing: 2, title: 'Weiqi (Go)', date: 'by the 4th century BCE', rail: 'Weiqi (Go)',
     eyebrow: 'China · Zhou dynasty to Han', status: ['known', 'Still played today'],
     game: 'go',
     body: [
@@ -1720,7 +1893,7 @@ const STOPS = [
     ],
     facts: [['Board', '17 × 17 on display; 9 × 9 at the table'], ['Pieces', 'Black and white stones'], ['Goal', 'Surround more territory']],
     build: buildGo },
-  { id: 'latrunculi', wing: 2, side: 1, z: -56, title: 'Ludus Latrunculorum', date: 'by the 1st century BCE', rail: 'Latrunculi',
+  { id: 'latrunculi', wing: 2, title: 'Ludus Latrunculorum', date: 'by the 1st century BCE', rail: 'Latrunculi',
     eyebrow: 'Rome · Late Republic to Empire', status: ['recon', 'Rules uncertain'],
     note: 'On display. Scholars still disagree about how the pieces moved.',
     body: [
@@ -1729,7 +1902,16 @@ const STOPS = [
     ],
     facts: [['Board', '7 × 8 to 9 × 10 (8 × 8 here)'], ['Pieces', 'Glass counters'], ['Capture', 'Trap between two'], ['Rules', 'Reconstructed']],
     build: buildLatrunculi },
-  { id: 'morris', wing: 2, side: -1, z: -62, title: "Nine Men's Morris", date: 'Roman era onward', rail: "Nine Men's Morris",
+  { id: 'patolli', wing: 2, title: 'Patolli', date: 'by c. 300 CE', rail: 'Patolli',
+    eyebrow: 'Mesoamerica', status: ['recon', 'Rules partly known'],
+    note: 'On display. The mat, beans and stones are new.',
+    body: [
+      'Patolli was played across Mesoamerica for more than a thousand years: by the Maya from around 300 CE, and later by the Toltecs and the Aztecs. Its track of 52 houses ran in an X across a reed mat, and each player raced six markers by throwing black beans marked on one side.',
+      'It was a gambler\'s game. Players staked blankets, precious stones, gold and food, and sometimes their homes or their freedom. The Dominican friar Diego Durán, writing in the 16th century, described players who carried the mat under an arm the way gamblers of his day carried cards. Moctezuma liked to watch his nobles play; the Spanish suppressed the game.'
+    ],
+    facts: [['Track', '52 houses in an X'], ['Moves', 'Thrown beans, marked on one side'], ['Markers', 'Six a side']],
+    build: buildPatolli },
+  { id: 'morris', wing: 2, title: "Nine Men's Morris", date: 'Roman era onward', rail: "Nine Men's Morris",
     eyebrow: 'The Roman world to medieval Europe', status: ['known', 'Rules survive in tradition'], game: 'morris',
     body: [
       'Boards for Nine Men\'s Morris and its smaller cousin, Three Men\'s Morris, are cut into stone across the Roman world. Carvings at the temple of Kurna in Egypt are often dated to about 1400 BCE, but boards scratched into old buildings are notoriously hard to date and may be far younger.',
@@ -1737,7 +1919,7 @@ const STOPS = [
     ],
     facts: [['Board', '24 points on three squares'], ['Pieces', '9 each'], ['Mill', 'Three in a row takes a piece'], ['Win', 'Leave the Scribe two pieces or no moves']],
     build: buildMorrisBoard },
-  { id: 'oware', wing: 2, side: 1, z: -68, title: 'Mancala (Oware)', date: 'c. 6th–7th century CE', rail: 'Oware',
+  { id: 'oware', wing: 2, title: 'Mancala (Oware)', date: 'c. 6th–7th century CE', rail: 'Oware',
     eyebrow: 'Africa · Aksum to the Akan', status: ['known', 'Rules survive in tradition'], game: 'oware',
     body: [
       'Mancala is a family of hundreds of games played by sowing seeds around rows of pits. The oldest securely dated evidence comes from the Kingdom of Aksum, in today\'s Ethiopia and Eritrea, where rows of pits were cut into rock and shaped in pottery in the 6th and 7th centuries CE. Hollows in far older stone slabs in Jordan may be boards too, but that is debated.',
@@ -1745,7 +1927,7 @@ const STOPS = [
     ],
     facts: [['Board', '2 rows of 6 pits'], ['Pieces', '48 seeds'], ['Capture', 'Make 2 or 3 in a Scribe pit'], ['Win', 'Capture 25 seeds']],
     build: buildOwareBoard },
-  { id: 'brandubh', wing: 2, side: -1, z: -74, title: 'Brandubh', date: 'c. 900–1000 CE', rail: 'Brandubh',
+  { id: 'brandubh', wing: 2, title: 'Brandubh', date: 'c. 900–1000 CE', rail: 'Brandubh',
     eyebrow: 'Ireland · Early Middle Ages', status: ['recon', 'Rules reconstructed'], game: 'brandubh',
     body: [
       'Brandubh, usually translated "black raven", was the Irish member of the tafl family: Norse and Celtic games in which a king tries to escape while a larger army closes in. Irish poems describe it played with five pieces against eight, one of the five being a chief.',
@@ -1762,7 +1944,7 @@ const STOPS = [
     ],
     facts: [['Tables', 'Tables, Shatranj'], ['Display', 'Chaturanga, Lewis chessmen, cards, tarot']],
   },
-  { id: 'tables', wing: 3, side: -1, z: -93, title: 'Tables', short: 'Tables (Backgammon)', date: 'c. 480 CE onward', rail: 'Tables',
+  { id: 'tables', wing: 3, title: 'Tables', short: 'Tables (Backgammon)', date: 'c. 480 CE onward', rail: 'Tables',
     eyebrow: 'Rome, Persia and medieval Europe', status: ['known', 'Rules survive in modern backgammon'], game: 'tables',
     body: [
       'Tables is the family of games that backgammon belongs to. The Byzantine poet Agathias recorded a disastrous throw by the emperor Zeno, who reigned from 474 to 491, in a game of tabula: 24 points, 15 pieces a side and three dice. It descended from the Roman game of twelve lines. In Persia a close relative, nard, appears between the 3rd and 6th centuries, and one legend credits it to a vizier of Khosrow I.',
@@ -1771,7 +1953,7 @@ const STOPS = [
     ],
     facts: [['Board', '24 points in four quarters'], ['Pieces', '15 each'], ['Moves', 'Two dice, doubles count twice'], ['Goal', 'Bear all fifteen off']],
     build: buildTablesBoard },
-  { id: 'chaturanga', wing: 3, side: 1, z: -98.5, title: 'Chaturanga', date: 'by c. 600 CE', rail: 'Chaturanga',
+  { id: 'chaturanga', wing: 3, title: 'Chaturanga', date: 'by c. 600 CE', rail: 'Chaturanga',
     eyebrow: 'India · Gupta period', status: ['recon', 'Rules partly lost'],
     note: 'On display. Nobody knows how the elephant moved, so we play its Persian successor next door.',
     body: [
@@ -1780,7 +1962,7 @@ const STOPS = [
     ],
     facts: [['Board', '8 × 8 ashtapada'], ['Pieces', 'Raja, mantri, gaja, ashva, ratha, padati'], ['Goal', 'Checkmate, or leave the king bare']],
     build: buildChaturanga },
-  { id: 'shatranj', wing: 3, side: -1, z: -104, title: 'Shatranj', date: 'c. 600–1200 CE', rail: 'Shatranj',
+  { id: 'shatranj', wing: 3, title: 'Shatranj', date: 'c. 600–1200 CE', rail: 'Shatranj',
     eyebrow: 'Persia and the Islamic world', status: ['known', 'Rules survive in writing'], game: 'shatranj',
     body: [
       'Chaturanga reached Sasanian Persia as chatrang, and after the Islamic conquest it became shatranj, the chess of the caliphs\' courts. Masters such as al-Adli and as-Suli wrote about openings and endgames in the 9th and 10th centuries, ranked players into classes, and composed mansubat: chess problems built from chains of checks.',
@@ -1788,7 +1970,7 @@ const STOPS = [
     ],
     facts: [['Board', '8 × 8, unchequered'], ['Firzan', 'One square diagonally'], ['Alfil', 'Jumps two diagonally'], ['Win', 'Checkmate, stalemate or a bare king']],
     build: buildShatranjBoard },
-  { id: 'lewis', wing: 3, side: 1, z: -109.5, title: 'The Lewis Chessmen', short: 'Lewis Chessmen', date: 'c. 1150–1200 CE', rail: 'Lewis Chessmen',
+  { id: 'lewis', wing: 3, title: 'The Lewis Chessmen', short: 'Lewis Chessmen', date: 'c. 1150–1200 CE', rail: 'Lewis Chessmen',
     eyebrow: 'Norway and the Hebrides · 12th century', status: ['known', 'Chess as Europe played it'],
     note: 'On display. The figures here are our own simplified carvings, not copies.',
     body: [
@@ -1797,7 +1979,7 @@ const STOPS = [
     ],
     facts: [['Found', 'Isle of Lewis, about 1831'], ['Material', 'Walrus ivory, whale tooth'], ['Pieces', '79 chessmen, 14 tables discs'], ['Held', 'British Museum, National Museums Scotland']],
     build: buildLewis },
-  { id: 'cards', wing: 3, side: -1, z: -115, title: 'Playing Cards', date: 'c. 900–1400 CE', rail: 'Playing Cards',
+  { id: 'cards', wing: 3, title: 'Playing Cards', date: 'c. 900–1400 CE', rail: 'Playing Cards',
     eyebrow: 'China, Mamluk Egypt and Europe', status: ['lost', 'Earliest games lost'],
     note: 'On display. These cards are new designs in the old styles.',
     body: [
@@ -1806,7 +1988,7 @@ const STOPS = [
     ],
     facts: [['China', 'Recorded by 969 CE'], ['Egypt', 'Mamluk packs, 15th century'], ['Europe', 'From the 1370s'], ['Suits', 'Coins, cups, swords, batons']],
     build: buildCards },
-  { id: 'tarot', wing: 3, side: 1, z: -120.5, title: 'Tarot (Tarocchi)', date: 'c. 1440 CE', rail: 'Tarot',
+  { id: 'tarot', wing: 3, title: 'Tarot (Tarocchi)', date: 'c. 1440 CE', rail: 'Tarot',
     eyebrow: 'Northern Italy · 15th century', status: ['known', 'Still played as a card game'],
     note: 'On display. These trumps are new paintings in the style of the gilded Milan decks.',
     body: [
@@ -1823,7 +2005,7 @@ const STOPS = [
     ],
     facts: [['Tables', 'Fox and Geese, Draughts, the Goose'], ['Display', 'The new queen, Pachisi, Mahjong']],
   },
-  { id: 'foxgeese', wing: 4, side: -1, z: -138, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
+  { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
     body: [
       'Fox and Geese is a hunt: one fox against a whole flock. Its likely ancestor is halatafl, the "tail board" game named in the Icelandic Grettis saga, which was written down in the 14th century. It is a cousin of the tafl games in Wing II.',
@@ -1832,7 +2014,7 @@ const STOPS = [
     ],
     facts: [['Board', '33 points on a cross'], ['Pieces', '1 fox, 13 geese'], ['You play', 'The fox'], ['Win', 'Thin the flock, or slip away']],
     build: buildFoxGeeseBoard },
-  { id: 'newqueen', wing: 4, side: 1, z: -143.5, title: 'The New Queen', date: 'c. 1475 CE', rail: 'The New Queen',
+  { id: 'newqueen', wing: 4, title: 'The New Queen', date: 'c. 1475 CE', rail: 'The New Queen',
     eyebrow: 'Valencia · late 15th century', status: ['known', 'Rules survive in writing'],
     note: 'On display. Play shatranj in Wing III to feel how slow the old queen was.',
     body: [
@@ -1842,7 +2024,7 @@ const STOPS = [
     ],
     facts: [['Queen', 'Any distance, any direction'], ['Bishop', 'Any distance diagonally'], ['First record', 'Scachs d\'amor, c. 1475']],
     build: buildNewChess },
-  { id: 'draughts', wing: 4, side: -1, z: -149, title: 'Draughts', date: 'c. 1100s – 1500s CE', rail: 'Draughts',
+  { id: 'draughts', wing: 4, title: 'Draughts', date: 'c. 1100s – 1500s CE', rail: 'Draughts',
     eyebrow: 'France, Spain and England', status: ['known', 'Rules survive in tradition'], game: 'draughts',
     body: [
       'Draughts was born when someone moved the pieces of alquerque, an Arabic game played on a grid of lines, onto a chessboard. When is disputed: the historian H. J. R. Murray thought the 12th century, while David Parlett finds the first possible reference in England in 1380. Early players called it fierges or ferses, after the medieval chess queen, and later dames.',
@@ -1850,7 +2032,7 @@ const STOPS = [
     ],
     facts: [['Board', '8 × 8, dark squares only'], ['Pieces', '12 each'], ['Capture', 'Compulsory, by jumping'], ['Win', 'Take or block every enemy piece']],
     build: buildDraughtsBoard },
-  { id: 'pachisi', wing: 4, side: 1, z: -154.5, title: 'Pachisi (Chaupar)', date: '16th century CE', rail: 'Pachisi',
+  { id: 'pachisi', wing: 4, title: 'Pachisi (Chaupar)', date: '16th century CE', rail: 'Pachisi',
     eyebrow: 'India · Mughal court', status: ['known', 'Still played, and the ancestor of Ludo'],
     note: 'On display. It is played by four, so the Scribe sits this one out.',
     body: [
@@ -1860,7 +2042,7 @@ const STOPS = [
     ],
     facts: [['Board', 'A cross of four arms'], ['Throws', 'Cowrie shells'], ['Pieces', '4 each, in four colours'], ['Descendants', 'Ludo, Parcheesi']],
     build: buildPachisi },
-  { id: 'goose', wing: 4, side: -1, z: -160, title: 'The Game of the Goose', short: 'Game of the Goose', date: 'c. 1575 CE', rail: 'The Goose',
+  { id: 'goose', wing: 4, title: 'The Game of the Goose', short: 'Game of the Goose', date: 'c. 1575 CE', rail: 'The Goose',
     eyebrow: 'Italy and Europe · 16th century', status: ['known', 'Rules survive in print'], game: 'goose',
     body: [
       'The Game of the Goose is often called the first board game made to be sold. Francesco I de\' Medici, Grand Duke of Tuscany, sent one to Philip II of Spain sometime between 1574 and 1587, and in June 1597 the London printer John Wolfe registered "the newe and most pleasant game of the goose".',
@@ -1868,7 +2050,7 @@ const STOPS = [
     ],
     facts: [['Board', '63 squares in a spiral'], ['Dice', 'Two'], ['Skill', 'None at all'], ['Win', 'Land exactly on 63']],
     build: buildGooseBoard },
-  { id: 'mahjong', wing: 4, side: 1, z: -165.5, title: 'Mahjong', date: 'mid-1800s CE', rail: 'Mahjong',
+  { id: 'mahjong', wing: 4, title: 'Mahjong', date: 'mid-1800s CE', rail: 'Mahjong',
     eyebrow: 'China · Qing dynasty', status: ['known', 'Still played today'],
     note: 'On display. A full table needs four players, so the Scribe sits this one out.',
     body: [
@@ -1885,7 +2067,7 @@ const STOPS = [
     ],
     facts: [['Tables', 'Reversi, Halma, Dots and Boxes'], ['Display', 'Mansion of Happiness, Game of Life, the Landlord\'s Game']],
   },
-  { id: 'mansion', wing: 5, side: -1, z: -183, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
+  { id: 'mansion', wing: 5, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
     eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'],
     note: 'On display. Note the teetotum: dice were thought too close to gambling.',
     body: [
@@ -1894,7 +2076,7 @@ const STOPS = [
     ],
     facts: [['Publisher', 'W. & S. B. Ives, Salem'], ['Moves', 'A spinning teetotum'], ['Goal', 'Reach the mansion at the centre']],
     build: buildMansion },
-  { id: 'lifegame', wing: 5, side: 1, z: -188.5, title: 'The Checkered Game of Life', short: 'Checkered Game of Life', date: '1860 CE', rail: 'Game of Life',
+  { id: 'lifegame', wing: 5, title: 'The Checkered Game of Life', short: 'Checkered Game of Life', date: '1860 CE', rail: 'Game of Life',
     eyebrow: 'Springfield, Massachusetts', status: ['known', 'Rules survive in print'],
     note: 'On display.',
     body: [
@@ -1903,7 +2085,7 @@ const STOPS = [
     ],
     facts: [['Maker', 'Milton Bradley'], ['Moves', 'A teetotum'], ['Sold', 'Over 45,000 by 1861']],
     build: buildCheckeredLife },
-  { id: 'reversi', wing: 5, side: -1, z: -194, title: 'Reversi', date: '1883 CE', rail: 'Reversi',
+  { id: 'reversi', wing: 5, title: 'Reversi', date: '1883 CE', rail: 'Reversi',
     eyebrow: 'Victorian England', status: ['known', 'Rules survive in print'], game: 'reversi',
     body: [
       'Two Englishmen, Lewis Waterman and John W. Mollett, each claimed to have invented reversi in 1883, and each called the other a fraud. Whoever was first, the game of flipping discs caught on: the Saturday Review mentioned it in 1886, and the German publisher Ravensburger was making it by 1893.',
@@ -1911,7 +2093,7 @@ const STOPS = [
     ],
     facts: [['Board', '8 × 8'], ['Pieces', '64 two-sided discs'], ['Win', 'Most discs showing']],
     build: buildReversiBoard },
-  { id: 'halma', wing: 5, side: 1, z: -199.5, title: 'Halma', date: '1883–84 CE', rail: 'Halma',
+  { id: 'halma', wing: 5, title: 'Halma', date: '1883–84 CE', rail: 'Halma',
     eyebrow: 'Massachusetts and Germany', status: ['known', 'Still played, as Chinese checkers'], game: 'halma',
     body: [
       'Halma, from the Greek for "leap", was invented in 1883 or 1884 by George Howard Monks, a surgeon at Harvard Medical School, who drew on an English game called Hoppity. Each player starts with a camp of men in one corner of a 16 × 16 board and races to move them all into the opposite corner, stepping, or leaping over any piece in chains of jumps.',
@@ -1920,7 +2102,7 @@ const STOPS = [
     ],
     facts: [['Board', '16 × 16'], ['Players', 'Two or four'], ['Moves', 'A step, or chains of leaps'], ['Descendant', 'Chinese checkers']],
     build: buildHalma },
-  { id: 'dotsboxes', wing: 5, side: -1, z: -205, title: 'Dots and Boxes', date: 'late 19th century CE', rail: 'Dots and Boxes',
+  { id: 'dotsboxes', wing: 5, title: 'Dots and Boxes', date: 'late 19th century CE', rail: 'Dots and Boxes',
     eyebrow: 'France', status: ['known', 'Rules survive in print'], game: 'dotsboxes',
     body: [
       'Dots and Boxes needs only a pencil and paper. The French mathematician Édouard Lucas, best known for the Tower of Hanoi puzzle, published it in the late 19th century as la pipopipette, and it has gone by many names since, from boxes to pigs in a pen.',
@@ -1928,7 +2110,7 @@ const STOPS = [
     ],
     facts: [['Grid', '4 × 4 boxes'], ['Score', 'Close a box, draw again'], ['Win', 'Most boxes']],
     build: buildDotsBoard },
-  { id: 'landlord', wing: 5, side: 1, z: -210.5, title: 'The Landlord\'s Game', date: '1904 CE', rail: 'Landlord\'s Game',
+  { id: 'landlord', wing: 5, title: 'The Landlord\'s Game', date: '1904 CE', rail: 'Landlord\'s Game',
     eyebrow: 'United States', status: ['known', 'Rules survive in the patent'],
     note: 'On display, as a patent sheet. The track drawn here is our own sketch, not a copy of the patent figure.',
     body: [
@@ -3288,6 +3470,7 @@ function step() {
 /* -------------------------------------------------------------- boot */
 async function boot() {
   try { await Promise.race([Promise.all([document.fonts.load('64px "Almendra SC"'), document.fonts.load('20px "Amethysta"'), document.fonts.load('20px "Montserrat"')]), wait(2500)]); } catch (e) {}
+  layoutHall();
   buildHall();
   buildUrTextures();
   for (const s of STOPS) {

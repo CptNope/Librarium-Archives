@@ -819,3 +819,96 @@ for (const level of ['gentle', 'fair', 'sharp']) {
     rules.setLevel('fair');
   });
 }
+
+/* ---------------------------------------------------------------- Alquerque */
+const { alquerque: AQ, snakes: SL, xiangqi: XQG } = rules;
+
+test('Alquerque: twelve pieces a side and the centre empty', () => {
+  AQ.init();
+  assert.equal(AQ.count(0), 12); assert.equal(AQ.count(1), 12);
+  assert.equal(AQ.b[12], 0);
+});
+
+test('Alquerque: pieces never step backwards, and diagonals only run through even points', () => {
+  AQ.init(); AQ.b.fill(0);
+  AQ.b[12] = 1; // centre: an even point with diagonals
+  const to = AQ.legal(0).map(m => m.to).sort((a, b) => a - b);
+  assert.deepEqual(to, [11, 13, 16, 17, 18]);
+  AQ.b.fill(0); AQ.b[7] = 1; // (1,2): odd, no diagonals
+  assert.deepEqual(AQ.legal(0).map(m => m.to).sort((a, b) => a - b), [6, 8, 12]);
+});
+
+test('Alquerque: capture is compulsory and chains', () => {
+  AQ.init(); AQ.b.fill(0);
+  AQ.b[0] = 1; AQ.b[6] = 2; AQ.b[18] = 2; AQ.b[20] = 1; // a free move is open to the piece on 20
+  const ms = AQ.legal(0);
+  assert.ok(ms.every(m => m.caps.length), 'only captures are offered');
+  const chain = ms.find(m => m.caps.length === 2);
+  assert.ok(chain); assert.deepEqual(chain.path, [12, 24]);
+});
+
+/* ------------------------------------------------------- Snakes and Ladders */
+test('Snakes and Ladders: ladders climb, snakes slide, and 100 needs an exact throw', () => {
+  SL.init();
+  SL.pos[0][0] = 9;
+  let [m] = SL.legal(0, 3, { faces: [3], value: 3 });
+  assert.equal(m.to, 31);
+  SL.pos[0][0] = 95;
+  [m] = SL.legal(0, 4, { faces: [4], value: 4 });
+  assert.equal(m.to, 61); // the snake of Lust at 99
+  [m] = SL.legal(0, 6, { faces: [6], value: 6 });
+  assert.equal(m.to, 95);
+  SL.pos[0][0] = 97;
+  [m] = SL.legal(0, 3, { faces: [3], value: 3 });
+  SL.apply(m); assert.ok(SL.done(0));
+});
+
+/* ------------------------------------------------------------------ Xiangqi */
+const xq = (r, c) => r * 9 + c;
+test('Xiangqi: red has 44 opening moves', () => {
+  XQG.init();
+  assert.equal(XQG.legal(0).length, 44);
+});
+
+test('Xiangqi: the generals may not face each other on an open file', () => {
+  XQG.init(); XQG.b.fill(0);
+  XQG.b[xq(0, 4)] = XQG.T.K; XQG.b[xq(9, 3)] = XQG.T.K + 8;
+  assert.ok(!XQG.legal(0).some(m => m.from === xq(0, 4) && m.to === xq(0, 3)), 'the red general may not step onto the black general\'s file');
+});
+
+test('Xiangqi: a cannon captures only over a screen, and a horse can be hobbled', () => {
+  XQG.init(); XQG.b.fill(0);
+  XQG.b[xq(0, 4)] = XQG.T.K; XQG.b[xq(9, 3)] = XQG.T.K + 8;
+  XQG.b[xq(4, 0)] = XQG.T.C; XQG.b[xq(4, 8)] = XQG.T.P + 8;
+  assert.ok(!XQG.legal(0).some(m => m.from === xq(4, 0) && m.to === xq(4, 8)), 'no screen, no capture');
+  XQG.b[xq(4, 4)] = XQG.T.P;
+  assert.ok(XQG.legal(0).some(m => m.from === xq(4, 0) && m.to === xq(4, 8)), 'over a screen it captures');
+  XQG.b.fill(0); XQG.b[xq(0, 4)] = XQG.T.K; XQG.b[xq(9, 3)] = XQG.T.K + 8;
+  XQG.b[xq(2, 2)] = XQG.T.H;
+  const free = XQG.legal(0).filter(m => m.from === xq(2, 2)).length;
+  XQG.b[xq(3, 2)] = XQG.T.P;
+  const hobbled = XQG.legal(0).filter(m => m.from === xq(2, 2)).length;
+  assert.equal(free, 8); assert.equal(hobbled, 6);
+});
+
+test('Xiangqi: elephants stay home and a general with no move loses', () => {
+  XQG.init(); XQG.b.fill(0);
+  XQG.b[xq(0, 4)] = XQG.T.K; XQG.b[xq(9, 3)] = XQG.T.K + 8;
+  XQG.b[xq(4, 2)] = XQG.T.E;
+  assert.ok(XQG.legal(0).filter(m => m.from === xq(4, 2)).every(m => m.to < 45));
+  // Two black chariots pin the red general in the corner of his palace.
+  XQG.b.fill(0); XQG.b[xq(0, 3)] = XQG.T.K; XQG.b[xq(9, 5)] = XQG.T.K + 8;
+  XQG.b[xq(9, 3)] = XQG.T.R + 8; XQG.b[xq(5, 4)] = XQG.T.R + 8;
+  const r = XQG.result(0);
+  assert.ok(r); assert.equal(r.winner, 1);
+});
+
+for (const id of ['alquerque', 'xiangqi']) for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`${id}: at ${level}, the Scribe moves within budget`, () => {
+    rules.setLevel(level);
+    const G = rules[id]; G.init(); let pl = 0, slowest = 0;
+    for (let k = 0; k < 8 && !G.result(pl); k++) { const t0 = Date.now(); const plan = G.aiPlan(pl); slowest = Math.max(slowest, Date.now() - t0); plan.forEach(m => G.apply(m)); pl = 1 - pl; }
+    assert.ok(slowest < { gentle: 400, fair: 1100, sharp: 2200 }[level], `took ${slowest} ms`);
+    rules.setLevel('fair');
+  });
+}
