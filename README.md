@@ -55,7 +55,25 @@ Rule choices worth knowing:
 - **Fox and Geese** is played on the plain cross board (no diagonal lines) with 13 geese that may move forward or sideways but never back. A **museum rule** lets the fox win if the geese go twenty moves each without advancing or losing a goose: without it, games with sideways moves can go on forever.
 - **The Goose:** a throw of 9 from the start goes to 26 (6 and 3) or 53 (5 and 4), whenever the piece is at the start, since geese every nine squares would otherwise fly it straight home. With two players, the Well and the Prison hold a player for two and three turns instead of until someone else arrives.
 
-The hall ends at a lectern featuring Librarium's own games and the closed arch of Wing V, which is in preparation.
+## Wing V: The Modern Board Game (c. 1840 CE – today)
+
+Through the fourth arch: games become products, sold by publishers and protected by patents.
+
+| Exhibit | Date | Rules | In the museum |
+| --- | --- | --- | --- |
+| The Mansion of Happiness | 1843 CE | Survive in print | On display (a spiral of virtues and vices, with a teetotum) |
+| The Checkered Game of Life | 1860 CE | Survive in print | On display |
+| Reversi | 1883 CE | Survive in print; played today as Othello | Playable, from the Othello opening |
+| Halma | 1883–84 CE | Still played, as Chinese checkers | On display (16 × 16 board with two camps) |
+| Dots and Boxes | late 19th century CE | Survive in print (Lucas's *pipopipette*) | Playable, on a 4 × 4 grid of boxes |
+| The Landlord's Game | 1904 CE | Survive in the patent | On display (a patent sheet; the drawn track is our own sketch) |
+
+Rule choices worth knowing:
+
+- **Reversi** starts from the four centre discs of Othello rather than the empty board of the 1880s. A player with no legal move passes; the game ends when neither can move.
+- **Dots and Boxes:** closing a box scores it and you must draw again. The Scribe plays the whole of its turn, so it may take several boxes in a row.
+
+The hall ends at a lectern featuring Librarium's own games, with links to Phoenix Farm, Calendra, The Great Chase and Royal Threadcount, under an arch signed *Different fables for different tables*.
 
 ## The Scribe
 
@@ -63,7 +81,8 @@ The AI opponent has three levels, picked at any table and remembered: **Gentle**
 
 - **Race games** (Senet, Ur) score each move. Gentle adds a lot of chance and sometimes just plays any legal move; Sharp plays its best move.
 - **Tables** scores every legal full turn (pip count, safe points, exposed checkers). Gentle picks loosely among the good ones; Sharp always takes the best.
-- **Strategy games** (Morris, Oware, Brandubh, Shatranj, Fox and Geese, Draughts) use a negamax search with alpha-beta pruning and iterative deepening. Each level has a thinking budget (about 0.1, 0.6 and 1.5 seconds): the Scribe searches one move deeper at a time and stops the moment its budget runs out, so it plays as well as the visitor's device allows without stalling. In Fox and Geese it plays the geese, steering by how much room the fox has left to roam.
+- **Strategy games** (Morris, Oware, Brandubh, Shatranj, Fox and Geese, Draughts) use a negamax search with alpha-beta pruning and iterative deepening. Each level has a thinking budget (about 0.1, 0.6 and 1.5 seconds): the Scribe searches one move deeper at a time and stops the moment its budget runs out, so it plays as well as the visitor's device allows without stalling. In Fox and Geese it plays the geese, steering by how much room the fox has left to roam. In Reversi it weighs corners, edges and mobility, then counts discs exactly near the end.
+- **Dots and Boxes** has its own Scribe. Gentle takes free boxes but often hands them back; Fair and Sharp avoid giving boxes away, and once only risky lines are left they solve the rest of the game exactly (Sharp from 22 open lines, Fair from 15), giving boxes away on purpose to keep control of the long chains.
 
 In Brandubh the visitor's side still wins most games, even against Sharp.
 
@@ -176,6 +195,11 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 - Masters Traditional Games, Fox and Geese; Traditional Board Games (tradgames.org.uk), Draughts
 - Kasparov–Wilson (kwabc.org): Scachs d'amor; ISTC: Lucena, *Repetición de amores y arte de ajedrez*
 - Live History India: Ludo's Indian roots
+- Library of Congress: The Mansion of Happiness (1843)
+- Wikipedia: The Mansion of Happiness, The Checkered Game of Life, Reversi, Halma, Chinese checkers, Dots and boxes, The Landlord's Game
+- Google Patents: US 748,626, Elizabeth J. Magie, Game-board (1904)
+- Elwyn Berlekamp, *The Dots and Boxes Game: Sophisticated Child's Play* (2000)
+- Librarium Games (librarium.games): Phoenix Farm, Calendra, The Great Chase, Royal Threadcount
 
 ## Roadmap
 
@@ -184,7 +208,9 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 - [x] Wing II: strategy games (Weiqi, Ludus latrunculorum, Nine Men's Morris, Oware, Brandubh)
 - [x] Wing III: kings, cards and courts (Tables, chaturanga, shatranj, Lewis chessmen, cards, tarot)
 - [x] Wing IV: printed boards and parlour tables (Fox and Geese, the new queen, Draughts, Pachisi, the Goose, Mahjong)
-- [ ] Wing V: the modern board game (from the first patented games to Librarium's own)
+- [x] Wing V: the modern board game (Mansion of Happiness, Game of Life, Reversi, Halma, Dots and Boxes, the Landlord's Game)
+- [ ] Playable Halma for two
+- [ ] Larger Dots and Boxes grids
 - [ ] A playable early card game, such as a simple tarocchi trick-taking game
 - [x] Difficulty settings for the Scribe
 - [ ] A stronger Brandubh attacker

@@ -12,12 +12,13 @@ A walkable 3D museum of the oldest board and card games, with tables visitors ca
 
 == Description ==
 
-Visitors walk a candlelit library hall in three wings, read the history of each game on its placard, and sit down to play:
+Visitors walk a candlelit library hall in five wings, read the history of each game on its placard, and sit down to play:
 
 * Wing I, The Dawn of Play: Senet and the Royal Game of Ur (playable), Mehen, the Başur Höyük pieces, Hounds and Jackals.
 * Wing II, Strategy Takes the Table: Nine Men's Morris, Oware and Brandubh (playable), Weiqi (Go), Ludus latrunculorum.
 * Wing III, Kings, Cards and Courts: Tables (backgammon) and Shatranj (playable), Chaturanga, the Lewis Chessmen, playing cards, tarot.
 * Wing IV, Printed Boards and Parlour Tables: Fox and Geese, Draughts and the Game of the Goose (playable), the new chess queen, Pachisi, Mahjong.
+* Wing V, The Modern Board Game: Reversi and Dots and Boxes (playable), the Mansion of Happiness, the Checkered Game of Life, Halma, the Landlord's Game, and a lectern of Librarium's own games.
 
 Visitors walk with the arrow keys or WASD, or on phones and tablets with an on-screen joystick or by tapping the floor, and pinch to zoom. The Scribe plays at three levels. Visitor progress (exhibits visited, records at each table) is kept in the visitor's own browser only; the plugin stores nothing on the server.
 
@@ -43,6 +44,9 @@ Only one museum can appear on a page. Assets load only on pages that show it.
 * Fonts Almendra SC, Amethysta and Montserrat from Google Fonts (SIL Open Font License).
 
 == Changelog ==
+
+= 0.8.0 =
+* Wing V: Reversi and Dots and Boxes, plus the Mansion of Happiness, the Checkered Game of Life, Halma and the Landlord's Game. The closing lectern links to Librarium's games.
 
 = 0.7.0 =
 * Wing IV: Fox and Geese, Draughts and the Game of the Goose, plus the new chess queen, Pachisi and Mahjong.

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0: Wing V
+
+- New wing, **The Modern Board Game** (c. 1840 to today), through a fourth open arch.
+- Two new playable tables:
+  - **Reversi**: the disc-flipping game of 1883, from the Othello opening. Passes are automatic.
+  - **Dots and Boxes**: a 4 × 4 grid of boxes. Close a box to draw again. The Scribe solves the endgame exactly at Fair and Sharp.
+- Four new display exhibits: **The Mansion of Happiness** (1843), **The Checkered Game of Life** (1860), **Halma** and **the Landlord's Game** (Lizzie Magie's 1904 patent).
+- The closing lectern now lists Librarium's own games with links, and the end arch reads *Different fables for different tables*.
+
 ## 0.7.0: Wing IV
 
 - New wing, **Printed Boards and Parlour Tables** (c. 1300–1900), through a third open arch.
