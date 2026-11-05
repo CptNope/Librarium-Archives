@@ -45,6 +45,9 @@ Only one museum can appear on a page. Assets load only on pages that show it.
 
 == Changelog ==
 
+= 0.11.0 =
+* New navigation: wing tabs, previous and next, and a searchable index of every exhibit.
+
 = 0.10.0 =
 * Sound (synthesized, with a mute button), a playable tarocchi card game, and Dots and Boxes on a 5 × 5 grid.
 

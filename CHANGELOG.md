@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0: New navigation
+
+- The bar along the bottom is rebuilt for five wings. **Wing tabs** (I to V) jump to each wing's entrance; the strip shows only the exhibits of the wing you are in, marks the tables you can play, and follows you as you walk; **‹ ›** (or **[ ]** on a keyboard) step through the exhibits in order, across wings.
+- **All exhibits** opens an index of every exhibit grouped by wing, with search (titles, places, dates and facts; Enter goes to the first match), filters for playable tables and exhibits you have not visited, and how many you have seen in each wing.
+- On phones the bar takes two rows, and the exhibit card and joystick sit above it.
+
 ## 0.10.0: Sound, tarocchi and a bigger grid
 
 - **Sound**, all synthesized in the browser: throwing sticks, dice, pieces, Go stones, pencil lines, cards, a chime at the end of a game, and a soft room tone with candle crackle. A speaker button mutes it and is remembered.
