@@ -1728,8 +1728,9 @@ function buildLiubo(group) {
   // One piece stood on end: an 'owl'.
   const owl = new THREE.Mesh(piece, mats[0]); owl.rotation.z = Math.PI / 2; owl.position.set(0.05, TOP + 0.076, 0.06); group.add(owl);
   const stick = new THREE.CylinderGeometry(0.008, 0.008, 0.16, 10, 1, false, 0, Math.PI);
-  const sm = new THREE.MeshStandardMaterial({ color: 0xa8783a, roughness: 0.6 });
-  for (let k = 0; k < 6; k++) { const st = new THREE.Mesh(stick, sm); st.rotation.set(Math.PI / 2, 0, k % 2 ? Math.PI : 0); st.rotation.order = 'YXZ'; st.rotation.y = 0.2 * (k - 2.5); st.position.set(W / 2 + 0.1, TOP + 0.006, -0.12 + k * 0.045); group.add(st); }
+  const sm = new THREE.MeshStandardMaterial({ color: 0x8a6030, roughness: 0.6, side: THREE.DoubleSide });
+  // Six throwing sticks laid side by side, flat face down.
+  for (let k = 0; k < 6; k++) { const st = new THREE.Mesh(stick, sm); st.rotation.set(-Math.PI / 2, 0, 0); st.position.set(W / 2 + 0.06 + k * 0.022, TOP, 0); group.add(st); }
 }
 function buildPatolli(group) {
   const W = 0.84;
@@ -1739,10 +1740,10 @@ function buildPatolli(group) {
     g.fillStyle = '#c8a86a'; g.fillRect(0, 0, w, w);
     for (let y = 0; y < w; y += 10) { g.fillStyle = y % 20 ? 'rgba(120,85,40,.25)' : 'rgba(255,240,200,.12)'; g.fillRect(0, y, w, 5); }
     for (let x = 0; x < w; x += 64) { g.fillStyle = 'rgba(90,60,25,.25)'; g.fillRect(x, 0, 3, w); }
-    const c = w / 2, sq = 38;
+    const c = w / 2, sq = 50;
     g.save(); g.translate(c, c); g.rotate(Math.PI / 4);
-    g.strokeStyle = '#2a1a0a'; g.lineWidth = 4;
-    const cell = (x, y, fill) => { if (fill) { g.fillStyle = fill; g.fillRect(x, y, sq, sq); } g.strokeRect(x, y, sq, sq); };
+    g.strokeStyle = '#2a1a0a'; g.lineWidth = 7;
+    const cell = (x, y, fill) => { g.fillStyle = fill || '#ead6a4'; g.fillRect(x, y, sq, sq); g.strokeRect(x, y, sq, sq); };
     for (let k = 0; k < 4; k++) {
       g.save(); g.rotate(k * Math.PI / 2);
       for (let i = 1; i <= 6; i++) for (const j of [-1, 0]) {
