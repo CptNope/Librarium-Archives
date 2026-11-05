@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Museum of Play · Embed demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almendra+SC&family=Amethysta&family=Montserrat:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/museum.css">
+<style>
+  /* A stand-in for a WordPress theme page, to check the museum embeds cleanly. */
+  body { margin: 0; background: #fff; color: #625f5f; font: 16px/1.6 "Almendra SC", Georgia, serif; }
+  header { background: #000; color: #f6a01a; padding: 18px max(16px, 5vw); font-size: 24px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px max(16px, 4vw) 80px; }
+  h1 { color: #222; font-size: 34px; margin: 0 0 8px; }
+  .btn { background: #e06418; color: #fff; padding: 6px 12px; } /* a theme class the museum must not inherit */
+</style>
+</head>
+<body>
+<header>Librarium Games</header>
+<main>
+  <h1>The Museum of Play</h1>
+  <p>This page imitates a WordPress page with the <code>[librarium_museum height="70vh" start="ur"]</code> shortcode, to test the embedded mode: the museum should sit in its own box, scroll with the page, ignore the theme's styles, and only take the keyboard while you are using it.</p>
+  <p class="btn">A theme button style</p>
+  <div class="lm-embed" style="--lm-height:70vh" id="slot"><p>Loading the museum…</p></div>
+  <p>Text below the museum. Scroll the page with the wheel or arrow keys when the pointer is not over the museum.</p>
+  <p style="height:60vh"></p>
+</main>
+<script>
+// Pull the museum markup from index.html so this demo never drifts from it.
+fetch('index.html').then(r => r.text()).then(html => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const app = doc.getElementById('lm-app');
+  app.dataset.start = new URLSearchParams(location.search).get('start') || 'ur';
+  const slot = document.getElementById('slot');
+  slot.innerHTML = ''; slot.appendChild(document.importNode(app, true));
+  const load = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.body.appendChild(s); });
+  return load('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js').then(() => load('js/rules.js')).then(() => load('js/museum.js'));
+});
+</script>
+</body>
+</html>

@@ -1,11 +1,13 @@
 {
   "name": "librarium-museum",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "description": "Librarium Museum of Play: a walkable 3D hall of the oldest board games, with playable Senet and Royal Game of Ur.",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "build:artifact": "node tools/build-artifact.mjs"
+    "build:artifact": "node tools/build-artifact.mjs",
+    "build:wp": "node tools/build-wp.mjs",
+    "test:plugin": "node tools/build-wp.mjs && php tests/plugin-render.test.php render && php tests/plugin-render.test.php sanitize"
   },
   "engines": {
     "node": ">=18"
