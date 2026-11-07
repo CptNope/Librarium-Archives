@@ -68,6 +68,13 @@ function librarium_museum_exhibits() {
 		'halma'      => 'Halma',
 		'dotsboxes'  => __( 'Dots and Boxes', 'librarium-museum' ),
 		'landlord'   => __( "The Landlord's Game", 'librarium-museum' ),
+		'wing6'      => __( 'Wing VI: Games of the World', 'librarium-museum' ),
+		'mutorere'   => __( 'Mū tōrere', 'librarium-museum' ),
+		'shogi'      => 'Shogi',
+		'konane'     => __( 'Kōnane', 'librarium-museum' ),
+		'yut'        => 'Yut Nori',
+		'fanorona'   => 'Fanorona',
+		'bao'        => 'Bao',
 		'next'       => __( 'Librarium lectern', 'librarium-museum' ),
 	);
 }

@@ -168,12 +168,14 @@ function buildHall() {
   buildDivider(HALL.dividers[1], 'Wing III', 'KINGS, CARDS AND COURTS');
   buildDivider(HALL.dividers[2], 'Wing IV', 'PRINTED BOARDS AND PARLOUR TABLES');
   buildDivider(HALL.dividers[3], 'Wing V', 'THE MODERN BOARD GAME');
+  buildDivider(HALL.dividers[4], 'Wing VI', 'GAMES OF THE WORLD');
   buildEndArch();
   buildBanner(-2.6, 'The Dawn of Play', 'Wing I  ·  c. 3100 – 2000 BCE');
   buildBanner(HALL.dividers[0] - 3.6, 'Strategy Takes the Table', 'Wing II  ·  c. 500 BCE – 1000 CE');
   buildBanner(HALL.dividers[1] - 3.6, 'Kings, Cards and Courts', 'Wing III  ·  c. 480 – 1450 CE');
   buildBanner(HALL.dividers[2] - 3.6, 'Printed Boards and Parlour Tables', 'Wing IV  ·  c. 1300 – 1900 CE');
   buildBanner(HALL.dividers[3] - 3.6, 'The Modern Board Game', 'Wing V  ·  c. 1840 CE – today');
+  buildBanner(HALL.dividers[4] - 3.6, 'Games of the World', 'Wing VI  ·  across the oceans');
 }
 
 function buildShelves(len, midZ) {
@@ -1957,6 +1959,159 @@ function buildSnakesBoard(group) {
   return TOP + 0.013;
 }
 
+/* --- Wing VI: Games of the World */
+const W6_CJK = '"Noto Serif CJK JP","Noto Serif CJK SC","Hiragino Mincho ProN","Yu Mincho","SimSun",serif';
+function stoneMesh(color, r, flat, rough) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), new THREE.MeshStandardMaterial({ color, roughness: rough == null ? 0.5 : rough }));
+  m.scale.y = flat; m.userData.mats = [m.material]; return m;
+}
+const MT_R = 0.3;
+function mtPos(i) { if (i === 8) return { x: 0, z: 0 }; const a = Math.PI + (i + 0.5) * Math.PI / 4; return { x: MT_R * Math.cos(a), z: -MT_R * Math.sin(a) }; }
+function buildMuTorere(group) {
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.44, 0.035, 48), new THREE.MeshStandardMaterial({ color: 0x5a3a20, roughness: 0.6 }));
+  disc.position.y = TOP + 0.0175; group.add(disc);
+  const px = 1024, W = 0.86, sc = px / W, c = px / 2;
+  const top = new THREE.Mesh(new THREE.CircleGeometry(0.43, 48), new THREE.MeshStandardMaterial({ roughness: 0.6, map: tex(px, px, (g) => {
+    woodGrain(g, px, px, '#a9763e', '#5a3a20');
+    // The star: eight arms (kewai) from the centre (pūtahi), like an octopus.
+    g.fillStyle = 'rgba(40,22,10,.82)';
+    for (let i = 0; i < 8; i++) {
+      const p = mtPos(i), x = c + p.x * sc, y = c + p.z * sc, a = Math.atan2(y - c, x - c);
+      g.beginPath(); g.moveTo(c + Math.cos(a - 0.32) * 46, c + Math.sin(a - 0.32) * 46);
+      g.quadraticCurveTo(c + Math.cos(a - 0.12) * 220, c + Math.sin(a - 0.12) * 220, x + Math.cos(a - 1.4) * 40, y + Math.sin(a - 1.4) * 40);
+      g.arc(x, y, 40, a - 1.4, a + 1.4);
+      g.quadraticCurveTo(c + Math.cos(a + 0.12) * 220, c + Math.sin(a + 0.12) * 220, c + Math.cos(a + 0.32) * 46, c + Math.sin(a + 0.32) * 46);
+      g.closePath(); g.fill();
+    }
+    g.beginPath(); g.arc(c, c, 58, 0, TAU); g.fill();
+    g.strokeStyle = '#e8c890'; g.lineWidth = 4;
+    for (let i = 0; i <= 8; i++) { const p = mtPos(i); g.beginPath(); g.arc(c + p.x * sc, c + p.z * sc, i === 8 ? 44 : 30, 0, TAU); g.stroke(); }
+  }) }));
+  top.rotation.x = -Math.PI / 2; top.position.y = TOP + 0.0355; group.add(top);
+  return TOP + 0.036;
+}
+const KN_S = 0.084;
+function knCell(i) { const r = (i / 8) | 0, c = i % 8; return { x: (c - 3.5) * KN_S, z: (3.5 - r) * KN_S }; }
+function buildKonane(group) {
+  // A papamū: a flat stone with rows of small hollows.
+  const W = 8 * KN_S + 0.08;
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(W, 0.06, W), new THREE.MeshStandardMaterial({ color: 0x5c5650, roughness: 0.95 }));
+  slab.position.y = TOP + 0.03; group.add(slab);
+  const px = 1024, sc = px / W;
+  topPlane(group, W, W, TOP + 0.0605, tex(px, px, (g) => {
+    g.fillStyle = '#6a645c'; g.fillRect(0, 0, px, px);
+    for (let i = 0; i < 3000; i++) { g.fillStyle = `rgba(${rand(20, 60) | 0},${rand(20, 55) | 0},${rand(20, 50) | 0},${rand(0.05, 0.25)})`; g.fillRect(rand(0, px), rand(0, px), rand(1, 5), rand(1, 5)); }
+    for (let i = 0; i < 64; i++) {
+      const p = knCell(i), x = px / 2 + p.x * sc, y = px / 2 + p.z * sc;
+      const gr = g.createRadialGradient(x - 4, y - 4, 2, x, y, 26); gr.addColorStop(0, '#2a2622'); gr.addColorStop(1, '#58524b');
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, 24, 0, TAU); g.fill();
+    }
+  }), { roughness: 0.95 });
+  return TOP + 0.061;
+}
+const FN_S = 0.098;
+function fnCell(i) { const r = (i / 9) | 0, c = i % 9; return { x: (c - 4) * FN_S, z: (2 - r) * FN_S }; }
+function buildFanorona(group) {
+  const W = 8 * FN_S + 0.12, D = 4 * FN_S + 0.12;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, D), new THREE.MeshStandardMaterial({ color: 0x7a4a24, roughness: 0.55 }));
+  board.position.y = TOP + 0.02; group.add(board);
+  const pw = 1024, ph = Math.round(pw * D / W), sc = pw / W;
+  topPlane(group, W, D, TOP + 0.0405, tex(pw, ph, (g) => {
+    woodGrain(g, pw, ph, '#c08a50', '#7a4a24');
+    const P = (r, c) => { const p = fnCell(r * 9 + c); return [pw / 2 + p.x * sc, ph / 2 + p.z * sc]; };
+    const line = (a, b) => { g.beginPath(); g.moveTo(...P(...a)); g.lineTo(...P(...b)); g.stroke(); };
+    g.strokeStyle = '#2a170b'; g.lineWidth = 4; g.lineCap = 'round';
+    for (let r = 0; r < 5; r++) line([r, 0], [r, 8]);
+    for (let c = 0; c < 9; c++) line([0, c], [4, c]);
+    // Diagonals through the strong points.
+    for (let k = -8; k <= 8; k += 2) {
+      const a = [], b = [];
+      for (let r = 0; r < 5; r++) { const c1 = r + k, c2 = k - r + 4; if (c1 >= 0 && c1 < 9) a.push([r, c1]); if (c2 >= 0 && c2 < 9) b.push([r, c2]); }
+      if (a.length > 1) line(a[0], a[a.length - 1]); if (b.length > 1) line(b[0], b[b.length - 1]);
+    }
+  }), { roughness: 0.55 });
+  return TOP + 0.041;
+}
+function buildShogi(group) {
+  const S = 0.072, W = 9 * S + 0.05;
+  const block = new THREE.Mesh(new THREE.BoxGeometry(W, 0.11, W + 0.04), new THREE.MeshStandardMaterial({ color: 0xc9a060, roughness: 0.5 }));
+  block.position.y = TOP + 0.055; group.add(block);
+  const px = 1024, sc = px / W;
+  topPlane(group, W, W + 0.04, TOP + 0.1105, tex(px, Math.round(px * (W + 0.04) / W), (g, w, h) => {
+    woodGrain(g, w, h, '#e0bc7a', '#b08848');
+    g.strokeStyle = '#2a1a0a'; g.lineWidth = 3;
+    const o = (w - 9 * S * sc) / 2, oy = (h - 9 * S * sc) / 2;
+    for (let i = 0; i <= 9; i++) { g.beginPath(); g.moveTo(o + i * S * sc, oy); g.lineTo(o + i * S * sc, oy + 9 * S * sc); g.stroke(); g.beginPath(); g.moveTo(o, oy + i * S * sc); g.lineTo(o + 9 * S * sc, oy + i * S * sc); g.stroke(); }
+    g.fillStyle = '#2a1a0a'; for (const [a, b] of [[3, 3], [3, 6], [6, 3], [6, 6]]) { g.beginPath(); g.arc(o + a * S * sc, oy + b * S * sc, 6, 0, TAU); g.fill(); }
+  }), { roughness: 0.5 });
+  // Pentagonal pieces, all one colour: the way a piece points shows whose it is.
+  const shape = new THREE.Shape(); shape.moveTo(-0.022, -0.026); shape.lineTo(0.022, -0.026); shape.lineTo(0.026, 0.012); shape.lineTo(0, 0.028); shape.lineTo(-0.026, 0.012); shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.01, bevelEnabled: false });
+  const wood = new THREE.MeshStandardMaterial({ color: 0xead2a0, roughness: 0.5 });
+  const kanji = {}; const face = ch => kanji[ch] || (kanji[ch] = tex(64, 64, (g) => { g.fillStyle = '#ead2a0'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#1a1008'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `600 40px ${W6_CJK}`; g.fillText(ch, 32, 34); }));
+  const back = ['香', '桂', '銀', '金', '王', '金', '銀', '桂', '香'];
+  const put = (ch, r, c, far) => {
+    const p = new THREE.Mesh(geo, wood); p.rotation.x = -Math.PI / 2; p.rotation.z = far ? Math.PI : 0;
+    const x = (c - 4) * S, z = (r - 4) * S; p.position.set(x, TOP + 0.111, z); group.add(p);
+    const label = new THREE.Mesh(new THREE.PlaneGeometry(0.03, 0.03), new THREE.MeshStandardMaterial({ map: face(ch), roughness: 0.5 }));
+    label.rotation.x = -Math.PI / 2; label.rotation.z = far ? Math.PI : 0; label.position.set(x, TOP + 0.1215, z + (far ? 0.002 : -0.002)); group.add(label);
+  };
+  back.forEach((ch, c) => { put(ch, 4 + 4, c, false); put(ch === '王' ? '玉' : ch, 0, c, true); });
+  put('角', 7, 1, false); put('飛', 7, 7, false); put('飛', 1, 1, true); put('角', 1, 7, true);
+  for (let c = 0; c < 9; c++) { put('歩', 6, c, false); put('歩', 2, c, true); }
+  return TOP + 0.111;
+}
+function buildYut(group) {
+  // A cloth board of 29 stations: twenty round the square, nine on the two diagonals.
+  const W = 0.62, px = 1024, sc = px / W;
+  topPlane(group, W + 0.08, W + 0.08, TOP + 0.003, tex(px, px, (g) => {
+    g.fillStyle = '#efe4c8'; g.fillRect(0, 0, px, px);
+    g.strokeStyle = '#7a2a1c'; g.lineWidth = 10; g.strokeRect(14, 14, px - 28, px - 28);
+    const h = W / 2 * sc * 0.86, c = px / 2, P = [];
+    for (let k = 0; k < 20; k++) { const side = (k / 5) | 0, t = (k % 5) / 5; const pts = [[h, h], [h, -h], [-h, -h], [-h, h], [h, h]]; const [a, b] = [pts[side], pts[side + 1]]; P.push([c + a[0] + (b[0] - a[0]) * t, c + a[1] + (b[1] - a[1]) * t]); }
+    for (const t of [1 / 3, 2 / 3]) for (const [x, y] of [[h, h], [h, -h], [-h, -h], [-h, h]]) P.push([c + x * (1 - t), c + y * (1 - t)]);
+    P.push([c, c]);
+    g.strokeStyle = 'rgba(90,40,20,.6)'; g.lineWidth = 4;
+    g.strokeRect(c - h, c - h, 2 * h, 2 * h);
+    g.beginPath(); g.moveTo(c - h, c - h); g.lineTo(c + h, c + h); g.moveTo(c + h, c - h); g.lineTo(c - h, c + h); g.stroke();
+    P.forEach(([x, y], k) => { const big = k % 5 === 0 || k === P.length - 1; g.fillStyle = big ? '#7a2a1c' : '#2a3a5a'; g.beginPath(); g.arc(x, y, big ? 26 : 18, 0, TAU); g.fill(); });
+  }), { roughness: 0.9 });
+  // Four sticks, flat on one side and round on the other.
+  const stick = new THREE.CylinderGeometry(0.014, 0.014, 0.16, 14, 1, false, 0, Math.PI);
+  const sm = new THREE.MeshStandardMaterial({ color: 0xc89a5a, roughness: 0.6, side: THREE.DoubleSide });
+  const R = seeded(57);
+  for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(stick, sm); st.rotation.set(-Math.PI / 2, 0, R() < 0.5 ? 0 : Math.PI); st.rotation.order = 'XZY'; st.rotation.y = (R() - 0.5) * 0.6; st.position.set(0.42 + (R() - 0.5) * 0.06, TOP + 0.01, -0.15 + k * 0.08); group.add(st); }
+  // Four pieces each, two of them riding stacked.
+  const mats = [new THREE.MeshStandardMaterial({ color: 0xa8322a, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0x2a3a6a, roughness: 0.4 })];
+  const pg = new THREE.CylinderGeometry(0.018, 0.02, 0.022, 16);
+  [[0, -0.27, 0.27], [0, -0.27, 0.27, 1], [0, 0.0, 0.0], [1, 0.27, -0.27], [1, -0.27, -0.09], [1, -0.4, 0.4]].forEach(([pl, x, z, up]) => { const m = new THREE.Mesh(pg, mats[pl]); m.position.set(x, TOP + 0.014 + (up ? 0.023 : 0), z); group.add(m); });
+}
+function buildBao(group) {
+  const W = 0.86, D = 0.46;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W, 0.07, D), new THREE.MeshStandardMaterial({ color: 0x6a3e1c, roughness: 0.55 }));
+  board.position.y = TOP + 0.035; group.add(board);
+  const pw = 1024, ph = Math.round(pw * D / W), sc = pw / W;
+  const pit = (x, z) => [pw / 2 + x * sc, ph / 2 + z * sc];
+  const PX = c => (c - 3.5) * 0.098, PZ = r => (r - 1.5) * 0.098;
+  topPlane(group, W, D, TOP + 0.0705, tex(pw, ph, (g) => {
+    woodGrain(g, pw, ph, '#9a6430', '#5a3416');
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 8; c++) {
+      const [x, y] = pit(PX(c), PZ(r)), house = (r === 1 && c === 4) || (r === 2 && c === 3);
+      const gr = g.createRadialGradient(x, y, 4, x, y, 40); gr.addColorStop(0, '#2a1608'); gr.addColorStop(1, '#5a3416');
+      g.fillStyle = gr;
+      if (house) { g.fillRect(x - 38, y - 38, 76, 76); } else { g.beginPath(); g.arc(x, y, 38, 0, TAU); g.fill(); }
+    }
+    g.strokeStyle = 'rgba(30,15,5,.6)'; g.lineWidth = 3; g.beginPath(); g.moveTo(16, ph / 2); g.lineTo(pw - 16, ph / 2); g.stroke();
+  }), { roughness: 0.55 });
+  // Seeds: a few in most pits, a heap in each house.
+  const seed = new THREE.SphereGeometry(0.009, 8, 6), sm = new THREE.MeshStandardMaterial({ color: 0x8a8070, roughness: 0.4 });
+  const R = seeded(1820);
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 8; c++) {
+    const house = (r === 1 && c === 4) || (r === 2 && c === 3), n = house ? 9 : (R() * 4) | 0;
+    for (let k = 0; k < n; k++) { const s = new THREE.Mesh(seed, sm); s.position.set(PX(c) + (R() - 0.5) * 0.04, TOP + 0.064 + (k > 4 ? 0.012 : 0), PZ(r) + (R() - 0.5) * 0.04); group.add(s); }
+  }
+}
+
 /* --- Finale lectern */
 let lectern;
 function buildLectern(z) {
@@ -2331,7 +2486,66 @@ const STOPS = [
     ],
     facts: [['Patent', 'U.S. 748,626, 1904'], ['Inventor', 'Lizzie Magie'], ['Descendant', 'Monopoly (1935)']],
     build: buildLandlord },
-  { id: 'next', wing: 5, title: 'From These Tables to Yours', short: 'Librarium', date: 'Today', rail: 'Today',
+  { id: 'wing6', wing: 6, title: 'Games of the World', short: 'Wing VI', date: 'Across the oceans', rail: 'Wing VI',
+    eyebrow: 'Wing VI · Librarium Museum of Play', status: null, begin: 'mutorere',
+    body: [
+      'The other wings follow one long road, from Egypt and Mesopotamia through Europe to the shop shelf. But play has many homelands. This wing gathers games from the Pacific, Africa and East Asia: some ancient, some first written down by visitors, all still played today.',
+      'Three tables are open: Mū tōrere from Aotearoa New Zealand, Kōnane from Hawaiʻi and Fanorona from Madagascar. Shogi, Yut Nori and Bao are on display.'
+    ],
+    facts: [['Tables', 'Mū tōrere, Kōnane, Fanorona'], ['Display', 'Shogi, Yut Nori, Bao']],
+  },
+  { id: 'mutorere', wing: 6, title: 'Mū tōrere', date: 'first described in 1917', rail: 'Mū tōrere',
+    eyebrow: 'Aotearoa New Zealand · Māori', status: ['known', 'Still played'], game: 'mutorere',
+    body: [
+      'Mū tōrere is a Māori game for two, played on a star of eight arms, the kewai, round a centre, the pūtahi, drawn on the ground or carved in wood. The board has been likened to an octopus. Each player has four men, and the aim is to leave the other player no move at all.',
+      'It was first described in print by Elsdon Best in 1917. Scholars still debate whether it is wholly Māori or partly an answer to the draughts that settlers brought, and accounts of its rules differ. It looks simple, but settlers who thought so are said to have lost to it again and again. Played perfectly, it is a draw.'
+    ],
+    facts: [['Board', 'Eight arms and a centre'], ['Men', 'Four each'], ['Win', 'Leave the other side no move']],
+    build: buildMuTorere },
+  { id: 'shogi', wing: 6, title: 'Shogi', short: 'Shogi (Japanese Chess)', date: 'oldest pieces c. 1058 CE', rail: 'Shogi',
+    eyebrow: 'Japan', status: ['known', 'Still played'],
+    note: 'On display, in the opening position.',
+    body: [
+      'Shogi, Japanese chess, belongs to the same family as chaturanga and xiangqi. The oldest pieces yet found, sixteen of them, were dug up at Kōfuku-ji in Nara beside a wooden plaque dated 1058, and they already have the five-sided shape of modern pieces.',
+      'Both sides\' pieces are the same colour: only the way a piece points shows whose it is. That made possible shogi\'s great invention of the 16th century, the drop. A captured piece changes sides, and its captor can put it back on the board later, so the game never thins out. Ōhashi Sōko set down the standard rules in 1636.'
+    ],
+    facts: [['Board', '9 × 9'], ['Pieces', 'One colour, pointing at the enemy'], ['Drops', 'Captured pieces come back into play']],
+    build: buildShogi },
+  { id: 'konane', wing: 6, title: 'Kōnane', date: 'by 1778–79', rail: 'Kōnane',
+    eyebrow: 'Hawaiʻi', status: ['known', 'Still played'], game: 'konane',
+    body: [
+      'Kōnane is a Hawaiian game of capture. Old boards, papamū, were cut into large flat stones as rows of small hollows, and the pieces were black lava and white coral; one such stone survives at Puʻuhonua o Hōnaunau. Captain James Cook\'s expedition saw the game played during its visit in 1778–79.',
+      'The board starts full. Two stones are lifted to open it, and from then on every move is a jump that takes a stone, so the board empties as the game goes on. The first player who cannot jump loses, and a draw is impossible. Mathematicians have shown that judging a large board is extremely hard.'
+    ],
+    facts: [['Board', '8 × 8 here; old boards came in many sizes'], ['Stones', 'Black lava and white coral'], ['Win', 'Be the last able to capture']],
+    build: buildKonane },
+  { id: 'yut', wing: 6, title: 'Yut Nori', date: 'traditional', rail: 'Yut Nori',
+    eyebrow: 'Korea', status: ['known', 'Still played'],
+    note: 'On display: the cloth, sticks and pieces are new.',
+    body: [
+      'Yut nori is the Korean family game of the New Year, played at Seollal and at the first full moon. Instead of dice, players throw four sticks, flat on one side and round on the other, and count the flat sides that land up: do (a pig, one step), gae (a dog, two), geol (a sheep, three), yut (a cow, four) and mo (a horse, five).',
+      'Each side races four pieces round a board of 29 stations, taking shortcuts across the middle from the corners. Pieces of one side can travel stacked, landing on an enemy sends it home, and a yut or a mo earns another throw. Its origin is uncertain; it is often traced to the Three Kingdoms period.'
+    ],
+    facts: [['Sticks', 'Four, flat on one side'], ['Board', '29 stations'], ['Pieces', 'Four each, which can travel stacked']],
+    build: buildYut },
+  { id: 'fanorona', wing: 6, title: 'Fanorona', date: 'traditional', rail: 'Fanorona',
+    eyebrow: 'Madagascar', status: ['known', 'Still played'], game: 'fanorona',
+    body: [
+      'Fanorona is a game of Madagascar, widely played there, and the full game, fanoron-tsivy, is played on five rows of nine points joined by lines and diagonals. It looks like alquerque, but its captures are its own: a stone takes by moving up to an enemy line or by moving away from one, and the whole unbroken line falls at once.',
+      'A Malagasy legend tells how King Ralambo chose his heir by summoning his sons while pretending to be ill. The elder was so absorbed in a fanorona problem that the younger, Andrianjaka, arrived first and became king. In 2007 computer scientists showed that, played perfectly, the game is a draw.'
+    ],
+    facts: [['Board', '5 × 9 points'], ['Stones', '22 each'], ['Capture', 'By approach or withdrawal']],
+    build: buildFanorona },
+  { id: 'bao', wing: 6, title: 'Bao', date: 'in verse by the 1820s', rail: 'Bao',
+    eyebrow: 'East Africa · the Swahili coast', status: ['known', 'Still played'],
+    note: 'On display.',
+    body: [
+      'Bao, Swahili for "board", is the mancala of East Africa, most popular among the Swahili of Tanzania and Kenya, and one of the most complex of all mancala games. The board has four rows of eight pits, two for each player, and a larger square pit, the nyumba or house, with powers of its own.',
+      'The poet Muyaka bin Haji of Mombasa praised the game in verse in the 1820s. In Bao la Kiswahili, the masters\' version, players start with most of their 32 seeds in hand and sow them in one by one. Zanzibar\'s bao masters are held in high respect, and tournaments are held in Tanzania, Zanzibar, Kenya and Malawi.'
+    ],
+    facts: [['Board', 'Four rows of eight pits'], ['Seeds', '64'], ['House', 'The square nyumba']],
+    build: buildBao },
+  { id: 'next', wing: 6, title: 'From These Tables to Yours', short: 'Librarium', date: 'Today', rail: 'Today',
     eyebrow: 'Librarium Games', status: null,
     body: [
       'From Senet to the Landlord\'s Game, every table in this hall began with someone deciding how a game should feel. Five thousand years on, people still gather to throw dice, shuffle tiles and corner each other\'s kings, and Librarium Games carries the tradition on with tables of its own.'
@@ -2392,7 +2606,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -2921,6 +3135,95 @@ const TAROCCHI_P = {
   },
   score: () => { const G = GAMES.tarocchi; return [['You', G.score(0)], ['Scribe', G.score(1)], 'points']; },
 };
+const MUTORERE_P = {
+  camW: 1.0,
+  intro() { return 'You play the light stones and move first. ' + this.prompt(); },
+  prompt: () => 'Pick a stone that can move into the empty point. A stone may enter the centre only beside one of the Scribe\'s.',
+  setup(ex) {
+    const G = GAMES.mutorere;
+    if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 4 }, () => { const m = stoneMesh(pl ? 0x2a2420 : 0xe8e0cc, 0.04, 0.5, 0.4); ex.group.add(m); return m; }));
+    this.cell = Array(9).fill(null); const k = [0, 0];
+    for (let i = 0; i < 9; i++) { const v = G.b[i]; if (!v) continue; const m = ex.pieces[v - 1][k[v - 1]++]; this.cell[i] = m; m.position.copy(this.pos(i)); }
+  },
+  pos(i) { const p = mtPos(i); return V3(p.x, GAMES.mutorere.surface + 0.02, p.z); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.mutorere, mesh = this.cell[m.from];
+    this.cell[m.from] = null; this.cell[m.to] = mesh;
+    const res = G.apply(m);
+    await hop(mesh, this.pos(m.to), 0.3, 0.04);
+    return res;
+  },
+  score: () => { const G = GAMES.mutorere; return [['You', G.legal(0).length], ['Scribe', G.legal(1).length], 'moves open']; },
+};
+const KONANE_P = {
+  camW: 0.98, ringScale: 0.7,
+  intro() { return 'You play black. Begin by lifting one of your stones from the centre or a corner. ' ; },
+  prompt: () => { const G = GAMES.konane; return G.ply === 0 ? 'Lift one of your stones from the centre or a corner.' : 'Pick a stone, then a ring: jump a white stone into the gap beyond. You may run on in a straight line.'; },
+  setup(ex) {
+    const G = GAMES.konane;
+    if (!ex.pieces) ex.pieces = Array.from({ length: 64 }, (_, i) => { const pl = G.b[i] - 1; const m = stoneMesh(pl ? 0xe8e4da : 0x24201c, 0.03, 0.62, pl ? 0.35 : 0.85); ex.group.add(m); return m; });
+    this.cell = Array(64).fill(null); this.lost = [0, 0];
+    const pools = [ex.pieces.filter((_, i) => (((i / 8) | 0) + (i % 8)) % 2 === 0), ex.pieces.filter((_, i) => (((i / 8) | 0) + (i % 8)) % 2 === 1)], k = [0, 0];
+    for (let i = 0; i < 64; i++) { const v = G.b[i]; if (!v) continue; const m = pools[v - 1][k[v - 1]++]; m.visible = true; m.scale.set(1, 0.62, 1); this.cell[i] = m; m.position.copy(this.pos(i)); }
+  },
+  pos(i) { const p = knCell(i); return V3(p.x, GAMES.konane.surface + 0.012, p.z); },
+  lostSpot(owner, k) { return V3(owner ? 0.46 : -0.46, TOP + 0.015 + ((k / 16) | 0) * 0.02, -0.3 + (k % 16) * 0.04); },
+  meshesFor(m) { return [this.cell[m.remove !== undefined ? m.remove : m.from]]; },
+  ringFor(m) { return m.remove !== undefined ? null : this.pos(m.to); },
+  fromFor(m) { return m.remove !== undefined ? null : this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.konane, tok = play.token;
+    if (m.remove !== undefined) {
+      const v = this.cell[m.remove]; this.cell[m.remove] = null; const owner = m.pl;
+      const res = G.apply(m); await hop(v, this.lostSpot(owner, this.lost[owner]++), 0.4, 0.12); return res;
+    }
+    const mesh = this.cell[m.from]; this.cell[m.from] = null; this.cell[m.to] = mesh;
+    const victims = m.caps.map(c => { const v = this.cell[c]; this.cell[c] = null; return v; });
+    const res = G.apply(m);
+    for (let k = 0; k < m.path.length; k++) {
+      if (tok !== play.token) return res;
+      await hop(mesh, this.pos(m.path[k]), 0.28, 0.07);
+      const owner = 1 - m.pl; hop(victims[k], this.lostSpot(owner, this.lost[owner]++), 0.4, 0.12);
+    }
+    return res;
+  },
+  score: () => { const G = GAMES.konane; return [['You', G.count(0)], ['Scribe', G.count(1)], 'stones']; },
+};
+const FANORONA_P = {
+  camW: 1.06, ringScale: 0.62,
+  intro() { return 'You play white and move first. ' + this.prompt(); },
+  prompt: () => (GAMES.fanorona.chain ? 'Capture again with the same stone, or choose Stop.' : 'Pick a stone, then the ring on the enemy stone you want to capture, or a ring on an empty point to move.'),
+  setup(ex) {
+    const G = GAMES.fanorona;
+    if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 22 }, () => { const m = stoneMesh(pl ? 0x2a2220 : 0xeee6d2, 0.03, 0.55, 0.45); ex.group.add(m); return m; }));
+    this.cell = Array(45).fill(null); this.lost = [0, 0]; const k = [0, 0];
+    ex.pieces.flat().forEach(m => { m.visible = true; });
+    for (let i = 0; i < 45; i++) { const v = G.b[i]; if (!v) continue; const m = ex.pieces[v - 1][k[v - 1]++]; this.cell[i] = m; m.position.copy(this.pos(i)); }
+  },
+  pos(i) { const p = fnCell(i); return V3(p.x, GAMES.fanorona.surface + 0.016, p.z); },
+  lostSpot(owner, k) { return V3(-0.4 + (k % 11) * 0.08, TOP + 0.017, owner ? -0.34 - ((k / 11) | 0) * 0.07 : 0.34 + ((k / 11) | 0) * 0.07); },
+  meshesFor(m) { return m.pass ? [] : [this.cell[m.from]]; },
+  // A capture is chosen by the stone it takes first, which tells approach from withdrawal.
+  ringFor(m) { return m.pass ? null : this.pos(m.caps.length ? m.caps[0] : m.to); },
+  fromFor(m) { return m.pass ? null : this.pos(m.from); },
+  ringTone: m => (m.caps && m.caps.length ? 'ember' : 'gold'),
+  async play(m) {
+    const G = GAMES.fanorona, tok = play.token;
+    if (m.pass) return G.apply(m);
+    const mesh = this.cell[m.from]; this.cell[m.from] = null; this.cell[m.to] = mesh;
+    const victims = m.caps.map(c => { const v = this.cell[c]; this.cell[c] = null; return v; });
+    const res = G.apply(m);
+    await hop(mesh, this.pos(m.to), 0.26, 0.03);
+    if (tok !== play.token) return res;
+    victims.forEach((v, k) => { const owner = 1 - m.pl; setTimeout(() => hop(v, this.lostSpot(owner, this.lost[owner]++), 0.4, 0.12), k * 70); });
+    if (victims.length) await wait(200 + victims.length * 70);
+    return res;
+  },
+  score: () => { const G = GAMES.fanorona; return [['You', G.count(0)], ['Scribe', G.count(1)], 'stones']; },
+};
 const GO_P = {
   camW: 0.95, ringScale: 0.6, ringOpacity: 0.4,
   intro() { return 'You play black and move first. ' + this.prompt(); },
@@ -3079,7 +3382,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -3150,8 +3453,8 @@ let mode = 'gallery', current = 0;
  * The bar along the bottom: wing tabs, the exhibits of the wing you are in,
  * previous and next, and an index of every exhibit with search and filters. */
 const rail = $('#lm-rail');
-const ROMAN_WINGS = ['', 'I', 'II', 'III', 'IV', 'V'];
-const WINGS = [1, 2, 3, 4, 5].map(n => {
+const ROMAN_WINGS = ['', 'I', 'II', 'III', 'IV', 'V', 'VI'];
+const WINGS = [1, 2, 3, 4, 5, 6].map(n => {
   const intro = STOPS.findIndex(x => x.wing === n && (x.id === 'hall' || x.id === 'wing' + n));
   return { n, roman: ROMAN_WINGS[n], intro, title: STOPS[intro].title, dates: n === 1 ? 'c. 3100 – 2000 BCE' : STOPS[intro].date };
 });
@@ -3472,7 +3775,8 @@ async function startGame(ex) {
   $('#lm-hud').hidden = false; $('#lm-win').hidden = true; $('#lm-rules').hidden = true;
   $('#lm-hudTitle').textContent = g.name;
   $('#lm-throwBtn').hidden = !g.dice; $('#lm-dice').hidden = !g.dice;
-  $('#lm-passBtn').hidden = !g.canPass; $('#lm-passBtn').disabled = true;
+  $('#lm-passBtn').hidden = !(g.canPass || g.stopLabel); $('#lm-passBtn').disabled = true;
+  $('#lm-passBtn').textContent = g.stopLabel || 'Pass';
   renderRules(g);
   if (!store.rulesSeen[g.id]) { $('#lm-rules').hidden = false; store.rulesSeen[g.id] = true; save(); }
   clearLastMove();
@@ -3505,7 +3809,11 @@ $('#lm-winLeave').addEventListener('click', leaveGame);
 $('#lm-againBtn').addEventListener('click', () => { const ex = play.ex; play.token++; clearHighlights(); mode = 'gallery'; startGame(ex); });
 $('#lm-rulesBtn').addEventListener('click', () => { $('#lm-rules').hidden = !$('#lm-rules').hidden; });
 $('#lm-throwBtn').addEventListener('click', humanThrow);
-$('#lm-passBtn').addEventListener('click', () => { if (play.phase === 'choose' && play.game.canPass) choose({ pl: 0, pass: true }); });
+$('#lm-passBtn').addEventListener('click', () => {
+  if (play.phase !== 'choose') return;
+  const m = play.moves.find(x => x.pass) || (play.game.canPass ? { pl: 0, pass: true } : null);
+  if (m) choose(m);
+});
 
 function setMsg(who, text) {
   const m = $('#lm-msg'); m.innerHTML = '';
@@ -3578,7 +3886,7 @@ function beginTurn(pl, first) {
 }
 function offer(moves, text) {
   play.moves = moves; play.phase = 'choose';
-  $('#lm-passBtn').disabled = false;
+  $('#lm-passBtn').disabled = !(play.game.canPass || moves.some(m => m.pass));
   highlight(moves);
   setMsg('Your turn', text);
 }
