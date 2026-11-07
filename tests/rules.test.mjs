@@ -1104,3 +1104,37 @@ test('Yut Nori: a piece goes home by passing the start corner', () => {
   const m = YT.legal(0, 2)[0];
   assert.equal(m.to, YT.HOME); YT.apply(m); assert.ok(YT.done(0));
 });
+
+/* ------------------------------------------------------------------ Pachisi */
+const { pachisi: PC } = rules;
+test('Pachisi: an 84-step route, with the castles 25 from home where the sources put them', () => {
+  for (let a = 0; a < 4; a++) {
+    assert.equal(PC.ROUTE[a].length, 84);
+    assert.ok(PC.castle(PC.ROUTE[a][84 - 25]));
+  }
+});
+test('Pachisi: the first piece of a colour comes out on any throw; later ones need a grace', () => {
+  PC.setVariant('short'); PC.init();
+  assert.ok(PC.legal(0, 3).some(m => m.from === 0));
+  PC.pos[0][0] = 5;
+  assert.ok(!PC.legal(0, 3).some(m => m.from === 0 && PC.arm(0, m.i) === PC.arm(0, 0)), 'yellow\'s second piece needs a grace');
+  assert.ok(PC.legal(0, 10).some(m => m.from === 0 && PC.arm(0, m.i) === PC.arm(0, 0)));
+});
+test('Pachisi: captures off castles only, no landing on an enemy castle, and no stopping one short of home', () => {
+  PC.setVariant('short'); PC.init();
+  PC.pos[0] = [5, 0, 0, 0];
+  const target = PC.cellOf(0, 0, 8); // yellow's 8th square, the castle at the end of its arm
+  assert.ok(PC.castle(target));
+  // Put a Scribe piece there: yellow may not land on it.
+  PC.pos[1] = [0, 0, 0, 0];
+  for (let idx = 1; idx < 84; idx++) if (PC.cellOf(1, 0, idx) === target) { PC.pos[1][0] = idx; break; }
+  assert.ok(!PC.legal(0, 3).some(m => m.i === 0 && m.to === 8));
+  // On an ordinary square, the same landing captures.
+  const plain = PC.cellOf(0, 0, 9);
+  for (let idx = 1; idx < 84; idx++) if (PC.cellOf(1, 0, idx) === plain) { PC.pos[1][0] = idx; break; }
+  const m = PC.legal(0, 4).find(x => x.i === 0 && x.to === 9);
+  assert.deepEqual(m.cap, [0]);
+  PC.pos[0][0] = 80;
+  assert.ok(!PC.legal(0, 3).some(x => x.i === 0), 'square 83 is a dead end');
+  assert.ok(PC.legal(0, 4).some(x => x.i === 0 && x.to === 84));
+});

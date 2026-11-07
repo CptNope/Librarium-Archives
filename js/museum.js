@@ -1407,7 +1407,7 @@ function buildPachisi(group) {
       for (let k = 0; k < 8; k++) for (let j = -1; j <= 1; j++) {
         const x = j * s - s / 2, y = ctr / 2 * sc + k * s;
         g.strokeStyle = '#f0d58a'; g.lineWidth = 2.5; g.strokeRect(x + 2, y + 2, s - 4, s - 4);
-        if ((k === 3 && j !== 0) || (k === 7 && j === 0)) { g.strokeStyle = '#f0d58a'; g.beginPath(); g.moveTo(x + 8, y + 8); g.lineTo(x + s - 8, y + s - 8); g.moveTo(x + s - 8, y + 8); g.lineTo(x + 8, y + s - 8); g.stroke(); }
+        if ((k === 4 && j !== 0) || (k === 7 && j === 0)) { g.strokeStyle = '#f0d58a'; g.beginPath(); g.moveTo(x + 8, y + 8); g.lineTo(x + s - 8, y + s - 8); g.moveTo(x + s - 8, y + 8); g.lineTo(x + 8, y + s - 8); g.stroke(); }
       }
       g.fillStyle = colours[arm]; g.globalAlpha = 0.55; g.fillRect(-s * 1.5, ctr / 2 * sc + 8 * s - 10, s * 3, 10); g.globalAlpha = 1;
       g.restore();
@@ -1420,9 +1420,9 @@ function buildPachisi(group) {
   // Cowrie shells, a few mouth up, and beehive-shaped pawns in four colours.
   const shellMat = new THREE.MeshStandardMaterial({ color: 0xf2ead8, roughness: 0.35 });
   const slit = new THREE.MeshStandardMaterial({ color: 0x5a4a3a });
-  const R = seeded(25);
+  const R = seeded(25), display = [];
   for (let k = 0; k < 7; k++) {
-    const sh = new THREE.Group();
+    const sh = new THREE.Group(); display.push(sh);
     const b = new THREE.Mesh(new THREE.SphereGeometry(0.012, 12, 10), shellMat); b.scale.set(1.4, 0.7, 1); sh.add(b);
     if (k % 2) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.002, 0.002), slit); l.position.y = 0.0085; sh.add(l); }
     sh.position.set(0.1 + R() * 0.12, TOP + 0.012, 0.1 + R() * 0.12); sh.rotation.y = R() * TAU; group.add(sh);
@@ -1434,9 +1434,11 @@ function buildPachisi(group) {
       const p = new THREE.Mesh(pawn, m);
       const along = ctr / 2 + (k === 3 ? 5.5 : 0.5 + k) * sq, across = (k % 2 ? 1 : -1) * sq;
       const ang = arm * Math.PI / 2, x = Math.sin(ang) * along + Math.cos(ang) * across, z = Math.cos(ang) * along - Math.sin(ang) * across;
-      p.position.set(x, TOP + 0.005, z); group.add(p);
+      p.position.set(x, TOP + 0.005, z); group.add(p); display.push(p);
     }
   });
+  group.userData.display = display;
+  return TOP + 0.005;
 }
 
 /* --- Wing IV: Mahjong (display) */
@@ -2389,9 +2391,9 @@ const STOPS = [
     eyebrow: 'Wing IV · Librarium Museum of Play', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
-      'Four tables are open: Fox and Geese, where you play the fox; Draughts; the Game of the Goose; and Snakes and Ladders, two races of pure luck.'
+      'Six tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Pachisi; the Game of the Goose; and Snakes and Ladders.'
     ],
-    facts: [['Tables', 'Fox and Geese, Draughts, the Goose, Snakes and Ladders'], ['Display', 'The new queen, Pachisi, Mahjong']],
+    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Pachisi, the Goose, Snakes and Ladders'], ['Display', 'The new queen, Pachisi, Mahjong']],
   },
   { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
@@ -2421,8 +2423,8 @@ const STOPS = [
     facts: [['Board', '8 × 8, dark squares only'], ['Pieces', '12 each'], ['Capture', 'Compulsory, by jumping'], ['Win', 'Take or block every enemy piece']],
     build: buildDraughtsBoard },
   { id: 'pachisi', wing: 4, title: 'Pachisi (Chaupar)', date: '16th century CE', rail: 'Pachisi',
-    eyebrow: 'India · Mughal court', status: ['known', 'Still played, and the ancestor of Ludo'],
-    note: 'On display. It is played by four, so the Scribe sits this one out.',
+    eyebrow: 'India · Mughal court', status: ['known', 'Still played, and the ancestor of Ludo'], game: 'pachisi',
+    note: 'Pachisi is played by four in two partnerships, so here you play two colours against the Scribe\'s two. The short game takes about a hundred throws; the full game, more than twice as many.',
     body: [
       'Pachisi and its close relative chaupar are race games played on a cross of cloth with four arms of squares. Instead of dice, players throw cowrie shells and count how many land mouth up; the name comes from the Hindi for twenty-five, the highest throw.',
       'How old it is is hard to pin down. A relief in the Ellora caves, carved between the 6th and 8th centuries, is often read as a game of this kind. The most famous board is a courtyard at Fatehpur Sikri, the city the Mughal emperor Akbar built in the 1570s, laid out in red and white stone; accounts say people stood in as the pieces.',
@@ -2519,9 +2521,9 @@ const STOPS = [
     eyebrow: 'Wing VI · Librarium Museum of Play', status: null, begin: 'mutorere',
     body: [
       'The other wings follow one long road, from Egypt and Mesopotamia through Europe to the shop shelf. But play has many homelands. This wing gathers games from the Pacific, Africa and East Asia: some ancient, some first written down by visitors, all still played today.',
-      'Three tables are open: Mū tōrere from Aotearoa New Zealand, Kōnane from Hawaiʻi and Fanorona from Madagascar. Shogi, Yut Nori and Bao are on display.'
+      'Five tables are open: Mū tōrere from Aotearoa New Zealand, Shogi from Japan, Kōnane from Hawaiʻi, Yut Nori from Korea and Fanorona from Madagascar. Bao is on display.'
     ],
-    facts: [['Tables', 'Mū tōrere, Kōnane, Fanorona'], ['Display', 'Shogi, Yut Nori, Bao']],
+    facts: [['Tables', 'Mū tōrere, Shogi, Kōnane, Yut Nori, Fanorona'], ['Display', 'Bao']],
   },
   { id: 'mutorere', wing: 6, title: 'Mū tōrere', date: 'first described in 1917', rail: 'Mū tōrere',
     eyebrow: 'Aotearoa New Zealand · Māori', status: ['known', 'Still played'], game: 'mutorere',
@@ -2633,7 +2635,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -3367,6 +3369,46 @@ const YUT_P = Object.assign(racePresenter(YUT), {
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(m => { m.visible = false; }); },
 });
 { const setup = YUT_P.setup; YUT_P.setup = function (ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); (ex.pieces || []).flat().forEach(m => { m.visible = true; }); setup.call(this, ex); }; }
+// Pachisi: cell positions on the cross. Arms 0 near, 1 right, 2 far, 3 left.
+const PC_SQ = 0.046, PC_D = [{ x: 0, z: 1 }, { x: 1, z: 0 }, { x: 0, z: -1 }, { x: -1, z: 0 }];
+function pcPos(cell) {
+  const a = (cell / 24) | 0, k = ((cell % 24) / 3) | 0, j = (cell % 3) - 1, d = PC_D[a], n = PC_D[(a + 1) % 4], along = 1.5 * PC_SQ + (k + 0.5) * PC_SQ;
+  return { x: d.x * along + n.x * j * PC_SQ, z: d.z * along + n.z * j * PC_SQ };
+}
+const PC_COL = [[0xe8b23a, 0x1e3a7a], [0xe8e0c8, 0x2a6a4a]];
+const PACHISI = Object.assign(R.pachisi, {
+  camW: 1.05, pieceH: 0,
+  makePieces(group) {
+    const geo = new THREE.LatheGeometry([[0, 0], [0.016, 0], [0.017, 0.004], [0.015, 0.016], [0.01, 0.028], [0.004, 0.034], [0, 0.035]].map(([a, b]) => new THREE.Vector2(a, b)), 20);
+    return [0, 1].map(pl => Array.from({ length: this.N }, (_, i) => {
+      const mat = new THREE.MeshStandardMaterial({ color: PC_COL[pl][i < this.per ? 0 : 1], roughness: 0.4 });
+      const m = new THREE.Mesh(geo, mat); m.userData.mats = [mat]; group.add(m); return m;
+    }));
+  },
+  local(pl, idx, i) {
+    const y = this.surface, a = this.arm(pl, i), d = PC_D[a], n = PC_D[(a + 1) % 4];
+    const k = i % this.per;
+    if (idx === 0) return V3(d.x * 0.05 + n.x * (k - (this.per - 1) / 2) * 0.03, y, d.z * 0.05 + n.z * (k - (this.per - 1) / 2) * 0.03);
+    if (idx === this.HOME) return V3(d.x * 0.018 + n.x * (k - (this.per - 1) / 2) * 0.026, y, d.z * 0.018 + n.z * (k - (this.per - 1) / 2) * 0.026);
+    const cell = this.cellOf(pl, i, idx), p = pcPos(cell);
+    // Pieces sharing a square sit side by side.
+    let under = 0; for (const q of [0, 1]) this.pos[q].forEach((v, j) => { if ((q < pl || (q === pl && j < i)) && this.cellOf(q, j, v) === cell) under++; });
+    return V3(p.x + (under % 2 ? 0.012 : under ? -0.012 : 0), y, p.z + (under > 1 ? 0.012 : 0));
+  },
+  bigHop: (m, s) => s === m.to && m.cap.length > 0,
+  score() { return [['You', this.home(0) + '/' + this.N], ['Scribe', this.home(1) + '/' + this.N], 'home']; },
+  winText: pl => (pl === 0 ? 'All your pieces are home in the Charkoni.' : 'The Scribe brought all its pieces home first.'),
+});
+const PACHISI_P = Object.assign(racePresenter(PACHISI), {
+  intro: () => 'You play yellow, from the near arm, and blue, from the far one. Throw to begin.',
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(m => { m.visible = false; }); },
+});
+{ const setup = PACHISI_P.setup; PACHISI_P.setup = function (ex) {
+  ex.group.userData.display.forEach(m => { m.visible = false; });
+  if (ex.pieces && ex.pieces[0].length !== PACHISI.N) { ex.pieces.flat().forEach(m => ex.group.remove(m)); ex.pieces = null; } // the other game size
+  (ex.pieces || []).flat().forEach(m => { m.visible = true; });
+  setup.call(this, ex);
+}; }
 const GO_P = {
   camW: 0.95, ringScale: 0.6, ringOpacity: 0.4,
   intro() { return 'You play black and move first. ' + this.prompt(); },
@@ -3525,7 +3567,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -3979,6 +4021,10 @@ function renderDice(g, r, shaking = false) {
       p.setAttribute('fill', '#ecdfc3'); p.setAttribute('stroke', '#a8977a'); p.setAttribute('stroke-width', '1.2'); svg.appendChild(p);
       const pips = { 1: [[15, 15]], 2: [[9, 9], [21, 21]], 3: [[9, 9], [15, 15], [21, 21]], 4: [[9, 9], [21, 9], [9, 21], [21, 21]], 5: [[9, 9], [21, 9], [15, 15], [9, 21], [21, 21]], 6: [[9, 8], [21, 8], [9, 15], [21, 15], [9, 22], [21, 22]] }[r ? f : 1];
       for (const [x, y] of pips) { const c = document.createElementNS(ns, 'circle'); c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', '2.6'); c.setAttribute('fill', r ? '#1d140c' : '#c9b79a'); svg.appendChild(c); }
+    } else if (g.id === 'pachisi') { // a cowrie: mouth up shows its slit
+      const e = document.createElementNS(ns, 'ellipse'); e.setAttribute('cx', '15'); e.setAttribute('cy', '15'); e.setAttribute('rx', '9'); e.setAttribute('ry', '13');
+      e.setAttribute('fill', r && f ? '#f2ead8' : '#c9b79a'); e.setAttribute('stroke', '#a8977a'); e.setAttribute('stroke-width', '1.2'); svg.appendChild(e);
+      if (r && f) { const l = document.createElementNS(ns, 'path'); l.setAttribute('d', 'M15 5 Q12 15 15 25'); l.setAttribute('stroke', '#5a4a3a'); l.setAttribute('stroke-width', '2'); l.setAttribute('fill', 'none'); svg.appendChild(l); }
     } else if (g.id === 'ur') {
       const p = document.createElementNS(ns, 'path'); p.setAttribute('d', 'M15 3 L27 26 L3 26 Z');
       p.setAttribute('fill', '#2a2018'); p.setAttribute('stroke', '#a8977a'); p.setAttribute('stroke-width', '1.4'); svg.appendChild(p);
