@@ -1013,3 +1013,128 @@ test('Fanorona: a capturing stone may go on, not back to a visited point nor the
   assert.ok(res.followUp.some(m => m.pass), 'and so is stopping');
   assert.ok(res.followUp.every(m => m.pass || m.to !== at(0, 0)), 'never back to where it started');
 });
+
+/* -------------------------------------------------------------------- Chess */
+const { chess: CHG } = rules;
+function chessFen(fen) {
+  const [rows, side, castle, ep] = fen.split(' ');
+  const T = { k: 1, q: 2, b: 3, n: 4, r: 5, p: 6 };
+  CHG.init(); CHG.b.fill(0);
+  rows.split('/').forEach((row, k) => { let c = 0; for (const ch of row) { if (/\d/.test(ch)) c += +ch; else { CHG.b[(7 - k) * 8 + c] = T[ch.toLowerCase()] + (ch === ch.toLowerCase() ? 8 : 0); c++; } } });
+  CHG.castle = [[castle.includes('Q'), castle.includes('K')], [castle.includes('q'), castle.includes('k')]];
+  CHG.ep = ep === '-' ? -1 : (+ep[1] - 1) * 8 + ep.charCodeAt(0) - 97;
+  return side === 'w' ? 0 : 1;
+}
+function perft(pl, d) { if (!d) return 1; let n = 0; for (const m of CHG.legal(pl)) { const s = CHG.snapshot(); CHG.raw(m); n += perft(1 - pl, d - 1); CHG.restore(s); } return n; }
+test('Chess: move counts from the start match the known values', () => {
+  CHG.init();
+  assert.deepEqual([1, 2, 3].map(d => perft(0, d)), [20, 400, 8902]);
+});
+test('Chess: castling, en passant and promotion counted right in the Kiwipete position', () => {
+  const pl = chessFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -');
+  assert.deepEqual([1, 2].map(d => perft(pl, d)), [48, 2039]);
+});
+test('Chess: checkmate and stalemate', () => {
+  let pl = chessFen('7k/6Q1/6K1/8/8/8/8/8 b - -'); // black is mated
+  assert.equal(CHG.result(pl).winner, 0);
+  pl = chessFen('7k/5Q2/6K1/8/8/8/8/8 b - -'); // black to move, no moves, not in check
+  assert.equal(CHG.result(pl).winner, -1);
+});
+
+/* -------------------------------------------------------------------- Shogi */
+const { shogi: SGG } = rules;
+const sq = (r, c) => r * 9 + c, T = SGG.SG;
+function sgPerft(pl, d) { if (!d) return 1; let n = 0; for (const m of SGG.legal(pl)) { const s = SGG.snapshot(); SGG.raw(m); n += sgPerft(1 - pl, d - 1); SGG.restore(s); } return n; }
+test('Shogi: move counts match the standard ones, less the optional promotions we make automatic', () => {
+  SGG.init();
+  assert.deepEqual([1, 2, 3].map(d => sgPerft(0, d)), [30, 900, 25470 - 30]);
+});
+test('Shogi: captured pieces go to hand and can be dropped, but not a second pawn on a file', () => {
+  SGG.init(); SGG.b.fill(0);
+  SGG.b[sq(0, 4)] = T.K; SGG.b[sq(8, 4)] = T.K + 32;
+  SGG.b[sq(4, 4)] = T.R; SGG.b[sq(6, 4)] = T.P + 32;
+  SGG.apply(SGG.legal(0).find(m => m.from === sq(4, 4) && m.to === sq(6, 4)));
+  assert.equal(SGG.hands[0][T.P - 1], 1);
+  SGG.b[sq(2, 3)] = T.P; // an unpromoted pawn of ours on file 3
+  const drops = SGG.legal(0).filter(m => m.drop === T.P);
+  assert.ok(drops.length > 0);
+  assert.ok(drops.every(m => m.to % 9 !== 3), 'no second pawn on file 3');
+  assert.ok(drops.every(m => ((m.to / 9) | 0) !== 8), 'no pawn dropped on the last rank');
+});
+test('Shogi: no checkmate by dropping a pawn', () => {
+  SGG.init(); SGG.b.fill(0);
+  // The Scribe's king in the corner, boxed in by its own pieces; a dropped pawn in front would mate.
+  SGG.b[sq(8, 0)] = T.K + 32; SGG.b[sq(8, 1)] = T.L + 32; SGG.b[sq(7, 1)] = T.S + 32;
+  SGG.b[sq(6, 0)] = T.G; SGG.b[sq(0, 8)] = T.K;
+  SGG.hands[0][T.P - 1] = 1;
+  assert.ok(!SGG.legal(0).some(m => m.drop === T.P && m.to === sq(7, 0)));
+});
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Shogi: at ${level}, the Scribe moves within budget`, () => {
+    rules.setLevel(level);
+    SGG.init(); let pl = 0, slowest = 0;
+    for (let k = 0; k < 6; k++) { const t0 = Date.now(); const plan = SGG.aiPlan(pl); slowest = Math.max(slowest, Date.now() - t0); plan.forEach(m => SGG.apply(m)); pl = 1 - pl; }
+    assert.ok(slowest < { gentle: 400, fair: 1100, sharp: 2200 }[level], `took ${slowest} ms`);
+    rules.setLevel('fair');
+  });
+}
+
+/* ----------------------------------------------------------------- Yut Nori */
+const { yut: YT } = rules;
+test('Yut Nori: shortcuts from the corners and the centre', () => {
+  assert.deepEqual(YT.route(5).slice(0, 3), [20, 21, 22]);
+  assert.deepEqual(YT.route(10), [25, 26, 22, 27, 28, 0, YT.HOME]);
+  assert.deepEqual(YT.route(22), [27, 28, 0, YT.HOME]);
+  assert.deepEqual(YT.route(3).slice(0, 3), [4, 5, 6], 'passing a corner does not cut across');
+});
+test('Yut Nori: pieces stack, captures send a stack home, and yut, mo or a capture throw again', () => {
+  YT.init();
+  YT.pos[0] = [3, 3, -1, -1]; YT.pos[1] = [6, -1, -1, -1];
+  const m = YT.legal(0, 3).find(x => x.from === 3);
+  assert.deepEqual(m.group.sort(), [0, 1]);
+  assert.deepEqual(m.cap, [0]);
+  YT.apply(m);
+  assert.deepEqual(YT.pos[0].slice(0, 2), [6, 6]); assert.equal(YT.pos[1][0], -1);
+  assert.ok(YT.extra(m), 'a capture earns a throw');
+  assert.ok(YT.extra({ cap: [], value: 5 }), 'so does mo');
+  assert.ok(!YT.extra({ cap: [], value: 2 }));
+});
+test('Yut Nori: a piece goes home by passing the start corner', () => {
+  YT.init(); YT.pos[0] = [28, YT.HOME, YT.HOME, YT.HOME];
+  const m = YT.legal(0, 2)[0];
+  assert.equal(m.to, YT.HOME); YT.apply(m); assert.ok(YT.done(0));
+});
+
+/* ------------------------------------------------------------------ Pachisi */
+const { pachisi: PC } = rules;
+test('Pachisi: an 84-step route, with the castles 25 from home where the sources put them', () => {
+  for (let a = 0; a < 4; a++) {
+    assert.equal(PC.ROUTE[a].length, 84);
+    assert.ok(PC.castle(PC.ROUTE[a][84 - 25]));
+  }
+});
+test('Pachisi: the first piece of a colour comes out on any throw; later ones need a grace', () => {
+  PC.setVariant('short'); PC.init();
+  assert.ok(PC.legal(0, 3).some(m => m.from === 0));
+  PC.pos[0][0] = 5;
+  assert.ok(!PC.legal(0, 3).some(m => m.from === 0 && PC.arm(0, m.i) === PC.arm(0, 0)), 'yellow\'s second piece needs a grace');
+  assert.ok(PC.legal(0, 10).some(m => m.from === 0 && PC.arm(0, m.i) === PC.arm(0, 0)));
+});
+test('Pachisi: captures off castles only, no landing on an enemy castle, and no stopping one short of home', () => {
+  PC.setVariant('short'); PC.init();
+  PC.pos[0] = [5, 0, 0, 0];
+  const target = PC.cellOf(0, 0, 8); // yellow's 8th square, the castle at the end of its arm
+  assert.ok(PC.castle(target));
+  // Put a Scribe piece there: yellow may not land on it.
+  PC.pos[1] = [0, 0, 0, 0];
+  for (let idx = 1; idx < 84; idx++) if (PC.cellOf(1, 0, idx) === target) { PC.pos[1][0] = idx; break; }
+  assert.ok(!PC.legal(0, 3).some(m => m.i === 0 && m.to === 8));
+  // On an ordinary square, the same landing captures.
+  const plain = PC.cellOf(0, 0, 9);
+  for (let idx = 1; idx < 84; idx++) if (PC.cellOf(1, 0, idx) === plain) { PC.pos[1][0] = idx; break; }
+  const m = PC.legal(0, 4).find(x => x.i === 0 && x.to === 9);
+  assert.deepEqual(m.cap, [0]);
+  PC.pos[0][0] = 80;
+  assert.ok(!PC.legal(0, 3).some(x => x.i === 0), 'square 83 is a dead end');
+  assert.ok(PC.legal(0, 4).some(x => x.i === 0 && x.to === 84));
+});

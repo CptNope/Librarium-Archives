@@ -841,6 +841,516 @@
     aiPlan(pl, depth) { return bestPlan(this, pl, depth, 5); },
   };
 
+  /* ------------------------------------------------------------------ Chess
+   * The modern game, played on at the New Queen. Same board layout as
+   * shatranj: index r*8+c, rank 0 nearest the visitor, a square holds
+   * type + 8*player: 1 king, 2 queen, 3 bishop, 4 knight, 5 rook, 6 pawn. */
+  const CH = { K: 1, Q: 2, B: 3, N: 4, R: 5, P: 6 };
+  const CH_VALUE = [0, 0, 9, 3.2, 3, 5, 1];
+  const CHESS = {
+    id: 'chess', name: 'Chess', dice: false, first: 0, CH,
+    rules: [
+      'You play white and move first. The queen moves any distance in any direction, the bishop any distance diagonally: the two changes of the 1470s that made chess fast.',
+      'The rook moves any distance across or up and down, the knight jumps in an L, and the king steps one square in any direction.',
+      'A pawn steps forward one square, or two from its first square, and captures one square diagonally forward. It may take a pawn that has just passed it with a double step (en passant). On the far rank it becomes a queen.',
+      'Castling: if neither the king nor that rook has moved, nothing stands between them, and the king is not in check or passing through an attacked square, move the king two squares toward the rook. The rook jumps to the king\'s other side.',
+      'Checkmate wins. Stalemate, bare kings, or fifty moves each with no capture or pawn move are draws.'
+    ],
+    source: 'Modern rules, with pawns always promoting to a queen and no draw by repetition.',
+    init() {
+      const b = Array(64).fill(0);
+      const back = [CH.R, CH.N, CH.B, CH.Q, CH.K, CH.B, CH.N, CH.R];
+      for (let c = 0; c < 8; c++) { b[c] = back[c]; b[8 + c] = CH.P; b[48 + c] = CH.P + 8; b[56 + c] = back[c] + 8; }
+      this.b = b; this.quiet = 0; this.ply = 0; this.ep = -1;
+      this.castle = [[true, true], [true, true]]; // [queen side, king side] for each player
+    },
+    owner: v => (v > 8 ? 1 : 0),
+    type: v => v & 7,
+    on: (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8,
+    count(pl) { let n = 0; for (const v of this.b) if (v && this.owner(v) === pl) n++; return n; },
+    attacked(sq, by) {
+      const b = this.b, r = sq >> 3, c = sq & 7;
+      const is = (rr, cc, ...ts) => { if (!this.on(rr, cc)) return false; const v = b[rr * 8 + cc]; return v && this.owner(v) === by && ts.includes(this.type(v)); };
+      for (const [dr, dc] of SH_KNIGHT) if (is(r + dr, c + dc, CH.N)) return true;
+      for (const [dr, dc] of SH_KING) if (is(r + dr, c + dc, CH.K)) return true;
+      const pr = by === 0 ? r - 1 : r + 1;
+      if (is(pr, c - 1, CH.P) || is(pr, c + 1, CH.P)) return true;
+      const slide = (dirs, ts) => { for (const [dr, dc] of dirs) { let rr = r + dr, cc = c + dc; while (this.on(rr, cc)) { const v = b[rr * 8 + cc]; if (v) { if (this.owner(v) === by && ts.includes(this.type(v))) return true; break; } rr += dr; cc += dc; } } return false; };
+      return slide(SH_ORTHO, [CH.R, CH.Q]) || slide(SH_DIAG, [CH.B, CH.Q]);
+    },
+    inCheck(pl) { const k = this.b.indexOf(CH.K + 8 * pl); return k >= 0 && this.attacked(k, 1 - pl); },
+    pseudo(pl) {
+      const b = this.b, out = [];
+      const add = (from, r, c, captureOnly, quietOnly) => {
+        if (!this.on(r, c)) return false;
+        const to = r * 8 + c, v = b[to];
+        if (v && this.owner(v) === pl) return false;
+        if (v && quietOnly) return false;
+        if (!v && captureOnly) return false;
+        out.push({ pl, from, to, cap: v });
+        return !v;
+      };
+      const slide = (i, dirs) => { const r = i >> 3, c = i & 7; for (const [dr, dc] of dirs) { let rr = r + dr, cc = c + dc; while (add(i, rr, cc)) { rr += dr; cc += dc; } } };
+      for (let i = 0; i < 64; i++) {
+        const v = b[i]; if (!v || this.owner(v) !== pl) continue;
+        const r = i >> 3, c = i & 7, t = this.type(v);
+        if (t === CH.K) {
+          for (const [dr, dc] of SH_KING) add(i, r + dr, c + dc);
+          const home = pl === 0 ? 0 : 56;
+          if (i === home + 4 && !this.inCheck(pl)) {
+            if (this.castle[pl][1] && b[home + 7] === CH.R + 8 * pl && !b[home + 5] && !b[home + 6] && !this.attacked(home + 5, 1 - pl)) out.push({ pl, from: i, to: home + 6, cap: 0, castle: [home + 7, home + 5] });
+            if (this.castle[pl][0] && b[home] === CH.R + 8 * pl && !b[home + 1] && !b[home + 2] && !b[home + 3] && !this.attacked(home + 3, 1 - pl)) out.push({ pl, from: i, to: home + 2, cap: 0, castle: [home, home + 3] });
+          }
+        }
+        else if (t === CH.Q) { slide(i, SH_ORTHO); slide(i, SH_DIAG); }
+        else if (t === CH.B) slide(i, SH_DIAG);
+        else if (t === CH.R) slide(i, SH_ORTHO);
+        else if (t === CH.N) for (const [dr, dc] of SH_KNIGHT) add(i, r + dr, c + dc);
+        else if (t === CH.P) {
+          const dr = pl === 0 ? 1 : -1, start = pl === 0 ? 1 : 6;
+          if (add(i, r + dr, c, false, true) && r === start) { const n = out.length; add(i, r + 2 * dr, c, false, true); if (out.length > n) out[out.length - 1].double = (r + dr) * 8 + c; }
+          add(i, r + dr, c - 1, true); add(i, r + dr, c + 1, true);
+          for (const dc of [-1, 1]) if (this.on(r + dr, c + dc) && (r + dr) * 8 + c + dc === this.ep) out.push({ pl, from: i, to: this.ep, cap: CH.P + 8 * (1 - pl), epTake: r * 8 + c + dc });
+        }
+      }
+      for (const m of out) if (this.type(b[m.from]) === CH.P && ((m.to >> 3) === (pl === 0 ? 7 : 0))) m.promo = true;
+      return out;
+    },
+    legal(pl) {
+      const out = [];
+      for (const m of this.pseudo(pl)) { const s = this.snapshot(); this.raw(m); if (!this.inCheck(pl)) out.push(m); this.restore(s); }
+      return out;
+    },
+    raw(m) {
+      const b = this.b, v = b[m.from], t = this.type(v);
+      b[m.to] = m.promo ? CH.Q + 8 * m.pl : v; b[m.from] = 0;
+      if (m.epTake !== undefined) b[m.epTake] = 0;
+      if (m.castle) { b[m.castle[1]] = b[m.castle[0]]; b[m.castle[0]] = 0; }
+      if (t === CH.K) this.castle[m.pl] = [false, false];
+      for (const [sq, pl, side] of [[0, 0, 0], [7, 0, 1], [56, 1, 0], [63, 1, 1]]) if (m.from === sq || m.to === sq) this.castle[pl][side] = false;
+      this.ep = m.double !== undefined ? m.double : -1;
+      this.quiet = m.cap || t === CH.P ? 0 : this.quiet + 1; this.ply++;
+    },
+    pieceName(v) { return ['', 'king', 'queen', 'bishop', 'knight', 'rook', 'pawn'][this.type(v)]; },
+    apply(m) {
+      this.raw(m);
+      const parts = [];
+      if (m.castle) parts.push(m.pl === 0 ? 'You castle.' : 'The Scribe castles.');
+      if (m.cap) parts.push(m.pl === 0 ? `You take the Scribe's ${this.pieceName(m.cap)}${m.epTake !== undefined ? ' en passant' : ''}.` : `The Scribe takes your ${this.pieceName(m.cap)}${m.epTake !== undefined ? ' en passant' : ''}.`);
+      if (m.promo) parts.push('The pawn becomes a queen.');
+      if (this.inCheck(1 - m.pl)) parts.push(m.pl === 0 ? 'Check.' : 'Check! Your king is attacked.');
+      return { caps: m.cap ? [m.epTake !== undefined ? m.epTake : m.to] : [], note: parts.join(' ') };
+    },
+    bare() { // only kings, or a king and one minor piece against a bare king
+      const rest = this.b.filter(v => v && this.type(v) !== CH.K);
+      return !rest.length || (rest.length === 1 && [CH.B, CH.N].includes(this.type(rest[0])));
+    },
+    result(pl) {
+      if (!this.legal(pl).length) return this.inCheck(pl)
+        ? { winner: 1 - pl, text: pl === 0 ? 'Checkmate. The Scribe wins.' : 'Checkmate! You win.' }
+        : { winner: -1, text: pl === 0 ? 'You have no legal move but are not in check: stalemate, a draw.' : 'The Scribe has no legal move but is not in check: stalemate, a draw.' };
+      if (this.bare()) return { winner: -1, text: 'Neither side has enough left to checkmate. The game is drawn.' };
+      if (this.quiet >= 100) return { winner: -1, text: 'Fifty moves each with no capture or pawn move. The game is drawn.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.quiet, this.ply, this.ep, this.castle.map(x => x.slice())]; },
+    restore(s) { this.b = s[0].slice(); this.quiet = s[1]; this.ply = s[2]; this.ep = s[3]; this.castle = s[4].map(x => x.slice()); },
+    turns(pl) {
+      const v = m => (m.cap ? CH_VALUE[this.type(m.cap)] * 10 - CH_VALUE[this.type(this.b[m.from])] : 0) + (m.promo ? 80 : 0);
+      return this.legal(pl).sort((a, b) => v(b) - v(a)).map(m => [m]);
+    },
+    terminal(pl, depth) {
+      // A side with no legal move: checkmate is a loss, stalemate a draw. Found by the move list itself.
+      if (this.quiet >= 100 || this.bare()) return 0;
+      return null;
+    },
+    evaluate(pl) {
+      let s = 0;
+      for (let i = 0; i < 64; i++) {
+        const v = this.b[i]; if (!v) continue;
+        const o = this.owner(v), t = this.type(v), r = i >> 3, c = i & 7, adv = o === 0 ? r : 7 - r;
+        let val = CH_VALUE[t];
+        const centre = 3.5 - Math.max(Math.abs(r - 3.5), Math.abs(c - 3.5));
+        if (t === CH.P) val += 0.05 * adv + (c >= 2 && c <= 5 ? 0.02 * adv : 0);
+        if (t === CH.N || t === CH.B) val += 0.1 * centre - (adv === 0 ? 0.15 : 0);
+        if (t === CH.K) val += this.count(1 - o) > 7 ? (adv === 0 && (c <= 2 || c >= 6) ? 0.3 : -0.1 * adv) : 0.05 * centre;
+        s += o === pl ? val : -val;
+      }
+      return s + (this.inCheck(1 - pl) ? 0.2 : 0);
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 5); },
+  };
+
+  /* ------------------------------------------------------------------ Shogi
+   * 9 x 9, index r*9+c, rank 0 nearest the visitor (sente, moving up). A
+   * square holds 0 or type (1-8) + 16 if promoted + 32 if the Scribe's.
+   * Types: 1 pawn, 2 lance, 3 knight, 4 silver, 5 gold, 6 bishop, 7 rook,
+   * 8 king. hands[pl][type - 1] counts captured pieces ready to drop. */
+  const SG = { P: 1, L: 2, N: 3, S: 4, G: 5, B: 6, R: 7, K: 8 };
+  const SG_VAL = [0, 1, 3, 4, 5, 6, 8, 10, 0];
+  const SG_PROMO_VAL = [0, 5, 6, 6, 6, 6, 10, 12, 0];
+  const sgType = v => v & 15, sgPro = v => (v & 16) !== 0, sgOwner = v => (v & 32 ? 1 : 0);
+  const SG_ALL8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  // Step moves for a piece of this kind, with f = +1 for the visitor, -1 for the Scribe.
+  function sgSteps(t, pro, f) {
+    const gold = [[f, 0], [f, -1], [f, 1], [0, -1], [0, 1], [-f, 0]];
+    if (pro && t <= 4) return gold;
+    if (t === SG.G) return gold;
+    if (t === SG.S) return [[f, 0], [f, -1], [f, 1], [-f, -1], [-f, 1]];
+    if (t === SG.K) return SG_ALL8;
+    if (t === SG.P) return [[f, 0]];
+    if (t === SG.N) return [[2 * f, -1], [2 * f, 1]];
+    if (t === SG.B && pro) return [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    if (t === SG.R && pro) return [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+    return [];
+  }
+  function sgSlides(t, pro, f) {
+    if (t === SG.L && !pro) return [[f, 0]];
+    if (t === SG.B) return [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+    if (t === SG.R) return [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    return [];
+  }
+  const SHOGI = {
+    id: 'shogi', name: 'Shogi', dice: false, first: 0, SG,
+    rules: [
+      'You move first, with the pieces pointing away from you. Checkmate the Scribe\'s king to win.',
+      'King: one step any way. Gold: one step any way but diagonally back. Silver: one step forward or diagonally. Knight: two forward and one across, jumping. Lance: any distance straight forward. Bishop and rook: as in chess. Pawn: one step forward, and it captures the same way.',
+      'A piece that moves into, out of or within the far three ranks is promoted. Pawns, lances, knights and silvers then move like golds; bishops and rooks gain the king\'s step as well. Here a piece always promotes when it can.',
+      'Drops: a piece you capture becomes yours. On a later turn, instead of moving, you can put it on any empty square: pick it from your hand at the right, then a ring. You may not drop a pawn on a file where you already have an unpromoted pawn, drop a piece where it could never move, or give checkmate by dropping a pawn.',
+      'Museum rule: after 150 moves each the game is drawn.'
+    ],
+    source: 'Modern shogi, except that promotion is automatic and repetition (sennichite) is replaced by a move limit.',
+    init() {
+      const b = Array(81).fill(0), back = [SG.L, SG.N, SG.S, SG.G, SG.K, SG.G, SG.S, SG.N, SG.L];
+      back.forEach((t, c) => { b[c] = t; b[72 + c] = t + 32; });
+      b[9 + 1] = SG.B; b[9 + 7] = SG.R; b[63 + 1] = SG.R + 32; b[63 + 7] = SG.B + 32;
+      for (let c = 0; c < 9; c++) { b[18 + c] = SG.P; b[54 + c] = SG.P + 32; }
+      this.b = b; this.hands = [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]]; this.ply = 0;
+    },
+    zone: (pl, r) => (pl === 0 ? r >= 6 : r <= 2),
+    count(pl) { let n = 0; for (const v of this.b) if (v && sgOwner(v) === pl) n++; return n + this.hands[pl].reduce((a, b) => a + b, 0); },
+    // Is square sq attacked by player `by`? Looks outward from sq for anything that could reach it.
+    attacked(sq, by) {
+      const b = this.b, r = (sq / 9) | 0, c = sq % 9, f = by === 0 ? 1 : -1;
+      for (const [dr, dc] of SG_ALL8.concat([[2 * f, -1], [2 * f, 1]])) {
+        const ar = r - dr, ac = c - dc; if (ar < 0 || ar > 8 || ac < 0 || ac > 8) continue;
+        const v = b[ar * 9 + ac]; if (!v || sgOwner(v) !== by) continue;
+        if (sgSteps(sgType(v), sgPro(v), f).some(([x, y]) => x === dr && y === dc)) return true;
+      }
+      for (const [dr, dc] of SG_ALL8) {
+        let rr = r + dr, cc = c + dc;
+        while (rr >= 0 && rr < 9 && cc >= 0 && cc < 9) {
+          const v = b[rr * 9 + cc];
+          if (v) {
+            if (sgOwner(v) === by && sgSlides(sgType(v), sgPro(v), f).some(([x, y]) => x === -dr && y === -dc)) return true;
+            break;
+          }
+          rr += dr; cc += dc;
+        }
+      }
+      return false;
+    },
+    king(pl) { return this.b.indexOf(SG.K + (pl ? 32 : 0)); },
+    inCheck(pl) { const k = this.king(pl); return k < 0 || this.attacked(k, 1 - pl); },
+    pseudo(pl) {
+      const b = this.b, f = pl === 0 ? 1 : -1, out = [];
+      for (let i = 0; i < 81; i++) {
+        const v = b[i]; if (!v || sgOwner(v) !== pl) continue;
+        const t = sgType(v), pro = sgPro(v), r = (i / 9) | 0, c = i % 9;
+        const add = (rr, cc) => {
+          if (rr < 0 || rr > 8 || cc < 0 || cc > 8) return false;
+          const to = rr * 9 + cc, w = b[to];
+          if (w && sgOwner(w) === pl) return false;
+          const promo = !pro && t !== SG.G && t !== SG.K && (this.zone(pl, r) || this.zone(pl, rr));
+          out.push({ pl, from: i, to, cap: w, promo });
+          return !w;
+        };
+        for (const [dr, dc] of sgSteps(t, pro, f)) add(r + dr, c + dc);
+        for (const [dr, dc] of sgSlides(t, pro, f)) { let rr = r + dr, cc = c + dc; while (add(rr, cc)) { rr += dr; cc += dc; } }
+      }
+      const hand = this.hands[pl], last = pl === 0 ? 8 : 0, last2 = pl === 0 ? 7 : 1;
+      for (let t = 1; t <= 7; t++) {
+        if (!hand[t - 1]) continue;
+        for (let i = 0; i < 81; i++) {
+          if (b[i]) continue;
+          const r = (i / 9) | 0, c = i % 9;
+          if ((t === SG.P || t === SG.L) && r === last) continue;
+          if (t === SG.N && (r === last || r === last2)) continue;
+          if (t === SG.P) { let two = false; for (let rr = 0; rr < 9; rr++) if (b[rr * 9 + c] === SG.P + (pl ? 32 : 0)) { two = true; break; } if (two) continue; }
+          out.push({ pl, drop: t, to: i, cap: 0 });
+        }
+      }
+      return out;
+    },
+    raw(m) {
+      const b = this.b, pl = m.pl;
+      if (m.drop) { b[m.to] = m.drop + (pl ? 32 : 0); this.hands[pl][m.drop - 1]--; }
+      else {
+        const v = b[m.from];
+        if (m.cap) this.hands[pl][sgType(m.cap) - 1]++;
+        b[m.to] = m.promo ? v | 16 : v; b[m.from] = 0;
+      }
+      this.ply++;
+    },
+    legal(pl) {
+      const out = [], check = this.inCheck(pl);
+      for (const m of this.pseudo(pl)) {
+        if (m.drop && !check && m.drop !== SG.P) { out.push(m); continue; }
+        const s = this.snapshot(); this.raw(m);
+        let ok = !this.inCheck(pl);
+        // No checkmate by dropping a pawn.
+        if (ok && m.drop === SG.P && this.inCheck(1 - pl) && !this.legal(1 - pl).length) ok = false;
+        this.restore(s);
+        if (ok) out.push(m);
+      }
+      return out;
+    },
+    pieceName(v) { const t = sgType(v), pro = sgPro(v); return pro ? ['', 'tokin', 'promoted lance', 'promoted knight', 'promoted silver', '', 'horse', 'dragon'][t] : ['', 'pawn', 'lance', 'knight', 'silver', 'gold', 'bishop', 'rook', 'king'][t]; },
+    apply(m) {
+      const name = m.cap ? this.pieceName(m.cap) : '';
+      this.raw(m);
+      const parts = [];
+      if (m.cap) parts.push(m.pl === 0 ? `You take the Scribe's ${name}; it joins your hand.` : `The Scribe takes your ${name}.`);
+      if (m.drop && m.pl === 1) parts.push(`The Scribe drops a ${this.pieceName(m.drop)}.`);
+      if (m.promo) parts.push(m.pl === 0 ? 'Your piece is promoted.' : 'The Scribe\'s piece is promoted.');
+      if (this.inCheck(1 - m.pl)) parts.push(m.pl === 0 ? 'Check.' : 'Check! Your king is attacked.');
+      return { caps: m.cap ? [m.to] : [], note: parts.join(' ') };
+    },
+    result(pl) {
+      if (!this.legal(pl).length) return { winner: 1 - pl, text: pl === 0 ? 'Checkmate. The Scribe wins.' : 'Checkmate! You win.' };
+      if (this.ply >= 300) return { winner: -1, text: 'A hundred and fifty moves each. The game is drawn.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.hands.map(h => h.slice()), this.ply]; },
+    restore(s) { this.b = s[0].slice(); this.hands = s[1].map(h => h.slice()); this.ply = s[2]; },
+    value(v) { return sgPro(v) ? SG_PROMO_VAL[sgType(v)] : SG_VAL[sgType(v)]; },
+    turns(pl) {
+      const key = m => (m.cap ? this.value(m.cap) * 10 : 0) + (m.promo ? 3 : 0) - (m.drop ? 1 : 0);
+      const ms = this.legal(pl).sort((a, b) => key(b) - key(a));
+      // Keep the search to the likelier drops: those near the action.
+      const kings = [this.king(0), this.king(1)];
+      return ms.filter(m => !m.drop || ms.length < 60 || kings.some(k => k >= 0 && Math.abs(((k / 9) | 0) - ((m.to / 9) | 0)) <= 2 && Math.abs((k % 9) - (m.to % 9)) <= 2)).map(m => [m]);
+    },
+    terminal(pl) { return this.ply >= 300 ? 0 : null; },
+    evaluate(pl) {
+      let s = 0;
+      for (let i = 0; i < 81; i++) {
+        const v = this.b[i]; if (!v) continue;
+        const o = sgOwner(v), r = (i / 9) | 0, adv = o === 0 ? r : 8 - r;
+        let val = this.value(v);
+        if (sgType(v) !== SG.K) val += 0.03 * adv;
+        s += o === pl ? val : -val;
+      }
+      for (const o of [0, 1]) this.hands[o].forEach((n, k) => { s += (o === pl ? 1 : -1) * n * SG_VAL[k + 1] * 1.1; });
+      // A king with gold and silver guards beside it.
+      for (const o of [0, 1]) { const k = this.king(o); if (k < 0) continue; let g = 0; const r = (k / 9) | 0, c = k % 9; for (const [dr, dc] of SG_ALL8) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < 9 && cc >= 0 && cc < 9) { const v = this.b[rr * 9 + cc]; if (v && sgOwner(v) === o) g++; } } s += (o === pl ? 1 : -1) * 0.25 * Math.min(g, 4); }
+      return s;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 4); },
+  };
+
+  /* ---------------------------------------------------------------- Yut Nori
+   * 29 stations. The outer square is 0-19, run anticlockwise from the start
+   * corner 0 (near right): corners at 5 (far right), 10 (far left) and 15
+   * (near left). The diagonal from 5 to 15 is 20, 21, centre 22, 23, 24; the
+   * diagonal from 10 to 0 is 25, 26, 22, 27, 28. A piece off the board is -1,
+   * a piece home is YT_HOME. A piece that STARTS its move on a corner or the
+   * centre takes the shortcut. */
+  const YT_HOME = 29;
+  const YT_NAMES = ['mo', 'do', 'gae', 'geol', 'yut'];
+  function ytRoute(s) {
+    const tail = a => a.concat([YT_HOME]);
+    const outer = from => { const r = []; for (let k = from + 1; k <= 19; k++) r.push(k); return tail(r.concat([0])); };
+    if (s === -1) return outer(0);
+    if (s === 0) return [YT_HOME];
+    if (s === 5) return [20, 21, 22, 23, 24].concat(outer(14).slice(0));
+    if (s === 10) return tail([25, 26, 22, 27, 28, 0]);
+    if (s === 22) return tail([27, 28, 0]);
+    if (s === 20 || s === 21) return [20, 21, 22, 23, 24].slice(s - 19).concat(outer(14));
+    if (s === 23 || s === 24) return [24].slice(s - 23).concat(outer(14));
+    if (s === 25 || s === 26) return tail([26, 22, 27, 28, 0].slice(s - 25));
+    if (s === 27 || s === 28) return tail([28, 0].slice(s - 27));
+    return outer(s);
+  }
+  const YUT = {
+    id: 'yut', name: 'Yut Nori', dice: true, N: 4, first: 0, sides: ['red pieces', 'blue pieces'], HOME: YT_HOME, route: ytRoute,
+    rules: [
+      'Throw the four sticks and count the flat sides that land up: one is do (1 step), two gae (2), three geol (3), four yut (4), and none is mo (5).',
+      'Enter a new piece or move one already on the board, anticlockwise from the start corner near you on the right.',
+      'A piece that starts its move on a corner or on the centre takes the shortcut across the board instead.',
+      'Land on your own piece and they stack, moving together from then on. Land on the Scribe\'s and they all go back off the board.',
+      'Throwing yut or mo, or capturing, earns another throw. A piece goes home when it moves past the start corner. Bring all four home first to win.'
+    ],
+    source: 'Common modern rules for two sides. Each throw is moved at once rather than saved up, and there is no back-do.',
+    init() { this.pos = [[-1, -1, -1, -1], [-1, -1, -1, -1]]; },
+    roll() { const f = [0, 0, 0, 0].map(() => (Math.random() < 0.5 ? 1 : 0)); const n = f.reduce((a, b) => a + b, 0); return { faces: f, value: n || 5 }; },
+    rollName: r => `${YT_NAMES[r.value % 5]} (${r.value})`,
+    legal(pl, v) {
+      const moves = [], seen = new Set();
+      this.pos[pl].forEach((p, i) => {
+        if (p === YT_HOME) return;
+        const key = p === -1 ? 'off' : p; if (seen.has(key)) return; seen.add(key);
+        const route = ytRoute(p), path = route.slice(0, v);
+        const to = path[path.length - 1];
+        const group = p === -1 ? [i] : this.pos[pl].map((q, k) => (q === p ? k : -1)).filter(k => k >= 0);
+        const cap = to === YT_HOME ? [] : this.pos[1 - pl].map((q, k) => (q === to ? k : -1)).filter(k => k >= 0);
+        moves.push({ pl, i, from: p, to, path, group, cap, value: v });
+      });
+      return moves;
+    },
+    steps(m) { return m.path; },
+    apply(m) {
+      const moved = [];
+      for (const k of m.group) { this.pos[m.pl][k] = m.to; if (k !== m.i) moved.push({ pl: m.pl, i: k }); }
+      for (const k of m.cap) { this.pos[1 - m.pl][k] = -1; moved.push({ pl: 1 - m.pl, i: k }); }
+      // Pieces already waiting on the landing station join the stack where they are.
+      let note = '';
+      if (m.cap.length) note = m.pl === 0 ? `Caught! ${m.cap.length > 1 ? 'The Scribe\'s stack goes' : 'The Scribe\'s piece goes'} back off the board.` : `The Scribe catches ${m.cap.length > 1 ? 'your stack' : 'your piece'}.`;
+      else if (m.to === YT_HOME) note = m.pl === 0 ? (m.group.length > 1 ? `${m.group.length} pieces home.` : 'A piece home.') : 'The Scribe brings a piece home.';
+      else if (m.from !== -1 && this.pos[m.pl].filter(q => q === m.to).length > m.group.length) note = m.pl === 0 ? 'Stacked: they travel together now.' : 'The Scribe stacks its pieces.';
+      else if ([5, 10, 22].includes(m.to)) note = m.pl === 0 ? 'On a shortcut point: next move cuts across.' : '';
+      return { moved, note };
+    },
+    extra(m) { return m.cap.length > 0 || m.value >= 4; },
+    extraNote: 'Throw again.',
+    done(pl) { return this.pos[pl].every(p => p === YT_HOME); },
+    home(pl) { return this.pos[pl].filter(p => p === YT_HOME).length; },
+    // How far a piece still has to go: the length of its route home.
+    left(p) { return p === YT_HOME ? 0 : ytRoute(p).length; },
+    danger(pl, sq) { // chance the other side can land on sq next throw
+      if (sq === YT_HOME || sq === -1) return 0;
+      const P = [0, 4 / 16, 6 / 16, 4 / 16, 1 / 16, 1 / 16];
+      let d = 0;
+      for (const q of new Set(this.pos[1 - pl])) { if (q === YT_HOME) continue; const r = ytRoute(q); for (let v = 1; v <= 5; v++) if (r[v - 1] === sq) d += P[v]; }
+      return Math.min(1, d);
+    },
+    ai(moves) {
+      let best = moves[0], bs = -1e9;
+      for (const m of moves) {
+        let s = 0;
+        const n = m.group.length;
+        if (m.to === YT_HOME) s += 40 * n;
+        s += m.cap.length * (30 + 4 * m.cap.reduce((a, k) => a + (20 - this.left(this.pos[1 - m.pl][k])), 0) / Math.max(1, m.cap.length));
+        s += (this.left(m.from) - this.left(m.to)) * 2 * n;
+        if ([5, 10, 22].includes(m.to)) s += 10;
+        if (m.to !== YT_HOME && this.pos[m.pl].some((q, k) => q === m.to && !m.group.includes(k))) s += 8;
+        s -= this.danger(m.pl, m.to) * 30 * n;
+        s += this.danger(m.pl, m.from) * 18 * n;
+        s += Math.random() * pick(30, 6, 0.5);
+        if (s > bs) { bs = s; best = m; }
+      }
+      return best;
+    },
+    aiPlan(pl, moves) { return [this.ai(moves)]; },
+  };
+
+  /* ----------------------------------------------------------------- Pachisi
+   * A cross of four arms (0 near, 1 right, 2 far, 3 left: anticlockwise seen
+   * from above), each 3 columns wide and 8 squares long, round the Charkoni.
+   * A cell is arm*24 + k*3 + (j+1): k counts out from the centre (0-7), j is
+   * -1, 0 or +1 across the arm, +1 being the side toward the next arm.
+   * Each piece's route has 84 steps: 0 is the Charkoni before it sets out,
+   * 1-83 the squares, 84 home again. Two players: the visitor plays the near
+   * and far colours (partners), the Scribe the left and right. */
+  const PC_HOME = 84;
+  const pcCell = (a, k, j) => (((a % 4) + 4) % 4) * 24 + k * 3 + (j + 1);
+  const PC_ROUTE = [0, 1, 2, 3].map(a => {
+    const r = [null];
+    for (let k = 0; k <= 7; k++) r.push(pcCell(a, k, 0));
+    for (let k = 7; k >= 0; k--) r.push(pcCell(a, k, 1));
+    for (let n = 1; n <= 3; n++) { const b = a + n; for (let k = 0; k <= 7; k++) r.push(pcCell(b, k, -1)); r.push(pcCell(b, 7, 0)); for (let k = 7; k >= 0; k--) r.push(pcCell(b, k, 1)); }
+    for (let k = 0; k <= 7; k++) r.push(pcCell(a, k, -1));
+    r.push(pcCell(a, 7, 0));
+    for (let k = 6; k >= 0; k--) r.push(pcCell(a, k, 0));
+    return r; // r[84] is undefined: home
+  });
+  const pcCastle = cell => { const k = ((cell % 24) / 3) | 0, j = (cell % 3) - 1; return (k === 7 && j === 0) || (k === 4 && j !== 0); };
+  const PC_ARMS = [[0, 2], [1, 3]]; // the visitor's two colours, the Scribe's two
+  const PC_VAL = [25, 10, 2, 3, 4, 5, 6]; // by the number of cowries landing mouth up
+  const PACHISI = {
+    id: 'pachisi', name: 'Pachisi', dice: true, N: 4, first: 0, HOME: PC_HOME, ROUTE: PC_ROUTE, castle: pcCastle, ARMS: PC_ARMS,
+    sides: ['yellow and blue pieces', 'green and cream pieces'],
+    variants: [{ id: 'short', label: 'Short game' }, { id: 'full', label: 'Full game' }],
+    variant: 'short', variantLabel: 'Pieces',
+    per: 2, // pieces per colour: 2 in the short game, 4 in the full one
+    setVariant(id) { this.variant = id === 'full' ? 'full' : 'short'; this.per = this.variant === 'full' ? 4 : 2; this.N = 2 * this.per; },
+    rules: [
+      'You play two colours as partners: yellow, from the near arm, and blue, from the far arm. The Scribe plays green and cream.',
+      'Throw six cowries and count those landing mouth up: 2, 3, 4 or 5 move that many squares; one up is 10, none is 25 and all six is 6. A 6, 10 or 25 is a grace: it can bring a piece out of the Charkoni onto the first square, and it earns another throw.',
+      'Each piece goes down the middle of its own arm, anticlockwise round the outside of the cross, and back up its own middle into the Charkoni, which needs an exact throw. No throw is 1, so a piece may not stop on the last square before home.',
+      'Land on an enemy piece to send it back to the Charkoni, and throw again. Pieces on the twelve castle squares, marked with a cross, are safe, and you may not land on a castle held by the enemy.',
+      'Bring all your pieces home first to win. The short game gives each colour two pieces, the full game four.'
+    ],
+    source: 'The common rules with six cowries (pachisi has no single standard). As in some versions, each colour\'s first piece may come out on any throw; later ones need a grace. Each throw is moved at once rather than collected first, and the short game uses two pieces per colour so it fits a museum visit.',
+    init() { this.pos = [Array(this.N).fill(0), Array(this.N).fill(0)]; },
+    arm(pl, i) { return PC_ARMS[pl][i < this.per ? 0 : 1]; },
+    cellOf(pl, i, idx) { return idx <= 0 || idx >= PC_HOME ? -1 : PC_ROUTE[this.arm(pl, i)][idx]; },
+    roll() {
+      const f = [0, 0, 0, 0, 0, 0].map(() => (Math.random() < 0.5 ? 1 : 0)), n = f.reduce((a, b) => a + b, 0);
+      return { faces: f, value: PC_VAL[n] };
+    },
+    rollName: r => `${r.value}${[6, 10, 25].includes(r.value) ? ', a grace' : ''}`,
+    grace: v => v === 6 || v === 10 || v === 25,
+    enemiesAt(pl, cell) { const out = []; this.pos[1 - pl].forEach((q, k) => { if (this.cellOf(1 - pl, k, q) === cell) out.push(k); }); return out; },
+    legal(pl, v) {
+      const moves = [], seen = new Set();
+      this.pos[pl].forEach((p, i) => {
+        if (p === PC_HOME) return;
+        const key = this.arm(pl, i) + ':' + p; if (seen.has(key)) return; seen.add(key);
+        let to;
+        if (p === 0) {
+          // A colour's first piece out may use any throw; after that, coming out needs a grace.
+          const colourOut = this.pos[pl].some((q, k) => k !== i && this.arm(pl, k) === this.arm(pl, i) && q !== 0);
+          if (colourOut && !this.grace(v)) return;
+          to = 1;
+        } else to = p + v;
+        if (to > PC_HOME || to === PC_HOME - 1) return; // no throw is 1, so the last square before home is a dead end
+        const cell = this.cellOf(pl, i, to), foes = cell < 0 ? [] : this.enemiesAt(pl, cell);
+        if (foes.length && pcCastle(cell)) return; // an enemy castle cannot be entered
+        moves.push({ pl, i, from: p, to, cap: foes, value: v });
+      });
+      return moves;
+    },
+    steps(m) { const s = []; for (let k = Math.max(1, m.from + 1); k <= m.to; k++) s.push(k); return s.length ? s : [m.to]; },
+    apply(m) {
+      this.pos[m.pl][m.i] = m.to; const moved = [];
+      for (const k of m.cap) { this.pos[1 - m.pl][k] = 0; moved.push({ pl: 1 - m.pl, i: k }); }
+      let note = '';
+      if (m.cap.length) note = m.pl === 0 ? `Captured! ${m.cap.length > 1 ? 'Those pieces go' : 'The piece goes'} back to the Charkoni.` : 'The Scribe sends your piece back to the Charkoni.';
+      else if (m.to === PC_HOME) note = m.pl === 0 ? 'Home in the Charkoni.' : 'The Scribe brings a piece home.';
+      else if (m.from === 0) note = m.pl === 0 ? 'A piece comes out.' : 'The Scribe brings a piece out.';
+      return { moved, note };
+    },
+    extra(m) { return this.grace(m.value) || m.cap.length > 0; },
+    extraNote: 'Throw again.',
+    done(pl) { return this.pos[pl].every(p => p === PC_HOME); },
+    home(pl) { return this.pos[pl].filter(p => p === PC_HOME).length; },
+    danger(pl, i, idx) { // chance an enemy can land here next throw
+      const cell = this.cellOf(pl, i, idx); if (cell < 0 || pcCastle(cell)) return 0;
+      const P = { 2: 0.234, 3: 0.312, 4: 0.234, 5: 0.094, 6: 0.016, 10: 0.094, 25: 0.016 };
+      let d = 0;
+      this.pos[1 - pl].forEach((q, k) => { if (q <= 0 || q >= PC_HOME) return; for (const v in P) if (this.cellOf(1 - pl, k, q + +v) === cell) d += P[v]; });
+      return Math.min(1, d);
+    },
+    ai(moves) {
+      let best = moves[0], bs = -1e9;
+      for (const m of moves) {
+        let s = (m.to - Math.max(0, m.from)) * 0.4;
+        if (m.from === 0) s += 14;
+        if (m.to === PC_HOME) s += 40;
+        s += m.cap.reduce((a, k) => a + 20 + this.pos[1 - m.pl][k] * 0.5, 0);
+        const cell = this.cellOf(m.pl, m.i, m.to);
+        if (cell >= 0 && pcCastle(cell)) s += 8;
+        s -= this.danger(m.pl, m.i, m.to) * (12 + m.to * 0.35);
+        if (m.from > 0) s += this.danger(m.pl, m.i, m.from) * (10 + m.from * 0.3);
+        s += Math.random() * pick(30, 5, 0.5);
+        if (s > bs) { bs = s; best = m; }
+      }
+      return best;
+    },
+    aiPlan(pl, moves) { return [this.ai(moves)]; },
+  };
+
   /* ----------------------------------------------------------- Fox and Geese
    * The 33-point cross board: point (r, c) exists when r or c is 2, 3 or 4.
    * Lines run along rows and columns, and diagonally through the points whose
@@ -2379,7 +2889,7 @@
     },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA };
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);

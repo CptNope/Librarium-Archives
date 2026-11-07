@@ -17,9 +17,9 @@ Visitors walk a candlelit library hall in six wings, read the history of each ga
 * Wing I, The Dawn of Play: Senet and the Royal Game of Ur (playable), Mehen, the Başur Höyük pieces, the first dice, Hounds and Jackals.
 * Wing II, Strategy Takes the Table: Go, Nine Men's Morris, Oware, Alquerque and Brandubh (playable), Petteia, Liubo, Ludus latrunculorum, Patolli.
 * Wing III, Kings, Cards and Courts: Tables (backgammon), Shatranj, Xiangqi and tarocchi (playable), Chaturanga, the Lewis Chessmen, playing cards, painted tarot trumps.
-* Wing IV, Printed Boards and Parlour Tables: Fox and Geese, Draughts, the Game of the Goose and Snakes and Ladders (playable), the new chess queen, Pachisi, Mahjong.
+* Wing IV, Printed Boards and Parlour Tables: Fox and Geese, chess (at the New Queen), Draughts, Pachisi, the Game of the Goose and Snakes and Ladders (playable), Mahjong.
 * Wing V, The Modern Board Game: Reversi, Halma and Dots and Boxes (playable), the Mansion of Happiness, the Checkered Game of Life, the Landlord's Game, and a lectern of Librarium's own games.
-* Wing VI, Games of the World: Mū tōrere, Kōnane and Fanorona (playable), Shogi, Yut Nori and Bao.
+* Wing VI, Games of the World: Mū tōrere, Shogi, Kōnane, Yut Nori and Fanorona (playable), Bao.
 
 Visitors walk with the arrow keys or WASD, or on phones and tablets with an on-screen joystick or by tapping the floor, and pinch to zoom. The Scribe plays at three levels. Visitor progress (exhibits visited, records at each table) is kept in the visitor's own browser only; the plugin stores nothing on the server.
 
@@ -45,6 +45,9 @@ Only one museum can appear on a page. Assets load only on pages that show it.
 * Fonts Almendra SC, Amethysta and Montserrat from Google Fonts (SIL Open Font License).
 
 == Changelog ==
+
+= 0.13.0 =
+* Chess, Shogi, Yut Nori and Pachisi are now playable.
 
 = 0.12.0 =
 * Wing VI, Games of the World: Mū tōrere, Kōnane and Fanorona to play; Shogi, Yut Nori and Bao on display.

@@ -1349,6 +1349,17 @@ function goosePawn(color) {
 }
 
 /* --- Wing IV: chess with the new queen (display) */
+/* Chess pieces in the Staunton manner, shared by the display and the table. */
+const chessLathe = (pts, m) => new THREE.Mesh(new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), 22), m);
+const CHESS_BASE = [[0, 0], [0.024, 0], [0.025, 0.006], [0.017, 0.012]];
+const CHESS_SHAPES = {
+    p: m => chessLathe([...CHESS_BASE, [0.009, 0.028], [0.013, 0.032], [0.012, 0.042], [0, 0.046]], m),
+    r: m => chessLathe([...CHESS_BASE, [0.015, 0.05], [0.019, 0.054], [0.019, 0.064], [0.014, 0.064], [0, 0.062]], m),
+    b: m => { const g = new THREE.Group(); g.add(chessLathe([...CHESS_BASE, [0.01, 0.045], [0.015, 0.052], [0.012, 0.068], [0.004, 0.076], [0, 0.078]], m)); return g; },
+    n: m => { const g = new THREE.Group(); g.add(chessLathe([...CHESS_BASE, [0.014, 0.022], [0, 0.024]], m)); const h = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.045, 0.016), m); h.position.set(0.004, 0.044, 0); h.rotation.z = -0.25; g.add(h); const sn = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.014, 0.014), m); sn.position.set(0.016, 0.06, 0); g.add(sn); return g; },
+    q: m => { const g = new THREE.Group(); g.add(chessLathe([...CHESS_BASE, [0.01, 0.06], [0.018, 0.07], [0.016, 0.084], [0, 0.084]], m)); for (let k = 0; k < 8; k++) { const a = k / 8 * TAU, ball = new THREE.Mesh(new THREE.SphereGeometry(0.004, 8, 6), m); ball.position.set(Math.cos(a) * 0.015, 0.088, Math.sin(a) * 0.015); g.add(ball); } return g; },
+    k: m => { const g = new THREE.Group(); g.add(chessLathe([...CHESS_BASE, [0.011, 0.064], [0.018, 0.074], [0.014, 0.088], [0, 0.088]], m)); const c1 = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.026, 0.005), m); c1.position.y = 0.1; g.add(c1); const c2 = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.005, 0.005), m); c2.position.y = 0.104; g.add(c2); return g; },
+  };
 function buildNewChess(group) {
   const S = 0.085, W = 8 * S + 0.07;
   const frame = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, W), new THREE.MeshStandardMaterial({ color: 0x2a170b, roughness: 0.5 }));
@@ -1360,29 +1371,23 @@ function buildNewChess(group) {
   }), { roughness: 0.5 });
   const y0 = TOP + 0.041;
   const mats = [new THREE.MeshStandardMaterial({ color: 0xeee0c0, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0x241810, roughness: 0.35 })];
-  const lathe = (pts, m) => new THREE.Mesh(new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), 22), m);
-  const base = [[0, 0], [0.024, 0], [0.025, 0.006], [0.017, 0.012]];
-  const shapes = {
-    p: m => lathe([...base, [0.009, 0.028], [0.013, 0.032], [0.012, 0.042], [0, 0.046]], m),
-    r: m => lathe([...base, [0.015, 0.05], [0.019, 0.054], [0.019, 0.064], [0.014, 0.064], [0, 0.062]], m),
-    b: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.01, 0.045], [0.015, 0.052], [0.012, 0.068], [0.004, 0.076], [0, 0.078]], m)); return g; },
-    n: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.014, 0.022], [0, 0.024]], m)); const h = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.045, 0.016), m); h.position.set(0.004, 0.044, 0); h.rotation.z = -0.25; g.add(h); const sn = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.014, 0.014), m); sn.position.set(0.016, 0.06, 0); g.add(sn); return g; },
-    q: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.01, 0.06], [0.018, 0.07], [0.016, 0.084], [0, 0.084]], m)); for (let k = 0; k < 8; k++) { const a = k / 8 * TAU, ball = new THREE.Mesh(new THREE.SphereGeometry(0.004, 8, 6), m); ball.position.set(Math.cos(a) * 0.015, 0.088, Math.sin(a) * 0.015); g.add(ball); } return g; },
-    k: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.011, 0.064], [0.018, 0.074], [0.014, 0.088], [0, 0.088]], m)); const c1 = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.026, 0.005), m); c1.position.y = 0.1; g.add(c1); const c2 = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.005, 0.005), m); c2.position.y = 0.104; g.add(c2); return g; },
-  };
+  const shapes = CHESS_SHAPES;
   // A position from a fast attacking game: the queen has swept out early.
   const layout = [
     [0, 0, 'r', 0], [0, 4, 'k', 0], [0, 5, 'b', 0], [0, 7, 'r', 0], [1, 0, 'p', 0], [1, 1, 'p', 0], [1, 5, 'p', 0], [1, 6, 'p', 0], [1, 7, 'p', 0], [2, 2, 'n', 0], [3, 3, 'p', 0], [3, 4, 'p', 0], [2, 5, 'n', 0],
     [4, 7, 'q', 0], [3, 2, 'b', 0],
     [7, 0, 'r', 1], [7, 2, 'b', 1], [7, 3, 'q', 1], [7, 4, 'k', 1], [7, 7, 'r', 1], [6, 0, 'p', 1], [6, 1, 'p', 1], [6, 2, 'p', 1], [6, 3, 'p', 1], [5, 5, 'n', 1], [6, 6, 'p', 1], [6, 7, 'p', 1], [4, 4, 'p', 1], [5, 2, 'n', 1], [4, 1, 'b', 1],
   ];
+  const display = [];
   for (const [r, c, t, side] of layout) {
-    const o = shapes[t](mats[side]); o.position.set((c - 3.5) * S, y0, (3.5 - r) * S); o.rotation.y = side ? -Math.PI / 2 : Math.PI / 2; group.add(o);
+    const o = shapes[t](mats[side]); o.position.set((c - 3.5) * S, y0, (3.5 - r) * S); o.rotation.y = side ? -Math.PI / 2 : Math.PI / 2; group.add(o); display.push(o);
   }
+  group.userData.display = display; // put away while a game is played on this board
   // A small gilded crown beside the board marks the piece that changed.
   const gold = new THREE.MeshStandardMaterial({ color: 0xd4a23a, metalness: 0.8, roughness: 0.3 });
   const q = shapes.q(gold); q.scale.setScalar(1.6); q.position.set(W / 2 + 0.11, TOP, -0.12); group.add(q);
   const old = sjPiece(2, new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 0.5 })); old.scale.setScalar(1.6); old.position.set(W / 2 + 0.11, TOP, 0.12); group.add(old);
+  return y0;
 }
 
 /* --- Wing IV: Pachisi (display) */
@@ -1402,7 +1407,7 @@ function buildPachisi(group) {
       for (let k = 0; k < 8; k++) for (let j = -1; j <= 1; j++) {
         const x = j * s - s / 2, y = ctr / 2 * sc + k * s;
         g.strokeStyle = '#f0d58a'; g.lineWidth = 2.5; g.strokeRect(x + 2, y + 2, s - 4, s - 4);
-        if ((k === 3 && j !== 0) || (k === 7 && j === 0)) { g.strokeStyle = '#f0d58a'; g.beginPath(); g.moveTo(x + 8, y + 8); g.lineTo(x + s - 8, y + s - 8); g.moveTo(x + s - 8, y + 8); g.lineTo(x + 8, y + s - 8); g.stroke(); }
+        if ((k === 4 && j !== 0) || (k === 7 && j === 0)) { g.strokeStyle = '#f0d58a'; g.beginPath(); g.moveTo(x + 8, y + 8); g.lineTo(x + s - 8, y + s - 8); g.moveTo(x + s - 8, y + 8); g.lineTo(x + 8, y + s - 8); g.stroke(); }
       }
       g.fillStyle = colours[arm]; g.globalAlpha = 0.55; g.fillRect(-s * 1.5, ctr / 2 * sc + 8 * s - 10, s * 3, 10); g.globalAlpha = 1;
       g.restore();
@@ -1415,9 +1420,9 @@ function buildPachisi(group) {
   // Cowrie shells, a few mouth up, and beehive-shaped pawns in four colours.
   const shellMat = new THREE.MeshStandardMaterial({ color: 0xf2ead8, roughness: 0.35 });
   const slit = new THREE.MeshStandardMaterial({ color: 0x5a4a3a });
-  const R = seeded(25);
+  const R = seeded(25), display = [];
   for (let k = 0; k < 7; k++) {
-    const sh = new THREE.Group();
+    const sh = new THREE.Group(); display.push(sh);
     const b = new THREE.Mesh(new THREE.SphereGeometry(0.012, 12, 10), shellMat); b.scale.set(1.4, 0.7, 1); sh.add(b);
     if (k % 2) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.002, 0.002), slit); l.position.y = 0.0085; sh.add(l); }
     sh.position.set(0.1 + R() * 0.12, TOP + 0.012, 0.1 + R() * 0.12); sh.rotation.y = R() * TAU; group.add(sh);
@@ -1429,9 +1434,11 @@ function buildPachisi(group) {
       const p = new THREE.Mesh(pawn, m);
       const along = ctr / 2 + (k === 3 ? 5.5 : 0.5 + k) * sq, across = (k % 2 ? 1 : -1) * sq;
       const ang = arm * Math.PI / 2, x = Math.sin(ang) * along + Math.cos(ang) * across, z = Math.cos(ang) * along - Math.sin(ang) * across;
-      p.position.set(x, TOP + 0.005, z); group.add(p);
+      p.position.set(x, TOP + 0.005, z); group.add(p); display.push(p);
     }
   });
+  group.userData.display = display;
+  return TOP + 0.005;
 }
 
 /* --- Wing IV: Mahjong (display) */
@@ -2032,8 +2039,27 @@ function buildFanorona(group) {
   }), { roughness: 0.55 });
   return TOP + 0.041;
 }
+const SHOGI_S = 0.072;
+// Pentagonal pieces, all one colour: the way a piece points shows whose it is.
+const shogiShape = new THREE.Shape(); shogiShape.moveTo(-0.022, -0.026); shogiShape.lineTo(0.022, -0.026); shogiShape.lineTo(0.026, 0.012); shogiShape.lineTo(0, 0.028); shogiShape.lineTo(-0.026, 0.012); shogiShape.closePath();
+const shogiGeo = new THREE.ExtrudeGeometry(shogiShape, { depth: 0.01, bevelEnabled: false });
+const shogiLabelGeo = new THREE.PlaneGeometry(0.03, 0.03);
+const shogiKanji = {};
+function shogiFace(ch, red) {
+  const key = ch + (red ? 'r' : '');
+  return shogiKanji[key] || (shogiKanji[key] = tex(64, 64, (g) => { g.fillStyle = '#ead2a0'; g.fillRect(0, 0, 64, 64); g.fillStyle = red ? '#b0201a' : '#1a1008'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `600 40px ${W6_CJK}`; g.fillText(ch, 32, 34); }));
+}
+function shogiPiece(ch, far, red) {
+  const wood = new THREE.MeshStandardMaterial({ color: 0xead2a0, roughness: 0.5 });
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(shogiGeo, wood); body.rotation.x = -Math.PI / 2; g.add(body);
+  const label = new THREE.Mesh(shogiLabelGeo, new THREE.MeshStandardMaterial({ map: shogiFace(ch, red), roughness: 0.5 }));
+  label.rotation.x = -Math.PI / 2; label.position.set(0, 0.0105, -0.002); g.add(label);
+  g.rotation.y = far ? Math.PI : 0; g.userData.mats = [wood, label.material]; g.userData.label = label;
+  return g;
+}
 function buildShogi(group) {
-  const S = 0.072, W = 9 * S + 0.05;
+  const S = SHOGI_S, W = 9 * S + 0.05;
   const block = new THREE.Mesh(new THREE.BoxGeometry(W, 0.11, W + 0.04), new THREE.MeshStandardMaterial({ color: 0xc9a060, roughness: 0.5 }));
   block.position.y = TOP + 0.055; group.add(block);
   const px = 1024, sc = px / W;
@@ -2044,21 +2070,12 @@ function buildShogi(group) {
     for (let i = 0; i <= 9; i++) { g.beginPath(); g.moveTo(o + i * S * sc, oy); g.lineTo(o + i * S * sc, oy + 9 * S * sc); g.stroke(); g.beginPath(); g.moveTo(o, oy + i * S * sc); g.lineTo(o + 9 * S * sc, oy + i * S * sc); g.stroke(); }
     g.fillStyle = '#2a1a0a'; for (const [a, b] of [[3, 3], [3, 6], [6, 3], [6, 6]]) { g.beginPath(); g.arc(o + a * S * sc, oy + b * S * sc, 6, 0, TAU); g.fill(); }
   }), { roughness: 0.5 });
-  // Pentagonal pieces, all one colour: the way a piece points shows whose it is.
-  const shape = new THREE.Shape(); shape.moveTo(-0.022, -0.026); shape.lineTo(0.022, -0.026); shape.lineTo(0.026, 0.012); shape.lineTo(0, 0.028); shape.lineTo(-0.026, 0.012); shape.closePath();
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.01, bevelEnabled: false });
-  const wood = new THREE.MeshStandardMaterial({ color: 0xead2a0, roughness: 0.5 });
-  const kanji = {}; const face = ch => kanji[ch] || (kanji[ch] = tex(64, 64, (g) => { g.fillStyle = '#ead2a0'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#1a1008'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `600 40px ${W6_CJK}`; g.fillText(ch, 32, 34); }));
-  const back = ['香', '桂', '銀', '金', '王', '金', '銀', '桂', '香'];
-  const put = (ch, r, c, far) => {
-    const p = new THREE.Mesh(geo, wood); p.rotation.x = -Math.PI / 2; p.rotation.z = far ? Math.PI : 0;
-    const x = (c - 4) * S, z = (r - 4) * S; p.position.set(x, TOP + 0.111, z); group.add(p);
-    const label = new THREE.Mesh(new THREE.PlaneGeometry(0.03, 0.03), new THREE.MeshStandardMaterial({ map: face(ch), roughness: 0.5 }));
-    label.rotation.x = -Math.PI / 2; label.rotation.z = far ? Math.PI : 0; label.position.set(x, TOP + 0.1215, z + (far ? 0.002 : -0.002)); group.add(label);
-  };
+  const back = ['香', '桂', '銀', '金', '王', '金', '銀', '桂', '香'], display = [];
+  const put = (ch, r, c, far) => { const p = shogiPiece(ch, far); p.position.set((c - 4) * SHOGI_S, TOP + 0.111, (r - 4) * SHOGI_S); group.add(p); display.push(p); };
   back.forEach((ch, c) => { put(ch, 4 + 4, c, false); put(ch === '王' ? '玉' : ch, 0, c, true); });
   put('角', 7, 1, false); put('飛', 7, 7, false); put('飛', 1, 1, true); put('角', 1, 7, true);
   for (let c = 0; c < 9; c++) { put('歩', 6, c, false); put('歩', 2, c, true); }
+  group.userData.display = display; // put away while a game is played
   return TOP + 0.111;
 }
 function buildYut(group) {
@@ -2079,12 +2096,26 @@ function buildYut(group) {
   // Four sticks, flat on one side and round on the other.
   const stick = new THREE.CylinderGeometry(0.014, 0.014, 0.16, 14, 1, false, 0, Math.PI);
   const sm = new THREE.MeshStandardMaterial({ color: 0xc89a5a, roughness: 0.6, side: THREE.DoubleSide });
-  const R = seeded(57);
-  for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(stick, sm); st.rotation.set(-Math.PI / 2, 0, R() < 0.5 ? 0 : Math.PI); st.rotation.order = 'XZY'; st.rotation.y = (R() - 0.5) * 0.6; st.position.set(0.42 + (R() - 0.5) * 0.06, TOP + 0.01, -0.15 + k * 0.08); group.add(st); }
+  const R = seeded(57), display = [];
+  for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(stick, sm); display.push(st); st.rotation.set(-Math.PI / 2, 0, R() < 0.5 ? 0 : Math.PI); st.rotation.order = 'XZY'; st.rotation.y = (R() - 0.5) * 0.6; st.position.set(0.42 + (R() - 0.5) * 0.06, TOP + 0.01, -0.15 + k * 0.08); group.add(st); }
   // Four pieces each, two of them riding stacked.
   const mats = [new THREE.MeshStandardMaterial({ color: 0xa8322a, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0x2a3a6a, roughness: 0.4 })];
   const pg = new THREE.CylinderGeometry(0.018, 0.02, 0.022, 16);
-  [[0, -0.27, 0.27], [0, -0.27, 0.27, 1], [0, 0.0, 0.0], [1, 0.27, -0.27], [1, -0.27, -0.09], [1, -0.4, 0.4]].forEach(([pl, x, z, up]) => { const m = new THREE.Mesh(pg, mats[pl]); m.position.set(x, TOP + 0.014 + (up ? 0.023 : 0), z); group.add(m); });
+  [[0, -0.27, 0.27], [0, -0.27, 0.27, 1], [0, 0.0, 0.0], [1, 0.27, -0.27], [1, -0.27, -0.09], [1, -0.4, 0.4]].forEach(([pl, x, z, up]) => { const m = new THREE.Mesh(pg, mats[pl]); m.position.set(x, TOP + 0.014 + (up ? 0.023 : 0), z); group.add(m); display.push(m); });
+  group.userData.display = display;
+  return TOP + 0.004;
+}
+// Where each of the 29 stations sits on the cloth (see the drawing above).
+const YT_H = 0.301;
+function ytPos(st) {
+  const C = { x: 0, z: 0 }, corner = k => [{ x: YT_H, z: YT_H }, { x: YT_H, z: -YT_H }, { x: -YT_H, z: -YT_H }, { x: -YT_H, z: YT_H }][k];
+  const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t });
+  if (st < 20) { const side = (st / 5) | 0, t = (st % 5) / 5; return lerp(corner(side), corner((side + 1) % 4), t); }
+  if (st === 22) return C;
+  if (st === 20 || st === 21) return lerp(corner(1), C, (st - 19) / 3);
+  if (st === 23 || st === 24) return lerp(C, corner(3), (st - 22) / 3);
+  if (st === 25 || st === 26) return lerp(corner(2), C, (st - 24) / 3);
+  return lerp(C, corner(0), (st - 26) / 3); // 27, 28
 }
 function buildBao(group) {
   const W = 0.86, D = 0.46;
@@ -2360,9 +2391,9 @@ const STOPS = [
     eyebrow: 'Wing IV · Librarium Museum of Play', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
-      'Four tables are open: Fox and Geese, where you play the fox; Draughts; the Game of the Goose; and Snakes and Ladders, two races of pure luck.'
+      'Six tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Pachisi; the Game of the Goose; and Snakes and Ladders.'
     ],
-    facts: [['Tables', 'Fox and Geese, Draughts, the Goose, Snakes and Ladders'], ['Display', 'The new queen, Pachisi, Mahjong']],
+    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Pachisi, the Goose, Snakes and Ladders'], ['Display', 'Mahjong']],
   },
   { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
@@ -2374,8 +2405,8 @@ const STOPS = [
     facts: [['Board', '33 points on a cross'], ['Pieces', '1 fox, 13 geese'], ['You play', 'The fox'], ['Win', 'Thin the flock, or slip away']],
     build: buildFoxGeeseBoard },
   { id: 'newqueen', wing: 4, title: 'The New Queen', date: 'c. 1475 CE', rail: 'The New Queen',
-    eyebrow: 'Valencia · late 15th century', status: ['known', 'Rules survive in writing'],
-    note: 'On display. Play shatranj in Wing III to feel how slow the old queen was.',
+    eyebrow: 'Valencia · late 15th century', status: ['known', 'Rules survive in writing'], game: 'chess',
+    note: 'Play modern chess here, then shatranj in Wing III to feel how slow the old queen was.',
     body: [
       'For six centuries the piece beside the king was the firzan, a counsellor who stepped a single square diagonally. Then, in late 15th-century Spain, she became the strongest piece on the board, free to sweep any distance in any direction. The bishop gained its long diagonal move at the same time.',
       'The earliest record of the new rules is Scachs d\'amor, a Catalan poem written in Valencia around 1475 by Francí de Castellví, Narcís Vinyoles and Bernat Fenollar, which plays out a game of chess as a courtship. Luis de Lucena\'s book on the game, printed in Salamanca around 1497, spread the new rules further, and the faster game soon replaced the old one across Europe.',
@@ -2392,8 +2423,8 @@ const STOPS = [
     facts: [['Board', '8 × 8, dark squares only'], ['Pieces', '12 each'], ['Capture', 'Compulsory, by jumping'], ['Win', 'Take or block every enemy piece']],
     build: buildDraughtsBoard },
   { id: 'pachisi', wing: 4, title: 'Pachisi (Chaupar)', date: '16th century CE', rail: 'Pachisi',
-    eyebrow: 'India · Mughal court', status: ['known', 'Still played, and the ancestor of Ludo'],
-    note: 'On display. It is played by four, so the Scribe sits this one out.',
+    eyebrow: 'India · Mughal court', status: ['known', 'Still played, and the ancestor of Ludo'], game: 'pachisi',
+    note: 'Pachisi is played by four in two partnerships, so here you play two colours against the Scribe\'s two. The short game takes about a hundred throws; the full game, more than twice as many.',
     body: [
       'Pachisi and its close relative chaupar are race games played on a cross of cloth with four arms of squares. Instead of dice, players throw cowrie shells and count how many land mouth up; the name comes from the Hindi for twenty-five, the highest throw.',
       'How old it is is hard to pin down. A relief in the Ellora caves, carved between the 6th and 8th centuries, is often read as a game of this kind. The most famous board is a courtyard at Fatehpur Sikri, the city the Mughal emperor Akbar built in the 1570s, laid out in red and white stone; accounts say people stood in as the pieces.',
@@ -2490,9 +2521,9 @@ const STOPS = [
     eyebrow: 'Wing VI · Librarium Museum of Play', status: null, begin: 'mutorere',
     body: [
       'The other wings follow one long road, from Egypt and Mesopotamia through Europe to the shop shelf. But play has many homelands. This wing gathers games from the Pacific, Africa and East Asia: some ancient, some first written down by visitors, all still played today.',
-      'Three tables are open: Mū tōrere from Aotearoa New Zealand, Kōnane from Hawaiʻi and Fanorona from Madagascar. Shogi, Yut Nori and Bao are on display.'
+      'Five tables are open: Mū tōrere from Aotearoa New Zealand, Shogi from Japan, Kōnane from Hawaiʻi, Yut Nori from Korea and Fanorona from Madagascar. Bao is on display.'
     ],
-    facts: [['Tables', 'Mū tōrere, Kōnane, Fanorona'], ['Display', 'Shogi, Yut Nori, Bao']],
+    facts: [['Tables', 'Mū tōrere, Shogi, Kōnane, Yut Nori, Fanorona'], ['Display', 'Bao']],
   },
   { id: 'mutorere', wing: 6, title: 'Mū tōrere', date: 'first described in 1917', rail: 'Mū tōrere',
     eyebrow: 'Aotearoa New Zealand · Māori', status: ['known', 'Still played'], game: 'mutorere',
@@ -2503,8 +2534,7 @@ const STOPS = [
     facts: [['Board', 'Eight arms and a centre'], ['Men', 'Four each'], ['Win', 'Leave the other side no move']],
     build: buildMuTorere },
   { id: 'shogi', wing: 6, title: 'Shogi', short: 'Shogi (Japanese Chess)', date: 'oldest pieces c. 1058 CE', rail: 'Shogi',
-    eyebrow: 'Japan', status: ['known', 'Still played'],
-    note: 'On display, in the opening position.',
+    eyebrow: 'Japan', status: ['known', 'Still played'], game: 'shogi',
     body: [
       'Shogi, Japanese chess, belongs to the same family as chaturanga and xiangqi. The oldest pieces yet found, sixteen of them, were dug up at Kōfuku-ji in Nara beside a wooden plaque dated 1058, and they already have the five-sided shape of modern pieces.',
       'Both sides\' pieces are the same colour: only the way a piece points shows whose it is. That made possible shogi\'s great invention of the 16th century, the drop. A captured piece changes sides, and its captor can put it back on the board later, so the game never thins out. Ōhashi Sōko set down the standard rules in 1636.'
@@ -2520,8 +2550,7 @@ const STOPS = [
     facts: [['Board', '8 × 8 here; old boards came in many sizes'], ['Stones', 'Black lava and white coral'], ['Win', 'Be the last able to capture']],
     build: buildKonane },
   { id: 'yut', wing: 6, title: 'Yut Nori', date: 'traditional', rail: 'Yut Nori',
-    eyebrow: 'Korea', status: ['known', 'Still played'],
-    note: 'On display: the cloth, sticks and pieces are new.',
+    eyebrow: 'Korea', status: ['known', 'Still played'], game: 'yut',
     body: [
       'Yut nori is the Korean family game of the New Year, played at Seollal and at the first full moon. Instead of dice, players throw four sticks, flat on one side and round on the other, and count the flat sides that land up: do (a pig, one step), gae (a dog, two), geol (a sheep, three), yut (a cow, four) and mo (a horse, five).',
       'Each side races four pieces round a board of 29 stations, taking shortcuts across the middle from the corners. Pieces of one side can travel stacked, landing on an enemy sends it home, and a yut or a mo earns another throw. Its origin is uncertain; it is often traced to the Three Kingdoms period.'
@@ -2606,7 +2635,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -3224,6 +3253,162 @@ const FANORONA_P = {
   },
   score: () => { const G = GAMES.fanorona; return [['You', G.count(0)], ['Scribe', G.count(1)], 'stones']; },
 };
+const CHESS_P = {
+  camW: 1.0,
+  intro() { return 'You play white and move first. ' + this.prompt(); },
+  prompt: () => 'Pick a piece, then a ring. To castle, pick the king and the ring two squares over.',
+  setup(ex) {
+    const G = GAMES.chess, d = ex.group.userData;
+    d.display.forEach(m => { m.visible = false; });
+    (ex.pieces || []).forEach(m => ex.group.remove(m));
+    ex.pieces = []; this.ex = ex;
+    this.cell = Array(64).fill(null); this.lost = [0, 0];
+    for (let i = 0; i < 64; i++) { const v = G.b[i]; if (v) this.cell[i] = this.make(v, i); }
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => { m.visible = false; }); },
+  make(v, i) {
+    const pl = v > 8 ? 1 : 0, t = 'xkqbnrp'[v & 7];
+    const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x241810 : 0xeee0c0, roughness: pl ? 0.35 : 0.4 });
+    const o = CHESS_SHAPES[t](mat); o.userData.mats = [mat]; o.rotation.y = pl ? -Math.PI / 2 : Math.PI / 2;
+    if (i !== undefined) o.position.copy(this.pos(i));
+    this.ex.group.add(o); this.ex.pieces.push(o); return o;
+  },
+  pos(i) { return V3(((i & 7) - 3.5) * 0.085, GAMES.chess.surface, (3.5 - (i >> 3)) * 0.085); },
+  lostSpot(owner, k) { return V3(owner ? -0.47 : 0.47, TOP, (owner ? -0.3 : 0.3) * (1 - (k % 8) / 8 * 2) * 0.9); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.chess, tok = play.token;
+    const mesh = this.cell[m.from], vSq = m.epTake !== undefined ? m.epTake : m.to, victim = m.cap ? this.cell[vSq] : null;
+    this.cell[m.from] = null; if (victim) this.cell[vSq] = null; this.cell[m.to] = mesh;
+    const res = G.apply(m);
+    await hop(mesh, this.pos(m.to), 0.32, (G.b[m.to] & 7) === 4 ? 0.08 : 0.03);
+    if (tok !== play.token) return res;
+    if (victim) { const owner = 1 - m.pl; hop(victim, this.lostSpot(owner, this.lost[owner]++), 0.4, 0.12); }
+    if (m.castle) { const rook = this.cell[m.castle[0]]; this.cell[m.castle[0]] = null; this.cell[m.castle[1]] = rook; await hop(rook, this.pos(m.castle[1]), 0.3, 0.06); }
+    if (m.promo) { mesh.visible = false; this.cell[m.to] = this.make(G.b[m.to], m.to); }
+    return res;
+  },
+  score: () => { const G = GAMES.chess; return [['You', G.count(0)], ['Scribe', G.count(1)], 'pieces']; },
+};
+const SHOGI_CH = [null, '歩', '香', '桂', '銀', '金', '角', '飛', '王'], SHOGI_PRO = [null, 'と', '杏', '圭', '全', null, '馬', '龍', null];
+const SHOGI_P = {
+  camW: 1.12, ringScale: 0.6,
+  intro() { return 'You move first; your pieces point away from you. ' + this.prompt(); },
+  prompt: () => 'Pick a piece, then a ring. Pieces you capture wait in your hand at the right: pick one there to drop it.',
+  setup(ex) {
+    const G = GAMES.shogi, d = ex.group.userData;
+    d.display.forEach(m => { m.visible = false; });
+    (ex.pieces || []).forEach(m => ex.group.remove(m));
+    ex.pieces = []; this.ex = ex; this.cell = Array(81).fill(null); this.hand = [[], []];
+    for (let i = 0; i < 81; i++) { const v = G.b[i]; if (v) { const p = this.make(v); p.position.copy(this.pos(i)); this.cell[i] = p; } }
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => { m.visible = false; }); },
+  make(v) {
+    const t = v & 15, pro = (v & 16) !== 0, pl = v & 32 ? 1 : 0;
+    const ch = pro ? SHOGI_PRO[t] : t === 8 && pl ? '玉' : SHOGI_CH[t];
+    const p = shogiPiece(ch, pl === 1, pro); p.userData.v = v;
+    this.ex.group.add(p); this.ex.pieces.push(p); return p;
+  },
+  relabel(p, v) {
+    const t = v & 15, pro = (v & 16) !== 0, pl = v & 32 ? 1 : 0;
+    p.userData.v = v; p.userData.label.material.map = shogiFace(pro ? SHOGI_PRO[t] : t === 8 && pl ? '玉' : SHOGI_CH[t], pro); p.userData.label.material.needsUpdate = true;
+    p.rotation.y = pl ? Math.PI : 0;
+  },
+  pos(i) { return V3(((i % 9) - 4) * SHOGI_S, GAMES.shogi.surface, (4 - ((i / 9) | 0)) * SHOGI_S); },
+  // Hands: the visitor's beside the board at the near right, the Scribe's at the far left, one row per kind.
+  handSpot(pl, t, k) { const x = (pl ? -1 : 1) * (0.43 + (k % 3) * 0.05), z = (pl ? -1 : 1) * (0.32 - (t - 1) * 0.06) ; return V3(x, GAMES.shogi.surface - 0.11 + 0.006 + ((k / 3) | 0) * 0.011, z); },
+  layoutHand(pl) {
+    for (let t = 1; t <= 7; t++) this.hand[pl].filter(p => (p.userData.v & 15) === t).forEach((p, k) => hop(p, this.handSpot(pl, t, k), 0.25, 0.03));
+  },
+  meshesFor(m) { if (m.drop) { const h = this.hand[m.pl].filter(p => (p.userData.v & 15) === m.drop); return [h[h.length - 1]]; } return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return m.drop ? null : this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.shogi, tok = play.token;
+    if (m.drop) {
+      const p = this.meshesFor(m)[0]; this.hand[m.pl].splice(this.hand[m.pl].indexOf(p), 1);
+      const res = G.apply(m); this.cell[m.to] = p;
+      await hop(p, this.pos(m.to), 0.32, 0.05); this.layoutHand(m.pl); return res;
+    }
+    const p = this.cell[m.from], victim = m.cap ? this.cell[m.to] : null;
+    this.cell[m.from] = null; this.cell[m.to] = p;
+    const res = G.apply(m);
+    await hop(p, this.pos(m.to), 0.3, (G.b[m.to] & 15) === 3 ? 0.07 : 0.03);
+    if (tok !== play.token) return res;
+    if (m.promo) this.relabel(p, G.b[m.to]);
+    if (victim) { // it changes sides and joins the captor's hand, unpromoted
+      this.relabel(victim, (victim.userData.v & 15) + (m.pl ? 32 : 0));
+      this.hand[m.pl].push(victim); this.layoutHand(m.pl);
+    }
+    return res;
+  },
+  score: () => { const G = GAMES.shogi; return [['You', G.hands[0].reduce((a, b) => a + b, 0)], ['Scribe', G.hands[1].reduce((a, b) => a + b, 0)], 'in hand']; },
+};
+const YUT = Object.assign(R.yut, {
+  camW: 1.12, pieceH: 0.011,
+  makePieces(group) {
+    return [0x8a2a22, 0x22346a].map(col => Array.from({ length: 4 }, () => {
+      const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.4 });
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.021, 0.022, 18), mat); m.userData.mats = [mat]; group.add(m); return m;
+    }));
+  },
+  local(pl, sq, i) {
+    const y = this.surface;
+    if (sq === -1) return V3(pl ? -0.45 : 0.45, y, (pl ? -1 : 1) * (0.2 - i * 0.05));
+    if (sq === this.HOME) return V3((pl ? -1 : 1) * (0.14 + i * 0.045), y, pl ? -0.42 : 0.42);
+    const p = ytPos(sq), k = this.pos[pl].filter((q, j) => q === sq && j < i).length; // stacked pieces sit on top of each other
+    return V3(p.x + (pl ? -0.008 : 0.008), y + k * 0.023, p.z);
+  },
+  bigHop: (m, s) => s === m.to && m.cap.length > 0,
+  score() { return [['You', this.home(0) + '/4'], ['Scribe', this.home(1) + '/4'], 'home']; },
+  winText: pl => (pl === 0 ? 'All four of your pieces are home.' : 'The Scribe brought all four home first.'),
+});
+const YUT_P = Object.assign(racePresenter(YUT), {
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(m => { m.visible = false; }); },
+});
+{ const setup = YUT_P.setup; YUT_P.setup = function (ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); (ex.pieces || []).flat().forEach(m => { m.visible = true; }); setup.call(this, ex); }; }
+// Pachisi: cell positions on the cross. Arms 0 near, 1 right, 2 far, 3 left.
+const PC_SQ = 0.046, PC_D = [{ x: 0, z: 1 }, { x: 1, z: 0 }, { x: 0, z: -1 }, { x: -1, z: 0 }];
+function pcPos(cell) {
+  const a = (cell / 24) | 0, k = ((cell % 24) / 3) | 0, j = (cell % 3) - 1, d = PC_D[a], n = PC_D[(a + 1) % 4], along = 1.5 * PC_SQ + (k + 0.5) * PC_SQ;
+  return { x: d.x * along + n.x * j * PC_SQ, z: d.z * along + n.z * j * PC_SQ };
+}
+const PC_COL = [[0xe8b23a, 0x1e3a7a], [0xe8e0c8, 0x2a6a4a]];
+const PACHISI = Object.assign(R.pachisi, {
+  camW: 1.05, pieceH: 0,
+  makePieces(group) {
+    const geo = new THREE.LatheGeometry([[0, 0], [0.016, 0], [0.017, 0.004], [0.015, 0.016], [0.01, 0.028], [0.004, 0.034], [0, 0.035]].map(([a, b]) => new THREE.Vector2(a, b)), 20);
+    return [0, 1].map(pl => Array.from({ length: this.N }, (_, i) => {
+      const mat = new THREE.MeshStandardMaterial({ color: PC_COL[pl][i < this.per ? 0 : 1], roughness: 0.4 });
+      const m = new THREE.Mesh(geo, mat); m.userData.mats = [mat]; group.add(m); return m;
+    }));
+  },
+  local(pl, idx, i) {
+    const y = this.surface, a = this.arm(pl, i), d = PC_D[a], n = PC_D[(a + 1) % 4];
+    const k = i % this.per;
+    if (idx === 0) return V3(d.x * 0.05 + n.x * (k - (this.per - 1) / 2) * 0.03, y, d.z * 0.05 + n.z * (k - (this.per - 1) / 2) * 0.03);
+    if (idx === this.HOME) return V3(d.x * 0.018 + n.x * (k - (this.per - 1) / 2) * 0.026, y, d.z * 0.018 + n.z * (k - (this.per - 1) / 2) * 0.026);
+    const cell = this.cellOf(pl, i, idx), p = pcPos(cell);
+    // Pieces sharing a square sit side by side.
+    let under = 0; for (const q of [0, 1]) this.pos[q].forEach((v, j) => { if ((q < pl || (q === pl && j < i)) && this.cellOf(q, j, v) === cell) under++; });
+    return V3(p.x + (under % 2 ? 0.012 : under ? -0.012 : 0), y, p.z + (under > 1 ? 0.012 : 0));
+  },
+  bigHop: (m, s) => s === m.to && m.cap.length > 0,
+  score() { return [['You', this.home(0) + '/' + this.N], ['Scribe', this.home(1) + '/' + this.N], 'home']; },
+  winText: pl => (pl === 0 ? 'All your pieces are home in the Charkoni.' : 'The Scribe brought all its pieces home first.'),
+});
+const PACHISI_P = Object.assign(racePresenter(PACHISI), {
+  intro: () => 'You play yellow, from the near arm, and blue, from the far one. Throw to begin.',
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(m => { m.visible = false; }); },
+});
+{ const setup = PACHISI_P.setup; PACHISI_P.setup = function (ex) {
+  ex.group.userData.display.forEach(m => { m.visible = false; });
+  if (ex.pieces && ex.pieces[0].length !== PACHISI.N) { ex.pieces.flat().forEach(m => ex.group.remove(m)); ex.pieces = null; } // the other game size
+  (ex.pieces || []).flat().forEach(m => { m.visible = true; });
+  setup.call(this, ex);
+}; }
 const GO_P = {
   camW: 0.95, ringScale: 0.6, ringOpacity: 0.4,
   intro() { return 'You play black and move first. ' + this.prompt(); },
@@ -3382,7 +3567,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -3765,6 +3950,7 @@ async function startGame(ex) {
   mode = 'play';
   const g = GAMES[ex.game], P = PRES[ex.game];
   play.ex = ex; play.game = g; play.P = P; play.token++;
+  play.phase = 'idle'; play.moves = []; play.selected = null; // nothing from the last table carries over during the glide
   g.surface = ex.surface;
   if (g.variants) g.setVariant((store.variants || {})[g.id] || g.variant);
   renderVariants(g);
@@ -3836,6 +4022,10 @@ function renderDice(g, r, shaking = false) {
       p.setAttribute('fill', '#ecdfc3'); p.setAttribute('stroke', '#a8977a'); p.setAttribute('stroke-width', '1.2'); svg.appendChild(p);
       const pips = { 1: [[15, 15]], 2: [[9, 9], [21, 21]], 3: [[9, 9], [15, 15], [21, 21]], 4: [[9, 9], [21, 9], [9, 21], [21, 21]], 5: [[9, 9], [21, 9], [15, 15], [9, 21], [21, 21]], 6: [[9, 8], [21, 8], [9, 15], [21, 15], [9, 22], [21, 22]] }[r ? f : 1];
       for (const [x, y] of pips) { const c = document.createElementNS(ns, 'circle'); c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', '2.6'); c.setAttribute('fill', r ? '#1d140c' : '#c9b79a'); svg.appendChild(c); }
+    } else if (g.id === 'pachisi') { // a cowrie: mouth up shows its slit
+      const e = document.createElementNS(ns, 'ellipse'); e.setAttribute('cx', '15'); e.setAttribute('cy', '15'); e.setAttribute('rx', '9'); e.setAttribute('ry', '13');
+      e.setAttribute('fill', r && f ? '#f2ead8' : '#c9b79a'); e.setAttribute('stroke', '#a8977a'); e.setAttribute('stroke-width', '1.2'); svg.appendChild(e);
+      if (r && f) { const l = document.createElementNS(ns, 'path'); l.setAttribute('d', 'M15 5 Q12 15 15 25'); l.setAttribute('stroke', '#5a4a3a'); l.setAttribute('stroke-width', '2'); l.setAttribute('fill', 'none'); svg.appendChild(l); }
     } else if (g.id === 'ur') {
       const p = document.createElementNS(ns, 'path'); p.setAttribute('d', 'M15 3 L27 26 L3 26 Z');
       p.setAttribute('fill', '#2a2018'); p.setAttribute('stroke', '#a8977a'); p.setAttribute('stroke-width', '1.4'); svg.appendChild(p);
@@ -3849,7 +4039,7 @@ function renderDice(g, r, shaking = false) {
   });
 }
 const readTime = note => Math.min(2800, 700 + note.length * 22);
-function rollText(g, r) { return g.pipDice && r.faces.length === 1 ? String(r.faces[0]) : g.pipDice ? (r.faces[0] === r.faces[1] ? `double ${r.faces[0]}s` : `${r.faces[0]} and ${r.faces[1]}`) : String(r.value); }
+function rollText(g, r) { return g.rollName ? g.rollName(r) : g.pipDice && r.faces.length === 1 ? String(r.faces[0]) : g.pipDice ? (r.faces[0] === r.faces[1] ? `double ${r.faces[0]}s` : `${r.faces[0]} and ${r.faces[1]}`) : String(r.value); }
 async function showRoll(r) {
   const g = play.game, tok = play.token;
   sfx.roll(g);
