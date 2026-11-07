@@ -3141,7 +3141,7 @@ const MUTORERE_P = {
   prompt: () => 'Pick a stone that can move into the empty point. A stone may enter the centre only beside one of the Scribe\'s.',
   setup(ex) {
     const G = GAMES.mutorere;
-    if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 4 }, () => { const m = stoneMesh(pl ? 0x2a2420 : 0xe8e0cc, 0.04, 0.5, 0.4); ex.group.add(m); return m; }));
+    if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 4 }, () => { const m = stoneMesh(pl ? 0x100c0a : 0xe8e0cc, 0.04, 0.5, 0.4); ex.group.add(m); return m; }));
     this.cell = Array(9).fill(null); const k = [0, 0];
     for (let i = 0; i < 9; i++) { const v = G.b[i]; if (!v) continue; const m = ex.pieces[v - 1][k[v - 1]++]; this.cell[i] = m; m.position.copy(this.pos(i)); }
   },
@@ -3164,7 +3164,7 @@ const KONANE_P = {
   prompt: () => { const G = GAMES.konane; return G.ply === 0 ? 'Lift one of your stones from the centre or a corner.' : 'Pick a stone, then a ring: jump a white stone into the gap beyond. You may run on in a straight line.'; },
   setup(ex) {
     const G = GAMES.konane;
-    if (!ex.pieces) ex.pieces = Array.from({ length: 64 }, (_, i) => { const pl = G.b[i] - 1; const m = stoneMesh(pl ? 0xe8e4da : 0x24201c, 0.03, 0.62, pl ? 0.35 : 0.85); ex.group.add(m); return m; });
+    if (!ex.pieces) ex.pieces = Array.from({ length: 64 }, (_, i) => { const pl = G.b[i] - 1; const m = stoneMesh(pl ? 0xe8e4da : 0x0e0c0b, 0.03, 0.62, pl ? 0.35 : 0.7); ex.group.add(m); return m; });
     this.cell = Array(64).fill(null); this.lost = [0, 0];
     const pools = [ex.pieces.filter((_, i) => (((i / 8) | 0) + (i % 8)) % 2 === 0), ex.pieces.filter((_, i) => (((i / 8) | 0) + (i % 8)) % 2 === 1)], k = [0, 0];
     for (let i = 0; i < 64; i++) { const v = G.b[i]; if (!v) continue; const m = pools[v - 1][k[v - 1]++]; m.visible = true; m.scale.set(1, 0.62, 1); this.cell[i] = m; m.position.copy(this.pos(i)); }
@@ -3198,7 +3198,7 @@ const FANORONA_P = {
   prompt: () => (GAMES.fanorona.chain ? 'Capture again with the same stone, or choose Stop.' : 'Pick a stone, then the ring on the enemy stone you want to capture, or a ring on an empty point to move.'),
   setup(ex) {
     const G = GAMES.fanorona;
-    if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 22 }, () => { const m = stoneMesh(pl ? 0x2a2220 : 0xeee6d2, 0.03, 0.55, 0.45); ex.group.add(m); return m; }));
+    if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 22 }, () => { const m = stoneMesh(pl ? 0x100c0a : 0xeee6d2, 0.03, 0.55, 0.4); ex.group.add(m); return m; }));
     this.cell = Array(45).fill(null); this.lost = [0, 0]; const k = [0, 0];
     ex.pieces.flat().forEach(m => { m.visible = true; });
     for (let i = 0; i < 45; i++) { const v = G.b[i]; if (!v) continue; const m = ex.pieces[v - 1][k[v - 1]++]; this.cell[i] = m; m.position.copy(this.pos(i)); }
