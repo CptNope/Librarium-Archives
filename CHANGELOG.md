@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.0: Known rules, now playable
+
+- Four exhibits whose rules are known can now be played:
+  - **Chess** at the New Queen: modern rules with castling, en passant and promotion. The move generator is checked against the standard perft counts.
+  - **Shogi**, with drops. Captured pieces wait in your hand beside the board.
+  - **Yut Nori**, with the four sticks, the shortcuts, stacking and extra throws.
+  - **Pachisi** for two, each side playing a pair of partner colours, with cowrie throws, graces and castles. You can pick a short or a full game.
+- Fixed the Pachisi board: the side castles now sit four squares in from the outer end, as the sources describe.
+- The dice tray shows cowries for Pachisi and names Yut Nori's throws (do, gae, geol, yut, mo).
+
 ## 0.12.0: Wing VI, Games of the World
 
 - A sixth wing, through a fifth arch, for games from the Pacific, Africa and East Asia. The closing lectern now stands at its end.
