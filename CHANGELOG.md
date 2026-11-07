@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.0: A table of four, and Bao
+
+- **Mahjong** is playable. You sit at East with three Scribes at the other winds. Claim discards for pungs, kongs and chows (from your left), declare concealed kongs, and go out with four sets and a pair, seven pairs or the thirteen orphans. The tiles are drawn with their faces, and your hand shows how many tiles you are from ready.
+- **Bao** is playable as Bao la Kujifunza, the learners' game, with captures sown from the ends of the row and relay sowing.
+- Moves that have no piece to click, such as Mahjong's claims, now show as buttons above the message bar.
+
 ## 0.13.0: Known rules, now playable
 
 - Four exhibits whose rules are known can now be played:

@@ -154,6 +154,9 @@
 #lm-app .dice.shake svg{animation:shake .12s linear infinite alternate}
 @keyframes shake{from{transform:rotate(-12deg) translateY(-2px)}to{transform:rotate(12deg) translateY(2px)}}
 #lm-app .msg{flex:1;min-width:0;font-size:14px;line-height:1.35}
+#lm-app .choices{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;max-width:55%}
+#lm-app .choices[hidden]{display:none}
+#lm-app .choices .btn{padding:0 12px;min-height:40px;font-size:12px}
 #lm-app .msg .who{font-family:var(--f-ui);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dust);display:block;margin-bottom:2px}
 #lm-app .rules{position:absolute;top:calc(64px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));width:min(360px,calc(100vw - 32px));max-height:calc(100% - 180px);overflow:auto;background:var(--panel);border:1px solid var(--line);padding:18px 20px;border-radius:3px}
 #lm-app .rules h3{font-family:var(--f-display);font-weight:400;color:var(--gold);font-size:21px;margin:0 0 6px}

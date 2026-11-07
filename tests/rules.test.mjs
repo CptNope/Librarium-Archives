@@ -1160,3 +1160,98 @@ test('Pachisi: captures off castles only, no landing on an enemy castle, and no 
   assert.ok(!PC.legal(0, 3).some(x => x.i === 0), 'square 83 is a dead end');
   assert.ok(PC.legal(0, 4).some(x => x.i === 0 && x.to === 84));
 });
+
+/* ------------------------------------------------------------------ Mahjong */
+const { mahjong: MJ } = rules;
+const mjIds = ts => ts.map((t, k) => t * 4 + (k % 4));
+test('Mahjong: counts how far a hand is from winning, including seven pairs and thirteen orphans', () => {
+  assert.equal(MJ.shanten(mjIds([0, 1, 2, 9, 10, 11, 18, 19, 20, 27, 27, 27, 31, 31]), 0), -1);
+  assert.equal(MJ.shanten(mjIds([0, 1, 2, 9, 10, 11, 18, 19, 20, 27, 27, 27, 31]), 0), 0);
+  assert.equal(MJ.shanten(mjIds([0, 0, 3, 3, 5, 5, 9, 9, 12, 12, 30, 30, 33, 33]), 0), -1);
+  assert.equal(MJ.shanten(mjIds([0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33, 33]), 0), -1);
+  assert.equal(MJ.shanten(mjIds([0, 1, 2, 9, 10, 11, 31, 31]), 2), -1, 'with two sets already shown');
+});
+test('Mahjong: a chow can be claimed only from the player on the left', () => {
+  MJ.init();
+  MJ.hands[0] = [1 * 4, 2 * 4, 30 * 4, 30 * 4 + 1];
+  const fromLeft = MJ.claimsFor(0, { seat: 3, tile: 0 * 4 + 1 }), fromRight = MJ.claimsFor(0, { seat: 1, tile: 0 * 4 + 1 });
+  assert.ok(fromLeft.some(c => c.kind === 'chow'));
+  assert.ok(!fromRight.some(c => c.kind === 'chow'));
+  assert.ok(MJ.claimsFor(0, { seat: 1, tile: 30 * 4 + 2 }).some(c => c.kind === 'pung'));
+});
+test('Mahjong: you are not asked to chow when a Scribe will pung the same tile', () => {
+  MJ.init(); rules.setLevel('fair');
+  MJ.hands[0] = [1 * 4, 2 * 4, 33 * 4, 33 * 4 + 1, 33 * 4 + 2, 27 * 4, 28 * 4, 29 * 4, 31 * 4, 32 * 4, 4 * 4, 5 * 4, 6 * 4];
+  MJ.hands[1] = [0 * 4 + 2, 0 * 4 + 3, 9 * 4, 10 * 4, 11 * 4, 12 * 4, 13 * 4, 14 * 4, 15 * 4, 16 * 4, 17 * 4, 22 * 4, 23 * 4];
+  MJ.openClaims({ seat: 3, tile: 0 * 4 + 1 });
+  if (MJ.need.ai && MJ.need.ai.kind === 'pung') assert.ok(!MJ.need.mine.some(c => c.kind === 'chow'));
+});
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Mahjong: at ${level}, a whole hand plays out, every Scribe turn in good time`, () => {
+    rules.setLevel(level); MJ.init(); let slowest = 0, guard = 0;
+    while (!MJ.result() && guard++ < 1000) {
+      const ms = MJ.legal(0);
+      if (ms.length) { const pick0 = MJ.need.type === 'discard' ? MJ.chooseDiscard(0) : -1; const m = ms.find(x => x.kind === 'tsumo' || x.kind === 'ron') || ms.find(x => x.kind === 'pass') || ms.find(x => x.kind === 'discard' && x.tile === pick0); MJ.apply(m); continue; }
+      const t0 = Date.now(); const plan = MJ.aiPlan(); slowest = Math.max(slowest, Date.now() - t0);
+      assert.ok(plan.length, 'the Scribes always have something to do');
+      plan.forEach(st => MJ.apply(st));
+    }
+    assert.ok(MJ.result());
+    assert.ok(slowest < 1500, `took ${slowest} ms`);
+    rules.setLevel('fair');
+  });
+}
+
+/* ---------------------------------------------------------- Bao la Kujifunza */
+const BAO = rules.bao;
+const baoEmpty = () => { BAO.init(); BAO.p.fill(0); };
+test('Bao: 64 seeds, two to a pit, and every opening move captures', () => {
+  BAO.init();
+  assert.equal(BAO.count(0) + BAO.count(1), 64);
+  const ms = BAO.legal(0);
+  assert.ok(ms.length > 0 && ms.every(m => m.mtaji));
+});
+test('Bao: a capture in the middle is sown from the kichwa that keeps the direction', () => {
+  baoEmpty();
+  BAO.p[9] = 2; BAO.p[11] = 1; BAO.p[28] = 3; BAO.p[24] = 1;
+  const m = BAO.legal(0).find(x => x.pit === 9 && x.dir === 1);
+  assert.ok(m && m.mtaji);
+  BAO.apply(m);
+  assert.deepEqual([8, 9, 10, 11, 12].map(i => BAO.p[i]), [1, 1, 0, 3, 1]);
+  assert.equal(BAO.p[28], 0);
+});
+test('Bao: a capture near an end is sown from the nearer kichwa', () => {
+  baoEmpty();
+  BAO.p[12] = 2; BAO.p[14] = 1; BAO.p[25] = 2; BAO.p[24] = 1;
+  BAO.apply(BAO.legal(0).find(x => x.pit === 12 && x.dir === 1));
+  assert.deepEqual([11, 12, 13, 14, 15].map(i => BAO.p[i]), [1, 1, 2, 0, 1]);
+  assert.equal(BAO.p[25], 0);
+});
+test('Bao: with no capture open, you must sow from the inner row', () => {
+  baoEmpty();
+  BAO.p[0] = 3; BAO.p[9] = 2; BAO.p[16] = 5;
+  const ms = BAO.legal(0);
+  assert.equal(ms.length, 2);
+  assert.ok(ms.every(m => m.pit === 9 && !m.mtaji));
+});
+test('Bao: an empty inner row loses', () => {
+  baoEmpty();
+  BAO.p[0] = 4; BAO.p[24] = 2;
+  assert.equal(BAO.result(0).winner, 1);
+});
+test('Bao: random games keep all 64 seeds and always end', () => {
+  for (let g = 0; g < 50; g++) {
+    BAO.init(); let pl = 0, r = null;
+    for (let t = 0; t < 400 && !(r = BAO.result(pl)); t++) { const ms = BAO.legal(pl); BAO.apply(ms[(Math.random() * ms.length) | 0]); pl = 1 - pl; }
+    assert.ok(r);
+    assert.equal(BAO.count(0) + BAO.count(1), 64);
+  }
+});
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Bao: at ${level}, the Scribe answers in good time`, () => {
+    rules.setLevel(level); BAO.init(); BAO.apply(BAO.legal(0)[0]);
+    const t0 = Date.now(), plan = BAO.aiPlan(1);
+    assert.ok(plan.length && Date.now() - t0 < 2000);
+    rules.setLevel('fair');
+  });
+}

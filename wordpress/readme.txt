@@ -46,6 +46,9 @@ Only one museum can appear on a page. Assets load only on pages that show it.
 
 == Changelog ==
 
+= 0.14.0 =
+* Mahjong (with three Scribe players) and Bao are now playable.
+
 = 0.13.0 =
 * Chess, Shogi, Yut Nori and Pachisi are now playable.
 
