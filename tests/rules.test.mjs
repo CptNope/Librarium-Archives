@@ -1040,3 +1040,41 @@ test('Chess: checkmate and stalemate', () => {
   pl = chessFen('7k/5Q2/6K1/8/8/8/8/8 b - -'); // black to move, no moves, not in check
   assert.equal(CHG.result(pl).winner, -1);
 });
+
+/* -------------------------------------------------------------------- Shogi */
+const { shogi: SGG } = rules;
+const sq = (r, c) => r * 9 + c, T = SGG.SG;
+function sgPerft(pl, d) { if (!d) return 1; let n = 0; for (const m of SGG.legal(pl)) { const s = SGG.snapshot(); SGG.raw(m); n += sgPerft(1 - pl, d - 1); SGG.restore(s); } return n; }
+test('Shogi: move counts match the standard ones, less the optional promotions we make automatic', () => {
+  SGG.init();
+  assert.deepEqual([1, 2, 3].map(d => sgPerft(0, d)), [30, 900, 25470 - 30]);
+});
+test('Shogi: captured pieces go to hand and can be dropped, but not a second pawn on a file', () => {
+  SGG.init(); SGG.b.fill(0);
+  SGG.b[sq(0, 4)] = T.K; SGG.b[sq(8, 4)] = T.K + 32;
+  SGG.b[sq(4, 4)] = T.R; SGG.b[sq(6, 4)] = T.P + 32;
+  SGG.apply(SGG.legal(0).find(m => m.from === sq(4, 4) && m.to === sq(6, 4)));
+  assert.equal(SGG.hands[0][T.P - 1], 1);
+  SGG.b[sq(2, 3)] = T.P; // an unpromoted pawn of ours on file 3
+  const drops = SGG.legal(0).filter(m => m.drop === T.P);
+  assert.ok(drops.length > 0);
+  assert.ok(drops.every(m => m.to % 9 !== 3), 'no second pawn on file 3');
+  assert.ok(drops.every(m => ((m.to / 9) | 0) !== 8), 'no pawn dropped on the last rank');
+});
+test('Shogi: no checkmate by dropping a pawn', () => {
+  SGG.init(); SGG.b.fill(0);
+  // The Scribe's king in the corner, boxed in by its own pieces; a dropped pawn in front would mate.
+  SGG.b[sq(8, 0)] = T.K + 32; SGG.b[sq(8, 1)] = T.L + 32; SGG.b[sq(7, 1)] = T.S + 32;
+  SGG.b[sq(6, 0)] = T.G; SGG.b[sq(0, 8)] = T.K;
+  SGG.hands[0][T.P - 1] = 1;
+  assert.ok(!SGG.legal(0).some(m => m.drop === T.P && m.to === sq(7, 0)));
+});
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Shogi: at ${level}, the Scribe moves within budget`, () => {
+    rules.setLevel(level);
+    SGG.init(); let pl = 0, slowest = 0;
+    for (let k = 0; k < 6; k++) { const t0 = Date.now(); const plan = SGG.aiPlan(pl); slowest = Math.max(slowest, Date.now() - t0); plan.forEach(m => SGG.apply(m)); pl = 1 - pl; }
+    assert.ok(slowest < { gentle: 400, fair: 1100, sharp: 2200 }[level], `took ${slowest} ms`);
+    rules.setLevel('fair');
+  });
+}

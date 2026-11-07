@@ -2037,8 +2037,27 @@ function buildFanorona(group) {
   }), { roughness: 0.55 });
   return TOP + 0.041;
 }
+const SHOGI_S = 0.072;
+// Pentagonal pieces, all one colour: the way a piece points shows whose it is.
+const shogiShape = new THREE.Shape(); shogiShape.moveTo(-0.022, -0.026); shogiShape.lineTo(0.022, -0.026); shogiShape.lineTo(0.026, 0.012); shogiShape.lineTo(0, 0.028); shogiShape.lineTo(-0.026, 0.012); shogiShape.closePath();
+const shogiGeo = new THREE.ExtrudeGeometry(shogiShape, { depth: 0.01, bevelEnabled: false });
+const shogiLabelGeo = new THREE.PlaneGeometry(0.03, 0.03);
+const shogiKanji = {};
+function shogiFace(ch, red) {
+  const key = ch + (red ? 'r' : '');
+  return shogiKanji[key] || (shogiKanji[key] = tex(64, 64, (g) => { g.fillStyle = '#ead2a0'; g.fillRect(0, 0, 64, 64); g.fillStyle = red ? '#b0201a' : '#1a1008'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `600 40px ${W6_CJK}`; g.fillText(ch, 32, 34); }));
+}
+function shogiPiece(ch, far, red) {
+  const wood = new THREE.MeshStandardMaterial({ color: 0xead2a0, roughness: 0.5 });
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(shogiGeo, wood); body.rotation.x = -Math.PI / 2; g.add(body);
+  const label = new THREE.Mesh(shogiLabelGeo, new THREE.MeshStandardMaterial({ map: shogiFace(ch, red), roughness: 0.5 }));
+  label.rotation.x = -Math.PI / 2; label.position.set(0, 0.0105, -0.002); g.add(label);
+  g.rotation.y = far ? Math.PI : 0; g.userData.mats = [wood, label.material]; g.userData.label = label;
+  return g;
+}
 function buildShogi(group) {
-  const S = 0.072, W = 9 * S + 0.05;
+  const S = SHOGI_S, W = 9 * S + 0.05;
   const block = new THREE.Mesh(new THREE.BoxGeometry(W, 0.11, W + 0.04), new THREE.MeshStandardMaterial({ color: 0xc9a060, roughness: 0.5 }));
   block.position.y = TOP + 0.055; group.add(block);
   const px = 1024, sc = px / W;
@@ -2049,21 +2068,12 @@ function buildShogi(group) {
     for (let i = 0; i <= 9; i++) { g.beginPath(); g.moveTo(o + i * S * sc, oy); g.lineTo(o + i * S * sc, oy + 9 * S * sc); g.stroke(); g.beginPath(); g.moveTo(o, oy + i * S * sc); g.lineTo(o + 9 * S * sc, oy + i * S * sc); g.stroke(); }
     g.fillStyle = '#2a1a0a'; for (const [a, b] of [[3, 3], [3, 6], [6, 3], [6, 6]]) { g.beginPath(); g.arc(o + a * S * sc, oy + b * S * sc, 6, 0, TAU); g.fill(); }
   }), { roughness: 0.5 });
-  // Pentagonal pieces, all one colour: the way a piece points shows whose it is.
-  const shape = new THREE.Shape(); shape.moveTo(-0.022, -0.026); shape.lineTo(0.022, -0.026); shape.lineTo(0.026, 0.012); shape.lineTo(0, 0.028); shape.lineTo(-0.026, 0.012); shape.closePath();
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.01, bevelEnabled: false });
-  const wood = new THREE.MeshStandardMaterial({ color: 0xead2a0, roughness: 0.5 });
-  const kanji = {}; const face = ch => kanji[ch] || (kanji[ch] = tex(64, 64, (g) => { g.fillStyle = '#ead2a0'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#1a1008'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `600 40px ${W6_CJK}`; g.fillText(ch, 32, 34); }));
-  const back = ['香', '桂', '銀', '金', '王', '金', '銀', '桂', '香'];
-  const put = (ch, r, c, far) => {
-    const p = new THREE.Mesh(geo, wood); p.rotation.x = -Math.PI / 2; p.rotation.z = far ? Math.PI : 0;
-    const x = (c - 4) * S, z = (r - 4) * S; p.position.set(x, TOP + 0.111, z); group.add(p);
-    const label = new THREE.Mesh(new THREE.PlaneGeometry(0.03, 0.03), new THREE.MeshStandardMaterial({ map: face(ch), roughness: 0.5 }));
-    label.rotation.x = -Math.PI / 2; label.rotation.z = far ? Math.PI : 0; label.position.set(x, TOP + 0.1215, z + (far ? 0.002 : -0.002)); group.add(label);
-  };
+  const back = ['香', '桂', '銀', '金', '王', '金', '銀', '桂', '香'], display = [];
+  const put = (ch, r, c, far) => { const p = shogiPiece(ch, far); p.position.set((c - 4) * SHOGI_S, TOP + 0.111, (r - 4) * SHOGI_S); group.add(p); display.push(p); };
   back.forEach((ch, c) => { put(ch, 4 + 4, c, false); put(ch === '王' ? '玉' : ch, 0, c, true); });
   put('角', 7, 1, false); put('飛', 7, 7, false); put('飛', 1, 1, true); put('角', 1, 7, true);
   for (let c = 0; c < 9; c++) { put('歩', 6, c, false); put('歩', 2, c, true); }
+  group.userData.display = display; // put away while a game is played
   return TOP + 0.111;
 }
 function buildYut(group) {
@@ -2508,8 +2518,7 @@ const STOPS = [
     facts: [['Board', 'Eight arms and a centre'], ['Men', 'Four each'], ['Win', 'Leave the other side no move']],
     build: buildMuTorere },
   { id: 'shogi', wing: 6, title: 'Shogi', short: 'Shogi (Japanese Chess)', date: 'oldest pieces c. 1058 CE', rail: 'Shogi',
-    eyebrow: 'Japan', status: ['known', 'Still played'],
-    note: 'On display, in the opening position.',
+    eyebrow: 'Japan', status: ['known', 'Still played'], game: 'shogi',
     body: [
       'Shogi, Japanese chess, belongs to the same family as chaturanga and xiangqi. The oldest pieces yet found, sixteen of them, were dug up at Kōfuku-ji in Nara beside a wooden plaque dated 1058, and they already have the five-sided shape of modern pieces.',
       'Both sides\' pieces are the same colour: only the way a piece points shows whose it is. That made possible shogi\'s great invention of the 16th century, the drop. A captured piece changes sides, and its captor can put it back on the board later, so the game never thins out. Ōhashi Sōko set down the standard rules in 1636.'
@@ -2611,7 +2620,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -3268,6 +3277,60 @@ const CHESS_P = {
   },
   score: () => { const G = GAMES.chess; return [['You', G.count(0)], ['Scribe', G.count(1)], 'pieces']; },
 };
+const SHOGI_CH = [null, '歩', '香', '桂', '銀', '金', '角', '飛', '王'], SHOGI_PRO = [null, 'と', '杏', '圭', '全', null, '馬', '龍', null];
+const SHOGI_P = {
+  camW: 1.12, ringScale: 0.6,
+  intro() { return 'You move first; your pieces point away from you. ' + this.prompt(); },
+  prompt: () => 'Pick a piece, then a ring. Pieces you capture wait in your hand at the right: pick one there to drop it.',
+  setup(ex) {
+    const G = GAMES.shogi, d = ex.group.userData;
+    d.display.forEach(m => { m.visible = false; });
+    (ex.pieces || []).forEach(m => ex.group.remove(m));
+    ex.pieces = []; this.ex = ex; this.cell = Array(81).fill(null); this.hand = [[], []];
+    for (let i = 0; i < 81; i++) { const v = G.b[i]; if (v) { const p = this.make(v); p.position.copy(this.pos(i)); this.cell[i] = p; } }
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => { m.visible = false; }); },
+  make(v) {
+    const t = v & 15, pro = (v & 16) !== 0, pl = v & 32 ? 1 : 0;
+    const ch = pro ? SHOGI_PRO[t] : t === 8 && pl ? '玉' : SHOGI_CH[t];
+    const p = shogiPiece(ch, pl === 1, pro); p.userData.v = v;
+    this.ex.group.add(p); this.ex.pieces.push(p); return p;
+  },
+  relabel(p, v) {
+    const t = v & 15, pro = (v & 16) !== 0, pl = v & 32 ? 1 : 0;
+    p.userData.v = v; p.userData.label.material.map = shogiFace(pro ? SHOGI_PRO[t] : t === 8 && pl ? '玉' : SHOGI_CH[t], pro); p.userData.label.material.needsUpdate = true;
+    p.rotation.y = pl ? Math.PI : 0;
+  },
+  pos(i) { return V3(((i % 9) - 4) * SHOGI_S, GAMES.shogi.surface, (4 - ((i / 9) | 0)) * SHOGI_S); },
+  // Hands: the visitor's beside the board at the near right, the Scribe's at the far left, one row per kind.
+  handSpot(pl, t, k) { const x = (pl ? -1 : 1) * (0.43 + (k % 3) * 0.05), z = (pl ? -1 : 1) * (0.32 - (t - 1) * 0.06) ; return V3(x, GAMES.shogi.surface - 0.11 + 0.006 + ((k / 3) | 0) * 0.011, z); },
+  layoutHand(pl) {
+    for (let t = 1; t <= 7; t++) this.hand[pl].filter(p => (p.userData.v & 15) === t).forEach((p, k) => hop(p, this.handSpot(pl, t, k), 0.25, 0.03));
+  },
+  meshesFor(m) { if (m.drop) { const h = this.hand[m.pl].filter(p => (p.userData.v & 15) === m.drop); return [h[h.length - 1]]; } return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return m.drop ? null : this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.shogi, tok = play.token;
+    if (m.drop) {
+      const p = this.meshesFor(m)[0]; this.hand[m.pl].splice(this.hand[m.pl].indexOf(p), 1);
+      const res = G.apply(m); this.cell[m.to] = p;
+      await hop(p, this.pos(m.to), 0.32, 0.05); this.layoutHand(m.pl); return res;
+    }
+    const p = this.cell[m.from], victim = m.cap ? this.cell[m.to] : null;
+    this.cell[m.from] = null; this.cell[m.to] = p;
+    const res = G.apply(m);
+    await hop(p, this.pos(m.to), 0.3, (G.b[m.to] & 15) === 3 ? 0.07 : 0.03);
+    if (tok !== play.token) return res;
+    if (m.promo) this.relabel(p, G.b[m.to]);
+    if (victim) { // it changes sides and joins the captor's hand, unpromoted
+      this.relabel(victim, (victim.userData.v & 15) + (m.pl ? 32 : 0));
+      this.hand[m.pl].push(victim); this.layoutHand(m.pl);
+    }
+    return res;
+  },
+  score: () => { const G = GAMES.shogi; return [['You', G.hands[0].reduce((a, b) => a + b, 0)], ['Scribe', G.hands[1].reduce((a, b) => a + b, 0)], 'in hand']; },
+};
 const GO_P = {
   camW: 0.95, ringScale: 0.6, ringOpacity: 0.4,
   intro() { return 'You play black and move first. ' + this.prompt(); },
@@ -3426,7 +3489,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
