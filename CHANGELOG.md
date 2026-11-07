@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0: Wing VI, Games of the World
+
+- A sixth wing, through a fifth arch, for games from the Pacific, Africa and East Asia. The closing lectern now stands at its end.
+- Three new tables:
+  - **Mū tōrere** (Māori), on a star of eight arms. Block the Scribe to win.
+  - **Kōnane** (Hawaiʻi), on a stone papamū. Every move is a capture by jumping.
+  - **Fanorona** (Madagascar), with approach and withdrawal captures and capture chains. A new **Stop** button ends a chain early.
+- Three new displays: **Shogi** in its opening position, **Yut Nori** with its four sticks, and **Bao** with the square nyumba.
+- The navigation gains a sixth wing tab.
+
 ## 0.11.0: New navigation
 
 - The bar along the bottom is rebuilt for five wings. **Wing tabs** (I to V) jump to each wing's entrance; the strip shows only the exhibits of the wing you are in, marks the tables you can play, and follows you as you walk; **‹ ›** (or **[ ]** on a keyboard) step through the exhibits in order, across wings.

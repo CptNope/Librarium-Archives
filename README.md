@@ -82,6 +82,25 @@ Rule choices worth knowing:
 - **Halma:** a man in the far camp may not leave it, and a full far camp with at least one of your men in it wins, so neither side can block by staying home. A museum rule ends the game after two hundred moves each.
 - **Tarocchi:** the rules of the first tarot games of the 1440s were never written down, so the table plays a simplified two-player game built on what every tarot game still shares: follow suit, trump if you cannot, and the Fool as an excuse. Thirteen cards each; kings 5, queens 4, knights 3, jacks 2, trumps I and XXI and the Fool 5, and 1 for each trick.
 
+## Wing VI: Games of the World
+
+Through the fifth arch: games from the Pacific, Africa and East Asia that the long road of the earlier wings passes by.
+
+| Exhibit | Date | Rules | In the museum |
+| --- | --- | --- | --- |
+| Mū tōrere | first described in 1917 (Elsdon Best) | Accounts differ | Playable |
+| Shogi | oldest pieces c. 1058 CE (Kōfuku-ji) | Unbroken tradition | On display, in the opening position |
+| Kōnane | by 1778–79 (Cook's expedition) | Still played | Playable on an 8 × 8 papamū |
+| Yut Nori | traditional | Still played | On display (cloth, four sticks, stacked pieces) |
+| Fanorona | traditional | Still played | Playable (fanoron-tsivy, 5 × 9) |
+| Bao | in verse by the 1820s | Still played | On display (four rows of eight pits and the square nyumba) |
+
+Rule choices worth knowing:
+
+- **Mū tōrere:** a man may move into the centre only from an arm next to an enemy man, the rule most often given today (without it the first player can win at once). Museum rule: thirty moves each is a draw; perfect play draws anyway.
+- **Kōnane:** black lifts a stone from the centre or a corner, white lifts one beside the gap, and from then on every move is a capture. Multiple jumps run in a straight line and may stop anywhere. The first player who cannot capture loses.
+- **Fanorona:** captures by approach or withdrawal take the whole unbroken line. You choose a capture by clicking the first enemy stone it would take, which also settles approach against withdrawal. A capture chain may not revisit a point or repeat a direction, and the **Stop** button ends it early. Museum rule: twenty moves each without a capture is a draw.
+
 The hall ends at a lectern featuring Librarium's own games, with links to Phoenix Farm, Calendra, The Great Chase and Royal Threadcount, under an arch signed *Different fables for different tables*.
 
 ## Sound
@@ -100,6 +119,7 @@ The AI opponent has three levels, picked at any table and remembered: **Gentle**
 - **Tables** scores every legal full turn (pip count, safe points, exposed checkers). Gentle picks loosely among the good ones; Sharp always takes the best.
 - **Strategy games** (Morris, Oware, Alquerque, Brandubh, Shatranj, Xiangqi, Fox and Geese, Draughts, Reversi, Halma) use a negamax search with alpha-beta pruning and iterative deepening. Each level has a thinking budget (about 0.1, 0.6 and 1.5 seconds): the Scribe searches one move deeper at a time and stops the moment its budget runs out, so it plays as well as the visitor's device allows without stalling. In Fox and Geese it plays the geese, steering by how much room the fox has left to roam. In Reversi it weighs corners, edges and mobility, then counts discs exactly near the end.
 - **Go** has its own Scribe too: Monte Carlo tree search. Before each move it plays thousands of quick random games from the position (capturing whatever the last move left in atari when it can), and RAVE lets a move that won when played later in a game count a little toward playing it now. The same budgets apply, so Sharp simply plays out more games. After you pass, it passes too if the count already favours it.
+- **Mū tōrere, Kōnane and Fanorona** use the shared search. In Mū tōrere it looks up to sixteen moves ahead, which is enough to never lose; in Kōnane it counts how many captures each side has left; in Fanorona it searches whole capture chains as one turn.
 - **Tarocchi** has its own Scribe. Gentle plays a sensible card half the time and a random legal one otherwise. Fair plays by rule of thumb: it wins a trick worth taking as cheaply as it can, and otherwise throws its least useful card. Sharp deals the cards it cannot see at random, many times over, keeping to what you have shown (a suit you could not follow, say), plays each deal to the end, and picks the card that scores best on average.
 - **Dots and Boxes** has its own Scribe. Gentle takes free boxes but often hands them back; Fair and Sharp avoid giving boxes away, and once only risky lines are left they solve the rest of the game exactly (Sharp from 22 open lines, Fair from 15), giving boxes away on purpose to keep control of the long chains.
 
@@ -122,7 +142,7 @@ Kept in the visitor's browser only (`localStorage`, key `librarium.museum.v1`): 
 | **Step through exhibits** | ‹ and › on the bar | ‹ and ›, or **[** and **]** |
 | **Find any exhibit** | All exhibits (the grid button) | All exhibits: type to search, Enter goes to the first match, Esc closes |
 
-- **The bar along the bottom** shows the wing you are in: its tabs (I to V) take you to each wing's entrance, the strip lists that wing's exhibits in date order (a gold triangle marks a table you can play, a green dot one you have visited), and it follows you as you walk. **All exhibits** opens an index of all 41, grouped by wing, with a search box and filters for playable tables and exhibits you have not visited yet. On a phone the bar takes two rows.
+- **The bar along the bottom** shows the wing you are in: its tabs (I to VI) take you to each wing's entrance, the strip lists that wing's exhibits in date order (a gold triangle marks a table you can play, a green dot one you have visited), and it follows you as you walk. **All exhibits** opens an index of every exhibit, grouped by wing, with a search box and filters for playable tables and exhibits you have not visited yet. On a phone the bar takes two rows.
 - The joystick appears on touch screens (and as soon as anyone touches the screen on a touch laptop). On a phone it hides while an exhibit card is open, so close the card to walk; walking up to an exhibit lights it on the timeline rather than covering the view, and a tap opens it.
 - Zoom eases back to normal when you travel to another exhibit or leave a table.
 - **Race games (Senet, Ur, Tables):** Throw (or Space), then click a glowing piece. In Tables each die is a separate move; when a checker can use either die, click it and then pick a ring
@@ -222,6 +242,8 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 - Wikipedia: The Mansion of Happiness, The Checkered Game of Life, Reversi, Halma, Chinese checkers, Dots and boxes, The Landlord's Game
 - Google Patents: US 748,626, Elizabeth J. Magie, Game-board (1904)
 - Elwyn Berlekamp, *The Dots and Boxes Game: Sophisticated Child's Play* (2000)
+- Wikipedia: Kōnane, Fanorona, Yunnori, History of shogi, Bao (game)
+- Te Ara, the Encyclopedia of New Zealand: Traditional Māori games (mū tōrere)
 - Wikipedia: Dice, Polis (board game), Liubo, Patolli, Alquerque, Xiangqi, Snakes and ladders, Royal Game of Ur
 - Jacob Schmidt-Madsen, *The Game of Knowledge: Playing at Spiritual Liberation in 18th- and 19th-century Western India*
 - Librarium Games (librarium.games): Phoenix Farm, Calendra, The Great Chase, Royal Threadcount
@@ -235,6 +257,8 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 - [x] Wing IV: printed boards and parlour tables (Fox and Geese, the new queen, Draughts, Pachisi, the Goose, Mahjong)
 - [x] Wing V: the modern board game (Mansion of Happiness, Game of Life, Reversi, Halma, Dots and Boxes, the Landlord's Game)
 - [x] Playable Halma for two
+- [x] Wing VI: Games of the World (Mū tōrere, Kōnane, Fanorona to play; Shogi, Yut Nori, Bao on display)
+- [ ] Playable Yut Nori and Bao
 - [x] Larger Dots and Boxes grids (5 × 5, chosen at the table)
 - [x] A playable early card game: tarocchi for two
 - [x] Difficulty settings for the Scribe
