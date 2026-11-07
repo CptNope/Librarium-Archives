@@ -3950,6 +3950,7 @@ async function startGame(ex) {
   mode = 'play';
   const g = GAMES[ex.game], P = PRES[ex.game];
   play.ex = ex; play.game = g; play.P = P; play.token++;
+  play.phase = 'idle'; play.moves = []; play.selected = null; // nothing from the last table carries over during the glide
   g.surface = ex.surface;
   if (g.variants) g.setVariant((store.variants || {})[g.id] || g.variant);
   renderVariants(g);
