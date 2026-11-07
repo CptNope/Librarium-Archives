@@ -1078,3 +1078,29 @@ for (const level of ['gentle', 'fair', 'sharp']) {
     rules.setLevel('fair');
   });
 }
+
+/* ----------------------------------------------------------------- Yut Nori */
+const { yut: YT } = rules;
+test('Yut Nori: shortcuts from the corners and the centre', () => {
+  assert.deepEqual(YT.route(5).slice(0, 3), [20, 21, 22]);
+  assert.deepEqual(YT.route(10), [25, 26, 22, 27, 28, 0, YT.HOME]);
+  assert.deepEqual(YT.route(22), [27, 28, 0, YT.HOME]);
+  assert.deepEqual(YT.route(3).slice(0, 3), [4, 5, 6], 'passing a corner does not cut across');
+});
+test('Yut Nori: pieces stack, captures send a stack home, and yut, mo or a capture throw again', () => {
+  YT.init();
+  YT.pos[0] = [3, 3, -1, -1]; YT.pos[1] = [6, -1, -1, -1];
+  const m = YT.legal(0, 3).find(x => x.from === 3);
+  assert.deepEqual(m.group.sort(), [0, 1]);
+  assert.deepEqual(m.cap, [0]);
+  YT.apply(m);
+  assert.deepEqual(YT.pos[0].slice(0, 2), [6, 6]); assert.equal(YT.pos[1][0], -1);
+  assert.ok(YT.extra(m), 'a capture earns a throw');
+  assert.ok(YT.extra({ cap: [], value: 5 }), 'so does mo');
+  assert.ok(!YT.extra({ cap: [], value: 2 }));
+});
+test('Yut Nori: a piece goes home by passing the start corner', () => {
+  YT.init(); YT.pos[0] = [28, YT.HOME, YT.HOME, YT.HOME];
+  const m = YT.legal(0, 2)[0];
+  assert.equal(m.to, YT.HOME); YT.apply(m); assert.ok(YT.done(0));
+});

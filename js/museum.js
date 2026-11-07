@@ -2094,12 +2094,26 @@ function buildYut(group) {
   // Four sticks, flat on one side and round on the other.
   const stick = new THREE.CylinderGeometry(0.014, 0.014, 0.16, 14, 1, false, 0, Math.PI);
   const sm = new THREE.MeshStandardMaterial({ color: 0xc89a5a, roughness: 0.6, side: THREE.DoubleSide });
-  const R = seeded(57);
-  for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(stick, sm); st.rotation.set(-Math.PI / 2, 0, R() < 0.5 ? 0 : Math.PI); st.rotation.order = 'XZY'; st.rotation.y = (R() - 0.5) * 0.6; st.position.set(0.42 + (R() - 0.5) * 0.06, TOP + 0.01, -0.15 + k * 0.08); group.add(st); }
+  const R = seeded(57), display = [];
+  for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(stick, sm); display.push(st); st.rotation.set(-Math.PI / 2, 0, R() < 0.5 ? 0 : Math.PI); st.rotation.order = 'XZY'; st.rotation.y = (R() - 0.5) * 0.6; st.position.set(0.42 + (R() - 0.5) * 0.06, TOP + 0.01, -0.15 + k * 0.08); group.add(st); }
   // Four pieces each, two of them riding stacked.
   const mats = [new THREE.MeshStandardMaterial({ color: 0xa8322a, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0x2a3a6a, roughness: 0.4 })];
   const pg = new THREE.CylinderGeometry(0.018, 0.02, 0.022, 16);
-  [[0, -0.27, 0.27], [0, -0.27, 0.27, 1], [0, 0.0, 0.0], [1, 0.27, -0.27], [1, -0.27, -0.09], [1, -0.4, 0.4]].forEach(([pl, x, z, up]) => { const m = new THREE.Mesh(pg, mats[pl]); m.position.set(x, TOP + 0.014 + (up ? 0.023 : 0), z); group.add(m); });
+  [[0, -0.27, 0.27], [0, -0.27, 0.27, 1], [0, 0.0, 0.0], [1, 0.27, -0.27], [1, -0.27, -0.09], [1, -0.4, 0.4]].forEach(([pl, x, z, up]) => { const m = new THREE.Mesh(pg, mats[pl]); m.position.set(x, TOP + 0.014 + (up ? 0.023 : 0), z); group.add(m); display.push(m); });
+  group.userData.display = display;
+  return TOP + 0.004;
+}
+// Where each of the 29 stations sits on the cloth (see the drawing above).
+const YT_H = 0.301;
+function ytPos(st) {
+  const C = { x: 0, z: 0 }, corner = k => [{ x: YT_H, z: YT_H }, { x: YT_H, z: -YT_H }, { x: -YT_H, z: -YT_H }, { x: -YT_H, z: YT_H }][k];
+  const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t });
+  if (st < 20) { const side = (st / 5) | 0, t = (st % 5) / 5; return lerp(corner(side), corner((side + 1) % 4), t); }
+  if (st === 22) return C;
+  if (st === 20 || st === 21) return lerp(corner(1), C, (st - 19) / 3);
+  if (st === 23 || st === 24) return lerp(C, corner(3), (st - 22) / 3);
+  if (st === 25 || st === 26) return lerp(corner(2), C, (st - 24) / 3);
+  return lerp(C, corner(0), (st - 26) / 3); // 27, 28
 }
 function buildBao(group) {
   const W = 0.86, D = 0.46;
@@ -2534,8 +2548,7 @@ const STOPS = [
     facts: [['Board', '8 × 8 here; old boards came in many sizes'], ['Stones', 'Black lava and white coral'], ['Win', 'Be the last able to capture']],
     build: buildKonane },
   { id: 'yut', wing: 6, title: 'Yut Nori', date: 'traditional', rail: 'Yut Nori',
-    eyebrow: 'Korea', status: ['known', 'Still played'],
-    note: 'On display: the cloth, sticks and pieces are new.',
+    eyebrow: 'Korea', status: ['known', 'Still played'], game: 'yut',
     body: [
       'Yut nori is the Korean family game of the New Year, played at Seollal and at the first full moon. Instead of dice, players throw four sticks, flat on one side and round on the other, and count the flat sides that land up: do (a pig, one step), gae (a dog, two), geol (a sheep, three), yut (a cow, four) and mo (a horse, five).',
       'Each side races four pieces round a board of 29 stations, taking shortcuts across the middle from the corners. Pieces of one side can travel stacked, landing on an enemy sends it home, and a yut or a mo earns another throw. Its origin is uncertain; it is often traced to the Three Kingdoms period.'
@@ -2620,7 +2633,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -3331,6 +3344,29 @@ const SHOGI_P = {
   },
   score: () => { const G = GAMES.shogi; return [['You', G.hands[0].reduce((a, b) => a + b, 0)], ['Scribe', G.hands[1].reduce((a, b) => a + b, 0)], 'in hand']; },
 };
+const YUT = Object.assign(R.yut, {
+  camW: 1.12, pieceH: 0.011,
+  makePieces(group) {
+    return [0x8a2a22, 0x22346a].map(col => Array.from({ length: 4 }, () => {
+      const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.4 });
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.021, 0.022, 18), mat); m.userData.mats = [mat]; group.add(m); return m;
+    }));
+  },
+  local(pl, sq, i) {
+    const y = this.surface;
+    if (sq === -1) return V3(pl ? -0.45 : 0.45, y, (pl ? -1 : 1) * (0.2 - i * 0.05));
+    if (sq === this.HOME) return V3((pl ? -1 : 1) * (0.14 + i * 0.045), y, pl ? -0.42 : 0.42);
+    const p = ytPos(sq), k = this.pos[pl].filter((q, j) => q === sq && j < i).length; // stacked pieces sit on top of each other
+    return V3(p.x + (pl ? -0.008 : 0.008), y + k * 0.023, p.z);
+  },
+  bigHop: (m, s) => s === m.to && m.cap.length > 0,
+  score() { return [['You', this.home(0) + '/4'], ['Scribe', this.home(1) + '/4'], 'home']; },
+  winText: pl => (pl === 0 ? 'All four of your pieces are home.' : 'The Scribe brought all four home first.'),
+});
+const YUT_P = Object.assign(racePresenter(YUT), {
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(m => { m.visible = false; }); },
+});
+{ const setup = YUT_P.setup; YUT_P.setup = function (ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); (ex.pieces || []).flat().forEach(m => { m.visible = true; }); setup.call(this, ex); }; }
 const GO_P = {
   camW: 0.95, ringScale: 0.6, ringOpacity: 0.4,
   intro() { return 'You play black and move first. ' + this.prompt(); },
@@ -3489,7 +3525,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -3956,7 +3992,7 @@ function renderDice(g, r, shaking = false) {
   });
 }
 const readTime = note => Math.min(2800, 700 + note.length * 22);
-function rollText(g, r) { return g.pipDice && r.faces.length === 1 ? String(r.faces[0]) : g.pipDice ? (r.faces[0] === r.faces[1] ? `double ${r.faces[0]}s` : `${r.faces[0]} and ${r.faces[1]}`) : String(r.value); }
+function rollText(g, r) { return g.rollName ? g.rollName(r) : g.pipDice && r.faces.length === 1 ? String(r.faces[0]) : g.pipDice ? (r.faces[0] === r.faces[1] ? `double ${r.faces[0]}s` : `${r.faces[0]} and ${r.faces[1]}`) : String(r.value); }
 async function showRoll(r) {
   const g = play.game, tok = play.token;
   sfx.roll(g);
