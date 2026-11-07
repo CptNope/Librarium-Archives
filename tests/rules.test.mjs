@@ -618,6 +618,28 @@ test('Reversi: a player with no move passes; the game ends when neither can move
   assert.equal(r.winner, 0);
 });
 
+test('Reversi: Gentle Scribe chooses any legal move without searching', () => {
+  const oldLevel = rules.level(), oldRandom = Math.random;
+  try {
+    rules.setLevel('gentle');
+    RV.init();
+    RV.apply(RV.legal(0)[0]); // Give the Scribe a real position with several replies.
+    const moves = RV.legal(1), before = RV.snapshot();
+    assert.ok(moves.length > 1);
+    Math.random = () => 0;
+    assert.deepEqual(RV.aiPlan(1), [moves[0]]);
+    Math.random = () => 0.999999;
+    assert.deepEqual(RV.aiPlan(1), [moves[moves.length - 1]]);
+    assert.deepEqual(RV.snapshot(), before, 'AI selection does not alter the board');
+
+    RV.b.fill(0); RV.b[0] = 1; RV.b[1] = 2;
+    assert.deepEqual(RV.aiPlan(1), [{ pl: 1, pass: true }], 'a player with no legal move still passes');
+  } finally {
+    Math.random = oldRandom;
+    rules.setLevel(oldLevel);
+  }
+});
+
 test('Reversi: AI-vs-AI games finish within the thinking budget', () => {
   rules.setLevel('fair');
   RV.init(); let pl = 0, n = 0, r, slowest = 0;
