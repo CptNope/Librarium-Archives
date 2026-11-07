@@ -1744,7 +1744,15 @@
       if (empty <= 10) return discs * 10 + pos * 0.2;
       return pos + (this.legal(pl).length - this.legal(1 - pl).length) * 4;
     },
-    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 6); },
+    aiPlan(pl, depth) {
+      // Gentle is a beginner opponent: choose any legal move instead of searching.
+      // Explicit depths still use the search, so tactical tests keep working.
+      if (LEVEL.name === 'gentle' && !depth) {
+        const moves = this.legal(pl);
+        if (moves.length) return [moves[(Math.random() * moves.length) | 0]];
+      }
+      return bestPlan(this, pl, depth, 6);
+    },
   };
 
   /* --------------------------------------------------------------- Alquerque
