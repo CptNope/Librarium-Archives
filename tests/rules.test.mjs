@@ -959,3 +959,57 @@ for (const level of ['gentle', 'fair', 'sharp']) {
     rules.setLevel('fair');
   });
 }
+
+/* --------------------------------------------------------------- Mū tōrere */
+const { mutorere: MT, konane: KN, fanorona: FN } = rules;
+test('Mū tōrere: a man enters the centre only beside an enemy man', () => {
+  MT.init();
+  // At the start the centre is empty: only the two end men of each group touch the other side.
+  assert.deepEqual(MT.legal(0).map(m => m.from).sort(), [4, 7]);
+  MT.b = [2, 2, 2, 0, 1, 1, 1, 1, 2]; // centre held by the Scribe, arm 3 empty
+  assert.deepEqual(MT.legal(0).map(m => m.from).sort(), [4]);
+  assert.deepEqual(MT.legal(1).map(m => m.from).sort(), [2, 8]);
+});
+test('Mū tōrere: a side with no move loses', () => {
+  MT.init();
+  MT.b = [2, 2, 2, 1, 0, 1, 1, 2, 1]; // arm 4 is empty, and its neighbours and the centre are all the visitor's
+  assert.equal(MT.legal(1).length, 0);
+  assert.equal(MT.result(1).winner, 0);
+});
+
+/* ------------------------------------------------------------------ Kōnane */
+test('Kōnane: the opening lifts a centre or corner stone, then one beside the gap', () => {
+  KN.init();
+  assert.deepEqual(KN.legal(0).map(m => m.remove).sort((a, b) => a - b), [0, 27, 36, 63]);
+  KN.apply({ pl: 0, remove: 27 });
+  assert.deepEqual(KN.legal(1).map(m => m.remove).sort((a, b) => a - b), [19, 26, 28, 35]);
+});
+test('Kōnane: jumps run in a straight line and may stop', () => {
+  KN.init(); KN.b.fill(0); KN.ply = 2;
+  KN.b[0] = 1; KN.b[1] = 2; KN.b[3] = 2; KN.b[8] = 2;
+  const ms = KN.legal(0).filter(m => m.from === 0);
+  assert.deepEqual(ms.map(m => m.to).sort((a, b) => a - b), [2, 4, 16]);
+  assert.deepEqual(ms.find(m => m.to === 4).caps, [1, 3]);
+});
+
+/* ---------------------------------------------------------------- Fanorona */
+test('Fanorona: approach and withdrawal capture whole lines, and capture is compulsory', () => {
+  FN.init(); FN.b.fill(0);
+  const at = (r, c) => r * 9 + c;
+  FN.b[at(2, 2)] = 1; FN.b[at(2, 4)] = 2; FN.b[at(2, 5)] = 2; FN.b[at(2, 1)] = 2; FN.b[at(0, 8)] = 1;
+  const ms = FN.legal(0);
+  assert.ok(ms.every(m => m.caps.length), 'no quiet moves while a capture exists');
+  const appr = ms.find(m => m.kind === 'approach' && m.to === at(2, 3));
+  assert.deepEqual(appr.caps, [at(2, 4), at(2, 5)]);
+  const wd = ms.find(m => m.kind === 'withdrawal' && m.to === at(2, 3));
+  assert.deepEqual(wd.caps, [at(2, 1)]);
+});
+test('Fanorona: a capturing stone may go on, not back to a visited point nor the same way twice', () => {
+  FN.init(); FN.b.fill(0);
+  const at = (r, c) => r * 9 + c;
+  FN.b[at(0, 0)] = 1; FN.b[at(0, 2)] = 2; FN.b[at(2, 1)] = 2; FN.b[at(4, 8)] = 2;
+  const res = FN.apply(FN.legal(0).find(m => m.to === at(0, 1)));
+  assert.ok(res.followUp, 'a second capture is on offer');
+  assert.ok(res.followUp.some(m => m.pass), 'and so is stopping');
+  assert.ok(res.followUp.every(m => m.pass || m.to !== at(0, 0)), 'never back to where it started');
+});
