@@ -1179,3 +1179,57 @@ for (const level of ['gentle', 'fair', 'sharp']) {
     rules.setLevel('fair');
   });
 }
+
+/* ---------------------------------------------------------- Bao la Kujifunza */
+const BAO = rules.bao;
+const baoEmpty = () => { BAO.init(); BAO.p.fill(0); };
+test('Bao: 64 seeds, two to a pit, and every opening move captures', () => {
+  BAO.init();
+  assert.equal(BAO.count(0) + BAO.count(1), 64);
+  const ms = BAO.legal(0);
+  assert.ok(ms.length > 0 && ms.every(m => m.mtaji));
+});
+test('Bao: a capture in the middle is sown from the kichwa that keeps the direction', () => {
+  baoEmpty();
+  BAO.p[9] = 2; BAO.p[11] = 1; BAO.p[28] = 3; BAO.p[24] = 1;
+  const m = BAO.legal(0).find(x => x.pit === 9 && x.dir === 1);
+  assert.ok(m && m.mtaji);
+  BAO.apply(m);
+  assert.deepEqual([8, 9, 10, 11, 12].map(i => BAO.p[i]), [1, 1, 0, 3, 1]);
+  assert.equal(BAO.p[28], 0);
+});
+test('Bao: a capture near an end is sown from the nearer kichwa', () => {
+  baoEmpty();
+  BAO.p[12] = 2; BAO.p[14] = 1; BAO.p[25] = 2; BAO.p[24] = 1;
+  BAO.apply(BAO.legal(0).find(x => x.pit === 12 && x.dir === 1));
+  assert.deepEqual([11, 12, 13, 14, 15].map(i => BAO.p[i]), [1, 1, 2, 0, 1]);
+  assert.equal(BAO.p[25], 0);
+});
+test('Bao: with no capture open, you must sow from the inner row', () => {
+  baoEmpty();
+  BAO.p[0] = 3; BAO.p[9] = 2; BAO.p[16] = 5;
+  const ms = BAO.legal(0);
+  assert.equal(ms.length, 2);
+  assert.ok(ms.every(m => m.pit === 9 && !m.mtaji));
+});
+test('Bao: an empty inner row loses', () => {
+  baoEmpty();
+  BAO.p[0] = 4; BAO.p[24] = 2;
+  assert.equal(BAO.result(0).winner, 1);
+});
+test('Bao: random games keep all 64 seeds and always end', () => {
+  for (let g = 0; g < 50; g++) {
+    BAO.init(); let pl = 0, r = null;
+    for (let t = 0; t < 400 && !(r = BAO.result(pl)); t++) { const ms = BAO.legal(pl); BAO.apply(ms[(Math.random() * ms.length) | 0]); pl = 1 - pl; }
+    assert.ok(r);
+    assert.equal(BAO.count(0) + BAO.count(1), 64);
+  }
+});
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Bao: at ${level}, the Scribe answers in good time`, () => {
+    rules.setLevel(level); BAO.init(); BAO.apply(BAO.legal(0)[0]);
+    const t0 = Date.now(), plan = BAO.aiPlan(1);
+    assert.ok(plan.length && Date.now() - t0 < 2000);
+    rules.setLevel('fair');
+  });
+}

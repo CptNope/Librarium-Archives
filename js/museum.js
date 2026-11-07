@@ -2159,13 +2159,19 @@ function ytPos(st) {
   if (st === 25 || st === 26) return lerp(corner(2), C, (st - 24) / 3);
   return lerp(C, corner(0), (st - 26) / 3); // 27, 28
 }
+const BAO_DX = 0.098;
+function baoPos(pit) { // pit = player*16 + L, as in the rules
+  const pl = pit >> 4, inner = (pit & 15) >= 8, c = window.LibrariumRules.bao.col(pit);
+  const r = pl === 0 ? (inner ? 2 : 3) : (inner ? 1 : 0);
+  return { x: (c - 3.5) * BAO_DX, z: (r - 1.5) * BAO_DX };
+}
 function buildBao(group) {
   const W = 0.86, D = 0.46;
   const board = new THREE.Mesh(new THREE.BoxGeometry(W, 0.07, D), new THREE.MeshStandardMaterial({ color: 0x6a3e1c, roughness: 0.55 }));
   board.position.y = TOP + 0.035; group.add(board);
   const pw = 1024, ph = Math.round(pw * D / W), sc = pw / W;
   const pit = (x, z) => [pw / 2 + x * sc, ph / 2 + z * sc];
-  const PX = c => (c - 3.5) * 0.098, PZ = r => (r - 1.5) * 0.098;
+  const PX = c => (c - 3.5) * BAO_DX, PZ = r => (r - 1.5) * BAO_DX;
   topPlane(group, W, D, TOP + 0.0705, tex(pw, ph, (g) => {
     woodGrain(g, pw, ph, '#9a6430', '#5a3416');
     for (let r = 0; r < 4; r++) for (let c = 0; c < 8; c++) {
@@ -2176,13 +2182,23 @@ function buildBao(group) {
     }
     g.strokeStyle = 'rgba(30,15,5,.6)'; g.lineWidth = 3; g.beginPath(); g.moveTo(16, ph / 2); g.lineTo(pw - 16, ph / 2); g.stroke();
   }), { roughness: 0.55 });
-  // Seeds: a few in most pits, a heap in each house.
-  const seed = new THREE.SphereGeometry(0.009, 8, 6), sm = new THREE.MeshStandardMaterial({ color: 0x8a8070, roughness: 0.4 });
-  const R = seeded(1820);
-  for (let r = 0; r < 4; r++) for (let c = 0; c < 8; c++) {
-    const house = (r === 1 && c === 4) || (r === 2 && c === 3), n = house ? 9 : (R() * 4) | 0;
-    for (let k = 0; k < n; k++) { const s = new THREE.Mesh(seed, sm); s.position.set(PX(c) + (R() - 0.5) * 0.04, TOP + 0.064 + (k > 4 ? 0.012 : 0), PZ(r) + (R() - 0.5) * 0.04); group.add(s); }
+  // Click targets for play: a thin dark disc in each pit, which glows when it can be sown.
+  const y = TOP + 0.0712, pits = [], discGeo = new THREE.CylinderGeometry(0.031, 0.031, 0.002, 24);
+  for (let k = 0; k < 32; k++) {
+    const p = baoPos(k), mat = new THREE.MeshStandardMaterial({ color: 0x2a1608, roughness: 0.9, transparent: true, opacity: 0.55 });
+    const disc = new THREE.Mesh(discGeo, mat); disc.position.set(p.x, y, p.z); disc.userData.mats = [mat]; group.add(disc); pits.push(disc);
   }
+  group.userData.pits = pits;
+  // Seeds on display: a few in most pits, a heap in each house. Put away while a game is played.
+  const before = group.children.length;
+  const seed = new THREE.SphereGeometry(0.009, 8, 6), sm = new THREE.MeshStandardMaterial({ color: 0x8a8070, roughness: 0.4 });
+  const Rn = seeded(1820);
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 8; c++) {
+    const house = (r === 1 && c === 4) || (r === 2 && c === 3), n = house ? 9 : (Rn() * 4) | 0;
+    for (let k = 0; k < n; k++) { const s = new THREE.Mesh(seed, sm); s.position.set(PX(c) + (Rn() - 0.5) * 0.04, TOP + 0.064 + (k > 4 ? 0.012 : 0), PZ(r) + (Rn() - 0.5) * 0.04); group.add(s); }
+  }
+  group.userData.display = group.children.slice(before);
+  return y + 0.001;
 }
 
 /* --- Finale lectern */
@@ -2563,9 +2579,9 @@ const STOPS = [
     eyebrow: 'Wing VI · Librarium Museum of Play', status: null, begin: 'mutorere',
     body: [
       'The other wings follow one long road, from Egypt and Mesopotamia through Europe to the shop shelf. But play has many homelands. This wing gathers games from the Pacific, Africa and East Asia: some ancient, some first written down by visitors, all still played today.',
-      'Five tables are open: Mū tōrere from Aotearoa New Zealand, Shogi from Japan, Kōnane from Hawaiʻi, Yut Nori from Korea and Fanorona from Madagascar. Bao is on display.'
+      'All six tables are open: Mū tōrere from Aotearoa New Zealand, Shogi from Japan, Kōnane from Hawaiʻi, Yut Nori from Korea, Fanorona from Madagascar and Bao from the Swahili coast.'
     ],
-    facts: [['Tables', 'Mū tōrere, Shogi, Kōnane, Yut Nori, Fanorona'], ['Display', 'Bao']],
+    facts: [['Tables', 'Mū tōrere, Shogi, Kōnane, Yut Nori, Fanorona, Bao']],
   },
   { id: 'mutorere', wing: 6, title: 'Mū tōrere', date: 'first described in 1917', rail: 'Mū tōrere',
     eyebrow: 'Aotearoa New Zealand · Māori', status: ['known', 'Still played'], game: 'mutorere',
@@ -2608,13 +2624,13 @@ const STOPS = [
     facts: [['Board', '5 × 9 points'], ['Stones', '22 each'], ['Capture', 'By approach or withdrawal']],
     build: buildFanorona },
   { id: 'bao', wing: 6, title: 'Bao', date: 'in verse by the 1820s', rail: 'Bao',
-    eyebrow: 'East Africa · the Swahili coast', status: ['known', 'Still played'],
-    note: 'On display.',
+    eyebrow: 'East Africa · the Swahili coast', status: ['known', 'Still played'], game: 'bao',
     body: [
       'Bao, Swahili for "board", is the mancala of East Africa, most popular among the Swahili of Tanzania and Kenya, and one of the most complex of all mancala games. The board has four rows of eight pits, two for each player, and a larger square pit, the nyumba or house, with powers of its own.',
-      'The poet Muyaka bin Haji of Mombasa praised the game in verse in the 1820s. In Bao la Kiswahili, the masters\' version, players start with most of their 32 seeds in hand and sow them in one by one. Zanzibar\'s bao masters are held in high respect, and tournaments are held in Tanzania, Zanzibar, Kenya and Malawi.'
+      'The poet Muyaka bin Haji of Mombasa praised the game in verse in the 1820s. In Bao la Kiswahili, the masters\' version, players start with most of their 32 seeds in hand and sow them in one by one. Zanzibar\'s bao masters are held in high respect, and tournaments are held in Tanzania, Zanzibar, Kenya and Malawi.',
+      'This table plays Bao la Kujifunza, the learners\' game: every seed starts on the board, two to a pit, and the house is an ordinary pit. Captures still fly from one end of the row to the other.'
     ],
-    facts: [['Board', 'Four rows of eight pits'], ['Seeds', '64'], ['House', 'The square nyumba']],
+    facts: [['Board', 'Four rows of eight pits'], ['Seeds', '64'], ['Win', 'Empty the other inner row']],
     build: buildBao },
   { id: 'next', wing: 6, title: 'From These Tables to Yours', short: 'Librarium', date: 'Today', rail: 'Today',
     eyebrow: 'Librarium Games', status: null,
@@ -2677,7 +2693,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -3531,6 +3547,62 @@ const MAHJONG_P = {
   },
   score: () => { const G = GAMES.mahjong, sh = G.shanten(G.hands[0], G.open(0)); return [['Wall', String(G.wall.length)], ['Your hand', sh < 0 ? 'complete' : sh === 0 ? 'ready' : `${sh} from ready`], '']; },
 };
+const BAO_P = {
+  camW: 1.0, ringScale: 0.75,
+  intro() { return 'Your sixteen pits are the two rows nearest you, and you move first. ' + this.prompt(); },
+  prompt: () => {
+    const ms = GAMES.bao.legal(0);
+    return ms.length && ms[0].mtaji ? 'You can capture, so you must: pick a pit, then the ring on the side to sow toward.' : 'No capture is open. Pick a pit (from your inner row if you can), then the ring on the side to sow toward.';
+  },
+  setup(ex) {
+    const G = GAMES.bao;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    this.ex = ex; this.pitMeshes = ex.group.userData.pits;
+    if (!ex.seeds) {
+      const cols = [0x8a8070, 0x6f6658, 0x9d9482, 0x7c705e];
+      ex.seeds = Array.from({ length: 64 }, (_, i) => {
+        const m = new THREE.Mesh(seedGeo, new THREE.MeshStandardMaterial({ color: cols[i % 4], roughness: 0.4 }));
+        m.scale.set(0.85, 0.75, 1); m.rotation.y = rand(0, TAU); ex.group.add(m); return m;
+      });
+    }
+    ex.seeds.forEach(m => { m.visible = true; });
+    this.pit = Array.from({ length: 32 }, () => []);
+    let k = 0;
+    for (let i = 0; i < 32; i++) for (let n = 0; n < G.p[i]; n++) { const m = ex.seeds[k++]; this.pit[i].push(m); m.position.copy(this.slot(i, n)); }
+  },
+  leave(ex) {
+    ex.group.userData.display.forEach(m => { m.visible = true; });
+    (ex.seeds || []).forEach(m => { m.visible = false; });
+  },
+  slot(i, k) {
+    const b = baoPos(i), per = 9, layer = Math.floor(k / per), j = k % per;
+    const a = j * 2.39996 + layer * 1.3, rr = Math.min(0.024, 0.0085 * Math.sqrt(j + 0.6));
+    return V3(b.x + Math.cos(a) * rr, GAMES.bao.surface + 0.007 + layer * 0.011, b.z + Math.sin(a) * rr);
+  },
+  meshesFor(m) { return [this.pitMeshes[m.pit]]; },
+  ringFor(m) { const p = baoPos(GAMES.bao.next(m.pit, m.dir)); return V3(p.x, GAMES.bao.surface, p.z); },
+  async play(m) {
+    const G = GAMES.bao, tok = play.token, res = G.apply(m);
+    const dur = res.trace.length > 70 ? 0.055 : 0.1;
+    let hand = [];
+    for (const [i, n] of res.trace) {
+      if (tok !== play.token) return res;
+      if (n === 0) { // everything in this pit is lifted into the hand
+        const b = baoPos(i), up = this.pit[i].splice(0);
+        await Promise.all(up.map((s, k) => hop(s, V3(b.x + (k % 5 - 2) * 0.006, G.surface + 0.05 + Math.floor(k / 5) * 0.012, b.z), 0.14, 0.02)));
+        hand = hand.concat(up);
+      } else {
+        const s = hand.shift(); if (!s) continue;
+        const v = this.slot(i, this.pit[i].length); this.pit[i].push(s);
+        // the rest of the hand travels along above the pit being sown
+        hand.forEach((h, k) => { h.position.x = v.x + (k % 5 - 2) * 0.006; h.position.z = v.z; });
+        await hop(s, v, dur, 0.03);
+      }
+    }
+    return res;
+  },
+  score: () => { const G = GAMES.bao; return [['You', G.count(0)], ['Scribe', G.count(1)], 'seeds']; },
+};
 const GO_P = {
   camW: 0.95, ringScale: 0.6, ringOpacity: 0.4,
   intro() { return 'You play black and move first. ' + this.prompt(); },
@@ -3689,7 +3761,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };

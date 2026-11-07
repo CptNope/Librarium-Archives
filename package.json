@@ -1,6 +1,6 @@
 {
   "name": "librarium-museum",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "private": true,
   "description": "Librarium Museum of Play: a walkable 3D hall of the oldest board games, with playable Senet and Royal Game of Ur.",
   "scripts": {

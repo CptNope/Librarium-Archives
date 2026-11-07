@@ -55,7 +55,7 @@ Through the third arch: games are printed, sold and brought home.
 | Pachisi (chaupar) | 16th century CE | Still played; ancestor of Ludo | Playable for two (you play two partner colours), short or full game |
 | The Game of the Goose | c. 1575 CE | Survive in print | Playable |
 | Snakes and Ladders (gyan chaupar) | 18th–19th century CE | Still played | Playable, with virtues and vices from an old Indian board |
-| Mahjong | mid-1800s CE | Still played | On display (wall and hand of tiles) |
+| Mahjong | mid-1800s CE | Still played | Playable at a table of four: you and three Scribes |
 
 Rule choices worth knowing:
 
@@ -93,7 +93,7 @@ Through the fifth arch: games from the Pacific, Africa and East Asia that the lo
 | Kōnane | by 1778–79 (Cook's expedition) | Still played | Playable on an 8 × 8 papamū |
 | Yut Nori | traditional | Still played | Playable, with shortcuts, stacking and extra throws |
 | Fanorona | traditional | Still played | Playable (fanoron-tsivy, 5 × 9) |
-| Bao | in verse by the 1820s | Still played | On display (four rows of eight pits and the square nyumba) |
+| Bao | in verse by the 1820s | Still played | Playable (Bao la Kujifunza, the learners' game) |
 
 Rule choices worth knowing:
 
@@ -103,6 +103,8 @@ Rule choices worth knowing:
 - **Pachisi:** six cowries (2, 3, 4, 5; one mouth up is 10, none 25, all six 6). A 6, 10 or 25 is a grace and earns another throw, as does a capture. Each colour's first piece may come out on any throw, later ones only on a grace. Castles are safe and can't be entered while the enemy holds them. No throw is 1, so a piece may not stop on the last square before home. The short game gives each colour two pieces (about a hundred throws), the full game four.
 - **Shogi:** drops follow the full rules (no second unpromoted pawn on a file, no dead pieces, no pawn-drop mate). Promotion is automatic whenever it is allowed, and a 150-move limit replaces the repetition rule.
 - **Yut Nori:** a piece that starts its move on a corner or the centre takes the shortcut; your own pieces stack and move together; a yut, a mo or a capture earns another throw. Each throw is moved at once rather than saved up, and there is no back-do.
+- **Mahjong:** a basic Chinese game with the 136 tiles (no flowers or seasons). Go out with four sets and a pair, seven pairs or the thirteen orphans. You may claim a discard for a pung or kong from anyone, a chow only from the player on your left, and a win from anyone; a win beats a pung or kong, which beats a chow. A kong draws a replacement tile. There is no scoring: whoever goes out first wins the hand, and an empty wall is a draw.
+- **Bao la Kujifunza:** every pit starts with two seeds and the house is an ordinary pit. A move sows a pit of two or more seeds either way round your own sixteen pits. If you can capture you must: a last seed landing in an occupied pit of your inner row takes the Scribe's seeds opposite, which are sown from an end of your row (the nearer end for a capture in the two pits at either end, otherwise the end that keeps your direction). Landing in any other occupied pit picks it up and sows on; a turn ends in an empty pit. A turn that cannot capture must start from the inner row if it can, and never captures. An empty inner row, or no move, loses. Museum rule: after a hundred moves each, the side with more seeds wins.
 - **Fanorona:** captures by approach or withdrawal take the whole unbroken line. You choose a capture by clicking the first enemy stone it would take, which also settles approach against withdrawal. A capture chain may not revisit a point or repeat a direction, and the **Stop** button ends it early. Museum rule: twenty moves each without a capture is a draw.
 
 The hall ends at a lectern featuring Librarium's own games, with links to Phoenix Farm, Calendra, The Great Chase and Royal Threadcount, under an arch signed *Different fables for different tables*.
@@ -126,6 +128,8 @@ The AI opponent has three levels, picked at any table and remembered: **Gentle**
 - **Chess and Shogi** use the shared search with captures tried first. Chess looks up to five moves deep within the level's time; Shogi up to four, trying only drops near either king when the list of moves is long.
 - **Yut Nori and Pachisi** have rule-of-thumb Scribes that weigh progress, captures, safety and (in Pachisi) castles; Gentle adds a lot of randomness. Over many games Fair beats Gentle about 55% of the time in Yut Nori and 72% in Pachisi.
 - **Mū tōrere, Kōnane and Fanorona** use the shared search. In Mū tōrere it looks up to sixteen moves ahead, which is enough to never lose; in Kōnane it counts how many captures each side has left; in Fanorona it searches whole capture chains as one turn.
+- **Mahjong** seats three Scribes, one at each other wind. Each counts how far its hand is from ready (shanten) and discards the tile that keeps the most useful draws open; it claims a discard only when that brings its hand closer. Gentle discards at random four times in ten and claims only half the time it could; Sharp also prefers to throw honour tiles that are already dead.
+- **Bao** uses the shared search, weighing seeds, the inner row and the best capture on offer. It is cheap to search, so Fair looks four plies ahead and Sharp up to twelve; over 40 games from varied openings Fair beat Gentle 31 to 9 and Sharp beat Fair 29 to 11. The side that moves first has a strong edge, and here that is you.
 - **Tarocchi** has its own Scribe. Gentle plays a sensible card half the time and a random legal one otherwise. Fair plays by rule of thumb: it wins a trick worth taking as cheaply as it can, and otherwise throws its least useful card. Sharp deals the cards it cannot see at random, many times over, keeping to what you have shown (a suit you could not follow, say), plays each deal to the end, and picks the card that scores best on average.
 - **Dots and Boxes** has its own Scribe. Gentle takes free boxes but often hands them back; Fair and Sharp avoid giving boxes away, and once only risky lines are left they solve the rest of the game exactly (Sharp from 22 open lines, Fair from 15), giving boxes away on purpose to keep control of the long chains.
 
@@ -266,7 +270,8 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 - [x] Playable Halma for two
 - [x] Wing VI: Games of the World (Mū tōrere, Kōnane, Fanorona to play; Shogi, Yut Nori, Bao on display)
 - [x] Backfill playable rules: chess, shogi, Yut Nori, Pachisi
-- [ ] Playable Bao (Bao la Kujifunza), the Checkered Game of Life, the Mansion of Happiness and the Landlord's Game
+- [x] Playable Mahjong (with three Scribes) and Bao la Kujifunza
+- [ ] The Checkered Game of Life, the Mansion of Happiness and the Landlord's Game, once a square-by-square transcription of an original board and its rules can be checked
 - [x] Larger Dots and Boxes grids (5 × 5, chosen at the table)
 - [x] A playable early card game: tarocchi for two
 - [x] Difficulty settings for the Scribe
