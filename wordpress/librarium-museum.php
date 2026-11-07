@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name:       Librarium Museum of Play
+ * Plugin Name:       Librarium Archives
  * Plugin URI:        https://github.com/CptNope/Librarium-Museum
- * Description:       A walkable 3D museum of the oldest board and card games, with tables visitors can play against the Scribe. Add it with the [librarium_museum] shortcode or the "Museum of Play" Elementor widget.
+ * Description:       A walkable 3D archive of the oldest board and card games, with tables visitors can play against the Scribe. Add it with the [librarium_museum] shortcode or the "Librarium Archives" Elementor widget.
  * Version:           0.5.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
@@ -146,7 +146,7 @@ function librarium_museum_render( $atts = array() ) {
 	// The museum's markup uses fixed ids, so only one can live on a page.
 	if ( $rendered ) {
 		return current_user_can( 'edit_posts' )
-			? '<p class="librarium-museum-notice">' . esc_html__( 'Only one Museum of Play can be shown per page. This copy is hidden.', 'librarium-museum' ) . '</p>'
+			? '<p class="librarium-museum-notice">' . esc_html__( 'Only one copy of the Librarium Archives can be shown per page. This copy is hidden.', 'librarium-museum' ) . '</p>'
 			: '';
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Librarium Museum of Play: game rules.
+ * Librarium Archives: game rules.
  *
  * Pure rule engines with no rendering code, so they can be tested in Node
  * (npm test) and reused by any front end. Each game keeps its state in
@@ -1017,7 +1017,7 @@
       'King: one step any way. Gold: one step any way but diagonally back. Silver: one step forward or diagonally. Knight: two forward and one across, jumping. Lance: any distance straight forward. Bishop and rook: as in chess. Pawn: one step forward, and it captures the same way.',
       'A piece that moves into, out of or within the far three ranks is promoted. Pawns, lances, knights and silvers then move like golds; bishops and rooks gain the king\'s step as well. Here a piece always promotes when it can.',
       'Drops: a piece you capture becomes yours. On a later turn, instead of moving, you can put it on any empty square: pick it from your hand at the right, then a ring. You may not drop a pawn on a file where you already have an unpromoted pawn, drop a piece where it could never move, or give checkmate by dropping a pawn.',
-      'Museum rule: after 150 moves each the game is drawn.'
+      'House rule: after 150 moves each the game is drawn.'
     ],
     source: 'Modern shogi, except that promotion is automatic and repetition (sennichite) is replaced by a move limit.',
     init() {
@@ -1281,7 +1281,7 @@
       'Land on an enemy piece to send it back to the Charkoni, and throw again. Pieces on the twelve castle squares, marked with a cross, are safe, and you may not land on a castle held by the enemy.',
       'Bring all your pieces home first to win. The short game gives each colour two pieces, the full game four.'
     ],
-    source: 'The common rules with six cowries (pachisi has no single standard). As in some versions, each colour\'s first piece may come out on any throw; later ones need a grace. Each throw is moved at once rather than collected first, and the short game uses two pieces per colour so it fits a museum visit.',
+    source: 'The common rules with six cowries (pachisi has no single standard). As in some versions, each colour\'s first piece may come out on any throw; later ones need a grace. Each throw is moved at once rather than collected first, and the short game uses two pieces per colour so it fits a visit to the Archives.',
     init() { this.pos = [Array(this.N).fill(0), Array(this.N).fill(0)]; },
     arm(pl, i) { return PC_ARMS[pl][i < this.per ? 0 : 1]; },
     cellOf(pl, i, idx) { return idx <= 0 || idx >= PC_HOME ? -1 : PC_ROUTE[this.arm(pl, i)][idx]; },
@@ -1356,7 +1356,7 @@
    * bamboo, 18-26 characters, 27-30 winds (east, south, west, north), 31-33
    * dragons (red, green, white). Four seats: 0 is the visitor (East, the
    * dealer); 1, 2 and 3 are Scribes, and play passes 0, 1, 2, 3. In the
-   * museum's two-sided turns, "player 1" is the three Scribes together:
+   * Archives' two-sided turns, "player 1" is the three Scribes together:
    * everything that happens between the visitor's decisions is one Scribe turn. */
   const MJ_SEATS = ['East', 'South', 'West', 'North'];
   const MJ_TERM = [0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33];
@@ -1398,7 +1398,7 @@
       'Go out with four sets and a pair: a set is a pung (three alike), a kong (four alike) or a chow (a run of three in one suit). Seven pairs, or one of each terminal and honour plus one more (thirteen orphans), also win.',
       'You can claim another player\'s discard to win, or to make a pung or kong; a chow only from the player on your left (North). The buttons show what you can claim. A win beats a pung or kong, which beats a chow.',
       'Declare a kong of four alike from your hand with its button; you then draw a replacement tile.',
-      'The first to go out wins the hand. If the wall runs out first, the hand is drawn. Scoring varies so much between rule sets that the museum leaves it out.'
+      'The first to go out wins the hand. If the wall runs out first, the hand is drawn. Scoring varies so much between rule sets that the Archives leave it out.'
     ],
     source: 'Common modern rules for 136 tiles without flowers. Scoring is left out: whoever goes out first wins.',
     init() {
@@ -1725,7 +1725,7 @@
       'The fox captures by jumping a goose to the empty point just beyond it, and may keep jumping in one turn. Geese cannot capture.',
       'The geese win by penning the fox in so it cannot move.',
       'The fox wins by thinning the flock to six geese or fewer, or by leaving the geese with no move.',
-      'Museum rule: if the geese go twenty moves without moving forward or losing a goose, the fox slips away and wins.'
+      'House rule: if the geese go twenty moves without moving forward or losing a goose, the fox slips away and wins.'
     ],
     source: 'A common English form of the game, on the plain cross board. Medieval versions varied in the number of geese, in the lines on the board and in whether geese could move backwards. The twenty-move rule is ours, so games end.',
     init() {
@@ -2268,7 +2268,7 @@
       'Elephants move exactly two points diagonally, never across the river, and are stopped by a piece in between. Horses move one point straight and one diagonally outward, and are stopped by a piece next to them in the straight direction.',
       'Chariots move any distance in a straight line. Cannons move the same way, but capture only by jumping exactly one piece, of either colour, on the way.',
       'Soldiers step one point forward; once across the river they may also step sideways. They never retreat.',
-      'Museum rule: sixty moves each with no capture is a draw.'
+      'House rule: sixty moves each with no capture is a draw.'
     ],
     source: 'The modern rules, which have been settled since the Song dynasty. The rules against perpetual check are replaced here by the sixty-move rule.',
     init() {
@@ -2415,7 +2415,7 @@
       'A man on an arm may move to a neighbouring arm, or into the centre. A man in the centre may move out to the empty arm.',
       'A man may move into the centre only if it stands next to one of the Scribe\'s men.',
       'Block the Scribe so it has no move, and you win.',
-      'Museum rule: after thirty moves each the game is drawn. With perfect play mū tōrere is a draw.'
+      'House rule: after thirty moves each the game is drawn. With perfect play mū tōrere is a draw.'
     ],
     source: 'Accounts of the rules differ. The rule for entering the centre used here is the one most often given today; without it the first player can win at once.',
     init() { this.b = [2, 2, 2, 2, 1, 1, 1, 1, 0]; this.ply = 0; },
@@ -2529,7 +2529,7 @@
       'Capture by approach: step up to an enemy stone in the direction you are moving. Or by withdrawal: step directly away from an enemy stone next to you. Either way, the whole unbroken line of enemy stones beyond is taken.',
       'Pick a stone, then pick the enemy stone you want to capture: the rings show your choices. When one step could approach or withdraw, you choose which line to take.',
       'Capturing is compulsory. After a capture, the same stone may capture again, but never back onto a point it visited this turn, and never twice in the same direction. Or choose Stop.',
-      'Take every enemy stone to win. Museum rule: twenty moves each with no capture is a draw.'
+      'Take every enemy stone to win. House rule: twenty moves each with no capture is a draw.'
     ],
     source: 'Fanoron-tsivy, the full 5 × 9 game, with the rules as they are usually given today.',
     init() {
@@ -3010,7 +3010,7 @@
       'Or it leaps: over one piece next to it, of either colour, onto the empty square just beyond. Nothing is captured, and a man may keep leaping in the same turn, as far as the chain goes.',
       'A man that reaches the far camp may move inside it but may not leave it again.',
       'You win when all your men are in the far camp. If the far camp is full and at least one man in it is yours, you win too, so no one can block a camp by staying home.',
-      'Museum rule: after two hundred moves each, whoever has more men home wins, then whoever is closer overall.'
+      'House rule: after two hundred moves each, whoever has more men home wins, then whoever is closer overall.'
     ],
     source: 'Two-player Halma as published by George Howard Monks in 1884, with the modern rule against blocking a camp.',
     init() {

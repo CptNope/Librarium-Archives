@@ -1,6 +1,6 @@
 <?php
 /**
- * Elementor widget: Museum of Play.
+ * Elementor widget: Librarium Archives.
  *
  * @package LibrariumMuseum
  */
@@ -22,7 +22,7 @@ class Librarium_Museum_Widget extends Widget_Base {
 
 	/** @return string */
 	public function get_title() {
-		return esc_html__( 'Museum of Play', 'librarium-museum' );
+		return esc_html__( 'Librarium Archives', 'librarium-museum' );
 	}
 
 	/** @return string */
@@ -116,7 +116,7 @@ class Librarium_Museum_Widget extends Widget_Base {
 			printf(
 				'<div style="height:%1$s;min-height:240px;display:grid;place-items:center;background:#0b0907;color:#f6a01a;font-family:Georgia,serif;text-align:center;padding:24px;border:1px solid rgba(246,160,26,.32)"><div><strong style="font-size:22px">%2$s</strong><br><span style="color:#a8977a;font-size:14px">%3$s</span></div></div>',
 				esc_attr( $height ),
-				esc_html__( 'Librarium Museum of Play', 'librarium-museum' ),
+				esc_html__( 'Librarium Archives', 'librarium-museum' ),
 				/* translators: %s: exhibit name */
 				esc_html( sprintf( __( 'The 3D hall appears on the live page. Opens at: %s', 'librarium-museum' ), $label ) )
 			);

@@ -1,6 +1,6 @@
-=== Librarium Museum of Play ===
+=== Librarium Archives ===
 Contributors: cptnope
-Tags: board games, museum, 3d, history, game
+Tags: board games, archive, 3d, history, game
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
@@ -8,7 +8,7 @@ Stable tag: 0.5.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A walkable 3D museum of the oldest board and card games, with tables visitors can play against an AI opponent, the Scribe.
+A walkable 3D archive of the oldest board and card games, with tables visitors can play against an AI opponent, the Scribe.
 
 == Description ==
 
@@ -31,13 +31,13 @@ Shortcode:
 
 `[librarium_museum height="720px" start="tables" shop_url="https://librarium.games/"]`
 
-* height: CSS height of the museum box (px, vh, svh, dvh, em, rem or %). Default 80vh.
+* height: CSS height of the Archives box (px, vh, svh, dvh, em, rem or %). Default 80vh.
 * start: the exhibit to open on, for example senet, ur, morris, oware, brandubh, tables, shatranj, foxgeese, draughts or goose. Default: the entrance.
 * shop_url: where the "Visit Librarium Games" button at the end of the hall points.
 
-Elementor: add the "Museum of Play" widget. In the editor it shows a placeholder; the 3D hall runs on the live page.
+Elementor: add the "Librarium Archives" widget. In the editor it shows a placeholder; the 3D hall runs on the live page.
 
-Only one museum can appear on a page. Assets load only on pages that show it.
+Only one copy of the Archives can appear on a page. Assets load only on pages that show it.
 
 == Third-party code ==
 
@@ -45,6 +45,9 @@ Only one museum can appear on a page. Assets load only on pages that show it.
 * Fonts Almendra SC, Amethysta and Montserrat from Google Fonts (SIL Open Font License).
 
 == Changelog ==
+
+= 0.14.1 =
+* Renamed from the Museum of Play to the Librarium Archives. The shortcode and settings are unchanged.
 
 = 0.14.0 =
 * Mahjong (with three Scribe players) and Bao are now playable.
