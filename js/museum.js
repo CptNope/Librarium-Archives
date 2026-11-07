@@ -1468,6 +1468,7 @@ function mjFace(kind, n) {
 function buildMahjong(group) {
   const felt = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.02, 0.8), new THREE.MeshLambertMaterial({ color: 0x1e4a32 }));
   felt.position.y = TOP + 0.01; group.add(felt);
+  const before = group.children.length;
   const tw = 0.034, th = 0.046, td = 0.024;
   const bone = new THREE.MeshStandardMaterial({ color: 0xf2ecdc, roughness: 0.3 });
   const back = new THREE.MeshStandardMaterial({ color: 0x2a7a5a, roughness: 0.35 });
@@ -1488,6 +1489,47 @@ function buildMahjong(group) {
   flower.position.set(0.42, TOP + 0.02 + td / 2, 0.05); flower.rotation.y = 0.3; group.add(flower);
   for (let k = 0; k < 2; k++) { const d = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.018, 0.018), new THREE.MeshStandardMaterial({ color: 0xf6f1e4, roughness: 0.3 })); d.position.set(-0.4 + k * 0.035, TOP + 0.029, 0.04); d.rotation.y = k * 0.6; group.add(d); }
   glassCase(group, 1.25, 0.3, 0.85);
+  group.userData.display = group.children.slice(before); // put away while a hand is played
+  return TOP + 0.02;
+}
+/* Mahjong tiles for the table: every face, with a small corner index for readers of either script. */
+const MJ_NUM = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
+const mjTileCache = {};
+function mjTile(t) {
+  if (mjTileCache[t]) return mjTileCache[t];
+  const map = tex(128, 172, (g, w, h) => {
+    g.fillStyle = '#f6f1e4'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#d8cfb8'; g.lineWidth = 6; g.strokeRect(3, 3, w - 6, h - 6);
+    const suit = (t / 9) | 0, n = (t % 9) + 1, cols = ['#1e5a8a', '#2a7a3a', '#b23a2a'];
+    let idx = '';
+    if (t < 9) {
+      const grid = { 1: [[0.5, 0.5]], 2: [[0.5, 0.3], [0.5, 0.7]], 3: [[0.3, 0.25], [0.5, 0.5], [0.7, 0.75]], 4: [[0.3, 0.3], [0.7, 0.3], [0.3, 0.7], [0.7, 0.7]], 5: [[0.3, 0.27], [0.7, 0.27], [0.5, 0.5], [0.3, 0.73], [0.7, 0.73]], 6: [[0.3, 0.22], [0.7, 0.22], [0.3, 0.5], [0.7, 0.5], [0.3, 0.78], [0.7, 0.78]], 7: [[0.25, 0.18], [0.5, 0.25], [0.75, 0.32], [0.3, 0.6], [0.7, 0.6], [0.3, 0.82], [0.7, 0.82]], 8: [[0.3, 0.16], [0.7, 0.16], [0.3, 0.39], [0.7, 0.39], [0.3, 0.62], [0.7, 0.62], [0.3, 0.85], [0.7, 0.85]], 9: [[0.22, 0.2], [0.5, 0.2], [0.78, 0.2], [0.22, 0.5], [0.5, 0.5], [0.78, 0.5], [0.22, 0.8], [0.5, 0.8], [0.78, 0.8]] }[n];
+      const r = n === 1 ? 38 : n <= 6 ? 16 : 12;
+      grid.forEach(([x, y], k) => { g.fillStyle = cols[k % 3]; g.beginPath(); g.arc(x * w, y * h, r, 0, TAU); g.fill(); g.fillStyle = '#f6f1e4'; g.beginPath(); g.arc(x * w, y * h, r * 0.45, 0, TAU); g.fill(); });
+      idx = String(n);
+    } else if (t < 18) {
+      if (n === 1) { g.fillStyle = '#2a7a3a'; g.beginPath(); g.ellipse(w / 2, h / 2, 26, 40, 0, 0, TAU); g.fill(); g.fillStyle = '#b23a2a'; g.beginPath(); g.arc(w / 2, h / 2 - 30, 12, 0, TAU); g.fill(); }
+      else for (let k = 0; k < n; k++) {
+        const per = n <= 3 ? n : n <= 6 ? 3 : 3, rows = Math.ceil(n / per), col = k % per, row = (k / per) | 0;
+        const x = w * (0.5 + (col - (Math.min(per, n - row * per) - 1) / 2) * 0.24), y = h * (0.12 + row * (0.76 / rows));
+        g.fillStyle = k === 0 && n % 2 ? '#b23a2a' : '#2a7a3a'; g.fillRect(x - 6, y, 12, h * 0.76 / rows - 8);
+        g.fillStyle = '#f6f1e4'; g.fillRect(x - 6, y + (h * 0.76 / rows - 8) / 2 - 1, 12, 3);
+      }
+      idx = String(n);
+    } else if (t < 27) {
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = '#1a1a1a'; g.font = `600 52px ${W6_CJK}`; g.fillText(MJ_NUM[n - 1], w / 2, h * 0.32);
+      g.fillStyle = '#b23a2a'; g.font = `600 56px ${W6_CJK}`; g.fillText('萬', w / 2, h * 0.7);
+      idx = String(n);
+    } else if (t < 31) {
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#1a1a1a'; g.font = `600 78px ${W6_CJK}`;
+      g.fillText('東南西北'[t - 27], w / 2, h / 2 + 4); idx = 'ESWN'[t - 27];
+    } else if (t === 31) { g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#b23a2a'; g.font = `700 80px ${W6_CJK}`; g.fillText('中', w / 2, h / 2 + 4); idx = 'R'; }
+    else if (t === 32) { g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#2a7a3a'; g.font = `700 76px ${W6_CJK}`; g.fillText('發', w / 2, h / 2 + 4); idx = 'G'; }
+    else { g.strokeStyle = '#1e5a8a'; g.lineWidth = 7; g.strokeRect(w * 0.2, h * 0.18, w * 0.6, h * 0.64); idx = 'W'; }
+    g.fillStyle = 'rgba(40,30,20,.75)'; g.font = '700 20px "Montserrat",sans-serif'; g.textAlign = 'left'; g.textBaseline = 'top'; g.fillText(idx, 9, 8);
+  });
+  mjTileCache[t] = map; return map;
 }
 
 /* --- Wing V: shared pieces */
@@ -2391,9 +2433,9 @@ const STOPS = [
     eyebrow: 'Wing IV · Librarium Museum of Play', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
-      'Six tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Pachisi; the Game of the Goose; and Snakes and Ladders.'
+      'Seven tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Pachisi; the Game of the Goose; Snakes and Ladders; and Mahjong, with three Scribes.'
     ],
-    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Pachisi, the Goose, Snakes and Ladders'], ['Display', 'Mahjong']],
+    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Pachisi, the Goose, Snakes and Ladders, Mahjong']],
   },
   { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
@@ -2449,13 +2491,13 @@ const STOPS = [
     facts: [['Squares', '100'], ['Moves', 'One die'], ['Goal', 'Square 100: liberation']],
     build: buildSnakesBoard },
   { id: 'mahjong', wing: 4, title: 'Mahjong', date: 'mid-1800s CE', rail: 'Mahjong',
-    eyebrow: 'China · Qing dynasty', status: ['known', 'Still played today'],
-    note: 'On display. A full table needs four players, so the Scribe sits this one out.',
+    eyebrow: 'China · Qing dynasty', status: ['known', 'Still played today'], game: 'mahjong',
+    note: 'A table needs four, so three Scribes join you. Scoring is left out: whoever goes out first wins the hand.',
     body: [
       'Mahjong took shape in the Shanghai region in the middle or later years of the 19th century, during the Qing dynasty. It grew out of older Chinese card games and keeps their money suits: circles, bamboo and characters, joined by winds and dragons. A full set has 136 tiles, or 144 with the flowers and seasons.',
       'After the First World War an American living in Shanghai, Joseph P. Babcock, simplified the rules, added English labels and coined the name mah-jongg. In the mid-1920s it became a craze in the United States, Britain and Australia, and in 1937 players in New York founded the National Mah Jongg League.'
     ],
-    facts: [['Tiles', '136, or 144 with flowers'], ['Suits', 'Circles, bamboo, characters'], ['Players', 'Four']],
+    facts: [['Tiles', '136, or 144 with flowers'], ['Suits', 'Circles, bamboo, characters'], ['Players', 'Four: you and three Scribes']],
     build: buildMahjong },
   { id: 'wing5', wing: 5, title: 'The Modern Board Game', short: 'Wing V', date: 'c. 1840 CE – today', rail: 'Wing V',
     eyebrow: 'Wing V · Librarium Museum of Play', status: null, begin: 'mansion',
@@ -2635,7 +2677,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -3409,6 +3451,86 @@ const PACHISI_P = Object.assign(racePresenter(PACHISI), {
   (ex.pieces || []).flat().forEach(m => { m.visible = true; });
   setup.call(this, ex);
 }; }
+// Mahjong: seat 0 sits at the front, 1 to the right, 2 at the back, 3 to the left.
+const MJ_TW = 0.034, MJ_TH = 0.046, MJ_TD = 0.024;
+const mjBone = new THREE.MeshStandardMaterial({ color: 0xf2ecdc, roughness: 0.3 }), mjBack = new THREE.MeshStandardMaterial({ color: 0x2a7a5a, roughness: 0.35 });
+const mjGeo = new THREE.BoxGeometry(MJ_TW, MJ_TH, MJ_TD);
+const MJ_SEAT = [ // the edge each seat sits at, the way it faces, its right hand, and which way its tiles turn
+  { e: { x: 0, z: 0.335 }, f: { x: 0, z: -1 }, r: { x: 1, z: 0 }, rot: 0 },
+  { e: { x: 0.53, z: 0 }, f: { x: -1, z: 0 }, r: { x: 0, z: -1 }, rot: Math.PI / 2 },
+  { e: { x: 0, z: -0.335 }, f: { x: 0, z: 1 }, r: { x: -1, z: 0 }, rot: Math.PI },
+  { e: { x: -0.53, z: 0 }, f: { x: 1, z: 0 }, r: { x: 0, z: 1 }, rot: -Math.PI / 2 },
+];
+const MAHJONG_P = {
+  camW: 1.3,
+  intro() { return 'You sit at East, the front of the table, with three Scribes. ' + this.prompt(); },
+  prompt: () => (GAMES.mahjong.need.type === 'claim' ? 'A tile you can claim was discarded. Choose a button, or Pass.' : 'Click a tile in your hand to discard it.'),
+  setup(ex) {
+    const G = GAMES.mahjong, d = ex.group.userData;
+    d.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) {
+      ex.pieces = Array.from({ length: 136 }, (_, id) => {
+        const face = new THREE.MeshStandardMaterial({ map: mjTile(id >> 2), roughness: 0.3 });
+        const m = new THREE.Mesh(mjGeo, [mjBone, mjBone, mjBone, mjBone, face, mjBack]); m.rotation.order = 'YXZ'; m.userData.mats = [face]; m.visible = false; ex.group.add(m); return m;
+      });
+      // Seat names on the felt.
+      ['East · you', 'South', 'West', 'North'].forEach((name, s) => {
+        const S = MJ_SEAT[s], plate = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.035), new THREE.MeshBasicMaterial({ transparent: true, map: tex(256, 64, (g, w, h) => { g.fillStyle = 'rgba(236,223,195,.8)'; g.font = '600 26px "Montserrat",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name.toUpperCase(), w / 2, h / 2); }) }));
+        plate.rotation.order = 'YXZ'; plate.rotation.set(-Math.PI / 2, S.rot, 0);
+        plate.position.set(S.e.x + S.f.x * (s % 2 ? 0.0 : 0.0) - S.r.x * 0.33, TOP + 0.021, S.e.z - S.r.z * 0.33 + (s === 0 ? 0.03 : 0));
+        ex.group.add(plate); (d.plates = d.plates || []).push(plate);
+      });
+    }
+    (d.plates || []).forEach(p => { p.visible = true; });
+    this.ex = ex; this.layout(true);
+  },
+  leave(ex) { const d = ex.group.userData; d.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => { m.visible = false; }); (d.plates || []).forEach(p => { p.visible = false; }); },
+  // Where every tile belongs now: hands standing, melds and discards lying face up, the wall hidden.
+  targets() {
+    const G = GAMES.mahjong, out = new Map(), y = G.surface;
+    for (let s = 0; s < 4; s++) {
+      const S = MJ_SEAT[s], hand = G.hands[s], n = hand.length;
+      hand.forEach((id, k) => {
+        const o = (k - (n - 1) / 2) * (MJ_TW + 0.002) + (s === 0 && k === n - 1 && G.need.type === 'discard' && G.need.seat === 0 && n % 3 === 2 ? 0.012 : 0);
+        out.set(id, { x: S.e.x + S.r.x * o, y: y + MJ_TH / 2, z: S.e.z + S.r.z * o, ry: S.rot, rx: s === 0 ? -0.18 : 0 });
+      });
+      let j = 0;
+      for (const m of G.melds[s]) for (const id of m.tiles) {
+        const o = 0.27 - j * (MJ_TW + 0.001) - Math.floor(j / 4) * 0.0; j++;
+        out.set(id, { x: S.e.x + S.f.x * 0.068 + S.r.x * o, y: y + MJ_TD / 2, z: S.e.z + S.f.z * 0.068 + S.r.z * o, ry: S.rot, rx: -Math.PI / 2 });
+      }
+      G.discards[s].forEach((id, k) => {
+        const col = k % 6, row = (k / 6) | 0, o = (col - 2.5) * (MJ_TW + 0.002), a = 0.125 + row * (MJ_TH + 0.003);
+        out.set(id, { x: S.e.x + S.f.x * a + S.r.x * o, y: y + MJ_TD / 2, z: S.e.z + S.f.z * a + S.r.z * o, ry: S.rot, rx: -Math.PI / 2 });
+      });
+    }
+    return out;
+  },
+  async layout(instant) {
+    const want = this.targets(), moves = [];
+    this.ex.pieces.forEach((m, id) => {
+      const t = want.get(id);
+      if (!t) { m.visible = false; return; }
+      if (instant || !m.visible) { m.visible = true; m.position.set(t.x, t.y, t.z); m.rotation.set(t.rx, t.ry, 0); return; }
+      const dx = t.x - m.position.x, dz = t.z - m.position.z, dy = t.y - m.position.y, drx = t.rx - m.rotation.x;
+      if (Math.abs(dx) + Math.abs(dz) + Math.abs(dy) + Math.abs(drx) < 1e-4) return;
+      moves.push({ m, from: { x: m.position.x, y: m.position.y, z: m.position.z, rx: m.rotation.x, ry: m.rotation.y }, t });
+    });
+    if (!moves.length) return;
+    await tween(0.22, k => { for (const { m, from, t } of moves) { m.position.set(from.x + (t.x - from.x) * k, from.y + (t.y - from.y) * k + Math.sin(k * Math.PI) * 0.03, from.z + (t.z - from.z) * k); m.rotation.set(from.rx + (t.rx - from.rx) * k, from.ry + (t.ry - from.ry) * k, 0); } });
+  },
+  meshesFor(m) { return m.kind === 'discard' ? [this.ex.pieces[m.tile]] : []; },
+  ringFor: () => null,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.mahjong, res = G.apply(m);
+    if (m.kind === 'discard' || m.kind === 'draw') sfx.card();
+    await this.layout(false);
+    if (m.pl === 1 && m.kind === 'discard') await wait(120);
+    return res;
+  },
+  score: () => { const G = GAMES.mahjong, sh = G.shanten(G.hands[0], G.open(0)); return [['Wall', String(G.wall.length)], ['Your hand', sh < 0 ? 'complete' : sh === 0 ? 'ready' : `${sh} from ready`], '']; },
+};
 const GO_P = {
   camW: 0.95, ringScale: 0.6, ringOpacity: 0.4,
   intro() { return 'You play black and move first. ' + this.prompt(); },
@@ -3567,7 +3689,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -3951,6 +4073,7 @@ async function startGame(ex) {
   const g = GAMES[ex.game], P = PRES[ex.game];
   play.ex = ex; play.game = g; play.P = P; play.token++;
   play.phase = 'idle'; play.moves = []; play.selected = null; // nothing from the last table carries over during the glide
+  $('#lm-choices').hidden = true;
   g.surface = ex.surface;
   if (g.variants) g.setVariant((store.variants || {})[g.id] || g.variant);
   renderVariants(g);
@@ -3982,7 +4105,7 @@ function renderRules(g) {
 }
 function leaveGame() {
   if (mode !== 'play') return;
-  play.token++; clearHighlights(); clearLastMove();
+  play.token++; clearHighlights(); clearLastMove(); $('#lm-choices').hidden = true;
   if (play.P && play.P.leave) play.P.leave(play.ex);
   mode = 'gallery';
   $('#lm-hud').hidden = true; rail.hidden = false; $('#lm-hint').style.opacity = 1;
@@ -4074,8 +4197,15 @@ function beginTurn(pl, first) {
     aiTurn();
   }
 }
+function renderChoices(moves) {
+  const box = $('#lm-choices'); box.innerHTML = '';
+  const list = moves.filter(m => m.label && !(play.P.meshesFor(m) || []).some(Boolean));
+  box.hidden = !list.length;
+  for (const m of list) { const b = document.createElement('button'); b.className = 'btn' + (/^Mahjong/.test(m.label) ? ' primary' : ''); b.textContent = m.label; b.addEventListener('click', () => choose(m)); box.appendChild(b); }
+}
 function offer(moves, text) {
   play.moves = moves; play.phase = 'choose';
+  renderChoices(moves);
   $('#lm-passBtn').disabled = !(play.game.canPass || moves.some(m => m.pass));
   highlight(moves);
   setMsg('Your turn', text);
@@ -4104,6 +4234,7 @@ async function humanThrow() {
 async function choose(m) {
   if (play.phase !== 'choose') return;
   play.phase = 'anim'; clearHighlights(); clearLastMove();
+  $('#lm-choices').hidden = true;
   $('#lm-passBtn').disabled = true;
   const g = play.game, tok = play.token;
   const res = await play.P.play(m);

@@ -1138,3 +1138,44 @@ test('Pachisi: captures off castles only, no landing on an enemy castle, and no 
   assert.ok(!PC.legal(0, 3).some(x => x.i === 0), 'square 83 is a dead end');
   assert.ok(PC.legal(0, 4).some(x => x.i === 0 && x.to === 84));
 });
+
+/* ------------------------------------------------------------------ Mahjong */
+const { mahjong: MJ } = rules;
+const mjIds = ts => ts.map((t, k) => t * 4 + (k % 4));
+test('Mahjong: counts how far a hand is from winning, including seven pairs and thirteen orphans', () => {
+  assert.equal(MJ.shanten(mjIds([0, 1, 2, 9, 10, 11, 18, 19, 20, 27, 27, 27, 31, 31]), 0), -1);
+  assert.equal(MJ.shanten(mjIds([0, 1, 2, 9, 10, 11, 18, 19, 20, 27, 27, 27, 31]), 0), 0);
+  assert.equal(MJ.shanten(mjIds([0, 0, 3, 3, 5, 5, 9, 9, 12, 12, 30, 30, 33, 33]), 0), -1);
+  assert.equal(MJ.shanten(mjIds([0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33, 33]), 0), -1);
+  assert.equal(MJ.shanten(mjIds([0, 1, 2, 9, 10, 11, 31, 31]), 2), -1, 'with two sets already shown');
+});
+test('Mahjong: a chow can be claimed only from the player on the left', () => {
+  MJ.init();
+  MJ.hands[0] = [1 * 4, 2 * 4, 30 * 4, 30 * 4 + 1];
+  const fromLeft = MJ.claimsFor(0, { seat: 3, tile: 0 * 4 + 1 }), fromRight = MJ.claimsFor(0, { seat: 1, tile: 0 * 4 + 1 });
+  assert.ok(fromLeft.some(c => c.kind === 'chow'));
+  assert.ok(!fromRight.some(c => c.kind === 'chow'));
+  assert.ok(MJ.claimsFor(0, { seat: 1, tile: 30 * 4 + 2 }).some(c => c.kind === 'pung'));
+});
+test('Mahjong: you are not asked to chow when a Scribe will pung the same tile', () => {
+  MJ.init(); rules.setLevel('fair');
+  MJ.hands[0] = [1 * 4, 2 * 4, 33 * 4, 33 * 4 + 1, 33 * 4 + 2, 27 * 4, 28 * 4, 29 * 4, 31 * 4, 32 * 4, 4 * 4, 5 * 4, 6 * 4];
+  MJ.hands[1] = [0 * 4 + 2, 0 * 4 + 3, 9 * 4, 10 * 4, 11 * 4, 12 * 4, 13 * 4, 14 * 4, 15 * 4, 16 * 4, 17 * 4, 22 * 4, 23 * 4];
+  MJ.openClaims({ seat: 3, tile: 0 * 4 + 1 });
+  if (MJ.need.ai && MJ.need.ai.kind === 'pung') assert.ok(!MJ.need.mine.some(c => c.kind === 'chow'));
+});
+for (const level of ['gentle', 'fair', 'sharp']) {
+  test(`Mahjong: at ${level}, a whole hand plays out, every Scribe turn in good time`, () => {
+    rules.setLevel(level); MJ.init(); let slowest = 0, guard = 0;
+    while (!MJ.result() && guard++ < 1000) {
+      const ms = MJ.legal(0);
+      if (ms.length) { const pick0 = MJ.need.type === 'discard' ? MJ.chooseDiscard(0) : -1; const m = ms.find(x => x.kind === 'tsumo' || x.kind === 'ron') || ms.find(x => x.kind === 'pass') || ms.find(x => x.kind === 'discard' && x.tile === pick0); MJ.apply(m); continue; }
+      const t0 = Date.now(); const plan = MJ.aiPlan(); slowest = Math.max(slowest, Date.now() - t0);
+      assert.ok(plan.length, 'the Scribes always have something to do');
+      plan.forEach(st => MJ.apply(st));
+    }
+    assert.ok(MJ.result());
+    assert.ok(slowest < 1500, `took ${slowest} ms`);
+    rules.setLevel('fair');
+  });
+}
