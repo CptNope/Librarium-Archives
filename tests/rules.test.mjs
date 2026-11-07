@@ -1013,3 +1013,30 @@ test('Fanorona: a capturing stone may go on, not back to a visited point nor the
   assert.ok(res.followUp.some(m => m.pass), 'and so is stopping');
   assert.ok(res.followUp.every(m => m.pass || m.to !== at(0, 0)), 'never back to where it started');
 });
+
+/* -------------------------------------------------------------------- Chess */
+const { chess: CHG } = rules;
+function chessFen(fen) {
+  const [rows, side, castle, ep] = fen.split(' ');
+  const T = { k: 1, q: 2, b: 3, n: 4, r: 5, p: 6 };
+  CHG.init(); CHG.b.fill(0);
+  rows.split('/').forEach((row, k) => { let c = 0; for (const ch of row) { if (/\d/.test(ch)) c += +ch; else { CHG.b[(7 - k) * 8 + c] = T[ch.toLowerCase()] + (ch === ch.toLowerCase() ? 8 : 0); c++; } } });
+  CHG.castle = [[castle.includes('Q'), castle.includes('K')], [castle.includes('q'), castle.includes('k')]];
+  CHG.ep = ep === '-' ? -1 : (+ep[1] - 1) * 8 + ep.charCodeAt(0) - 97;
+  return side === 'w' ? 0 : 1;
+}
+function perft(pl, d) { if (!d) return 1; let n = 0; for (const m of CHG.legal(pl)) { const s = CHG.snapshot(); CHG.raw(m); n += perft(1 - pl, d - 1); CHG.restore(s); } return n; }
+test('Chess: move counts from the start match the known values', () => {
+  CHG.init();
+  assert.deepEqual([1, 2, 3].map(d => perft(0, d)), [20, 400, 8902]);
+});
+test('Chess: castling, en passant and promotion counted right in the Kiwipete position', () => {
+  const pl = chessFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -');
+  assert.deepEqual([1, 2].map(d => perft(pl, d)), [48, 2039]);
+});
+test('Chess: checkmate and stalemate', () => {
+  let pl = chessFen('7k/6Q1/6K1/8/8/8/8/8 b - -'); // black is mated
+  assert.equal(CHG.result(pl).winner, 0);
+  pl = chessFen('7k/5Q2/6K1/8/8/8/8/8 b - -'); // black to move, no moves, not in check
+  assert.equal(CHG.result(pl).winner, -1);
+});

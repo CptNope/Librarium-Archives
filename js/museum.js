@@ -1349,6 +1349,17 @@ function goosePawn(color) {
 }
 
 /* --- Wing IV: chess with the new queen (display) */
+/* Chess pieces in the Staunton manner, shared by the display and the table. */
+const chessLathe = (pts, m) => new THREE.Mesh(new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), 22), m);
+const CHESS_BASE = [[0, 0], [0.024, 0], [0.025, 0.006], [0.017, 0.012]];
+const CHESS_SHAPES = {
+    p: m => chessLathe([...CHESS_BASE, [0.009, 0.028], [0.013, 0.032], [0.012, 0.042], [0, 0.046]], m),
+    r: m => chessLathe([...CHESS_BASE, [0.015, 0.05], [0.019, 0.054], [0.019, 0.064], [0.014, 0.064], [0, 0.062]], m),
+    b: m => { const g = new THREE.Group(); g.add(chessLathe([...CHESS_BASE, [0.01, 0.045], [0.015, 0.052], [0.012, 0.068], [0.004, 0.076], [0, 0.078]], m)); return g; },
+    n: m => { const g = new THREE.Group(); g.add(chessLathe([...CHESS_BASE, [0.014, 0.022], [0, 0.024]], m)); const h = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.045, 0.016), m); h.position.set(0.004, 0.044, 0); h.rotation.z = -0.25; g.add(h); const sn = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.014, 0.014), m); sn.position.set(0.016, 0.06, 0); g.add(sn); return g; },
+    q: m => { const g = new THREE.Group(); g.add(chessLathe([...CHESS_BASE, [0.01, 0.06], [0.018, 0.07], [0.016, 0.084], [0, 0.084]], m)); for (let k = 0; k < 8; k++) { const a = k / 8 * TAU, ball = new THREE.Mesh(new THREE.SphereGeometry(0.004, 8, 6), m); ball.position.set(Math.cos(a) * 0.015, 0.088, Math.sin(a) * 0.015); g.add(ball); } return g; },
+    k: m => { const g = new THREE.Group(); g.add(chessLathe([...CHESS_BASE, [0.011, 0.064], [0.018, 0.074], [0.014, 0.088], [0, 0.088]], m)); const c1 = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.026, 0.005), m); c1.position.y = 0.1; g.add(c1); const c2 = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.005, 0.005), m); c2.position.y = 0.104; g.add(c2); return g; },
+  };
 function buildNewChess(group) {
   const S = 0.085, W = 8 * S + 0.07;
   const frame = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, W), new THREE.MeshStandardMaterial({ color: 0x2a170b, roughness: 0.5 }));
@@ -1360,29 +1371,23 @@ function buildNewChess(group) {
   }), { roughness: 0.5 });
   const y0 = TOP + 0.041;
   const mats = [new THREE.MeshStandardMaterial({ color: 0xeee0c0, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0x241810, roughness: 0.35 })];
-  const lathe = (pts, m) => new THREE.Mesh(new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), 22), m);
-  const base = [[0, 0], [0.024, 0], [0.025, 0.006], [0.017, 0.012]];
-  const shapes = {
-    p: m => lathe([...base, [0.009, 0.028], [0.013, 0.032], [0.012, 0.042], [0, 0.046]], m),
-    r: m => lathe([...base, [0.015, 0.05], [0.019, 0.054], [0.019, 0.064], [0.014, 0.064], [0, 0.062]], m),
-    b: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.01, 0.045], [0.015, 0.052], [0.012, 0.068], [0.004, 0.076], [0, 0.078]], m)); return g; },
-    n: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.014, 0.022], [0, 0.024]], m)); const h = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.045, 0.016), m); h.position.set(0.004, 0.044, 0); h.rotation.z = -0.25; g.add(h); const sn = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.014, 0.014), m); sn.position.set(0.016, 0.06, 0); g.add(sn); return g; },
-    q: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.01, 0.06], [0.018, 0.07], [0.016, 0.084], [0, 0.084]], m)); for (let k = 0; k < 8; k++) { const a = k / 8 * TAU, ball = new THREE.Mesh(new THREE.SphereGeometry(0.004, 8, 6), m); ball.position.set(Math.cos(a) * 0.015, 0.088, Math.sin(a) * 0.015); g.add(ball); } return g; },
-    k: m => { const g = new THREE.Group(); g.add(lathe([...base, [0.011, 0.064], [0.018, 0.074], [0.014, 0.088], [0, 0.088]], m)); const c1 = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.026, 0.005), m); c1.position.y = 0.1; g.add(c1); const c2 = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.005, 0.005), m); c2.position.y = 0.104; g.add(c2); return g; },
-  };
+  const shapes = CHESS_SHAPES;
   // A position from a fast attacking game: the queen has swept out early.
   const layout = [
     [0, 0, 'r', 0], [0, 4, 'k', 0], [0, 5, 'b', 0], [0, 7, 'r', 0], [1, 0, 'p', 0], [1, 1, 'p', 0], [1, 5, 'p', 0], [1, 6, 'p', 0], [1, 7, 'p', 0], [2, 2, 'n', 0], [3, 3, 'p', 0], [3, 4, 'p', 0], [2, 5, 'n', 0],
     [4, 7, 'q', 0], [3, 2, 'b', 0],
     [7, 0, 'r', 1], [7, 2, 'b', 1], [7, 3, 'q', 1], [7, 4, 'k', 1], [7, 7, 'r', 1], [6, 0, 'p', 1], [6, 1, 'p', 1], [6, 2, 'p', 1], [6, 3, 'p', 1], [5, 5, 'n', 1], [6, 6, 'p', 1], [6, 7, 'p', 1], [4, 4, 'p', 1], [5, 2, 'n', 1], [4, 1, 'b', 1],
   ];
+  const display = [];
   for (const [r, c, t, side] of layout) {
-    const o = shapes[t](mats[side]); o.position.set((c - 3.5) * S, y0, (3.5 - r) * S); o.rotation.y = side ? -Math.PI / 2 : Math.PI / 2; group.add(o);
+    const o = shapes[t](mats[side]); o.position.set((c - 3.5) * S, y0, (3.5 - r) * S); o.rotation.y = side ? -Math.PI / 2 : Math.PI / 2; group.add(o); display.push(o);
   }
+  group.userData.display = display; // put away while a game is played on this board
   // A small gilded crown beside the board marks the piece that changed.
   const gold = new THREE.MeshStandardMaterial({ color: 0xd4a23a, metalness: 0.8, roughness: 0.3 });
   const q = shapes.q(gold); q.scale.setScalar(1.6); q.position.set(W / 2 + 0.11, TOP, -0.12); group.add(q);
   const old = sjPiece(2, new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 0.5 })); old.scale.setScalar(1.6); old.position.set(W / 2 + 0.11, TOP, 0.12); group.add(old);
+  return y0;
 }
 
 /* --- Wing IV: Pachisi (display) */
@@ -2374,8 +2379,8 @@ const STOPS = [
     facts: [['Board', '33 points on a cross'], ['Pieces', '1 fox, 13 geese'], ['You play', 'The fox'], ['Win', 'Thin the flock, or slip away']],
     build: buildFoxGeeseBoard },
   { id: 'newqueen', wing: 4, title: 'The New Queen', date: 'c. 1475 CE', rail: 'The New Queen',
-    eyebrow: 'Valencia · late 15th century', status: ['known', 'Rules survive in writing'],
-    note: 'On display. Play shatranj in Wing III to feel how slow the old queen was.',
+    eyebrow: 'Valencia · late 15th century', status: ['known', 'Rules survive in writing'], game: 'chess',
+    note: 'Play modern chess here, then shatranj in Wing III to feel how slow the old queen was.',
     body: [
       'For six centuries the piece beside the king was the firzan, a counsellor who stepped a single square diagonally. Then, in late 15th-century Spain, she became the strongest piece on the board, free to sweep any distance in any direction. The bishop gained its long diagonal move at the same time.',
       'The earliest record of the new rules is Scachs d\'amor, a Catalan poem written in Valencia around 1475 by Francí de Castellví, Narcís Vinyoles and Bernat Fenollar, which plays out a game of chess as a courtship. Luis de Lucena\'s book on the game, printed in Salamanca around 1497, spread the new rules further, and the faster game soon replaced the old one across Europe.',
@@ -2606,7 +2611,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -3224,6 +3229,45 @@ const FANORONA_P = {
   },
   score: () => { const G = GAMES.fanorona; return [['You', G.count(0)], ['Scribe', G.count(1)], 'stones']; },
 };
+const CHESS_P = {
+  camW: 1.0,
+  intro() { return 'You play white and move first. ' + this.prompt(); },
+  prompt: () => 'Pick a piece, then a ring. To castle, pick the king and the ring two squares over.',
+  setup(ex) {
+    const G = GAMES.chess, d = ex.group.userData;
+    d.display.forEach(m => { m.visible = false; });
+    (ex.pieces || []).forEach(m => ex.group.remove(m));
+    ex.pieces = []; this.ex = ex;
+    this.cell = Array(64).fill(null); this.lost = [0, 0];
+    for (let i = 0; i < 64; i++) { const v = G.b[i]; if (v) this.cell[i] = this.make(v, i); }
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => { m.visible = false; }); },
+  make(v, i) {
+    const pl = v > 8 ? 1 : 0, t = 'xkqbnrp'[v & 7];
+    const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x241810 : 0xeee0c0, roughness: pl ? 0.35 : 0.4 });
+    const o = CHESS_SHAPES[t](mat); o.userData.mats = [mat]; o.rotation.y = pl ? -Math.PI / 2 : Math.PI / 2;
+    if (i !== undefined) o.position.copy(this.pos(i));
+    this.ex.group.add(o); this.ex.pieces.push(o); return o;
+  },
+  pos(i) { return V3(((i & 7) - 3.5) * 0.085, GAMES.chess.surface, (3.5 - (i >> 3)) * 0.085); },
+  lostSpot(owner, k) { return V3(owner ? -0.47 : 0.47, TOP, (owner ? -0.3 : 0.3) * (1 - (k % 8) / 8 * 2) * 0.9); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.chess, tok = play.token;
+    const mesh = this.cell[m.from], vSq = m.epTake !== undefined ? m.epTake : m.to, victim = m.cap ? this.cell[vSq] : null;
+    this.cell[m.from] = null; if (victim) this.cell[vSq] = null; this.cell[m.to] = mesh;
+    const res = G.apply(m);
+    await hop(mesh, this.pos(m.to), 0.32, (G.b[m.to] & 7) === 4 ? 0.08 : 0.03);
+    if (tok !== play.token) return res;
+    if (victim) { const owner = 1 - m.pl; hop(victim, this.lostSpot(owner, this.lost[owner]++), 0.4, 0.12); }
+    if (m.castle) { const rook = this.cell[m.castle[0]]; this.cell[m.castle[0]] = null; this.cell[m.castle[1]] = rook; await hop(rook, this.pos(m.castle[1]), 0.3, 0.06); }
+    if (m.promo) { mesh.visible = false; this.cell[m.to] = this.make(G.b[m.to], m.to); }
+    return res;
+  },
+  score: () => { const G = GAMES.chess; return [['You', G.count(0)], ['Scribe', G.count(1)], 'pieces']; },
+};
 const GO_P = {
   camW: 0.95, ringScale: 0.6, ringOpacity: 0.4,
   intro() { return 'You play black and move first. ' + this.prompt(); },
@@ -3382,7 +3426,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
