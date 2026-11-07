@@ -1,10 +1,12 @@
-# Librarium Museum of Play
+# Librarium Archives
 
-A walkable 3D museum of the oldest known board games, built for [Librarium Games](https://librarium.games). Visitors stroll a candlelit library hall, read the history of each game on its placard, and sit down to play the ones whose rules we can reconstruct against an AI opponent, the Scribe.
+A walkable 3D archive of the oldest known board games, built for [Librarium Games](https://librarium.games). Visitors stroll a candlelit library hall, read the history of each game on its placard, and sit down to play the ones whose rules we can reconstruct against an AI opponent, the Scribe.
+
+The Archives were first called the Librarium Museum of Play. The repository, file names, shortcode and plugin slug keep the `museum` name so that existing pages and saved progress keep working.
 
 ## Wing I: The Dawn of Play (c. 3100–2000 BCE)
 
-| Exhibit | Date | Rules | In the museum |
+| Exhibit | Date | Rules | In the Archives |
 | --- | --- | --- | --- |
 | Senet | c. 3100 BCE | Reconstructed (after Kendall, 1979) | Playable |
 | Mehen | c. 3100–2300 BCE | Lost | On display |
@@ -17,7 +19,7 @@ A walkable 3D museum of the oldest known board games, built for [Librarium Games
 
 Through the arch, luck drains out of the games.
 
-| Exhibit | Date | Rules | In the museum |
+| Exhibit | Date | Rules | In the Archives |
 | --- | --- | --- | --- |
 | Petteia | by 443 BCE | Mostly lost | On display (the board is our guess) |
 | Liubo | by the 4th century BCE | Lost; reconstructions only | On display (after the Mawangdui set) |
@@ -33,7 +35,7 @@ Through the arch, luck drains out of the games.
 
 Through the second arch: chess travels from India to the far North, Rome's dice games become tables, and cards arrive from the East.
 
-| Exhibit | Date | Rules | In the museum |
+| Exhibit | Date | Rules | In the Archives |
 | --- | --- | --- | --- |
 | Tables (backgammon) | c. 480 CE onward | Modern backgammon, no cube | Playable |
 | Chaturanga | by c. 600 CE | Partly lost (the elephant's move) | On display, on an ashtapada board |
@@ -47,7 +49,7 @@ Through the second arch: chess travels from India to the far North, Rome's dice 
 
 Through the third arch: games are printed, sold and brought home.
 
-| Exhibit | Date | Rules | In the museum |
+| Exhibit | Date | Rules | In the Archives |
 | --- | --- | --- | --- |
 | Fox and Geese | by c. 1300 CE | Survive in tradition; many local variants | Playable, as the fox |
 | The New Queen (chess) | c. 1475 CE | Survive in writing (*Scachs d'amor*; Lucena) | Playable as modern chess; the old firzan and the new queen stand beside the board |
@@ -59,14 +61,14 @@ Through the third arch: games are printed, sold and brought home.
 
 Rule choices worth knowing:
 
-- **Fox and Geese** is played on the plain cross board (no diagonal lines) with 13 geese that may move forward or sideways but never back. A **museum rule** lets the fox win if the geese go twenty moves each without advancing or losing a goose: without it, games with sideways moves can go on forever.
+- **Fox and Geese** is played on the plain cross board (no diagonal lines) with 13 geese that may move forward or sideways but never back. A **house rule** lets the fox win if the geese go twenty moves each without advancing or losing a goose: without it, games with sideways moves can go on forever.
 - **The Goose:** a throw of 9 from the start goes to 26 (6 and 3) or 53 (5 and 4), whenever the piece is at the start, since geese every nine squares would otherwise fly it straight home. With two players, the Well and the Prison hold a player for two and three turns instead of until someone else arrives.
 
 ## Wing V: The Modern Board Game (c. 1840 CE – today)
 
 Through the fourth arch: games become products, sold by publishers and protected by patents.
 
-| Exhibit | Date | Rules | In the museum |
+| Exhibit | Date | Rules | In the Archives |
 | --- | --- | --- | --- |
 | The Mansion of Happiness | 1843 CE | Survive in print | On display (a spiral of virtues and vices, with a teetotum) |
 | The Checkered Game of Life | 1860 CE | Survive in print | On display |
@@ -79,14 +81,14 @@ Rule choices worth knowing:
 
 - **Reversi** starts from the four centre discs of Othello rather than the empty board of the 1880s. A player with no legal move passes; the game ends when neither can move.
 - **Dots and Boxes:** closing a box scores it and you must draw again. The Scribe plays the whole of its turn, so it may take several boxes in a row.
-- **Halma:** a man in the far camp may not leave it, and a full far camp with at least one of your men in it wins, so neither side can block by staying home. A museum rule ends the game after two hundred moves each.
+- **Halma:** a man in the far camp may not leave it, and a full far camp with at least one of your men in it wins, so neither side can block by staying home. A house rule ends the game after two hundred moves each.
 - **Tarocchi:** the rules of the first tarot games of the 1440s were never written down, so the table plays a simplified two-player game built on what every tarot game still shares: follow suit, trump if you cannot, and the Fool as an excuse. Thirteen cards each; kings 5, queens 4, knights 3, jacks 2, trumps I and XXI and the Fool 5, and 1 for each trick.
 
 ## Wing VI: Games of the World
 
 Through the fifth arch: games from the Pacific, Africa and East Asia that the long road of the earlier wings passes by.
 
-| Exhibit | Date | Rules | In the museum |
+| Exhibit | Date | Rules | In the Archives |
 | --- | --- | --- | --- |
 | Mū tōrere | first described in 1917 (Elsdon Best) | Accounts differ | Playable |
 | Shogi | oldest pieces c. 1058 CE (Kōfuku-ji) | Unbroken tradition | Playable, with drops |
@@ -97,15 +99,15 @@ Through the fifth arch: games from the Pacific, Africa and East Asia that the lo
 
 Rule choices worth knowing:
 
-- **Mū tōrere:** a man may move into the centre only from an arm next to an enemy man, the rule most often given today (without it the first player can win at once). Museum rule: thirty moves each is a draw; perfect play draws anyway.
+- **Mū tōrere:** a man may move into the centre only from an arm next to an enemy man, the rule most often given today (without it the first player can win at once). House rule: thirty moves each is a draw; perfect play draws anyway.
 - **Kōnane:** black lifts a stone from the centre or a corner, white lifts one beside the gap, and from then on every move is a capture. Multiple jumps run in a straight line and may stop anywhere. The first player who cannot capture loses.
 - **Chess:** modern rules, with castling and en passant. Pawns always promote to a queen; there is no draw by repetition, but stalemate, bare kings and the fifty-move rule are draws.
 - **Pachisi:** six cowries (2, 3, 4, 5; one mouth up is 10, none 25, all six 6). A 6, 10 or 25 is a grace and earns another throw, as does a capture. Each colour's first piece may come out on any throw, later ones only on a grace. Castles are safe and can't be entered while the enemy holds them. No throw is 1, so a piece may not stop on the last square before home. The short game gives each colour two pieces (about a hundred throws), the full game four.
 - **Shogi:** drops follow the full rules (no second unpromoted pawn on a file, no dead pieces, no pawn-drop mate). Promotion is automatic whenever it is allowed, and a 150-move limit replaces the repetition rule.
 - **Yut Nori:** a piece that starts its move on a corner or the centre takes the shortcut; your own pieces stack and move together; a yut, a mo or a capture earns another throw. Each throw is moved at once rather than saved up, and there is no back-do.
 - **Mahjong:** a basic Chinese game with the 136 tiles (no flowers or seasons). Go out with four sets and a pair, seven pairs or the thirteen orphans. You may claim a discard for a pung or kong from anyone, a chow only from the player on your left, and a win from anyone; a win beats a pung or kong, which beats a chow. A kong draws a replacement tile. There is no scoring: whoever goes out first wins the hand, and an empty wall is a draw.
-- **Bao la Kujifunza:** every pit starts with two seeds and the house is an ordinary pit. A move sows a pit of two or more seeds either way round your own sixteen pits. If you can capture you must: a last seed landing in an occupied pit of your inner row takes the Scribe's seeds opposite, which are sown from an end of your row (the nearer end for a capture in the two pits at either end, otherwise the end that keeps your direction). Landing in any other occupied pit picks it up and sows on; a turn ends in an empty pit. A turn that cannot capture must start from the inner row if it can, and never captures. An empty inner row, or no move, loses. Museum rule: after a hundred moves each, the side with more seeds wins.
-- **Fanorona:** captures by approach or withdrawal take the whole unbroken line. You choose a capture by clicking the first enemy stone it would take, which also settles approach against withdrawal. A capture chain may not revisit a point or repeat a direction, and the **Stop** button ends it early. Museum rule: twenty moves each without a capture is a draw.
+- **Bao la Kujifunza:** every pit starts with two seeds and the house is an ordinary pit. A move sows a pit of two or more seeds either way round your own sixteen pits. If you can capture you must: a last seed landing in an occupied pit of your inner row takes the Scribe's seeds opposite, which are sown from an end of your row (the nearer end for a capture in the two pits at either end, otherwise the end that keeps your direction). Landing in any other occupied pit picks it up and sows on; a turn ends in an empty pit. A turn that cannot capture must start from the inner row if it can, and never captures. An empty inner row, or no move, loses. House rule: after a hundred moves each, the side with more seeds wins.
+- **Fanorona:** captures by approach or withdrawal take the whole unbroken line. You choose a capture by clicking the first enemy stone it would take, which also settles approach against withdrawal. A capture chain may not revisit a point or repeat a direction, and the **Stop** button ends it early. House rule: twenty moves each without a capture is a draw.
 
 The hall ends at a lectern featuring Librarium's own games, with links to Phoenix Farm, Calendra, The Great Chase and Royal Threadcount, under an arch signed *Different fables for different tables*.
 
@@ -162,10 +164,10 @@ Kept in the visitor's browser only (`localStorage`, key `librarium.museum.v1`): 
 
 ## WordPress plugin
 
-The museum ships as a WordPress plugin for librarium.games.
+The Archives ship as a WordPress plugin for librarium.games.
 
 1. Download `librarium-museum-plugin` from the latest successful **CI** run on GitHub (Actions tab), unzip it to get `librarium-museum.zip`, and upload that under **Plugins > Add New > Upload Plugin**.
-2. Add the museum to a page with the shortcode, or with the **Museum of Play** widget in Elementor:
+2. Add the Archives to a page with the shortcode, or with the **Librarium Archives** widget in Elementor:
 
 ```
 [librarium_museum]
@@ -174,20 +176,20 @@ The museum ships as a WordPress plugin for librarium.games.
 
 | Attribute | What it does | Default |
 | --- | --- | --- |
-| `height` | Height of the museum box: px, vh, svh, dvh, em, rem or % | `80vh` |
+| `height` | Height of the Archives box: px, vh, svh, dvh, em, rem or % | `80vh` |
 | `start` | Exhibit to open on: `senet`, `ur`, `morris`, `oware`, `brandubh`, `tables`, `shatranj`, or any other exhibit id | the entrance |
 | `shop_url` | Where the "Visit Librarium Games" button at the end of the hall points | `https://librarium.games/` |
 
 How it behaves on a page:
 
-- **Embedded, not full-page.** The museum sits in its own box and scrolls with the page. A full-screen button (top right) expands it where the browser allows.
+- **Embedded, not full-page.** The Archives sit in its own box and scrolls with the page. A full-screen button (top right) expands it where the browser allows.
 - **Keyboard.** It only takes WASD and the arrow keys while the pointer is over it or focus is inside it, so the page keeps scrolling normally.
-- **Styles are scoped.** Every rule is scoped under `#lm-app` and every id is prefixed `lm-`, so the theme and the museum don't restyle each other. The phone layout responds to the box's width (a container query), not the window's.
+- **Styles are scoped.** Every rule is scoped under `#lm-app` and every id is prefixed `lm-`, so the theme and the Archives don't restyle each other. The phone layout responds to the box's width (a container query), not the window's.
 - **Assets load only where needed:** on pages whose content holds the shortcode (in the head), or when the widget or shortcode renders (in the footer). three.js r128 is bundled with the plugin; nothing loads from a CDN except Google Fonts.
 - **One per page.** A second copy renders nothing for visitors and a notice for editors.
 - **In the Elementor editor** the widget shows a placeholder; the 3D hall runs on the live page.
 
-`embed-demo.html` imitates a WordPress page with the museum embedded at 70vh; it is published with the site at `/embed-demo.html`.
+`embed-demo.html` imitates a WordPress page with the Archives embedded at 70vh; it is published with the site at `/embed-demo.html`.
 
 ## Project layout
 
@@ -201,7 +203,7 @@ tools/build-artifact.mjs Inlines everything into dist/artifact.html for Claude a
 tools/build-wp.mjs       Builds the WordPress plugin into dist/librarium-museum.zip
 wordpress/               Plugin PHP (shortcode, Elementor widget) and readme.txt
 tests/plugin-render.test.php  Renders the shortcode with stubbed WordPress functions
-embed-demo.html          A stand-in WordPress page that embeds the museum
+embed-demo.html          A stand-in WordPress page that embeds the Archives
 ```
 
 There is no build step for the site itself. three.js r128 loads from cdnjs, and everything else is static, so the folder can be served as-is or dropped into WordPress.
@@ -232,7 +234,7 @@ To preview locally, serve the folder with any static server, for example `npx se
 
 ## Historical notes and sources
 
-The placard text is written for this museum. Where scholarship is uncertain, the placards say so: Senet's rules were never written down, so the playable version is a modern reconstruction; the Royal Game of Ur follows Irving Finkel's translation of a Babylonian rules tablet; Mehen, Hounds and Jackals, and the Başur Höyük pieces are shown without rules because none survive.
+The placard text is written for the Archives. Where scholarship is uncertain, the placards say so: Senet's rules were never written down, so the playable version is a modern reconstruction; the Royal Game of Ur follows Irving Finkel's translation of a Babylonian rules tablet; Mehen, Hounds and Jackals, and the Başur Höyük pieces are shown without rules because none survive.
 
 - Smithsonian Magazine, "The Best Board Games of the Ancient World"
 - History.com, "The Oldest Board Games in the World"
@@ -261,7 +263,7 @@ The placard text is written for this museum. Where scholarship is uncertain, the
 
 ## Roadmap
 
-- [x] WordPress plugin with a shortcode and an Elementor widget, loading the museum only where it is shown
+- [x] WordPress plugin with a shortcode and an Elementor widget, loading the Archives only where it is shown
 - [ ] Swap the type-set wordmark for Librarium's logo files
 - [x] Wing II: strategy games (Weiqi, Ludus latrunculorum, Nine Men's Morris, Oware, Brandubh)
 - [x] Wing III: kings, cards and courts (Tables, chaturanga, shatranj, Lewis chessmen, cards, tarot)

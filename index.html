@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Walk a candlelit hall of the oldest known board games and play Senet and the Royal Game of Ur. A Librarium Games project.">
 <!-- artifact:head -->
-<title>Librarium Museum of Play</title>
+<title>Librarium Archives</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almendra+SC&family=Amethysta&family=Montserrat:wght@400;600&display=swap">
@@ -16,9 +16,9 @@
 <body>
 <!-- artifact:body -->
 <div id="lm-app">
-  <canvas id="lm-scene" tabindex="0" aria-label="3D museum hall. Use the timeline buttons below to visit each exhibit."></canvas>
+  <canvas id="lm-scene" tabindex="0" aria-label="3D archive hall. Use the timeline buttons below to visit each exhibit."></canvas>
 
-  <div class="brand"><div class="mark">Librarium</div><div class="sub">Museum of Play</div></div>
+  <div class="brand"><div class="mark">Librarium</div><div class="sub">Archives</div></div>
   <button class="iconbtn" id="lm-helpBtn" aria-label="How to explore">?</button>
   <button class="iconbtn soundbtn" id="lm-soundBtn" aria-label="Sound on. Mute" aria-pressed="true"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 8h3l4-3v10l-4-3H3z" fill="currentColor"/><path class="wave" d="M13 7.2a4 4 0 0 1 0 5.6M15.2 5a7 7 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path class="mute" d="M13 7.5l5 5M18 7.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   <button class="iconbtn fsbtn" id="lm-fsBtn" aria-label="Full screen"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 8V3h5M12 3h5v5M17 12v5h-5M8 17H3v-5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
@@ -31,7 +31,7 @@
 
   <div class="hint" id="lm-hint">Drag to look · WASD or arrows to walk · [ and ] step between exhibits</div>
   <div class="joy" id="lm-joy" hidden aria-hidden="true"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 12l-7 9h14zM50 88l-7-9h14zM12 50l9-7v14zM88 50l-9-7v14z" fill="currentColor"/></svg><div class="knob"></div></div>
-  <nav class="rail" id="lm-rail" aria-label="Museum navigation">
+  <nav class="rail" id="lm-rail" aria-label="Archives navigation">
     <div class="wings" id="lm-wings" role="group" aria-label="Wings"></div>
     <button class="railstep" id="lm-prev" aria-label="Previous exhibit" title="Previous exhibit ( [ )"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
     <div class="stops" id="lm-stops"></div>
@@ -87,7 +87,7 @@
     </div>
   </section>
 
-  <div class="loader" id="lm-loader"><div>Lighting the lamps…<small>Librarium Museum of Play</small></div></div>
+  <div class="loader" id="lm-loader"><div>Lighting the lamps…<small>Librarium Archives</small></div></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

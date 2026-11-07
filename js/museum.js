@@ -1,5 +1,5 @@
 /*
- * Librarium Museum of Play: the 3D hall, exhibits, camera and play table.
+ * Librarium Archives: the 3D hall, exhibits, camera and play table.
  * Needs three.js r128 (global THREE) and js/rules.js (global LibrariumRules).
  */
 (() => {
@@ -12,12 +12,12 @@ const rand = (a, b) => a + Math.random() * (b - a);
 const wait = ms => new Promise(r => setTimeout(r, reduceMotion ? ms * 0.5 : ms));
 
 /* ------------------------------------------------------------------ host
- * The museum fills the window on its own page, or a box when embedded in
+ * The Archives fill the window on its own page, or a box when embedded in
  * another page (the WordPress plugin wraps it in .lm-embed). Settings come
  * from data attributes on #lm-app: data-start (an exhibit id to open on) and
  * data-shop (where the closing "Visit Librarium Games" link points). */
 const root = $('#lm-app');
-if (!root) return; // no museum markup on this page
+if (!root) return; // no Archives markup on this page
 const embedded = !!root.closest('.lm-embed');
 const hostSize = () => ({ w: root.clientWidth || window.innerWidth, h: root.clientHeight || window.innerHeight });
 const narrowHost = () => (root.clientWidth || window.innerWidth) <= 720;
@@ -2229,7 +2229,7 @@ function buildLectern(z) {
 /* ---------------------------------------------------------- exhibit data */
 const STOPS = [
   { id: 'hall', wing: 1, title: 'The Dawn of Play', short: 'Welcome', date: 'Wing I', rail: 'Entrance',
-    eyebrow: 'Wing I · Librarium Museum of Play', status: null, begin: 'senet',
+    eyebrow: 'Wing I · Librarium Archives', status: null, begin: 'senet',
     body: [
       'Long before anyone wrote rules down, people were already sitting across a board from each other, moving pieces and trusting their luck. This wing gathers the oldest board games we know of, from the Nile valley to the city of Ur.',
       'Two of them are ready to play. Walk up to a plinth, read its story, and take a seat at the table. The rules of the others are lost, so we show them as they were found. Beyond the arch, Wing II turns from luck to strategy.'
@@ -2290,7 +2290,7 @@ const STOPS = [
     build: buildHounds },
 
   { id: 'wing2', wing: 2, title: 'Strategy Takes the Table', short: 'Wing II', date: 'c. 500 BCE – 1000 CE', rail: 'Wing II',
-    eyebrow: 'Wing II · Librarium Museum of Play', status: null, begin: 'go',
+    eyebrow: 'Wing II · Librarium Archives', status: null, begin: 'go',
     body: [
       'The games in the first wing were races, and the dice or sticks had the final word. Here the luck drains away. These are games of position, where you win by surrounding, trapping or outthinking the person across from you.',
       'Five tables are open: Go on a small board, Nine Men\'s Morris, the mancala game Oware, Alquerque, and the Irish game Brandubh. Petteia, Liubo and Patolli are on display. The Scribe is waiting at each of them, and it plays these games much more carefully than it rolls dice.'
@@ -2377,7 +2377,7 @@ const STOPS = [
     facts: [['Board', '7 × 7, a throne and four corners'], ['Pieces', 'King and 4 defenders vs 8'], ['You play', 'The king\'s side'], ['Win', 'Bring the king to a corner']],
     build: buildBrandubhBoard },
   { id: 'wing3', wing: 3, title: 'Kings, Cards and Courts', short: 'Wing III', date: 'c. 480 – 1450 CE', rail: 'Wing III',
-    eyebrow: 'Wing III · Librarium Museum of Play', status: null, begin: 'tables',
+    eyebrow: 'Wing III · Librarium Archives', status: null, begin: 'tables',
     body: [
       'Board games became courtly pastimes. In this wing chess travels from India through Persia to the far North, the dice games of Rome and Persia settle into tables, and paper cards arrive from the East and change how Europe plays.',
       'Four tables are open: Tables, the family of games that became backgammon; Shatranj, the chess of the caliphs\' courts; Xiangqi, the chess of China; and a game of tarocchi, the card game that tarot was made for.'
@@ -2446,7 +2446,7 @@ const STOPS = [
     facts: [['Pack', 'Four suits, 21 trumps and the Fool'], ['Played', 'Trick-taking games'], ['Fortune-telling', 'From about 1770']],
     build: buildTarot },
   { id: 'wing4', wing: 4, title: 'Printed Boards and Parlour Tables', short: 'Wing IV', date: 'c. 1300 – 1900 CE', rail: 'Wing IV',
-    eyebrow: 'Wing IV · Librarium Museum of Play', status: null, begin: 'foxgeese',
+    eyebrow: 'Wing IV · Librarium Archives', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
       'Seven tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Pachisi; the Game of the Goose; Snakes and Ladders; and Mahjong, with three Scribes.'
@@ -2458,7 +2458,7 @@ const STOPS = [
     body: [
       'Fox and Geese is a hunt: one fox against a whole flock. Its likely ancestor is halatafl, the "tail board" game named in the Icelandic Grettis saga, which was written down in the 14th century. It is a cousin of the tafl games in Wing II.',
       'The household accounts of Edward IV of England, who reigned from 1461 to 1483, record silver-gilt pieces for the game: two foxes and 26 hounds, enough for two sets. Boards scratched into cloister benches show that monks played it too, and Queen Victoria is said to have enjoyed it.',
-      'Rules varied from place to place. We play a common English form, with one museum rule added so that every game ends.'
+      'Rules varied from place to place. We play a common English form, with one house rule added so that every game ends.'
     ],
     facts: [['Board', '33 points on a cross'], ['Pieces', '1 fox, 13 geese'], ['You play', 'The fox'], ['Win', 'Thin the flock, or slip away']],
     build: buildFoxGeeseBoard },
@@ -2516,7 +2516,7 @@ const STOPS = [
     facts: [['Tiles', '136, or 144 with flowers'], ['Suits', 'Circles, bamboo, characters'], ['Players', 'Four: you and three Scribes']],
     build: buildMahjong },
   { id: 'wing5', wing: 5, title: 'The Modern Board Game', short: 'Wing V', date: 'c. 1840 CE – today', rail: 'Wing V',
-    eyebrow: 'Wing V · Librarium Museum of Play', status: null, begin: 'mansion',
+    eyebrow: 'Wing V · Librarium Archives', status: null, begin: 'mansion',
     body: [
       'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
       'Three tables are open: Reversi, Halma, and Dots and Boxes.'
@@ -2576,7 +2576,7 @@ const STOPS = [
     facts: [['Patent', 'U.S. 748,626, 1904'], ['Inventor', 'Lizzie Magie'], ['Descendant', 'Monopoly (1935)']],
     build: buildLandlord },
   { id: 'wing6', wing: 6, title: 'Games of the World', short: 'Wing VI', date: 'Across the oceans', rail: 'Wing VI',
-    eyebrow: 'Wing VI · Librarium Museum of Play', status: null, begin: 'mutorere',
+    eyebrow: 'Wing VI · Librarium Archives', status: null, begin: 'mutorere',
     body: [
       'The other wings follow one long road, from Egypt and Mesopotamia through Europe to the shop shelf. But play has many homelands. This wing gathers games from the Pacific, Africa and East Asia: some ancient, some first written down by visitors, all still played today.',
       'All six tables are open: Mū tōrere from Aotearoa New Zealand, Shogi from Japan, Kōnane from Hawaiʻi, Yut Nori from Korea, Fanorona from Madagascar and Bao from the Swahili coast.'
@@ -4570,7 +4570,7 @@ canvas.addEventListener('wheel', e => {
   camTween = null;
   setZoom(view.zoomTo * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)));
 }, { passive: false });
-// Stop Safari's own page zoom from fighting the museum's pinch.
+// Stop Safari's own page zoom from fighting the Archives' pinch.
 ['gesturestart', 'gesturechange'].forEach(t => root.addEventListener(t, e => e.preventDefault()));
 
 // Tap the floor to walk there, keeping the way you face.
@@ -4629,7 +4629,7 @@ function touchCopy() {
   if (current === 0 && placardOpen) renderPlacard(STOPS[0]);
 }
 const KEYMAP = { KeyW: 'f', ArrowUp: 'f', KeyS: 'b', ArrowDown: 'b', KeyA: 'l', ArrowLeft: 'l', KeyD: 'r', ArrowRight: 'r' };
-// On its own page the museum always takes the keyboard. Embedded, it only does so
+// On its own page the Archives always take the keyboard. Embedded, it only does so
 // while the pointer is over it or focus is inside it, so the host page still scrolls.
 let pointerInside = false;
 root.addEventListener('pointerenter', () => { pointerInside = true; });

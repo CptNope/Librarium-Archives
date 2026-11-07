@@ -44,7 +44,7 @@ if ( 'render' === $mode ) {
 	check( 'registers the Elementor hook', isset( $GLOBALS['actions']['elementor/widgets/register'] ) );
 	check( 'a second museum on the page renders nothing for visitors', librarium_museum_render( array() ) === '' );
 	$GLOBALS['can_edit'] = true;
-	check( 'a second museum shows editors a notice', strpos( librarium_museum_render( array() ), 'Only one Museum of Play' ) !== false );
+	check( 'a second museum shows editors a notice', strpos( librarium_museum_render( array() ), 'Only one copy of the Librarium Archives' ) !== false );
 } else {
 	// Run in its own process so the one-per-page flag starts fresh.
 	$bad = librarium_museum_render( array( 'height' => '100%;background:red', 'start' => '<b>nope</b>', 'shop_url' => 'javascript:alert(1)' ) );

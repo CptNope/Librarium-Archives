@@ -747,7 +747,7 @@ test('Halma: filling the far camp wins, and so does a full camp with one of your
   assert.equal(HM.result(0).winner, 0);
 });
 
-test('Halma: the museum rule ends a long game on men home', () => {
+test('Halma: the house rule ends a long game on men home', () => {
   HM.init();
   HM.ply = 400;
   const r = HM.result(0);

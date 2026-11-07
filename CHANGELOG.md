@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.14.1: The Librarium Archives
+
+- The hall is renamed from the Museum of Play to the **Librarium Archives**, on the sign, the loading screen, the wing banners, the WordPress plugin and its Elementor widget. The `[librarium_museum]` shortcode, its settings and saved visitor progress are unchanged, so existing pages keep working.
+- "Museum rule" is now "house rule" in the rules panels.
+
 ## 0.14.0: A table of four, and Bao
 
 - **Mahjong** is playable. You sit at East with three Scribes at the other winds. Claim discards for pungs, kongs and chows (from your left), declare concealed kongs, and go out with four sets and a pair, seven pairs or the thirteen orphans. The tiles are drawn with their faces, and your hand shows how many tiles you are from ready.
@@ -63,7 +68,7 @@
 
 - New wing, **Printed Boards and Parlour Tables** (c. 1300–1900), through a third open arch.
 - Three new playable tables:
-  - **Fox and Geese**: you are the fox, the Scribe herds 13 geese. Includes a museum rule so every game ends.
+  - **Fox and Geese**: you are the fox, the Scribe herds 13 geese. Includes a house rule so every game ends.
   - **Draughts**: English draughts, with compulsory multi-jump captures and crowning.
   - **The Game of the Goose**: a 63-square spiral race with geese, the Bridge, Inn, Well, Maze, Prison and Death.
 - Three new display exhibits: **The New Queen** (chess after c. 1475, with the old firzan beside the new queen), **Pachisi** on a cloth cross with cowrie shells, and **Mahjong** tiles.
@@ -82,7 +87,7 @@
 
 ## 0.5.0: WordPress plugin
 
-- **WordPress plugin** (`librarium-museum.zip`, built by CI): `[librarium_museum]` shortcode with `height`, `start` and `shop_url`, a **Museum of Play** Elementor widget with the same settings, assets loaded only where the museum appears, and three.js bundled.
+- **WordPress plugin** (`librarium-museum.zip`, built by CI): `[librarium_museum]` shortcode with `height`, `start` and `shop_url`, a **Librarium Archives** Elementor widget with the same settings, assets loaded only where the museum appears, and three.js bundled.
 - **Embedded mode:** the museum can live in a box inside any page. It sizes from its box, the phone layout follows the box width, it only takes the keyboard while in use, and the timeline no longer scrolls the host page.
 - **Full-screen button** on the standalone page and when embedded.
 - **Scoped styles:** every rule now lives under `#lm-app` and every id is prefixed `lm-`, so themes and the museum can't restyle each other.
