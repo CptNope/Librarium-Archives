@@ -1457,3 +1457,105 @@ test('Dominoes: simulated hands always end, and every tile is accounted for', ()
   }
   rules.setLevel('fair');
 });
+
+/* ------------------------------------------------------------------ Tablut */
+const TBL = rules.tablut;
+test('Tablut: 16 Muscovites against the king and 8 Swedes on 9 × 9', () => {
+  TBL.init(); assert.equal(TBL.count(1), 16); assert.equal(TBL.count(0), 9); assert.equal(TBL.b[40], 3);
+});
+test('Tablut: the king escapes at any edge square', () => {
+  TBL.init(); TBL.b.fill(0); TBL.b[22] = 3; TBL.b[0] = 1;
+  TBL.apply({ pl: 0, from: 22, to: 4 });
+  assert.equal(TBL.result(0).winner, 0);
+});
+test('Tablut: away from the throne two Muscovites capture the king; beside it, three and the throne', () => {
+  TBL.init(); TBL.b.fill(0); TBL.b[20] = 3; TBL.b[19] = 1; TBL.b[30] = 1; TBL.b[80] = 2;
+  TBL.apply({ pl: 1, from: 30, to: 21 });
+  assert.equal(TBL.win && TBL.win.winner, 1);
+  TBL.init(); TBL.b.fill(0); TBL.b[31] = 3; TBL.b[30] = 1; TBL.b[32] = 1; TBL.b[13] = 1; TBL.b[80] = 2;
+  TBL.apply({ pl: 1, from: 13, to: 22 });
+  assert.equal(TBL.win && TBL.win.winner, 1);
+  TBL.init(); TBL.b.fill(0); TBL.b[31] = 3; TBL.b[30] = 1; TBL.b[13] = 1; TBL.b[80] = 2;
+  TBL.apply({ pl: 1, from: 13, to: 22 });
+  assert.equal(TBL.win, null);
+});
+test('Tablut: the king helps capture, and only he may stop on the throne', () => {
+  TBL.init(); TBL.b.fill(0); TBL.b[10] = 3; TBL.b[11] = 1; TBL.b[30] = 2; TBL.b[0] = 1;
+  const r = TBL.apply({ pl: 0, from: 30, to: 12 });
+  assert.deepEqual(r.caps, [11]);
+  TBL.init(); assert.ok(!TBL.legal(0).some(m => m.to === 40));
+});
+
+/* ------------------------------------------------------------------ Makruk */
+const MKR = rules.makruk;
+test('Makruk: 23 legal opening moves, pawns on the third rank, no double step', () => {
+  MKR.init(); assert.equal(MKR.legal(0).length, 23);
+  assert.ok(MKR.legal(0).filter(m => (MKR.b[m.from] & 7) === 6).every(m => m.to - m.from === 8));
+});
+test('Makruk: a bia reaching the sixth rank turns into a met', () => {
+  MKR.init(); MKR.b.fill(0); MKR.b[3] = 1; MKR.b[60] = 9; MKR.b[32] = 6;
+  MKR.apply({ pl: 0, from: 32, to: 40 });
+  assert.equal(MKR.b[40], 7);
+});
+test('Makruk: the khon steps one diagonally or one straight forward', () => {
+  MKR.init(); MKR.b.fill(0); MKR.b[0] = 1; MKR.b[63] = 9; MKR.b[27] = 3;
+  const to = MKR.legal(0).filter(m => m.from === 27).map(m => m.to).sort((a, b) => a - b);
+  assert.deepEqual(to, [18, 20, 34, 35, 36]);
+});
+test('Makruk: checkmate wins and stalemate draws', () => {
+  MKR.init(); MKR.b.fill(0); MKR.b[56] = 9; MKR.b[42] = 1; MKR.b[49] = 5; MKR.b[1] = 5;
+  MKR.apply({ pl: 0, from: 1, to: 57 });
+  assert.equal(MKR.result(1).winner, 0);
+});
+
+/* ------------------------------------------------------------------- Kalah */
+const KLH = rules.kalah;
+test('Kalah: a last seed in your store earns another move', () => {
+  KLH.setVariant('4'); KLH.init();
+  const r = KLH.apply({ pl: 0, pit: 2 });
+  assert.ok(r.again); assert.equal(KLH.p[6], 1); assert.ok(r.followUp.length);
+});
+test('Kalah: landing in your own empty pit captures the pit opposite', () => {
+  KLH.init(); KLH.p.fill(0); KLH.p[0] = 1; KLH.p[11] = 5; KLH.p[12] = 1; KLH.p[5] = 1;
+  KLH.apply({ pl: 0, pit: 0 });
+  assert.equal(KLH.p[6], 6); assert.equal(KLH.p[11], 0); assert.equal(KLH.p[1], 0);
+});
+test('Kalah: sowing skips the Scribe\'s store, and the game ends when a side is empty', () => {
+  KLH.init(); KLH.p.fill(0); KLH.p[5] = 9; KLH.p[7] = 1;
+  KLH.apply({ pl: 0, pit: 5 });
+  assert.equal(KLH.p[13], 0); assert.equal(KLH.p[0], 1); // wrapped past the Scribe's store (and captured with the last seed)
+  KLH.init(); KLH.p.fill(0); KLH.p[5] = 1; KLH.p[8] = 3;
+  KLH.apply({ pl: 0, pit: 5 });
+  assert.equal(KLH.p[6], 1); assert.equal(KLH.p[13], 3); assert.ok(KLH.result());
+});
+
+/* ---------------------------------------------------------------- Cribbage */
+const CRB = rules.cribbage, crd = (r, s) => s * 13 + r;
+test('Cribbage: the show counts fifteens, pairs, runs, flushes and nobs (29 is the best hand)', () => {
+  assert.equal(CRB.show([crd(4, 0), crd(4, 1), crd(4, 2), crd(10, 3)], crd(4, 3), false).total, 29);
+  assert.equal(CRB.show([crd(2, 0), crd(3, 1), crd(4, 0), crd(4, 2)], crd(5, 3), false).total, 14);
+  assert.equal(CRB.show([crd(0, 1), crd(2, 1), crd(6, 1), crd(8, 1)], crd(11, 0), false).total, 4);
+  assert.equal(CRB.show([crd(0, 1), crd(2, 1), crd(6, 1), crd(8, 1)], crd(11, 0), true).total, 0);
+});
+test('Cribbage: the play pegs fifteens, pairs, runs and thirty-one', () => {
+  assert.equal(CRB.peg([crd(4, 0), crd(4, 1), crd(4, 2)], 15).pts, 8);
+  assert.equal(CRB.peg([crd(3, 0), crd(5, 1), crd(4, 2)], 15).pts, 5);
+  assert.equal(CRB.peg([crd(12, 0), crd(11, 1), crd(10, 2), crd(0, 3)], 31).pts, 2);
+});
+test('Cribbage: a full game ends, every card is accounted for each deal, and scores reach the target', () => {
+  for (const lv of ['gentle', 'fair', 'sharp']) {
+    rules.setLevel(lv); CRB.setVariant('61');
+    for (let g = 0; g < 10; g++) {
+      CRB.init(); let t = 0;
+      while (CRB.over < 0 && t++ < 3000) {
+        const pl = CRB.need.pl, ms = CRB.legal(pl);
+        assert.ok(ms.length);
+        if (pl === 0) CRB.apply(CRB.need.type === 'play' ? CRB.aiCard(0, ms) : ms[(Math.random() * ms.length) | 0]);
+        else for (const m of CRB.aiPlan(1)) CRB.apply(m);
+        if (CRB.need.type === 'play') assert.ok(CRB.count <= 31);
+      }
+      assert.ok(CRB.over >= 0); assert.equal(CRB.score[CRB.over], 61);
+    }
+  }
+  rules.setLevel('fair');
+});

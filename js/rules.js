@@ -2369,6 +2369,534 @@
     },
   };
 
+  /* ------------------------------------------------------------------ Tablut
+   * Linnaeus's Lapland tafl, 9x9, index r*9+c. 0 empty, 1 Muscovite, 2 Swede, 3 king.
+   * The visitor commands the Swedes and the king; the Scribe the Muscovites, who move first. */
+  const TB_N = 9, TB_THRONE = 40, TB_DIRS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  const TABLUT = {
+    id: 'tablut', name: 'Tablut', dice: false, first: 1, THRONE: TB_THRONE, N: TB_N,
+    rules: [
+      'The Scribe commands the sixteen Muscovites and moves first. You command the king and his eight Swedes.',
+      'Every piece moves like a chess rook: any distance in a straight line, without jumping. Only the king may stop on the throne in the centre; others may pass over it when it is empty.',
+      'Trap an enemy piece between two of yours to capture it. The empty throne counts as an enemy to both sides, and the king helps the Swedes capture.',
+      'The king is captured like any other piece, by two Muscovites on opposite sides, except on the throne, where it takes four, and beside it, where it takes three with the throne as the fourth.',
+      'You win when the king reaches any square on the edge of the board. The Scribe wins by capturing him.',
+      'House rule: after a hundred moves each with no result, the game is drawn.'
+    ],
+    source: 'Linnaeus\'s account of 1732, read as most modern players do: the king escapes to any edge square and is armed, and is captured by two except on or beside the throne.',
+    init() {
+      const b = Array(81).fill(0);
+      [3, 4, 5, 13, 27, 36, 45, 37, 35, 44, 53, 43, 75, 76, 77, 67].forEach(i => { b[i] = 1; });
+      [22, 31, 38, 39, 41, 42, 49, 58].forEach(i => { b[i] = 2; });
+      b[TB_THRONE] = 3;
+      this.b = b; this.win = null; this.ply = 0;
+    },
+    owns(pl, v) { return pl === 1 ? v === 1 : v === 2 || v === 3; },
+    count(pl) { let n = 0; for (const v of this.b) if (this.owns(pl, v)) n++; return n; },
+    edge(i) { const r = (i / 9) | 0, c = i % 9; return r === 0 || r === 8 || c === 0 || c === 8; },
+    legal(pl) {
+      if (this.win) return [];
+      const b = this.b, out = [];
+      for (let i = 0; i < 81; i++) {
+        const v = b[i]; if (!this.owns(pl, v)) continue;
+        const r0 = (i / 9) | 0, c0 = i % 9;
+        for (const [dr, dc] of TB_DIRS) {
+          let r = r0 + dr, c = c0 + dc;
+          while (r >= 0 && r < 9 && c >= 0 && c < 9) {
+            const j = r * 9 + c;
+            if (b[j]) break;
+            if (j !== TB_THRONE || v === 3) out.push({ pl, from: i, to: j });
+            r += dr; c += dc;
+          }
+        }
+      }
+      return out;
+    },
+    anvil(j, pl) { const v = this.b[j]; return this.owns(pl, v) || (v === 0 && j === TB_THRONE); },
+    nb(k) { const r = (k / 9) | 0, c = k % 9; return TB_DIRS.map(([dr, dc]) => { const rr = r + dr, cc = c + dc; return rr < 0 || rr > 8 || cc < 0 || cc > 8 ? -1 : rr * 9 + cc; }); },
+    apply(m) {
+      const b = this.b, v = b[m.from];
+      b[m.from] = 0; b[m.to] = v; this.ply++;
+      const caps = [];
+      if (v === 3 && this.edge(m.to)) { this.win = { winner: 0, text: 'The king reaches the edge of the board and escapes.' }; return { caps, note: 'The king escapes.' }; }
+      const r = (m.to / 9) | 0, c = m.to % 9;
+      for (const [dr, dc] of TB_DIRS) {
+        const rr = r + dr, cc = c + dc;
+        if (rr < 0 || rr > 8 || cc < 0 || cc > 8) continue;
+        const n = rr * 9 + cc, t = b[n];
+        if (!t || this.owns(m.pl, t)) continue;
+        const fr = rr + dr, fc = cc + dc, far = fr < 0 || fr > 8 || fc < 0 || fc > 8 ? -1 : fr * 9 + fc;
+        if (t === 3) {
+          const nb = this.nb(n); let caught;
+          if (n === TB_THRONE) caught = nb.every(j => j >= 0 && b[j] === 1);
+          else if (nb.includes(TB_THRONE)) caught = nb.every(j => j === TB_THRONE || (j >= 0 && b[j] === 1));
+          else caught = far >= 0 && this.anvil(far, m.pl);
+          if (caught) { b[n] = 0; caps.push(n); this.win = { winner: 1, text: 'The king is surrounded and captured.' }; }
+          continue;
+        }
+        if (far >= 0 && this.anvil(far, m.pl)) { b[n] = 0; caps.push(n); }
+      }
+      let note = '';
+      if (this.win) note = 'The king is captured.';
+      else if (caps.length) note = m.pl === 0 ? (caps.length > 1 ? `You capture ${caps.length} Muscovites.` : 'You capture a Muscovite.') : (caps.length > 1 ? `The Scribe captures ${caps.length} of your Swedes.` : 'The Scribe captures one of your Swedes.');
+      return { caps, note };
+    },
+    result(pl) {
+      if (this.win) return this.win;
+      if (!this.legal(pl).length) return { winner: 1 - pl, text: pl === 0 ? 'You have no legal move.' : 'The Scribe has no legal move.' };
+      if (this.ply >= 200) return { winner: -1, text: 'A hundred moves each without a result. The game is drawn.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.win, this.ply]; },
+    restore(s) { this.b = s[0].slice(); this.win = s[1]; this.ply = s[2]; },
+    // Open lines from the king to the edge: one is a threat, two cannot both be blocked.
+    kingRuns() {
+      const k = this.b.indexOf(3); if (k < 0) return 0;
+      let n = 0; const r = (k / 9) | 0, c = k % 9;
+      for (const [dr, dc] of TB_DIRS) {
+        let rr = r + dr, cc = c + dc, open = true;
+        while (rr >= 0 && rr < 9 && cc >= 0 && cc < 9) { if (this.b[rr * 9 + cc]) { open = false; break; } rr += dr; cc += dc; }
+        if (open) n++;
+      }
+      return n;
+    },
+    turns(pl) {
+      const k = this.b.indexOf(3), kr = (k / 9) | 0, kc = k % 9;
+      const near = m => Math.abs(((m.to / 9) | 0) - kr) + Math.abs((m.to % 9) - kc);
+      const ms = this.legal(pl);
+      ms.sort((a, b) => near(a) - near(b));
+      return ms.slice(0, 40).map(m => [m]);
+    },
+    terminal(pl, depth) {
+      if (this.win) return this.win.winner === pl ? 1000 + depth : -1000 - depth;
+      if (this.ply >= 200) return 0;
+      return null;
+    },
+    evaluate(pl) {
+      const k = this.b.indexOf(3); if (k < 0) return pl === 1 ? 900 : -900;
+      const runs = this.kingRuns(), r = (k / 9) | 0, c = k % 9, toEdge = Math.min(r, c, 8 - r, 8 - c);
+      let around = 0; for (const j of this.nb(k)) if (j >= 0 && this.b[j] === 1) around++;
+      const sw = (this.count(0) - 1) * 1.6 - this.count(1) + runs * (runs > 1 ? 30 : 6) - toEdge * 0.8 - around * 2.5;
+      return pl === 0 ? sw : -sw;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 4); },
+  };
+
+  /* ------------------------------------------------------------------ Makruk
+   * Thai chess. Index r*8+c, row 0 nearest the visitor (white). Piece codes:
+   * 1 khun (king), 2 met, 3 khon, 4 ma, 5 ruea, 6 bia (pawn), 7 promoted bia; +8 for the Scribe. */
+  const MK_K = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]], MK_D = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const MK_N = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]], MK_R = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const MK_VAL = [0, 0, 2, 3, 3.2, 5, 1, 2];
+  const MAKRUK = {
+    id: 'makruk', name: 'Makruk', dice: false, first: 0,
+    rules: [
+      'You play white and move first. Checkmate the Scribe\'s khun (king) to win.',
+      'Khun: one square any way. Ruea (boat): like a rook. Ma (horse): like a knight. Khon (nobleman): one square diagonally, or one straight forward. Met (seed): one square diagonally.',
+      'Bia (cowrie, the pawn): one square forward, capturing one square diagonally forward. No double first step. A bia reaching the sixth rank turns over and moves like a met.',
+      'There is no castling. Stalemate is a draw.',
+      'Counting: when no unpromoted bia is left, the side behind may count, and mate must come within 64 moves. When a side is down to its khun alone, the other must mate within a limit set by its pieces (8 moves with two rueas, 16 with one, and so on), counted from the number of pieces on the board. Otherwise the game is drawn.'
+    ],
+    source: 'Makruk as played in Thailand today, with the counting rules simplified: the count is kept for you.',
+    init() {
+      const b = new Array(64).fill(0), back = [5, 4, 3, 1, 2, 3, 4, 5], top = [5, 4, 3, 2, 1, 3, 4, 5];
+      for (let c = 0; c < 8; c++) { b[c] = back[c]; b[16 + c] = 6; b[40 + c] = 14; b[56 + c] = top[c] + 8; }
+      this.b = b; this.ply = 0; this.count = null; this.over = null;
+    },
+    side(v) { return v ? (v > 8 ? 1 : 0) : -1; },
+    kingAt(pl) { const k = pl ? 9 : 1; return this.b.indexOf(k); },
+    attacked(i, by) { // is square i attacked by player by?
+      const b = this.b, r = i >> 3, c = i & 7, own = v => v && this.side(v) === by, t = v => v & 7;
+      for (const [dr, dc] of MK_N) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8) { const v = b[rr * 8 + cc]; if (own(v) && t(v) === 4) return true; } }
+      for (const [dr, dc] of MK_R) { let rr = r + dr, cc = c + dc; while (rr >= 0 && rr < 8 && cc >= 0 && cc < 8) { const v = b[rr * 8 + cc]; if (v) { if (own(v) && t(v) === 5) return true; break; } rr += dr; cc += dc; } }
+      for (const [dr, dc] of MK_K) {
+        const rr = r + dr, cc = c + dc; if (rr < 0 || rr > 7 || cc < 0 || cc > 7) continue;
+        const v = b[rr * 8 + cc]; if (!own(v)) continue;
+        const tt = t(v), fwd = by === 0 ? 1 : -1, diag = dr !== 0 && dc !== 0;
+        if (tt === 1) return true;
+        if ((tt === 2 || tt === 7) && diag) return true;
+        if (tt === 3 && (diag || (dc === 0 && dr === -fwd))) return true; // a khon attacks diagonally and straight forward
+        if (tt === 6 && diag && dr === -fwd) return true;
+      }
+      return false;
+    },
+    pseudo(pl) {
+      const b = this.b, out = [], fwd = pl === 0 ? 1 : -1;
+      for (let i = 0; i < 64; i++) {
+        const v = b[i]; if (!v || this.side(v) !== pl) continue;
+        const t = v & 7, r = i >> 3, c = i & 7;
+        const add = (rr, cc, capOnly, quietOnly) => {
+          if (rr < 0 || rr > 7 || cc < 0 || cc > 7) return false;
+          const j = rr * 8 + cc, w = b[j];
+          if (w && this.side(w) === pl) return false;
+          if (w && quietOnly) return false;
+          if (!w && capOnly) return true;
+          out.push({ pl, from: i, to: j, cap: !!w }); return !w;
+        };
+        if (t === 1) MK_K.forEach(([dr, dc]) => add(r + dr, c + dc));
+        else if (t === 2 || t === 7) MK_D.forEach(([dr, dc]) => add(r + dr, c + dc));
+        else if (t === 3) { MK_D.forEach(([dr, dc]) => add(r + dr, c + dc)); add(r + fwd, c); }
+        else if (t === 4) MK_N.forEach(([dr, dc]) => add(r + dr, c + dc));
+        else if (t === 5) MK_R.forEach(([dr, dc]) => { let rr = r + dr, cc = c + dc; while (add(rr, cc)) { rr += dr; cc += dc; } });
+        else if (t === 6) { add(r + fwd, c, false, true); add(r + fwd, c - 1, true); add(r + fwd, c + 1, true); }
+      }
+      return out;
+    },
+    legal(pl) {
+      if (this.over) return [];
+      return this.pseudo(pl).filter(m => { const s = this.snapshot(); this.move(m); const ok = !this.attacked(this.kingAt(pl), 1 - pl); this.restore(s); return ok; });
+    },
+    move(m) {
+      const b = this.b, v = b[m.from]; b[m.from] = 0; b[m.to] = v;
+      const promoRow = m.pl === 0 ? 5 : 2;
+      if ((v & 7) === 6 && (m.to >> 3) === promoRow) { b[m.to] = 7 + (m.pl ? 8 : 0); m.promo = true; }
+      this.ply++;
+    },
+    material(pl) { let s = 0; for (const v of this.b) if (v && this.side(v) === pl) s += MK_VAL[v & 7]; return s; },
+    pieces(pl) { let n = 0; for (const v of this.b) if (v && this.side(v) === pl) n++; return n; },
+    apply(m) {
+      const captured = this.b[m.to];
+      this.move(m);
+      // The counts: start them when their conditions first hold, and step them each move.
+      const pawns = this.b.some(v => (v & 7) === 6);
+      for (const lone of [0, 1]) {
+        if (this.pieces(lone) === 1 && (!this.count || this.count.kind !== 'pieces')) {
+          const strong = 1 - lone, has = t => this.b.filter(v => v && this.side(v) === strong && (v & 7) === t).length;
+          const lim = has(5) >= 2 ? 8 : has(5) === 1 ? 16 : has(3) >= 2 ? 22 : has(4) >= 2 ? 32 : has(3) === 1 ? 44 : 64;
+          this.count = { kind: 'pieces', lone, n: this.pieces(0) + this.pieces(1), lim };
+        }
+      }
+      if (!pawns && !this.count) this.count = { kind: 'board', n: 0, lim: 64 };
+      let note = '';
+      if (this.count && m.pl === (this.count.kind === 'pieces' ? this.count.lone : this.behind())) { this.count.n++; }
+      const opp = 1 - m.pl, check = this.attacked(this.kingAt(opp), m.pl);
+      if (m.promo) note = m.pl === 0 ? 'Your bia turns over: it now moves like a met.' : 'The Scribe\'s bia turns over.';
+      if (check) note = (note ? note + ' ' : '') + (m.pl === 0 ? 'Check.' : 'Check!');
+      return { note, caps: captured ? [m.to] : [] };
+    },
+    behind() { return this.material(0) <= this.material(1) ? 0 : 1; },
+    result(pl) {
+      const ms = this.legal(pl);
+      if (!ms.length) {
+        if (this.attacked(this.kingAt(pl), 1 - pl)) return { winner: 1 - pl, text: pl === 0 ? 'Checkmate. The Scribe wins.' : 'Checkmate.' };
+        return { winner: -1, text: 'Stalemate. In makruk that is a draw.' };
+      }
+      if (this.count && this.count.n >= this.count.lim) return { winner: -1, text: this.count.kind === 'pieces' ? 'The count ran out before mate: a draw.' : 'Sixty-four moves counted without mate: a draw.' };
+      if (this.pieces(0) === 1 && this.pieces(1) === 1) return { winner: -1, text: 'Only the two khuns are left: a draw.' };
+      if (this.ply >= 400) return { winner: -1, text: 'Two hundred moves each: a draw.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.ply, this.count ? Object.assign({}, this.count) : null]; },
+    restore(s) { this.b = s[0].slice(); this.ply = s[1]; this.count = s[2] ? Object.assign({}, s[2]) : null; },
+    turns(pl) {
+      const ms = this.legal(pl);
+      const val = m => (this.b[m.to] ? 10 * MK_VAL[this.b[m.to] & 7] - MK_VAL[this.b[m.from] & 7] : 0);
+      ms.sort((a, b) => val(b) - val(a));
+      return ms.map(m => [m]);
+    },
+    terminal(pl, depth) {
+      if (!this.legal(pl).length) return this.attacked(this.kingAt(pl), 1 - pl) ? -1000 - depth : 0;
+      if (this.count && this.count.n >= this.count.lim) return 0;
+      return null;
+    },
+    evaluate(pl) {
+      let s = 0;
+      for (let i = 0; i < 64; i++) {
+        const v = this.b[i]; if (!v) continue;
+        const p = this.side(v), t = v & 7, r = i >> 3, c = i & 7;
+        let x = MK_VAL[t] + (t !== 1 && t !== 5 ? 0.05 * (3.5 - Math.abs(c - 3.5)) : 0);
+        if (t === 6) x += 0.08 * (p === 0 ? r - 2 : 5 - r);
+        s += p === pl ? x : -x;
+      }
+      return s;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 5); },
+  };
+
+  /* ------------------------------------------------------------------- Kalah
+   * Pits 0-5 are the visitor's, left to right; 6 is the visitor's store (kalah, on
+   * their right); 7-12 the Scribe's, running back the other way; 13 the Scribe's store. */
+  const KALAH = {
+    id: 'kalah', name: 'Kalah', dice: false, first: 0, seeds: 4,
+    variants: [{ id: '3', label: '3 seeds' }, { id: '4', label: '4 seeds' }, { id: '6', label: '6 seeds' }],
+    variant: '4', variantLabel: 'Seeds',
+    setVariant(id) { this.variant = ['3', '4', '6'].includes(id) ? id : '4'; this.seeds = +this.variant; },
+    rules: [
+      'Each of you owns the six pits on your side and the store (kalah) on your right. You move first.',
+      'Take all the seeds from one of your pits and sow them one by one, anticlockwise, into the following pits and your own store, but never the Scribe\'s store.',
+      'If your last seed falls in your store, you move again.',
+      'If it falls in an empty pit on your side and the Scribe\'s pit opposite has seeds, you capture both: that seed and everything opposite go to your store.',
+      'When one side\'s pits are all empty, the game ends and the other side puts its remaining seeds in its own store. The fuller store wins.'
+    ],
+    source: 'Kalah as William Julius Champion Jr. sold it from 1944, with the usual modern rules.',
+    init() { const p = new Array(14).fill(this.seeds); p[6] = 0; p[13] = 0; this.p = p; this.over = false; this.ply = 0; },
+    pit(pl, k) { return pl * 7 + k; }, store(pl) { return pl * 7 + 6; },
+    side(pl) { let n = 0; for (let k = 0; k < 6; k++) n += this.p[pl * 7 + k]; return n; },
+    legal(pl) { if (this.over) return []; const out = []; for (let k = 0; k < 6; k++) if (this.p[pl * 7 + k]) out.push({ pl, pit: pl * 7 + k }); return out; },
+    apply(m) {
+      const p = this.p, pl = m.pl, skip = this.store(1 - pl), trace = [];
+      let n = p[m.pit], at = m.pit; p[m.pit] = 0; trace.push([m.pit, 0]);
+      while (n) { at = (at + 1) % 14; if (at === skip) continue; p[at]++; n--; trace.push([at, p[at]]); }
+      this.ply++;
+      let again = at === this.store(pl), caps = 0, note = '';
+      const mine = at >= pl * 7 && at < pl * 7 + 6;
+      if (mine && p[at] === 1) {
+        const opp = 12 - at;
+        if (p[opp]) { caps = p[opp] + 1; p[this.store(pl)] += caps; trace.push([opp, 0], [at, 0], [this.store(pl), p[this.store(pl)]]); p[opp] = 0; p[at] = 0; note = pl === 0 ? `You capture ${caps} seeds.` : `The Scribe captures ${caps} seeds.`; }
+      }
+      // The end: the side with seeds left keeps them.
+      if (!this.side(0) || !this.side(1)) {
+        for (const q of [0, 1]) { let rest = 0; for (let k = 0; k < 6; k++) { const i = q * 7 + k; if (p[i]) { rest += p[i]; p[i] = 0; trace.push([i, 0]); } } if (rest) { p[this.store(q)] += rest; trace.push([this.store(q), p[this.store(q)]]); } }
+        this.over = true; again = false;
+      }
+      if (again) note = (note ? note + ' ' : '') + (pl === 0 ? 'Your last seed lands in your store: move again.' : 'The Scribe\'s last seed lands in its store, and it moves again.');
+      const r = { trace, note, again, caps: caps ? [1] : [] };
+      if (again && pl === 0) r.followUp = this.legal(0);
+      return r;
+    },
+    result() {
+      if (!this.over) return null;
+      const a = this.p[6], b = this.p[13];
+      return { winner: a > b ? 0 : b > a ? 1 : -1, text: `Stores: you ${a}, the Scribe ${b}.` };
+    },
+    snapshot() { return [this.p.slice(), this.over, this.ply]; },
+    restore(s) { this.p = s[0].slice(); this.over = s[1]; this.ply = s[2]; },
+    // A turn is a whole chain of sowings while the last seed keeps landing in the store.
+    turns(pl) {
+      const out = [], rec = (prefix, depth) => {
+        for (const m of this.legal(pl)) {
+          const s = this.snapshot(), r = this.apply(m);
+          if (r.again && depth < 8 && this.legal(pl).length) rec(prefix.concat([m]), depth + 1);
+          else out.push(prefix.concat([m]));
+          this.restore(s);
+        }
+      };
+      rec([], 0);
+      return out.length ? out : [[]];
+    },
+    terminal(pl, depth) {
+      if (this.over) { const d = this.p[this.store(pl)] - this.p[this.store(1 - pl)]; return d > 0 ? 1000 + depth : d < 0 ? -1000 - depth : 0; }
+      const half = this.seeds * 6;
+      if (this.p[this.store(pl)] > half) return 1000 + depth;
+      if (this.p[this.store(1 - pl)] > half) return -1000 - depth;
+      return null;
+    },
+    evaluate(pl) { return this.p[this.store(pl)] - this.p[this.store(1 - pl)] + 0.25 * (this.side(pl) - this.side(1 - pl)); },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 8); },
+  };
+
+  /* ---------------------------------------------------------------- Cribbage
+   * Two-player six-card cribbage. Card c: rank c % 13 (0 ace ... 12 king), suit
+   * (c / 13) | 0 (spades, hearts, diamonds, clubs). The turn order is not simple
+   * alternation, so need says who acts next and how: discard, play, or next (the
+   * visitor reads the show and asks for the next deal). */
+  const CR_RANK = 'A 2 3 4 5 6 7 8 9 10 J Q K'.split(' '), CR_SUIT = ['♠', '♥', '♦', '♣'];
+  const crRank = c => c % 13, crSuit = c => (c / 13) | 0, crVal = c => Math.min(10, (c % 13) + 1);
+  const crName = c => CR_RANK[crRank(c)] + CR_SUIT[crSuit(c)];
+  // Score a hand of four with the starter: fifteens, pairs, runs, flush and nobs, with the words for each.
+  function crShow(hand, starter, crib) {
+    const all = starter >= 0 ? hand.concat([starter]) : hand.slice(), n = all.length, parts = []; let total = 0;
+    let fif = 0;
+    for (let mask = 1; mask < 1 << n; mask++) { let sum = 0; for (let k = 0; k < n; k++) if (mask & (1 << k)) sum += crVal(all[k]); if (sum === 15) fif++; }
+    if (fif) { total += 2 * fif; parts.push(`${fif === 1 ? 'fifteen' : fif + ' fifteens'} for ${2 * fif}`); }
+    let pairs = 0;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (crRank(all[i]) === crRank(all[j])) pairs++;
+    if (pairs) { total += 2 * pairs; parts.push(`${pairs === 1 ? 'a pair' : pairs === 3 ? 'a pair royal' : pairs === 6 ? 'a double pair royal' : pairs + ' pairs'} for ${2 * pairs}`); }
+    const cnt = new Array(13).fill(0); all.forEach(c => cnt[crRank(c)]++);
+    let runPts = 0;
+    for (let r = 0; r < 13;) {
+      if (!cnt[r]) { r++; continue; }
+      let e = r, mult = 1; while (e < 13 && cnt[e]) { mult *= cnt[e]; e++; }
+      if (e - r >= 3) { runPts += (e - r) * mult; parts.push(`${mult > 1 ? mult + ' runs' : 'a run'} of ${e - r} for ${(e - r) * mult}`); }
+      r = e;
+    }
+    total += runPts;
+    const fs = crSuit(hand[0]);
+    if (hand.every(c => crSuit(c) === fs)) {
+      if (starter >= 0 && crSuit(starter) === fs) { total += 5; parts.push('a flush of five for 5'); }
+      else if (!crib) { total += 4; parts.push('a flush for 4'); }
+    }
+    if (starter >= 0 && hand.some(c => crRank(c) === 10 && crSuit(c) === crSuit(starter))) { total += 1; parts.push('his nobs for 1'); }
+    return { total, parts };
+  }
+  // Points for the card just played onto the run of play.
+  function crPeg(seq, count) {
+    let pts = 0; const why = [];
+    if (count === 15) { pts += 2; why.push('fifteen for 2'); }
+    if (count === 31) { pts += 2; why.push('thirty-one for 2'); }
+    let k = 1; const last = crRank(seq[seq.length - 1]);
+    while (k < seq.length && crRank(seq[seq.length - 1 - k]) === last) k++;
+    if (k >= 2) { const p = [0, 0, 2, 6, 12][k]; pts += p; why.push(k === 2 ? 'a pair for 2' : k === 3 ? 'a pair royal for 6' : 'a double pair royal for 12'); }
+    for (let n = seq.length; n >= 3; n--) {
+      const ranks = seq.slice(-n).map(crRank), lo = Math.min(...ranks), hi = Math.max(...ranks);
+      if (hi - lo === n - 1 && new Set(ranks).size === n) { pts += n; why.push(`a run of ${n} for ${n}`); break; }
+    }
+    return { pts, why };
+  }
+  const CRIBBAGE = {
+    id: 'cribbage', name: 'Cribbage', dice: false, first: 0, target: 61,
+    variants: [{ id: '61', label: 'To 61' }, { id: '121', label: 'To 121' }],
+    variant: '61', variantLabel: 'Game',
+    setVariant(id) { this.variant = id === '121' ? '121' : '61'; this.target = +this.variant; },
+    show: crShow, peg: crPeg, name_: crName, rank: crRank, suit: crSuit, val: crVal,
+    followPrompt: '',
+    rules: [
+      'Each deal, you each get six cards and lay two aside, face down, for the crib, which scores for the dealer. The deal alternates; the Scribe deals first. Then a starter card is turned up, and if it is a jack the dealer pegs 2 for his heels.',
+      'The play: starting with the player who did not deal, you take turns laying a card and calling the running total, which may not pass 31. Score 2 for making 15 or 31, 2 for a pair with the card before (6 for three of a kind, 12 for four), and 1 a card for a run of three or more. When neither of you can play without passing 31, the last to play pegs 1 for the go and the count starts again from nothing. The last card of all pegs 1.',
+      'The show: each hand of four, with the starter, counts 2 for every combination making 15, 2 for every pair, 1 a card for runs, 4 for a flush (5 if the starter matches; the crib needs all five) and 1 for his nobs, a jack of the starter\'s suit. The non-dealer counts first, then the dealer\'s hand, then the crib.',
+      'The first to peg out wins: 61 points here by default, or the full 121.'
+    ],
+    source: 'Cribbage as Sir John Suckling is said to have devised it in the 1630s from the older game of noddy, in its modern two-player six-card form.',
+    init() { this.score = [0, 0]; this.dealer = 1; this.over = -1; this.deals = 0; this.lastShow = null; this.deal(); },
+    deal() {
+      const d = Array.from({ length: 52 }, (_, k) => k);
+      for (let k = 51; k > 0; k--) { const j = (Math.random() * (k + 1)) | 0; [d[k], d[j]] = [d[j], d[k]]; }
+      this.deck = d; this.hands = [d.slice(0, 6), d.slice(6, 12)]; this.crib = []; this.starter = -1; this.deals++;
+      this.seq = []; this.count = 0; this.played = [[], []]; this.kept = null; this.lastShow = null; this.lastPlayer = -1; this.resets = 0;
+      // The Scribe lays its two for the crib at once; the visitor chooses theirs.
+      const lay = this.aiDiscard(1);
+      lay.forEach(c => { this.hands[1].splice(this.hands[1].indexOf(c), 1); this.crib.push(c); });
+      this.need = { pl: 0, type: 'discard' };
+    },
+    add(pl, pts, notes, why) {
+      if (!pts || this.over >= 0) return;
+      this.score[pl] = Math.min(this.target, this.score[pl] + pts);
+      if (why) notes.push(why);
+      if (this.score[pl] >= this.target) { this.over = pl; notes.push(pl === 0 ? 'You peg out!' : 'The Scribe pegs out.'); }
+    },
+    canPlay(pl) { return this.hands[pl].some(c => this.count + crVal(c) <= 31); },
+    legal(pl) {
+      if (this.over >= 0 || this.need.pl !== pl) return [];
+      if (this.need.type === 'discard') return this.hands[pl].map(c => ({ pl, kind: 'discard', c }));
+      if (this.need.type === 'next') return [{ pl, kind: 'next', label: this.over >= 0 ? 'Done' : 'Next deal' }];
+      return this.hands[pl].filter(c => this.count + crVal(c) <= 31).map(c => ({ pl, kind: 'play', c }));
+    },
+    who(pl) { return pl === 0 ? 'You' : 'The Scribe'; },
+    apply(m) {
+      const pl = m.pl, notes = [], res = { note: '', events: [] };
+      if (m.kind === 'discard') {
+        this.hands[pl].splice(this.hands[pl].indexOf(m.c), 1); this.crib.push(m.c);
+        res.events.push({ type: 'crib', c: m.c, pl });
+        if (this.crib.length === 4) {
+          this.kept = [this.hands[0].slice(), this.hands[1].slice()];
+          const rest = this.deck.filter(c => !this.hands[0].includes(c) && !this.hands[1].includes(c) && !this.crib.includes(c));
+          this.starter = rest[(Math.random() * rest.length) | 0];
+          res.events.push({ type: 'starter', c: this.starter });
+          notes.push(`The starter is the ${crName(this.starter)}.`);
+          if (crRank(this.starter) === 10) this.add(this.dealer, 2, notes, `${this.who(this.dealer)} ${this.dealer === 0 ? 'peg' : 'pegs'} 2 for his heels.`);
+          this.need = { pl: 1 - this.dealer, type: 'play' };
+          this.settle(notes, res);
+        }
+      } else if (m.kind === 'play') {
+        this.hands[pl].splice(this.hands[pl].indexOf(m.c), 1); this.played[pl].push(m.c);
+        this.seq.push(m.c); this.count += crVal(m.c); this.lastPlayer = pl;
+        res.events.push({ type: 'play', c: m.c, pl, count: this.count });
+        const pg = crPeg(this.seq, this.count);
+        notes.push(`${this.count}.`);
+        if (pg.pts) this.add(pl, pg.pts, notes, `${this.who(pl)}: ${pg.why.join(', ')}.`);
+        if (this.count === 31) this.reset(res);
+        this.need = { pl: 1 - pl, type: 'play' };
+        this.settle(notes, res);
+      } else if (m.kind === 'next') {
+        if (this.over < 0) { this.dealer = 1 - this.dealer; this.deal(); res.events.push({ type: 'deal' }); notes.push(this.dealer === 0 ? 'Your deal: the crib is yours.' : 'The Scribe deals: the crib is its.'); }
+      }
+      res.note = notes.join(' ');
+      if (pl === 0 && this.need.pl === 0 && this.over < 0) res.followUp = this.legal(0);
+      return res;
+    },
+    reset(res) { this.seq = []; this.count = 0; this.resets++; res.events.push({ type: 'reset' }); },
+    // After a card: pass the turn over anyone who cannot play, score the go, and run the show when the cards are out.
+    settle(notes, res) {
+      if (this.over >= 0) return;
+      for (let guard = 0; guard < 6; guard++) {
+        const q = this.need.pl;
+        if (!this.hands[0].length && !this.hands[1].length) {
+          if (this.count && this.count < 31) this.add(this.lastPlayer, 1, notes, `${this.who(this.lastPlayer)}: 1 for the last card.`);
+          if (this.over < 0) this.showAll(notes, res);
+          return;
+        }
+        if (this.canPlay(q)) return;
+        if (this.canPlay(1 - q)) { if (this.hands[q].length) notes.push(q === 0 ? 'You say go.' : 'The Scribe says go.'); this.need = { pl: 1 - q, type: 'play' }; return; }
+        // Neither can play: a go for the last to play, and a fresh count.
+        if (this.count && this.count < 31) this.add(this.lastPlayer, 1, notes, `${this.who(this.lastPlayer)}: 1 for the go.`);
+        if (this.over >= 0) return;
+        this.reset(res);
+        const next = 1 - this.lastPlayer;
+        this.need = { pl: this.hands[next].length ? next : this.lastPlayer, type: 'play' };
+      }
+    },
+    showAll(notes, res) {
+      const pone = 1 - this.dealer, out = [];
+      for (const [pl, cards, crib] of [[pone, this.kept[pone], false], [this.dealer, this.kept[this.dealer], false], [this.dealer, this.crib, true]]) {
+        const sh = crShow(cards, this.starter, crib);
+        const label = crib ? (pl === 0 ? 'Your crib' : 'The Scribe\'s crib') : (pl === 0 ? 'Your hand' : 'The Scribe\'s hand');
+        out.push({ pl, crib, cards, total: sh.total, text: `${label}: ${sh.parts.length ? sh.parts.join(', ') : 'nineteen (nothing)'}${sh.total ? `, ${sh.total} in all` : ''}.` });
+        this.add(pl, sh.total, []);
+        if (this.over >= 0) break;
+      }
+      this.lastShow = out;
+      res.events.push({ type: 'show', show: out });
+      notes.push(out.map(x => x.text).join(' '));
+      if (this.over >= 0) notes.push(this.over === 0 ? 'You peg out!' : 'The Scribe pegs out.');
+      this.need = { pl: 0, type: 'next' };
+    },
+    result() {
+      if (this.over < 0) return null;
+      const w = this.over, l = 1 - w, lurch = this.score[l] < (this.target === 121 ? 91 : 31);
+      return { winner: w, text: `${w === 0 ? 'You' : 'The Scribe'} reached ${this.target}; ${w === 0 ? 'the Scribe' : 'you'} had ${this.score[l]}.${lurch ? ' A lurch: a double game.' : ''}` };
+    },
+    snapshot() { return JSON.stringify({ score: this.score, dealer: this.dealer, over: this.over, deals: this.deals, deck: this.deck, hands: this.hands, crib: this.crib, starter: this.starter, seq: this.seq, count: this.count, played: this.played, kept: this.kept, lastPlayer: this.lastPlayer, need: this.need, lastShow: this.lastShow, resets: this.resets }); },
+    restore(s) { Object.assign(this, JSON.parse(s)); },
+    // The Scribe's two for the crib: the four it keeps should score well with any starter.
+    aiDiscard(pl) {
+      const h = this.hands[pl], mine = this.dealer === pl;
+      if (LEVEL.name === 'gentle') { const a = h.slice().sort(() => Math.random() - 0.5); return a.slice(0, 2); }
+      let best = null, bv = -Infinity;
+      const others = Array.from({ length: 52 }, (_, k) => k).filter(c => !h.includes(c));
+      for (let i = 0; i < 6; i++) for (let j = i + 1; j < 6; j++) {
+        const keep = h.filter((_, k) => k !== i && k !== j), lay = [h[i], h[j]];
+        let v;
+        if (LEVEL.name === 'fair') v = crShow(keep, -1, false).total; // no starter: score what is held
+        else { v = 0; for (const st of others) v += crShow(keep, st, false).total; v /= others.length; }
+        // What the two laid aside are worth in the crib: a pair, a fifteen or fives help whoever owns it.
+        let c = 0; if (crRank(lay[0]) === crRank(lay[1])) c += 2; if (crVal(lay[0]) + crVal(lay[1]) === 15) c += 2; c += lay.filter(x => crRank(x) === 4).length * 1.5;
+        if (Math.abs(crRank(lay[0]) - crRank(lay[1])) === 1) c += 0.8;
+        v += mine ? c : -c;
+        if (v > bv) { bv = v; best = lay; }
+      }
+      return best;
+    },
+    // The Scribe's card in the play: take points, and avoid leaving 5 or 21 or an easy pair or run.
+    aiCard(pl, ms) {
+      if (ms.length === 1 || LEVEL.name === 'gentle') return ms[(Math.random() * ms.length) | 0];
+      let best = ms[0], bv = -Infinity;
+      for (const m of ms) {
+        const seq = this.seq.concat([m.c]), count = this.count + crVal(m.c);
+        let v = crPeg(seq, count).pts * 10;
+        if (LEVEL.name === 'sharp') {
+          if (count === 5 || count === 21) v -= 6;
+          if (count < 31 && 31 - count <= 10) v -= 1; // leaves the other a likely 31
+          if (count < 15 && count + 10 >= 15 && count !== 5) v -= 1.5;
+          if (this.seq.length === 0 && crVal(m.c) < 5) v += 2; // a low lead cannot be made fifteen
+          if (this.hands[pl].some(x => x !== m.c && crRank(x) === crRank(m.c))) v += 0.8; // a pair in hand can answer a pair
+          v += crVal(m.c) * 0.05;
+        } else if (count === 5 || count === 21) v -= 3;
+        if (v > bv) { bv = v; best = m; }
+      }
+      return best;
+    },
+    aiPlan(pl) {
+      const plan = [], snap = this.snapshot();
+      for (let k = 0; k < 20 && this.over < 0 && this.need.pl === pl; k++) {
+        const ms = this.legal(pl); if (!ms.length) break;
+        const m = ms[0].kind === 'play' ? this.aiCard(pl, ms) : ms[0];
+        plan.push(m); this.apply(m);
+      }
+      this.restore(snap);
+      return plan;
+    },
+  };
+
   /* ----------------------------------------------------------- Fox and Geese
    * The 33-point cross board: point (r, c) exists when r or c is 2, 3 or 4.
    * Lines run along rows and columns, and diagonally through the points whose
@@ -3915,7 +4443,7 @@
     },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES };
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);
