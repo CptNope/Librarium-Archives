@@ -56,12 +56,14 @@ Through the third arch: games are printed, sold and brought home.
 | Draughts | c. 1100s–1500s CE | English draughts (checkers) | Playable |
 | Pachisi (chaupar) | 16th century CE | Still played; ancestor of Ludo | Playable for two (you play two partner colours), short or full game |
 | The Game of the Goose | c. 1575 CE | Survive in print | Playable |
+| Dominoes | 18th century CE (Europe) | Still played | Playable: the two-player Draw game |
 | Snakes and Ladders (gyan chaupar) | 18th–19th century CE | Still played | Playable, with virtues and vices from an old Indian board |
 | Mahjong | mid-1800s CE | Still played | Playable at a table of four: you and three Scribes |
 
 Rule choices worth knowing:
 
 - **Fox and Geese** is played on the plain cross board (no diagonal lines) with 13 geese that may move forward or sideways but never back. A **house rule** lets the fox win if the geese go twenty moves each without advancing or losing a goose: without it, games with sideways moves can go on forever.
+- **Dominoes:** the Draw game for two from pagat.com: seven tiles each, draw from the boneyard until you can play but never the last two, and the lower pip count wins when the hand ends. One hand is played rather than a game to 100.
 - **The Goose:** a throw of 9 from the start goes to 26 (6 and 3) or 53 (5 and 4), whenever the piece is at the start, since geese every nine squares would otherwise fly it straight home. With two players, the Well and the Prison hold a player for two and three turns instead of until someone else arrives.
 
 ## Wing V: The Modern Board Game (c. 1840 CE – today)
@@ -75,13 +77,17 @@ Through the fourth arch: games become products, sold by publishers and protected
 | Reversi | 1883 CE | Survive in print; played today as Othello | Playable, from the Othello opening |
 | Halma | 1883–84 CE | Still played, as Chinese checkers | Playable, two players with 19 men each |
 | Dots and Boxes | late 19th century CE | Survive in print (Lucas's *pipopipette*) | Playable, on a 4 × 4 or 5 × 5 grid of boxes |
+| Chinese checkers (Stern-Halma) | 1892 CE | Still played | Playable, two players with ten marbles each |
 | The Landlord's Game | 1904 CE | Survive in the patent | Playable, on a board read from the patent drawing |
+| Hex | 1942 CE | Still played | Playable on 7 × 7, 9 × 9 or 11 × 11, with the swap rule |
 
 Rule choices worth knowing:
 
 - **Reversi** starts from the four centre discs of Othello rather than the empty board of the 1880s. A player with no legal move passes; the game ends when neither can move.
 - **Dots and Boxes:** closing a box scores it and you must draw again. The Scribe plays the whole of its turn, so it may take several boxes in a row.
 - **The Landlord's Game** follows U.S. Patent 748,626 (1904). The board's forty spaces, prices, rents and taxes are read from the patent drawing: Mother Earth, 22 lots priced at ten times their number, four absolute necessities, four railroads, three luxuries, two franchises, Legacy, the Public Park and poorhouse, the jail, and Lord Blueblood's No Trespassing corner. The rules are the patent's, for two players: lot tickets at the start, buy or rent, $100 wages, $5 taxes and fares, $50 luxuries worth $60 at the end, franchise charters, jail with a $50 fine or a double, railroad rides on a double, Bank notes at $5 interest, and the poorhouse. It is three times round by default, or five as in the patent (a table variant). The patent's rule for two checkers sharing a lot is left out, and loans and repayments are made for you.
+- **Chinese checkers:** ten marbles each in opposite points of the star. A move is a step or a chain of hops over single marbles of either colour; nothing is captured. A full far point with at least one of your marbles in it wins. House rule: after a hundred and fifty moves each, more marbles home wins.
+- **Hex:** red (you) joins the near and far edges, blue the sides. After your first stone the Scribe may use the swap rule: it takes the stone, reflected across the board into blue, and you move again.
 - **Halma:** a man in the far camp may not leave it, and a full far camp with at least one of your men in it wins, so neither side can block by staying home. A house rule ends the game after two hundred moves each.
 - **Tarocchi:** the rules of the first tarot games of the 1440s were never written down, so the table plays a simplified two-player game built on what every tarot game still shares: follow suit, trump if you cannot, and the Fool as an excuse. Thirteen cards each; kings 5, queens 4, knights 3, jacks 2, trumps I and XXI and the Fool 5, and 1 for each trick.
 
@@ -93,6 +99,7 @@ Through the fifth arch: games from the Pacific, Africa and East Asia that the lo
 | --- | --- | --- | --- |
 | Mū tōrere | first described in 1917 (Elsdon Best) | Accounts differ | Playable |
 | Shogi | oldest pieces c. 1058 CE (Kōfuku-ji) | Unbroken tradition | Playable, with drops |
+| Gomoku | named renju in 1899 | Still played | Playable, freestyle on 15 × 15 |
 | Kōnane | by 1778–79 (Cook's expedition) | Still played | Playable on an 8 × 8 papamū |
 | Yut Nori | traditional | Still played | Playable, with shortcuts, stacking and extra throws |
 | Fanorona | traditional | Still played | Playable (fanoron-tsivy, 5 × 9) |
@@ -101,6 +108,7 @@ Through the fifth arch: games from the Pacific, Africa and East Asia that the lo
 Rule choices worth knowing:
 
 - **Mū tōrere:** a man may move into the centre only from an arm next to an enemy man, the rule most often given today (without it the first player can win at once). House rule: thirty moves each is a draw; perfect play draws anyway.
+- **Gomoku:** freestyle: five or more in a row wins, with none of renju's restrictions on black.
 - **Kōnane:** black lifts a stone from the centre or a corner, white lifts one beside the gap, and from then on every move is a capture. Multiple jumps run in a straight line and may stop anywhere. The first player who cannot capture loses.
 - **Chess:** modern rules, with castling and en passant. Pawns always promote to a queen; there is no draw by repetition, but stalemate, bare kings and the fifty-move rule are draws.
 - **Pachisi:** six cowries (2, 3, 4, 5; one mouth up is 10, none 25, all six 6). A 6, 10 or 25 is a grace and earns another throw, as does a capture. Each colour's first piece may come out on any throw, later ones only on a grace. Castles are safe and can't be entered while the enemy holds them. No throw is 1, so a piece may not stop on the last square before home. The short game gives each colour two pieces (about a hundred throws), the full game four.
@@ -134,6 +142,10 @@ The AI opponent has three levels, picked at any table and remembered: **Gentle**
 - **Mahjong** seats three Scribes, one at each other wind. Each counts how far its hand is from ready (shanten) and discards the tile that keeps the most useful draws open; it claims a discard only when that brings its hand closer. Gentle discards at random four times in ten and claims only half the time it could; Sharp also prefers to throw honour tiles that are already dead.
 - **Bao** uses the shared search, weighing seeds, the inner row and the best capture on offer. It is cheap to search, so Fair looks four plies ahead and Sharp up to twelve; over 40 games from varied openings Fair beat Gentle 31 to 9 and Sharp beat Fair 29 to 11. The side that moves first has a strong edge, and here that is you.
 - **The Landlord's Game** has a rule-of-thumb Scribe. It decides which lot tickets to buy, whether to buy or rent, whether to buy a luxury, whether to pay its way out of jail, and, when a double offers a railroad ride, which landing leaves it richer. Gentle decides by coin toss; Fair keeps a cash cushion; Sharp buys every lot it can afford, since land pays. Dice decide a lot: over 1,500 games Sharp beat Fair 52% of the time, and Fair beat Gentle 67%.
+- **Chinese checkers** uses the shared search, like Halma, weighing how far each marble has to go.
+- **Hex** uses Monte Carlo search with RAVE: it fills the rest of the board at random thousands of times, and every stone a side ends up with counts a little toward playing there now. Fair and Sharp swap a central opening stone. Over short matches Fair beat Gentle 9 to 1 on 7 × 7 and Sharp beat Fair 6 to 0 on 9 × 9.
+- **Gomoku** ranks every point near the stones by the lines it would make for each side. Gentle picks loosely among the best six; Fair plays the best; Sharp also hunts for a win by continuous fours, stops the visitor's, and searches a few moves ahead scored by every five-point window on the board. From varied openings Sharp beat Fair 58 to 22, and Fair beat Gentle every time.
+- **Dominoes:** the Scribe sees only its own hand. Gentle plays any tile that fits; Fair sheds heavy tiles and doubles first; Sharp also keeps tiles that match the ends it leaves, and leaves ends you have shown you cannot match. Over hundreds of hands Fair beat Gentle 61% and Sharp beat Fair 62%.
 - **Tarocchi** has its own Scribe. Gentle plays a sensible card half the time and a random legal one otherwise. Fair plays by rule of thumb: it wins a trick worth taking as cheaply as it can, and otherwise throws its least useful card. Sharp deals the cards it cannot see at random, many times over, keeping to what you have shown (a suit you could not follow, say), plays each deal to the end, and picks the card that scores best on average.
 - **Dots and Boxes** has its own Scribe. Gentle takes free boxes but often hands them back; Fair and Sharp avoid giving boxes away, and once only risky lines are left they solve the rest of the game exactly (Sharp from 22 open lines, Fair from 15), giving boxes away on purpose to keep control of the long chains.
 
@@ -256,7 +268,8 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - Wikipedia: The Mansion of Happiness, The Checkered Game of Life, Reversi, Halma, Chinese checkers, Dots and boxes, The Landlord's Game
 - U.S. Patent 748,626, Lizzie J. Magie, Game-board (1904): drawing and text (Google Patents; transcription at landlordsgame.info)
 - Elwyn Berlekamp, *The Dots and Boxes Game: Sophisticated Child's Play* (2000)
-- Wikipedia: Kōnane, Fanorona, Yunnori, History of shogi, Bao (game)
+- Wikipedia: Kōnane, Fanorona, Yunnori, History of shogi, Bao (game), Hex (board game), Renju, Dominoes, Chinese checkers
+- pagat.com: Draw dominoes, and the history of dominoes
 - Wikipedia: Pachisi; Masters of Games: The Rules of Pachisi & Chaupur
 - Te Ara, the Encyclopedia of New Zealand: Traditional Māori games (mū tōrere)
 - Wikipedia: Dice, Polis (board game), Liubo, Patolli, Alquerque, Xiangqi, Snakes and ladders, Royal Game of Ur
@@ -276,6 +289,7 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - [x] Backfill playable rules: chess, shogi, Yut Nori, Pachisi
 - [x] Playable Mahjong (with three Scribes) and Bao la Kujifunza
 - [x] The Landlord's Game, from the patent drawing and text
+- [x] New exhibits: Dominoes, Chinese checkers, Hex and Gomoku
 - [ ] The Checkered Game of Life and the Mansion of Happiness, once a square-by-square transcription of an original board and its rules can be checked
 - [x] Larger Dots and Boxes grids (5 × 5, chosen at the table)
 - [x] A playable early card game: tarocchi for two

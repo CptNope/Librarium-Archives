@@ -1914,6 +1914,461 @@
     },
   };
 
+  /* --------------------------------------------------------- Chinese checkers
+   * Stern-Halma's star of 121 holes, in cube coordinates (x + y + z = 0): the
+   * union of two big triangles. The visitor starts in the point nearest them
+   * (z > 4) and races for the far point (z < -4); the Scribe the other way. */
+  const CC_CELLS = [], CC_AT = new Map();
+  for (let x = -8; x <= 8; x++) for (let y = -8; y <= 8; y++) {
+    const z = -x - y; if (z < -8 || z > 8) continue;
+    if ((x <= 4 && y <= 4 && z <= 4) || (x >= -4 && y >= -4 && z >= -4)) { CC_AT.set(x + ',' + y, CC_CELLS.length); CC_CELLS.push([x, y, z]); }
+  }
+  const CC_DIRS = [[1, -1, 0], [-1, 1, 0], [1, 0, -1], [-1, 0, 1], [0, 1, -1], [0, -1, 1]];
+  const ccAt = (x, y) => { const k = CC_AT.get(x + ',' + y); return k === undefined ? -1 : k; };
+  const CC_NB = CC_CELLS.map(([x, y]) => CC_DIRS.map(([dx, dy]) => ccAt(x + dx, y + dy)));
+  const CC_JUMP = CC_CELLS.map(([x, y]) => CC_DIRS.map(([dx, dy]) => ccAt(x + 2 * dx, y + 2 * dy)));
+  const CC_CAMP = [CC_CELLS.map((c, i) => (c[2] > 4 ? i : -1)).filter(i => i >= 0), CC_CELLS.map((c, i) => (c[2] < -4 ? i : -1)).filter(i => i >= 0)];
+  const CC_GOAL = [0, 1].map(pl => { const a = new Uint8Array(CC_CELLS.length); CC_CAMP[1 - pl].forEach(i => { a[i] = 1; }); return a; });
+  // Rows still to travel, plus a little for straying into a side point of the star.
+  const ccDist = (pl, i) => { const [x, y, z] = CC_CELLS[i]; return (pl === 0 ? z : -z) + 8 + 0.5 * Math.max(0, Math.max(Math.abs(x), Math.abs(y)) - 4); };
+  const CC_LIMIT = 300;
+  const CHINESE = {
+    id: 'chinese', name: 'Chinese checkers', dice: false, first: 0, CELLS: CC_CELLS, CAMP: CC_CAMP, GOAL: CC_GOAL, N: CC_CELLS.length,
+    rules: [
+      'You play red, from the point of the star nearest you, and move first. Move all ten of your marbles into the far point before the Scribe fills yours.',
+      'A marble steps to an empty hole next to it, in any of six directions.',
+      'Or it hops: over one marble next to it, of either colour, into the empty hole just beyond. Nothing is captured, and it may keep hopping in the same turn, as far as the chain goes. A move is a step or a chain of hops, never both.',
+      'You win when all your marbles are in the far point. If the far point is full and at least one marble in it is yours, you win too, so no one can block by staying home.',
+      'House rule: after a hundred and fifty moves each, whoever has more marbles home wins, then whoever is closer overall.'
+    ],
+    source: 'Stern-Halma, the star Halma Ravensburger published in 1892, for two players with ten marbles each. The rule against blocking a point by staying home is a common modern addition.',
+    init() { const b = new Uint8Array(CC_CELLS.length); CC_CAMP[0].forEach(i => { b[i] = 1; }); CC_CAMP[1].forEach(i => { b[i] = 2; }); this.b = b; this.ply = 0; },
+    home(pl) { let n = 0; for (const i of CC_CAMP[1 - pl]) if (this.b[i] === pl + 1) n++; return n; },
+    men(pl) { const out = []; for (let i = 0; i < this.b.length; i++) if (this.b[i] === pl + 1) out.push(i); return out; },
+    reach(i) {
+      const b = this.b, pl = b[i] - 1, out = [];
+      for (const j of CC_NB[i]) if (j >= 0 && !b[j]) out.push({ pl, from: i, to: j, path: [j] });
+      b[i] = 0;
+      const seen = new Set([i]), queue = [[i, []]];
+      while (queue.length) {
+        const [at, path] = queue.shift();
+        for (let d = 0; d < 6; d++) {
+          const mid = CC_NB[at][d], land = CC_JUMP[at][d];
+          if (mid < 0 || land < 0 || !b[mid] || b[land] || seen.has(land)) continue;
+          seen.add(land);
+          const np = path.concat([land]);
+          out.push({ pl, from: i, to: land, path: np, hop: true });
+          queue.push([land, np]);
+        }
+      }
+      b[i] = pl + 1;
+      return out;
+    },
+    legal(pl) { if (this.winner() !== null) return []; const out = []; for (const i of this.men(pl)) out.push(...this.reach(i)); return out; },
+    apply(m) {
+      if (m.pass) { this.ply++; return { note: '' }; }
+      const was = CC_GOAL[m.pl][m.from];
+      this.b[m.from] = 0; this.b[m.to] = m.pl + 1; this.ply++;
+      const parts = [];
+      if (m.hop && m.path.length > 1) parts.push(m.pl === 0 ? `You hop ${m.path.length} times.` : `The Scribe hops ${m.path.length} times.`);
+      if (!was && CC_GOAL[m.pl][m.to]) { const n = this.home(m.pl); parts.push(m.pl === 0 ? `${n} of your marbles ${n === 1 ? 'is' : 'are'} home.` : `${n} of the Scribe's marbles ${n === 1 ? 'is' : 'are'} home.`); }
+      return { note: parts.join(' ') };
+    },
+    winner() {
+      for (const pl of [0, 1]) { const n = this.home(pl); if (n === 10) return pl; if (n && CC_CAMP[1 - pl].every(i => this.b[i])) return pl; }
+      return null;
+    },
+    total(pl) { let d = 0; for (const i of this.men(pl)) d += ccDist(pl, i); return d; },
+    skipTurn(pl) { if (this.winner() !== null || this.legal(pl).length || !this.legal(1 - pl).length) return ''; return pl === 0 ? 'Your marbles are boxed in, so you pass.' : 'The Scribe\'s marbles are boxed in, and it passes.'; },
+    result() {
+      const w = this.winner();
+      if (w !== null) return { winner: w, text: w === 0 ? (this.home(0) === 10 ? 'All your marbles reached the far point.' : 'The far point is full, and your marbles are in it.') : (this.home(1) === 10 ? 'All the Scribe\'s marbles reached your point.' : 'Your point is full, and the Scribe\'s marbles are in it.') };
+      if (this.ply >= CC_LIMIT || (!this.legal(0).length && !this.legal(1).length)) {
+        const a = this.home(0), b = this.home(1), da = this.total(0), db = this.total(1);
+        const winner = a !== b ? (a > b ? 0 : 1) : Math.abs(da - db) > 1e-9 ? (da < db ? 0 : 1) : -1;
+        return { winner, text: a !== b ? `A hundred and fifty moves each. Marbles home: you ${a}, the Scribe ${b}.` : winner < 0 ? 'A hundred and fifty moves each, dead level. The game is drawn.' : `A hundred and fifty moves each, ${a} home apiece; ${winner === 0 ? 'yours are' : 'the Scribe\'s are'} closer.` };
+      }
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.ply]; },
+    restore(s) { this.b = s[0].slice(); this.ply = s[1]; },
+    turns(pl) {
+      const ms = this.legal(pl);
+      if (!ms.length) return [[{ pl, pass: true }]];
+      const gain = m => ccDist(pl, m.from) - ccDist(pl, m.to) + (CC_GOAL[pl][m.to] && !CC_GOAL[pl][m.from] ? 1.5 : 0) - (CC_GOAL[pl][m.from] && !CC_GOAL[pl][m.to] ? 3 : 0);
+      ms.sort((x, y) => gain(y) - gain(x));
+      return ms.slice(0, 30).map(m => [m]);
+    },
+    terminal(pl, depth) {
+      const w = this.winner();
+      if (w !== null) return w === pl ? 1000 + depth : -1000 - depth;
+      if (this.ply >= CC_LIMIT) return (this.home(pl) - this.home(1 - pl)) * 50 + (this.total(1 - pl) - this.total(pl));
+      return null;
+    },
+    score(pl) { let s = 0; for (let i = 0; i < this.b.length; i++) if (this.b[i] === pl + 1) { const d = ccDist(pl, i); s -= d + 0.06 * d * d; if (CC_GOAL[pl][i]) s += 2; } return s; },
+    evaluate(pl) { return this.score(pl) - this.score(1 - pl); },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 3); },
+  };
+
+  /* --------------------------------------------------------------------- Hex
+   * An n x n rhombus of hexagons, index r*n + c, row 0 nearest the visitor.
+   * Red (the visitor) joins the near and far rows; blue (the Scribe) joins
+   * the left and right columns. b holds 0 empty, 1 red, 2 blue. */
+  const HEX = {
+    id: 'hex', name: 'Hex', dice: false, first: 0, n: 9,
+    variants: [{ id: '7', label: '7 × 7' }, { id: '9', label: '9 × 9' }, { id: '11', label: '11 × 11' }],
+    variant: '9', variantLabel: 'Board',
+    setVariant(id) { this.variant = ['7', '9', '11'].includes(id) ? id : '9'; this.n = +this.variant; },
+    rules: [
+      'You play red and move first. Join the red edges, nearest and farthest from you, with an unbroken chain of red hexagons. The Scribe plays blue and joins the left and right edges.',
+      'On your turn, place one stone on any empty hexagon. Stones never move and are never taken.',
+      'Someone always wins: a full board always holds exactly one winning chain, so Hex cannot be drawn.',
+      'The swap rule: going first is a big advantage, so after your first stone the Scribe may take it for itself instead of playing. The stone is then reflected across the board into blue, and you move again.'
+    ],
+    source: 'Hex as Piet Hein published it in 1942 and John Nash rediscovered it, with the swap rule from the modern game.',
+    init() { const N = this.n * this.n; this.b = new Uint8Array(N); this.ply = 0; this.swapped = false; this.last = -1; this.win = -1; },
+    nb(i) { const n = this.n, r = (i / n) | 0, c = i % n, out = []; for (const [dr, dc] of [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0]]) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < n && cc >= 0 && cc < n) out.push(rr * n + cc); } return out; },
+    joined(b, col) { // does col (1 red, 2 blue) join its edges?
+      const n = this.n, seen = new Uint8Array(n * n), stack = [];
+      for (let k = 0; k < n; k++) { const i = col === 1 ? k : k * n; if (b[i] === col) { seen[i] = 1; stack.push(i); } }
+      while (stack.length) {
+        const i = stack.pop(), r = (i / n) | 0, c = i % n;
+        if (col === 1 ? r === n - 1 : c === n - 1) return true;
+        for (const j of this.nb(i)) if (!seen[j] && b[j] === col) { seen[j] = 1; stack.push(j); }
+      }
+      return false;
+    },
+    legal(pl) {
+      if (this.win >= 0) return [];
+      const out = [];
+      for (let i = 0; i < this.b.length; i++) if (!this.b[i]) out.push({ pl, at: i });
+      if (pl === 1 && this.ply === 1 && !this.swapped) out.push({ pl, swap: true, label: 'Swap' });
+      return out;
+    },
+    apply(m) {
+      const n = this.n;
+      if (m.swap) {
+        const i = this.b.findIndex(v => v === 1), r = (i / n) | 0, c = i % n, j = c * n + r;
+        this.b[i] = 0; this.b[j] = 2; this.swapped = true; this.ply++; this.last = j;
+        return { note: m.pl === 1 ? 'The Scribe swaps: it takes your opening stone, reflected into blue. Your move again.' : '', swap: { from: i, to: j } };
+      }
+      this.b[m.at] = m.pl + 1; this.ply++; this.last = m.at;
+      if (this.joined(this.b, m.pl + 1)) this.win = m.pl;
+      return { note: '' };
+    },
+    result() { return this.win < 0 ? null : { winner: this.win, text: this.win === 0 ? 'Your red chain joins your two edges.' : 'The Scribe\'s blue chain joins its two edges.' }; },
+    snapshot() { return [this.b.slice(), this.ply, this.swapped, this.last, this.win]; },
+    restore(s) { this.b = s[0].slice(); [, this.ply, this.swapped, this.last, this.win] = s; },
+    // The Scribe takes the opening stone when it sits in the middle of the board.
+    wantSwap() {
+      if (LEVEL.name === 'gentle') return false;
+      const n = this.n, i = this.b.findIndex(v => v === 1), r = (i / n) | 0, c = i % n, m = LEVEL.name === 'sharp' ? 1 : 2;
+      return r >= m && r <= n - 1 - m && c >= m && c <= n - 1 - m;
+    },
+    aiPlan(pl, budget) {
+      if (pl === 1 && this.ply === 1 && !this.swapped && this.wantSwap()) return [{ pl, swap: true }];
+      const at = hexSearch(this, pl, budget || BUDGET_MS[LEVEL.name]);
+      return [{ pl, at }];
+    },
+  };
+  // Monte Carlo search with RAVE: random fills of the board, where every stone a side ends up
+  // with counts a little toward playing there now (in Hex, the order of moves barely matters).
+  function hexSearch(G, pl, budget) {
+    const n = G.n, N = n * n, t0 = Date.now(), K = 600;
+    const empties0 = []; for (let i = 0; i < N; i++) if (!G.b[i]) empties0.push(i);
+    const node = (toMove) => ({ toMove, n: 0, kids: new Map(), rN: new Float32Array(N), rW: new Float32Array(N) });
+    const root = node(pl), b = new Uint8Array(N), buf = new Int32Array(N);
+    let iters = 0;
+    while (true) {
+      if ((iters & 63) === 0 && Date.now() - t0 > budget) break;
+      iters++;
+      b.set(G.b);
+      let nd = root; const path = [root];
+      // Selection and expansion.
+      for (;;) {
+        let best = -1, bv = -1;
+        const beta0 = Math.sqrt(K / (3 * nd.n + K));
+        for (let i = 0; i < N; i++) {
+          if (b[i]) continue;
+          const ch = nd.kids.get(i), rn = nd.rN[i], amaf = rn ? nd.rW[i] / rn : 0.5;
+          let v;
+          if (ch && ch.n) { const beta = Math.sqrt(K / (3 * ch.n + K)); v = (1 - beta) * (ch.w / ch.n) + beta * amaf; } else v = amaf + 0.02 * beta0;
+          v += Math.random() * 1e-6;
+          if (v > bv) { bv = v; best = i; }
+        }
+        if (best < 0) break;
+        b[best] = nd.toMove + 1;
+        let ch = nd.kids.get(best);
+        if (!ch) { ch = node(1 - nd.toMove); ch.move = best; ch.mover = nd.toMove; ch.w = 0; nd.kids.set(best, ch); path.push(ch); break; }
+        path.push(ch); nd = ch;
+        if (nd.n < 1) break;
+      }
+      // Playout: fill the rest at random.
+      let m = 0; for (let i = 0; i < N; i++) if (!b[i]) buf[m++] = i;
+      let side = path[path.length - 1].toMove;
+      for (let k = m - 1; k >= 0; k--) { const j = (Math.random() * (k + 1)) | 0, t = buf[k]; buf[k] = buf[j]; buf[j] = t; b[buf[k]] = side + 1; side = 1 - side; }
+      const redWins = G.joined(b, 1), winner = redWins ? 0 : 1;
+      // Back up, with all-moves-as-first statistics for each node's side to move.
+      for (const nd2 of path) {
+        nd2.n++;
+        if (nd2.mover !== undefined && nd2.mover === winner) nd2.w++;
+        const col = nd2.toMove + 1, won = nd2.toMove === winner ? 1 : 0;
+        for (const i of empties0) if (b[i] === col) { nd2.rN[i]++; nd2.rW[i] += won; }
+      }
+    }
+    let best = -1, bn = -1;
+    for (const [i, ch] of root.kids) {
+      let v = ch.n + (LEVEL.name === 'gentle' ? Math.random() * ch.n * 0.8 : 0);
+      if (v > bn) { bn = v; best = i; }
+    }
+    if (best < 0) best = empties0[(Math.random() * empties0.length) | 0];
+    return best;
+  }
+
+  /* ------------------------------------------------------------------ Gomoku
+   * Five in a row on a 15 x 15 board, index r*15 + c, row 0 nearest the visitor.
+   * Freestyle: five or more in a line wins. b holds 0 empty, 1 black, 2 white. */
+  const GM_N = 15, GM_DIRS = [[0, 1], [1, 0], [1, 1], [1, -1]];
+  const GOMOKU = {
+    id: 'gomoku', name: 'Gomoku', dice: false, first: 0, n: GM_N,
+    rules: [
+      'You play black and move first. Place one stone on any empty point, where the lines cross.',
+      'Make an unbroken line of five or more of your stones, across, up and down, or diagonally, and you win.',
+      'Stones never move and are never taken. If the board fills with no line of five, the game is drawn.'
+    ],
+    source: 'Freestyle gomoku on a 15 × 15 board: five or more in a row wins, with none of the restrictions renju later placed on black.',
+    init() { this.b = new Uint8Array(GM_N * GM_N); this.ply = 0; this.win = -1; this.line = null; this.last = -1; },
+    run(b, i, col, dr, dc) { let k = 0, r = ((i / GM_N) | 0) + dr, c = (i % GM_N) + dc; while (r >= 0 && r < GM_N && c >= 0 && c < GM_N && b[r * GM_N + c] === col) { k++; r += dr; c += dc; } return k; },
+    legal(pl) { if (this.win >= 0 || this.ply >= GM_N * GM_N) return []; const out = []; for (let i = 0; i < this.b.length; i++) if (!this.b[i]) out.push({ pl, at: i }); return out; },
+    apply(m) {
+      const col = m.pl + 1; this.b[m.at] = col; this.ply++; this.last = m.at;
+      for (const [dr, dc] of GM_DIRS) {
+        const f = this.run(this.b, m.at, col, dr, dc), bk = this.run(this.b, m.at, col, -dr, -dc);
+        if (f + bk + 1 >= 5) {
+          this.win = m.pl; const r = (m.at / GM_N) | 0, c = m.at % GM_N;
+          this.line = Array.from({ length: f + bk + 1 }, (_, k) => (r + (k - bk) * dr) * GM_N + (c + (k - bk) * dc));
+        }
+      }
+      return { note: '' };
+    },
+    result() {
+      if (this.win >= 0) return { winner: this.win, text: this.win === 0 ? 'Five black stones in a row.' : 'Five white stones in a row.' };
+      if (this.ply >= GM_N * GM_N) return { winner: -1, text: 'The board is full with no five in a row.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.ply, this.win, this.line, this.last]; },
+    restore(s) { this.b = s[0].slice(); [, this.ply, this.win, this.line, this.last] = s; },
+    // How good point i is for col: each line through it scored by length and open ends.
+    pointScore(i, col) {
+      const b = this.b; let s = 0, threats = 0;
+      for (const [dr, dc] of GM_DIRS) {
+        const f = this.run(b, i, col, dr, dc), bk = this.run(b, i, col, -dr, -dc), len = f + bk + 1;
+        if (len >= 5) return 1e7;
+        const end = (k, sg) => { const r = ((i / GM_N) | 0) + sg * (k + 1) * dr, c = (i % GM_N) + sg * (k + 1) * dc; return r >= 0 && r < GM_N && c >= 0 && c < GM_N && !b[r * GM_N + c]; };
+        // A gap then more of the same colour counts as a broken line.
+        const gapF = end(f, 1) ? this.run(b, (((i / GM_N) | 0) + (f + 1) * dr) * GM_N + (i % GM_N) + (f + 1) * dc, col, dr, dc) : 0;
+        const gapB = end(bk, -1) ? this.run(b, (((i / GM_N) | 0) - (bk + 1) * dr) * GM_N + (i % GM_N) - (bk + 1) * dc, col, -dr, -dc) : 0;
+        const open = (end(f, 1) ? 1 : 0) + (end(bk, -1) ? 1 : 0);
+        const broken = Math.max(gapF, gapB);
+        const L = len + broken;
+        if (len === 4) { s += open === 2 ? 1e6 : open === 1 ? 5e4 : 0; if (open) threats++; } // a four, open or not
+        else if (broken && len + broken >= 4) { s += 4e4; threats++; } // a split four: filling the gap makes five
+        else if (L === 3) { s += open === 2 ? 1e3 : open === 1 ? 100 : 0; if (open === 2) threats++; } // a three
+        else if (L === 2) s += open === 2 ? 60 : open === 1 ? 10 : 0;
+        else s += open;
+      }
+      // Two threats at once (four and three, or two open threes) can rarely both be stopped.
+      if (threats >= 2) s += 3e5;
+      return s;
+    },
+    candidates() {
+      const out = [], b = this.b;
+      if (!this.ply) return [((GM_N / 2) | 0) * GM_N + ((GM_N / 2) | 0)];
+      for (let i = 0; i < b.length; i++) {
+        if (b[i]) continue;
+        const r = (i / GM_N) | 0, c = i % GM_N; let near = false;
+        for (let dr = -2; dr <= 2 && !near; dr++) for (let dc = -2; dc <= 2; dc++) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < GM_N && cc >= 0 && cc < GM_N && b[rr * GM_N + cc]) { near = true; break; } }
+        if (near) out.push(i);
+      }
+      return out;
+    },
+    rank(pl) { // candidate points, best first, with attack and defence weighed together
+      const me = pl + 1, you = 2 - pl, dw = LEVEL.name === 'sharp' ? 0.7 : 0.85; // Sharp leans to attack
+      return this.candidates().map(i => ({ i, a: this.pointScore(i, me), d: this.pointScore(i, you) })).map(x => Object.assign(x, { v: x.a + dw * x.d })).sort((x, y) => y.v - x.v);
+    },
+    windows(side) { // every run of five points holding only one colour, weighted by how full it is
+      const W = [0, 1, 12, 150, 2500, 1e6], b = this.b; let me = 0, you = 0;
+      for (const [dr, dc] of GM_DIRS) for (let r = 0; r < GM_N; r++) for (let c = 0; c < GM_N; c++) {
+        const r4 = r + 4 * dr, c4 = c + 4 * dc; if (r4 < 0 || r4 >= GM_N || c4 < 0 || c4 >= GM_N) continue;
+        let k1 = 0, k2 = 0;
+        for (let k = 0; k < 5; k++) { const v = b[(r + k * dr) * GM_N + c + k * dc]; if (v === 1) k1++; else if (v === 2) k2++; }
+        if (k1 && !k2) (side === 0 ? (me += W[k1]) : (you += W[k1])); else if (k2 && !k1) (side === 1 ? (me += W[k2]) : (you += W[k2]));
+      }
+      return me - 1.3 * you;
+    },
+    winPoints(col) { return this.candidates().filter(j => this.pointScore(j, col) >= 1e7); },
+    // Victory by continuous fours: a chain of fours, each forcing a single block, ending in two ways to make five.
+    vcf(pl, depth, top = true) {
+      if (top) this.vcfNodes = 0;
+      if (depth <= 0 || ++this.vcfNodes > 2500) return -1;
+      const me = pl + 1, you = 2 - pl;
+      for (const i of this.candidates()) {
+        const sc = this.pointScore(i, me);
+        if (sc >= 1e7) return i;
+        if (sc < 4e4) continue; // only moves that make a four
+        this.b[i] = me;
+        const wins = this.winPoints(me);
+        let ok = false;
+        if (wins.length >= 2) ok = true;
+        else if (wins.length === 1 && this.pointScore(wins[0], you) < 1e7 && !this.winPoints(you).length) {
+          this.b[wins[0]] = you; ok = this.vcf(pl, depth - 1, false) >= 0; this.b[wins[0]] = 0;
+        }
+        this.b[i] = 0;
+        if (ok) return i;
+      }
+      return -1;
+    },
+    aiPlan(pl) {
+      const ranked = this.rank(pl), win = ranked.find(x => x.a >= 1e7), block = ranked.find(x => x.d >= 1e7);
+      if (win) return [{ pl, at: win.i }];
+      if (block && (LEVEL.name !== 'gentle' || Math.random() < 0.8)) return [{ pl, at: block.i }];
+      if (LEVEL.name === 'gentle') { const k = Math.min(ranked.length, 6); return [{ pl, at: ranked[(Math.random() * k) | 0].i }]; }
+      if (LEVEL.name === 'fair') return [{ pl, at: ranked[0].i }];
+      // Sharp hunts for a win by continuous fours, and stops the visitor's.
+      const mine = this.vcf(pl, 10);
+      if (mine >= 0) return [{ pl, at: mine }];
+      let pool = ranked.slice(0, 10);
+      if (this.vcf(1 - pl, 8) >= 0) {
+        const safe = ranked.slice(0, 8).filter(x => { this.b[x.i] = pl + 1; const ok = this.vcf(1 - pl, 8) < 0; this.b[x.i] = 0; return ok; });
+        if (safe.length) pool = safe;
+      }
+      // Then a short search over the most promising points, scored by every five-point window on the board.
+      const t0 = Date.now();
+      const search = (side, depth, alpha, beta) => {
+        if (depth === 0 || Date.now() - t0 > 900) return this.windows(side);
+        const cands = this.rank(side).slice(0, 7);
+        let bestV = -Infinity;
+        for (const x of cands) {
+          if (x.a >= 1e7) return 1e6 + depth;
+          this.b[x.i] = side + 1;
+          const v = -search(1 - side, depth - 1, -beta, -alpha);
+          this.b[x.i] = 0;
+          if (v > bestV) bestV = v;
+          if (v > alpha) alpha = v;
+          if (alpha >= beta) break;
+        }
+        return bestV === -Infinity ? this.windows(side) : bestV;
+      };
+      let best = pool[0].i, bv = -Infinity;
+      for (const x of pool.slice(0, 8)) {
+        this.b[x.i] = pl + 1;
+        const v = -search(1 - pl, 2, -Infinity, -bv);
+        this.b[x.i] = 0;
+        if (v > bv) { bv = v; best = x.i; }
+      }
+      return [{ pl, at: best }];
+    },
+  };
+
+  /* ---------------------------------------------------------------- Dominoes
+   * The two-player Draw game with a double-six set. Tile t is the pair DM_T[t].
+   * The line runs left to right; its open ends are ends[0] and ends[1]. The
+   * boneyard is shuffled at the deal and drawn from the end. */
+  const DM_T = []; for (let a = 0; a <= 6; a++) for (let b = a; b <= 6; b++) DM_T.push([a, b]);
+  const DOMINOES = {
+    id: 'dominoes', name: 'Dominoes', dice: false, first: 0, TILES: DM_T,
+    followPrompt: 'Play a glowing tile, or draw again.',
+    rules: [
+      'Each of you has seven tiles; the other fourteen lie face down in the boneyard. You lead first, with any tile.',
+      'On your turn, play one tile that matches either open end of the line: click it, and if it fits both ends, then the ring at the end you want.',
+      'If you cannot play, you must draw from the boneyard until you can. The last two tiles are never drawn: once only two remain, a player who cannot play passes.',
+      'The hand ends when someone plays their last tile, or when neither of you can play. The player with fewer pips left in hand wins, and scores the difference (a player who goes out scores all the other\'s pips). Equal pips is a draw.'
+    ],
+    source: 'The Draw game, the oldest kind of European domino game, as pagat.com gives it for two players. One hand is played here rather than a game to 100.',
+    init() {
+      const t = Array.from({ length: 28 }, (_, k) => k);
+      for (let k = 27; k > 0; k--) { const j = (Math.random() * (k + 1)) | 0; [t[k], t[j]] = [t[j], t[k]]; }
+      this.hands = [t.slice(0, 7), t.slice(7, 14)]; this.yard = t.slice(14);
+      this.line = []; this.ends = null; this.passes = 0; this.out = -1; this.ply = 0;
+      this.lacks = [new Set(), new Set()]; // numbers a player has shown they hold none of
+    },
+    pips(pl) { return this.hands[pl].reduce((a, t) => a + DM_T[t][0] + DM_T[t][1], 0); },
+    fits(t, v) { return DM_T[t][0] === v || DM_T[t][1] === v; },
+    legal(pl) {
+      if (this.over()) return [];
+      const h = this.hands[pl], out = [];
+      if (!this.ends) return h.map(t => ({ pl, kind: 'play', t, side: 1 }));
+      for (const t of h) for (const side of [0, 1]) {
+        if (!this.fits(t, this.ends[side])) continue;
+        if (side === 1 && this.ends[0] === this.ends[1] && this.fits(t, this.ends[0])) continue; // same either way
+        out.push({ pl, kind: 'play', t, side });
+      }
+      if (out.length) return out;
+      return this.yard.length > 2 ? [{ pl, kind: 'draw', label: 'Draw a tile' }] : [{ pl, kind: 'pass', label: 'Pass', pass: true }];
+    },
+    over() { return this.out >= 0 || this.passes >= 2; },
+    apply(m) {
+      const pl = m.pl, who = pl === 0 ? 'You' : 'The Scribe';
+      if (m.kind === 'draw') {
+        const t = this.yard.pop(); this.hands[pl].push(t);
+        if (this.ends) { this.lacks[pl].add(this.ends[0]); this.lacks[pl].add(this.ends[1]); }
+        const r = { note: pl === 0 ? `You draw the ${DM_T[t][0]}–${DM_T[t][1]}.` : 'The Scribe draws a tile.', drew: t };
+        if (pl === 0) r.followUp = this.legal(0);
+        return r;
+      }
+      if (m.kind === 'pass') {
+        this.passes++; if (this.ends) { this.lacks[pl].add(this.ends[0]); this.lacks[pl].add(this.ends[1]); }
+        return { note: pl === 0 ? 'You cannot play, and pass.' : 'The Scribe cannot play, and passes.' };
+      }
+      const [a, b] = DM_T[m.t]; this.hands[pl].splice(this.hands[pl].indexOf(m.t), 1); this.passes = 0; this.ply++;
+      let placed;
+      if (!this.ends) { placed = { t: m.t, l: a, r: b }; this.line.push(placed); this.ends = [a, b]; }
+      else if (m.side === 0) { const v = this.ends[0], o = a === v ? b : a; placed = { t: m.t, l: o, r: v }; this.line.unshift(placed); this.ends[0] = o; }
+      else { const v = this.ends[1], o = a === v ? b : a; placed = { t: m.t, l: v, r: o }; this.line.push(placed); this.ends[1] = o; }
+      if (!this.hands[pl].length) this.out = pl;
+      return { note: this.out === pl ? `${who} ${pl === 0 ? 'play' : 'plays'} the last tile: domino!` : '', placed, side: m.side };
+    },
+    result() {
+      if (!this.over()) return null;
+      const a = this.pips(0), b = this.pips(1);
+      if (this.out >= 0) { const w = this.out; return { winner: w, text: w === 0 ? `You go out. You score the Scribe's ${b} pips.` : `The Scribe goes out and scores your ${a} pips.` }; }
+      if (a === b) return { winner: -1, text: `Blocked, with ${a} pips each. No one scores.` };
+      return { winner: a < b ? 0 : 1, text: `Blocked. Pips left: you ${a}, the Scribe ${b}. ${a < b ? 'You score' : 'The Scribe scores'} ${Math.abs(a - b)}.` };
+    },
+    snapshot() { return JSON.stringify([this.hands, this.yard, this.line, this.ends, this.passes, this.out, this.ply, [...this.lacks[0]], [...this.lacks[1]]]); },
+    restore(s) { const v = JSON.parse(s); [this.hands, this.yard, this.line, this.ends, this.passes, this.out, this.ply] = v; this.lacks = [new Set(v[7]), new Set(v[8])]; },
+    // The Scribe's choice of tile, using only what it can see: its hand, the line, and what you have shown you lack.
+    choose(pl, ms) {
+      if (ms.length === 1 || LEVEL.name === 'gentle') return ms[(Math.random() * ms.length) | 0];
+      const h = this.hands[pl], foe = 1 - pl;
+      const val = m => {
+        const [a, b] = DM_T[m.t]; let v = a + b + (a === b ? 6 : 0);
+        if (LEVEL.name === 'sharp') {
+          const ends = this.ends ? this.ends.slice() : [a, b];
+          if (this.ends) { const s = m.side, o = a === ends[s] ? b : a; ends[s] = o; }
+          const rest = h.filter(t => t !== m.t);
+          v += 2.5 * ends.reduce((acc, e) => acc + rest.filter(t => this.fits(t, e)).length, 0); // keep plays for later
+          v += 5 * ends.filter(e => this.lacks[foe].has(e)).length; // leave ends the visitor cannot match
+          // Numbers already showing on the table are scarcer for the visitor too.
+          const seen = e => this.line.reduce((acc, x) => acc + (x.l === e) + (x.r === e), 0) + rest.filter(t => this.fits(t, e)).length;
+          v += 0.8 * ends.reduce((acc, e) => acc + seen(e), 0);
+        }
+        return v;
+      };
+      return ms.reduce((x, y) => (val(y) > val(x) ? y : x));
+    },
+    aiPlan(pl) {
+      const snap = this.snapshot(), plan = [];
+      for (let k = 0; k < 30; k++) {
+        const ms = this.legal(pl); if (!ms.length) break;
+        if (ms[0].kind === 'draw') { plan.push(ms[0]); this.apply(ms[0]); continue; }
+        plan.push(ms[0].kind === 'pass' ? ms[0] : this.choose(pl, ms)); break;
+      }
+      this.restore(snap);
+      return plan;
+    },
+  };
+
   /* ----------------------------------------------------------- Fox and Geese
    * The 33-point cross board: point (r, c) exists when r or c is 2, 3 or 4.
    * Lines run along rows and columns, and diagonally through the points whose
@@ -3460,7 +3915,7 @@
     },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD };
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);

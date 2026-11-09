@@ -46,6 +46,9 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 
 == Changelog ==
 
+= 0.16.0 =
+* New playable exhibits: Dominoes, Chinese Checkers, Hex and Gomoku. Use dominoes, chinese, hex or gomoku as the start exhibit.
+
 = 0.15.0 =
 * The shortcode is now [librarium_archives] and the plugin slug librarium-archives.
 * The Landlord's Game (1904) is playable, on a board read from the patent drawing.
