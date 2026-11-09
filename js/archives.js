@@ -1824,19 +1824,18 @@ const CC_COLS = [0xb3261e, 0x1f4f9a, 0x2f8a3a, 0xd9a520, 0x6b2f8a, 0xf2efe6];
 function ccMarble(col) { const mat = new THREE.MeshPhysicalMaterial({ color: col, roughness: 0.12, clearcoat: 0.8, transparent: true, opacity: 0.92 }); const m = new THREE.Mesh(ccMarbleGeo, mat); m.userData.mats = [mat]; return m; }
 function buildChinese(group) {
   const R = 0.47, board = new THREE.Mesh(new THREE.CylinderGeometry(R, R + 0.01, 0.03, 6), new THREE.MeshStandardMaterial({ color: 0x8a5a2e, roughness: 0.5 }));
-  board.position.y = TOP + 0.015; board.rotation.y = Math.PI / 6; group.add(board);
+  board.position.y = TOP + 0.015; group.add(board); // corners point at the six points of the star
   const N = 1024, sc = N / (2 * R), CELLS = window.LibrariumRules.chinese.CELLS;
   // The six points are tinted the colours of the marbles that start in them.
   const tip = ([x, y, z]) => (z > 4 ? 0 : z < -4 ? 1 : x > 4 ? 2 : x < -4 ? 3 : y > 4 ? 4 : y < -4 ? 5 : -1);
   const top = topPlane(group, 2 * R, 2 * R, TOP + 0.0305, tex(N, N, (g) => {
     g.clearRect(0, 0, N, N);
-    g.save(); g.translate(N / 2, N / 2); g.beginPath();
-    for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; g.lineTo(Math.cos(a) * (R - 0.004) * sc / Math.cos(Math.PI / 6) * 0.866, Math.sin(a) * (R - 0.004) * sc / Math.cos(Math.PI / 6) * 0.866); }
+    g.save(); g.beginPath();
+    for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; g.lineTo(N / 2 + Math.sin(a) * (R - 0.003) * sc, N / 2 + Math.cos(a) * (R - 0.003) * sc); }
     g.closePath(); g.clip(); woodGrain(g, N, N, '#b07a44', '#6a4422'); g.restore();
-    g.translate(0, 0);
     CELLS.forEach((cell, i) => {
       const p = ccCell(i), x = N / 2 + p.x * sc, y = N / 2 + p.z * sc, t = tip(cell);
-      if (t >= 0) { g.fillStyle = '#' + CC_COLS[t].toString(16).padStart(6, '0'); g.globalAlpha = 0.28; g.beginPath(); g.arc(x, y, 30, 0, TAU); g.fill(); g.globalAlpha = 1; }
+      if (t >= 0) { g.fillStyle = '#' + CC_COLS[t].toString(16).padStart(6, '0'); g.globalAlpha = 0.4; g.beginPath(); g.arc(x, y, 30, 0, TAU); g.fill(); g.globalAlpha = 1; }
       const gr = g.createRadialGradient(x, y, 2, x, y, 13); gr.addColorStop(0, '#2a160a'); gr.addColorStop(1, '#5a3418');
       g.fillStyle = gr; g.beginPath(); g.arc(x, y, 12, 0, TAU); g.fill();
     });
@@ -1850,13 +1849,13 @@ function buildChinese(group) {
 }
 
 const hxStoneGeo = new THREE.CylinderGeometry(1, 1, 0.3, 6);
-const HX_MATS = [new THREE.MeshStandardMaterial({ color: 0xb3261e, roughness: 0.35 }), new THREE.MeshStandardMaterial({ color: 0x1f4f9a, roughness: 0.35 })];
+const HX_MATS = [new THREE.MeshStandardMaterial({ color: 0x9e1b14, roughness: 0.3 }), new THREE.MeshStandardMaterial({ color: 0x15397a, roughness: 0.3 })];
 function hxD(n) { return Math.min(0.075, 0.84 / (1.5 * (n - 1) + 1.3)); }
 function hxCell(n, i) { const r = (i / n) | 0, c = i % n, d = hxD(n), h = (n - 1) / 2; return { x: (c - h) * d + (r - h) * d / 2, z: (h - r) * d * 0.866 }; }
 function hxFace(n) { // the rhombus of hexagons for an n x n board, with red near and far edges and blue sides
   const W = 0.92, D = 0.62, N = 1280, sc = N / W, Nh = Math.round(N * D / W), d = hxD(n), rr = d / Math.sqrt(3) * 1.0;
   return topPlane(new THREE.Group(), W, D, 0, tex(N, Nh, (g) => {
-    g.clearRect(0, 0, N, Nh);
+    woodGrain(g, N, Nh, '#5a3a20', '#2e1c0e');
     const hexPath = (x, y, R) => { g.beginPath(); for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; g.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R); } g.closePath(); };
     for (let i = 0; i < n * n; i++) {
       const p = hxCell(n, i), x = N / 2 + p.x * sc, y = Nh / 2 + p.z * sc, r = (i / n) | 0, c = i % n;
@@ -1881,7 +1880,7 @@ function buildHex(group) {
     const inChain = chain.includes(i), v = inChain ? 0 : R() < 0.38 ? (R() < 0.45 ? 0 : 1) : -1;
     if (v < 0) continue;
     const m = new THREE.Mesh(hxStoneGeo, HX_MATS[v]); const p = hxCell(11, i);
-    m.scale.set(d * 0.42, 0.012, d * 0.42); m.position.set(p.x, y + 0.006, p.z); group.add(m); shown.push(m);
+    m.scale.set(d * 0.42, 0.03, d * 0.42); m.position.set(p.x, y + 0.006, p.z); group.add(m); shown.push(m);
   }
   group.userData.hex = { face, display: shown };
   return y;
@@ -1913,7 +1912,7 @@ function buildGomoku(group) {
 }
 
 // Domino tiles: ebony backs, ivory faces with the two halves' pips.
-const DM_L = 0.056, DM_Wd = 0.028, DM_H = 0.009;
+const DM_L = 0.066, DM_Wd = 0.033, DM_H = 0.01;
 const dmGeo = new THREE.BoxGeometry(DM_L, DM_H, DM_Wd);
 const dmSide = new THREE.MeshStandardMaterial({ color: 0xe9e1cc, roughness: 0.4 }), dmBack = new THREE.MeshStandardMaterial({ color: 0x1c1410, roughness: 0.35 });
 const DM_FACE = [];
@@ -1930,8 +1929,8 @@ function dmFace(t) {
 }
 function dmTile(t) { const m = new THREE.Mesh(dmGeo, [dmSide, dmSide, dmFace(t), dmBack, dmSide, dmSide]); m.userData.mats = [dmSide]; m.userData.t = t; return m; }
 function buildDominoes(group) {
-  const W = 1.0, D = 0.86;
-  const top = new THREE.Mesh(new THREE.BoxGeometry(W, 0.02, D), new THREE.MeshStandardMaterial({ color: 0x24402c, roughness: 0.95 }));
+  const W = 1.12, D = 0.88;
+  const top = new THREE.Mesh(new THREE.BoxGeometry(W, 0.02, D), new THREE.MeshStandardMaterial({ color: 0x12301c, roughness: 1 }));
   top.position.y = TOP + 0.01; group.add(top);
   const rim = new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.5 });
   for (const [x, z, w, d] of [[0, D / 2, W + 0.04, 0.02], [0, -D / 2, W + 0.04, 0.02], [W / 2, 0, 0.02, D], [-W / 2, 0, 0.02, D]]) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, 0.03, d), rim); b.position.set(x, TOP + 0.015, z); group.add(b); }
@@ -3911,7 +3910,7 @@ const HEX_P = {
   ringFor(m) { return m.swap ? null : this.pos(m.at); },
   fromFor: () => null,
   stone(pl, i) {
-    const d = hxD(GAMES.hex.n), m = new THREE.Mesh(hxStoneGeo, HX_MATS[pl]); m.scale.set(d * 0.42, 0.012, d * 0.42);
+    const d = hxD(GAMES.hex.n), m = new THREE.Mesh(hxStoneGeo, HX_MATS[pl]); m.scale.set(d * 0.42, 0.03, d * 0.42);
     const p = this.pos(i); m.position.set(p.x, p.y + 0.06, p.z); this.ex.group.add(m); this.ex.pieces.push(m); this.cell[i] = m; return m;
   },
   async play(m) {
@@ -3955,14 +3954,17 @@ const GOMOKU_P = {
   score: () => { const G = GAMES.gomoku; return [['Stones', G.ply], ['Points left', 225 - G.ply], '']; },
 };
 const DOMINOES_P = {
-  camW: 1.12, ringScale: 0.5,
+  camW: 1.2, ringScale: 0.55,
   intro() { return 'You lead first, with any tile. ' + this.prompt(); },
   prompt() {
     const G = GAMES.dominoes;
     if (!G.ends) return 'Click any tile in your hand to lead.';
+    const ms = G.legal(0);
+    if (ms[0] && ms[0].kind === 'draw') return `Open ends: ${G.ends[0]} and ${G.ends[1]}. Nothing in your hand fits, so draw from the boneyard.`;
+    if (ms[0] && ms[0].kind === 'pass') return `Open ends: ${G.ends[0]} and ${G.ends[1]}. Nothing fits and only two tiles are left in the boneyard, so you pass.`;
     return `Open ends: ${G.ends[0]} and ${G.ends[1]}. Click a glowing tile to play it; if it fits both ends, pick the ring.`;
   },
-  SP: DM_L + 0.006, ROW: 0.075,
+  SP: DM_L + 0.004, ROW: 0.07,
   // Where the k-th tile out from the first one sits: rows of six, snaking back and forth.
   arm(k) {
     if (k === 0) return { x: 0, z: 0, dir: 1 };
@@ -3981,10 +3983,10 @@ const DOMINOES_P = {
     this.layHands(false);
   },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.tiles || []).forEach(m => { m.visible = false; }); },
-  yardPos(k) { return V3(0.4 + (k % 2) * (DM_Wd + 0.008), GAMES.dominoes.surface + DM_H / 2, -0.21 + ((k / 2) | 0) * (DM_L + 0.008)); },
+  yardPos(k) { return V3(0.49 + (k % 2) * (DM_Wd + 0.008), GAMES.dominoes.surface + DM_H / 2, -0.25 + ((k / 2) | 0) * (DM_L + 0.006)); },
   handPos(pl, k, n) {
-    const per = 14, row = (k / per) | 0, kk = k % per, m = Math.min(n - row * per, per), sp = DM_L + 0.006;
-    return V3((kk - (m - 1) / 2) * sp, GAMES.dominoes.surface + DM_Wd / 2, (pl === 0 ? 1 : -1) * (0.34 - row * 0.05));
+    const per = 13, row = (k / per) | 0, kk = k % per, m = Math.min(n - row * per, per), sp = DM_L + 0.005;
+    return V3(-0.04 + (kk - (m - 1) / 2) * sp, GAMES.dominoes.surface + DM_Wd / 2, (pl === 0 ? 1 : -1) * (0.36 - row * 0.055));
   },
   async layHands(animate) {
     const G = GAMES.dominoes, jobs = [];
