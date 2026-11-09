@@ -21,7 +21,7 @@
 }
 
 #lm-app{font-family:var(--f-body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;background:var(--ink);color:var(--parchment)}
-#lm-app{position:fixed;inset:0;container-type:inline-size;container-name:museum;overflow:hidden}
+#lm-app{position:fixed;inset:0;container-type:inline-size;container-name:archives;overflow:hidden}
 /* Embedded in a page (the WordPress plugin): a box in the flow instead of the whole window. */
 .lm-embed{position:relative;width:100%}
 .lm-embed #lm-app{position:relative;inset:auto;height:var(--lm-height,80vh);min-height:440px;border-radius:4px}
@@ -173,7 +173,7 @@
 #lm-app .loader small{display:block;font-family:var(--f-ui);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--dust);margin-top:10px;text-align:center}
 #lm-app .loader.done{opacity:0;pointer-events:none}
 
-@container museum (max-width:720px){
+@container archives (max-width:720px){
   #lm-app .placard{top:auto;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));width:auto;bottom:calc(144px + env(safe-area-inset-bottom,0px));max-height:min(48vh,480px)}
   /* The bar takes two rows: wing tabs and the index on top, then the exhibits with previous and next. */
   #lm-app .rail{flex-wrap:wrap;gap:6px;padding-top:18px}

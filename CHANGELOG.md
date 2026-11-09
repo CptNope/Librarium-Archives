@@ -1,8 +1,12 @@
 # Changelog
 
+## 0.15.0: Archives all the way down
+
+- The rename is complete: the shortcode is now `[librarium_archives]`, the plugin is `librarium-archives` (`librarium-archives.zip`), the files are `js/archives.js` and `css/archives.css`, and the repository is `CptNope/Librarium-Archives`. Visitor progress is saved under `librarium.archives.v1`. Nothing was live yet, so there is no migration.
+
 ## 0.14.1: The Librarium Archives
 
-- The hall is renamed from the Museum of Play to the **Librarium Archives**, on the sign, the loading screen, the wing banners, the WordPress plugin and its Elementor widget. The `[librarium_museum]` shortcode, its settings and saved visitor progress are unchanged, so existing pages keep working.
+- The hall is renamed from the Museum of Play to the **Librarium Archives**, on the sign, the loading screen, the wing banners, the WordPress plugin and its Elementor widget. 
 - "Museum rule" is now "house rule" in the rules panels.
 
 ## 0.14.0: A table of four, and Bao

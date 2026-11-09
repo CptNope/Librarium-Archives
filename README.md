@@ -2,7 +2,7 @@
 
 A walkable 3D archive of the oldest known board games, built for [Librarium Games](https://librarium.games). Visitors stroll a candlelit library hall, read the history of each game on its placard, and sit down to play the ones whose rules we can reconstruct against an AI opponent, the Scribe.
 
-The Archives were first called the Librarium Museum of Play. The repository, file names, shortcode and plugin slug keep the `museum` name so that existing pages and saved progress keep working.
+The Archives were first called the Librarium Museum of Play, and the repository was `Librarium-Museum` (GitHub redirects the old address).
 
 ## Wing I: The Dawn of Play (c. 3100–2000 BCE)
 
@@ -139,7 +139,7 @@ In Brandubh the visitor's side still wins most games, even against Sharp.
 
 ## Visitor progress
 
-Kept in the visitor's browser only (`localStorage`, key `librarium.museum.v1`): exhibits visited (a green dot on the timeline), the Scribe's level, which rules panels have already been shown (each table opens its rules automatically the first time), and the visitor's win/loss/draw record at each table, shown on the placard and after each game. If storage is blocked, everything still works for that visit.
+Kept in the visitor's browser only (`localStorage`, key `librarium.archives.v1`): exhibits visited (a green dot on the timeline), the Scribe's level, which rules panels have already been shown (each table opens its rules automatically the first time), and the visitor's win/loss/draw record at each table, shown on the placard and after each game. If storage is blocked, everything still works for that visit.
 
 ## Controls
 
@@ -166,12 +166,12 @@ Kept in the visitor's browser only (`localStorage`, key `librarium.museum.v1`): 
 
 The Archives ship as a WordPress plugin for librarium.games.
 
-1. Download `librarium-museum-plugin` from the latest successful **CI** run on GitHub (Actions tab), unzip it to get `librarium-museum.zip`, and upload that under **Plugins > Add New > Upload Plugin**.
+1. Download `librarium-archives-plugin` from the latest successful **CI** run on GitHub (Actions tab), unzip it to get `librarium-archives.zip`, and upload that under **Plugins > Add New > Upload Plugin**.
 2. Add the Archives to a page with the shortcode, or with the **Librarium Archives** widget in Elementor:
 
 ```
-[librarium_museum]
-[librarium_museum height="720px" start="tables" shop_url="https://librarium.games/"]
+[librarium_archives]
+[librarium_archives height="720px" start="tables" shop_url="https://librarium.games/"]
 ```
 
 | Attribute | What it does | Default |
@@ -195,12 +195,12 @@ How it behaves on a page:
 
 ```
 index.html               Page markup, fonts, script order
-css/museum.css           All styles (brand: Almendra SC, Amethysta, Montserrat; logo gold #F6A01A)
+css/archives.css           All styles (brand: Almendra SC, Amethysta, Montserrat; logo gold #F6A01A)
 js/rules.js              Pure rule engines for all five playable games, plus the Scribe's AI (no rendering)
-js/museum.js             three.js hall, exhibit models, light pool, camera, placards, play table
+js/archives.js             three.js hall, exhibit models, light pool, camera, placards, play table
 tests/rules.test.mjs     Rule tests, simulated AI-vs-AI games and AI timing checks
 tools/build-artifact.mjs Inlines everything into dist/artifact.html for Claude artifacts
-tools/build-wp.mjs       Builds the WordPress plugin into dist/librarium-museum.zip
+tools/build-wp.mjs       Builds the WordPress plugin into dist/librarium-archives.zip
 wordpress/               Plugin PHP (shortcode, Elementor widget) and readme.txt
 tests/plugin-render.test.php  Renders the shortcode with stubbed WordPress functions
 embed-demo.html          A stand-in WordPress page that embeds the Archives
@@ -218,19 +218,19 @@ npm run test:plugin      # builds the plugin zip and runs the PHP render tests (
 
 Local plugin builds load three.js from cdnjs unless `vendor/three.min.js` exists; CI downloads it and bundles it.
 
-To preview locally, serve the folder with any static server, for example `npx serve .` or `python3 -m http.server`, then open the printed address. Add `?debug` to the address to expose the live state as `window.__museum` in the console, with `choose`, `humanThrow`, `startGame` and a `snap()` helper that returns a small JPEG of the 3D view. Debug mode also keeps the scene ticking when the browser pauses animation frames in a hidden tab.
+To preview locally, serve the folder with any static server, for example `npx serve .` or `python3 -m http.server`, then open the printed address. Add `?debug` to the address to expose the live state as `window.__archives` in the console, with `choose`, `humanThrow`, `startGame` and a `snap()` helper that returns a small JPEG of the 3D view. Debug mode also keeps the scene ticking when the browser pauses animation frames in a hidden tab.
 
 ### Adding a game
 
 1. Add a rule engine to `js/rules.js` with `init`, `legal(pl)`, `apply(m)` and `result(pl)`. Dice games set `dice: true`, provide `roll`, `done`, `home`, `extra` and `aiPlan(pl, moves)`, and receive the full roll as `legal(pl, value, roll)`. A move can return `followUp` choices for the same player (Morris removals, the second die in Tables). Optional hooks: `skipTurn(pl)` returns a message when a player misses a turn, `autoMove` plays a throw's only move without a click, `pipDice` draws two six-sided dice, and `winText(pl)` words the result. Strategy games also provide `snapshot`, `restore`, `turns`, `terminal`, `evaluate` and `aiPlan`, which plug into the shared negamax search.
-2. Add a presenter in `js/museum.js` (`setup`, `meshesFor`, `ringFor`, `play`, `score`, `prompt`) and register it in `PRES`.
+2. Add a presenter in `js/archives.js` (`setup`, `meshesFor`, `ringFor`, `play`, `score`, `prompt`) and register it in `PRES`.
 3. Add a board builder and a `STOPS` entry with `game: '<id>'`.
 4. Add tests in `tests/rules.test.mjs`.
 
 ## Deployment
 
 - **GitHub Pages:** `.github/workflows/pages.yml` deploys `main` after the tests pass. In the repo's Settings > Pages, set **Source** to **GitHub Actions** once.
-- **CI:** `.github/workflows/ci.yml` runs syntax checks, the rule tests and the artifact build on every push and pull request, and builds, lints and tests the WordPress plugin, uploading the zip as the `librarium-museum-plugin` artifact.
+- **CI:** `.github/workflows/ci.yml` runs syntax checks, the rule tests and the artifact build on every push and pull request, and builds, lints and tests the WordPress plugin, uploading the zip as the `librarium-archives-plugin` artifact.
 
 ## Historical notes and sources
 

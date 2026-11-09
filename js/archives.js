@@ -3811,7 +3811,7 @@ function flyToPlay(stop, dur = 1.4) {
 /* ---------------------------------------------------- visitor progress
  * Kept in this browser only: exhibits visited, rules already shown, the
  * Scribe's level and the visitor's record at each table. */
-const STORE_KEY = 'librarium.museum.v1';
+const STORE_KEY = 'librarium.archives.v1';
 const store = (() => {
   let d = {};
   try { d = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (e) { d = {}; }
@@ -4769,7 +4769,7 @@ async function boot() {
 }
 // Inspect the live state from the console with ?debug in the address.
 if (/[?&]debug\b/.test(location.search)) {
-  window.__museum = {
+  window.__archives = {
     play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop,
     // Put the camera at an exhibit straight away, without the glide (for slow test machines).
     jump(id) {
