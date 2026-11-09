@@ -1341,3 +1341,119 @@ test('Landlord: simulated games end, and the worth adds up', () => {
   }
   rules.setLevel('fair'); LLG.setVariant('3');
 });
+
+/* ------------------------------------------------------- Chinese checkers */
+const CCK = rules.chinese;
+test('Chinese checkers: a star of 121 holes, ten marbles a side in opposite points', () => {
+  assert.equal(CCK.CELLS.length, 121);
+  CCK.init();
+  assert.equal(CCK.men(0).length, 10); assert.equal(CCK.men(1).length, 10);
+  assert.ok(CCK.CAMP[0].every(i => CCK.CELLS[i][2] > 4)); assert.ok(CCK.CAMP[1].every(i => CCK.CELLS[i][2] < -4));
+});
+test('Chinese checkers: hops chain over either colour and capture nothing', () => {
+  CCK.init(); CCK.b.fill(0);
+  const at = (x, y) => CCK.CELLS.findIndex(c => c[0] === x && c[1] === y);
+  const a = at(0, 0); CCK.b[a] = 1; CCK.b[at(1, -1)] = 2; CCK.b[at(3, -3)] = 1;
+  const far = CCK.reach(a).find(m => m.to === at(4, -4));
+  assert.ok(far && far.path.length === 2);
+  CCK.apply(far); assert.equal(CCK.b[at(1, -1)], 2);
+});
+test('Chinese checkers: filling the far point wins, even with the other side\'s marbles in it', () => {
+  CCK.init(); CCK.b.fill(0);
+  CCK.CAMP[1].forEach((i, k) => { CCK.b[i] = k < 9 ? 1 : 2; });
+  assert.equal(CCK.winner(), 0);
+});
+
+/* -------------------------------------------------------------------- Hex */
+const HX = rules.hex;
+test('Hex: red joins near and far rows, blue joins the sides', () => {
+  HX.setVariant('7'); HX.init();
+  for (let r = 0; r < 7; r++) HX.apply({ pl: 0, at: r * 7 + 3 });
+  assert.equal(HX.result().winner, 0);
+  HX.init(); for (let c = 0; c < 7; c++) HX.apply({ pl: 1, at: 2 * 7 + c });
+  assert.equal(HX.result().winner, 1);
+});
+test('Hex: a full board always has exactly one winner', () => {
+  HX.setVariant('7');
+  for (let g = 0; g < 50; g++) {
+    HX.init(); const b = new Uint8Array(49);
+    for (let i = 0; i < 49; i++) b[i] = Math.random() < 0.5 ? 1 : 2;
+    assert.notEqual(HX.joined(b, 1), HX.joined(b, 2));
+  }
+});
+test('Hex: the swap reflects the opening stone into blue', () => {
+  HX.setVariant('9'); HX.init(); HX.apply({ pl: 0, at: 2 * 9 + 5 });
+  const sw = HX.legal(1).find(m => m.swap); assert.ok(sw);
+  HX.apply(sw);
+  assert.equal(HX.b[5 * 9 + 2], 2); assert.equal(HX.b[2 * 9 + 5], 0);
+  assert.ok(!HX.legal(1).some(m => m.swap));
+});
+test('Hex: the Scribe answers on a 9 × 9 board in good time', () => {
+  rules.setLevel('fair'); HX.setVariant('9'); HX.init(); HX.apply({ pl: 0, at: 0 });
+  const t0 = Date.now(), plan = HX.aiPlan(1);
+  assert.ok(plan.length === 1 && Date.now() - t0 < 2000);
+  HX.setVariant('9');
+});
+
+/* ----------------------------------------------------------------- Gomoku */
+const GMK = rules.gomoku;
+test('Gomoku: five in a row wins, and so do six', () => {
+  GMK.init();
+  for (let c = 0; c < 5; c++) GMK.apply({ pl: 0, at: 7 * 15 + c });
+  assert.equal(GMK.result().winner, 0); assert.equal(GMK.line.length, 5);
+  GMK.init();
+  for (const c of [0, 1, 2, 4, 5]) GMK.apply({ pl: 1, at: c });
+  assert.equal(GMK.result(), null);
+  GMK.apply({ pl: 1, at: 3 });
+  assert.equal(GMK.result().winner, 1); assert.equal(GMK.line.length, 6);
+});
+test('Gomoku: the Scribe takes a win and blocks an open four', () => {
+  for (const lv of ['fair', 'sharp']) {
+    rules.setLevel(lv);
+    GMK.init(); for (const c of [3, 4, 5, 6]) GMK.b[7 * 15 + c] = 2; for (const c of [3, 4, 5]) GMK.b[2 * 15 + c] = 1; GMK.ply = 7;
+    assert.ok([7 * 15 + 2, 7 * 15 + 7].includes(GMK.aiPlan(1)[0].at));
+    GMK.init(); for (const c of [3, 4, 5, 6]) GMK.b[7 * 15 + c] = 1; GMK.b[0] = 2; GMK.b[14] = 2; GMK.ply = 6;
+    assert.ok([7 * 15 + 2, 7 * 15 + 7].includes(GMK.aiPlan(1)[0].at));
+  }
+  rules.setLevel('fair');
+});
+
+/* --------------------------------------------------------------- Dominoes */
+const DMN = rules.dominoes;
+test('Dominoes: a double-six set of 28, seven each and fourteen in the boneyard', () => {
+  assert.equal(DMN.TILES.length, 28);
+  DMN.init();
+  assert.equal(DMN.hands[0].length, 7); assert.equal(DMN.hands[1].length, 7); assert.equal(DMN.yard.length, 14);
+});
+test('Dominoes: tiles match the open ends, and you draw until you can play but never the last two', () => {
+  DMN.init();
+  const t = DMN.TILES.findIndex(([a, b]) => a === 6 && b === 6);
+  const id = (a, b) => DMN.TILES.findIndex(([x, y]) => x === a && y === b);
+  DMN.hands = [[t, id(2, 3)], [id(0, 1)]];
+  DMN.yard = [id(0, 2), id(1, 1), id(4, 6)]; // drawn from the end: the 4-6 first
+  DMN.apply({ pl: 0, kind: 'play', t, side: 1 });
+  assert.deepEqual(DMN.ends, [6, 6]);
+  assert.equal(DMN.legal(1)[0].kind, 'draw');
+  DMN.apply(DMN.legal(1)[0]);
+  assert.equal(DMN.legal(1)[0].kind, 'play');
+  DMN.hands[1] = [id(0, 1)];
+  assert.equal(DMN.legal(1)[0].kind, 'pass'); // two left in the boneyard
+});
+test('Dominoes: a blocked hand goes to the lower pip count', () => {
+  DMN.init();
+  DMN.hands = [[DMN.TILES.findIndex(([a, b]) => a === 0 && b === 1)], [DMN.TILES.findIndex(([a, b]) => a === 5 && b === 6)]];
+  DMN.passes = 2;
+  const r = DMN.result(); assert.equal(r.winner, 0);
+});
+test('Dominoes: simulated hands always end, and every tile is accounted for', () => {
+  for (const lv of ['gentle', 'fair', 'sharp']) {
+    rules.setLevel(lv);
+    for (let g = 0; g < 40; g++) {
+      DMN.init(); let pl = 0, t = 0;
+      while (!DMN.result() && t++ < 200) { for (const m of DMN.aiPlan(pl)) DMN.apply(m); pl = 1 - pl; }
+      assert.ok(DMN.result());
+      assert.equal(DMN.hands[0].length + DMN.hands[1].length + DMN.yard.length + DMN.line.length, 28);
+    }
+  }
+  rules.setLevel('fair');
+});
