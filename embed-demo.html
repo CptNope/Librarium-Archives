@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almendra+SC&family=Amethysta&family=Montserrat:wght@400;600&display=swap">
-<link rel="stylesheet" href="css/museum.css">
+<link rel="stylesheet" href="css/archives.css">
 <style>
   /* A stand-in for a WordPress theme page, to check the Archives embed cleanly. */
   body { margin: 0; background: #fff; color: #625f5f; font: 16px/1.6 "Almendra SC", Georgia, serif; }
@@ -21,7 +21,7 @@
 <header>Librarium Games</header>
 <main>
   <h1>The Librarium Archives</h1>
-  <p>This page imitates a WordPress page with the <code>[librarium_museum height="70vh" start="ur"]</code> shortcode, to test the embedded mode: the Archives should sit in its own box, scroll with the page, ignore the theme's styles, and only take the keyboard while you are using it.</p>
+  <p>This page imitates a WordPress page with the <code>[librarium_archives height="70vh" start="ur"]</code> shortcode, to test the embedded mode: the Archives should sit in its own box, scroll with the page, ignore the theme's styles, and only take the keyboard while you are using it.</p>
   <p class="btn">A theme button style</p>
   <div class="lm-embed" style="--lm-height:70vh" id="slot"><p>Loading the Archives…</p></div>
   <p>Text below the Archives. Scroll the page with the wheel or arrow keys when the pointer is not over the Archives.</p>
@@ -36,7 +36,7 @@ fetch('index.html').then(r => r.text()).then(html => {
   const slot = document.getElementById('slot');
   slot.innerHTML = ''; slot.appendChild(document.importNode(app, true));
   const load = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.body.appendChild(s); });
-  return load('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js').then(() => load('js/rules.js')).then(() => load('js/museum.js'));
+  return load('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js').then(() => load('js/rules.js')).then(() => load('js/archives.js'));
 });
 </script>
 </body>

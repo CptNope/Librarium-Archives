@@ -1735,36 +1735,85 @@ function buildDotsBoard(group) {
 const dbLineMats = [new THREE.MeshStandardMaterial({ color: 0x8a5a12, roughness: 0.6 }), new THREE.MeshStandardMaterial({ color: 0x2a3a5a, roughness: 0.6 })];
 
 /* --- Wing V: The Landlord's Game, as its patent drawing (display) */
+// The Landlord's Game board, laid out as in the drawing of U.S. Patent 748,626 (1904).
+const LL_B = 0.86, LL_C = 0.13, LL_W = (LL_B - 2 * LL_C) / 9;
+function llSpace(k) { // centre of space k, and the unit vector pointing from it to the board's edge
+  const h = LL_B / 2, c = LL_C / 2;
+  if (k === 0) return { x: h - c, z: -h + c, ox: 0.7, oz: -0.7 };
+  if (k < 10) return { x: h - c, z: -h + LL_C + (k - 0.5) * LL_W, ox: 1, oz: 0 };
+  if (k === 10) return { x: h - c, z: h - c, ox: 0.7, oz: 0.7 };
+  if (k < 20) return { x: h - LL_C - (k - 10.5) * LL_W, z: h - c, ox: 0, oz: 1 };
+  if (k === 20) return { x: -h + c, z: h - c, ox: -0.7, oz: 0.7 };
+  if (k < 30) return { x: -h + c, z: h - LL_C - (k - 20.5) * LL_W, ox: -1, oz: 0 };
+  if (k === 30) return { x: -h + c, z: -h + c, ox: -0.7, oz: -0.7 };
+  return { x: -h + LL_C + (k - 30.5) * LL_W, z: -h + c, ox: 0, oz: -1 };
+}
 function buildLandlord(group) {
-  const W = 0.62, D = 0.82;
-  const blotter = new THREE.Mesh(new THREE.BoxGeometry(W + 0.12, 0.015, D + 0.08), new THREE.MeshStandardMaterial({ color: 0x2a3a2a, roughness: 0.9 }));
-  blotter.position.y = TOP + 0.0075; group.add(blotter);
-  const px = 768, py = Math.round(768 * D / W);
-  topPlane(group, W, D, TOP + 0.0158, tex(px, py, (g, w, h) => {
-    g.fillStyle = '#f1ead8'; g.fillRect(0, 0, w, h); speckle(g, w, h, 1200, ['#d8ccb0'], 1.1);
-    g.fillStyle = '#2a2a2a'; g.textAlign = 'center';
-    g.font = '26px Georgia, serif'; g.fillText('No. 748,626.', w / 2, 56);
-    g.font = '20px Georgia, serif'; g.fillText('PATENTED JAN. 5, 1904.', w / 2, 86);
-    g.font = 'italic 24px Georgia, serif'; g.fillText('GAME BOARD.', w / 2, 120);
-    // A square track of spaces around the edge, drawn in a patent draughtsman's ink.
-    const x0 = 80, y0 = 160, size = w - 160, n = 10, s = size / (n + 1);
-    g.strokeStyle = '#2a2a2a'; g.lineWidth = 2;
-    g.strokeRect(x0, y0, size, size);
-    g.strokeRect(x0 + s, y0 + s, size - 2 * s, size - 2 * s);
-    for (let k = 1; k <= n; k++) {
-      g.beginPath(); g.moveTo(x0 + k * s, y0); g.lineTo(x0 + k * s, y0 + s); g.stroke();
-      g.beginPath(); g.moveTo(x0 + k * s, y0 + size - s); g.lineTo(x0 + k * s, y0 + size); g.stroke();
-      g.beginPath(); g.moveTo(x0, y0 + k * s); g.lineTo(x0 + s, y0 + k * s); g.stroke();
-      g.beginPath(); g.moveTo(x0 + size - s, y0 + k * s); g.lineTo(x0 + size, y0 + k * s); g.stroke();
+  const B = LL_B, base = new THREE.Mesh(new THREE.BoxGeometry(B + 0.03, 0.02, B + 0.03), new THREE.MeshStandardMaterial({ color: 0x3a2a1c, roughness: 0.7 }));
+  base.position.y = TOP + 0.01; group.add(base);
+  const N = 1280, sc = N / B, SP = window.LibrariumRules.landlord.SPACES;
+  const FILL = { lot: '#a9cf9d', need: '#a9c3e0', lux: '#c4abd8', franchise: '#ecd77e' };
+  topPlane(group, B, B, TOP + 0.0205, tex(N, N, (g) => {
+    g.fillStyle = '#efe7d2'; g.fillRect(0, 0, N, N); speckle(g, N, N, 2600, ['#d9cdb0'], 1.3);
+    g.strokeStyle = '#1f1d1a'; g.fillStyle = '#1f1d1a'; g.lineWidth = 3; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const C = LL_C * sc, Wd = LL_W * sc;
+    g.strokeRect(6, 6, N - 12, N - 12); g.strokeRect(C, C, N - 2 * C, N - 2 * C);
+    const font = (px, it) => { g.font = `${it ? 'italic ' : ''}${px}px Georgia, "Times New Roman", serif`; };
+    for (let k = 0; k < 40; k++) {
+      if (k % 10 === 0) continue;
+      const sp = SP[k], p = llSpace(k), cx = N / 2 + p.x * sc, cy = N / 2 + p.z * sc;
+      const ang = p.oz === 1 ? 0 : p.oz === -1 ? Math.PI : p.ox === -1 ? Math.PI / 2 : -Math.PI / 2;
+      g.save(); g.translate(cx, cy); g.rotate(ang);
+      // In the rotated frame the space is Wd wide and C deep, with the board's edge at +C/2.
+      if (FILL[sp.t]) { g.fillStyle = FILL[sp.t]; g.globalAlpha = 0.55; g.fillRect(-Wd / 2, -C / 2, Wd, C); g.globalAlpha = 1; }
+      g.strokeStyle = '#1f1d1a'; g.lineWidth = 2.5; g.strokeRect(-Wd / 2, -C / 2, Wd, C);
+      g.fillStyle = '#1f1d1a';
+      const lines = sp.t === 'lot' ? [['LOT ' + sp.n, 16], ['FOR SALE', 12], ['$' + sp.price, 22], ['FOR RENT', 12], ['$' + sp.rent, 20]]
+        : sp.t === 'need' ? [['ABSOLUTE', 11], ['NECESSITY', 11], [sp.name.toUpperCase(), 15], ['TAXES $5', 13]]
+        : sp.t === 'rr' ? [['R. R.', 24], ['$5', 22]]
+        : sp.t === 'lux' ? [['LUXURY', 15], ['$50', 22]]
+        : sp.t === 'franchise' ? [[sp.key === 'light' ? 'LIGHT' : 'WATER', 15], ['FRANCHISE', 11], ['$5', 20]]
+        : sp.t === 'legacy' ? [['LEGACY', 15], ['$100', 22]]
+        : sp.t === 'trespass' ? [['NO', 13], ['TRES-', 13], ['PASSING', 13], ['GO TO', 11], ['JAIL', 15]] : [[sp.name, 13]];
+      const total = lines.reduce((a, [, px]) => a + px * 1.25, 0); let y = -total / 2;
+      for (const [t, px] of lines) { font(px); y += px * 0.625; g.fillText(t, 0, y, Wd - 8); y += px * 0.625; }
+      g.restore();
     }
-    for (const [cx, cy] of [[x0, y0], [x0 + size - s, y0], [x0, y0 + size - s], [x0 + size - s, y0 + size - s]]) { g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + s, cy + s); g.stroke(); }
-    g.font = '15px Georgia, serif'; g.fillText('Fig. 1.', w / 2, y0 + size + 34);
-    g.textAlign = 'right'; g.font = 'italic 17px Georgia, serif';
-    g.fillText('Inventor', w - 70, h - 70);
-    g.strokeStyle = '#2a2a2a'; g.beginPath(); g.moveTo(w - 260, h - 50); g.bezierCurveTo(w - 220, h - 80, w - 160, h - 30, w - 90, h - 55); g.stroke();
-  }), { roughness: 0.9 });
+    // The corners, as the patent draws them.
+    const corner = (k, draw) => { const p = llSpace(k), cx = N / 2 + p.x * sc, cy = N / 2 + p.z * sc; g.save(); g.translate(cx, cy); draw(); g.restore(); };
+    corner(0, () => { // Mother Earth
+      g.fillStyle = '#c9dcc0'; g.beginPath(); g.arc(0, 0, C * 0.3, 0, TAU); g.fill(); g.stroke();
+      g.fillStyle = '#86a676'; for (const [x, y, r] of [[-10, -9, 12], [9, 5, 14], [-3, 15, 7]]) { g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+      g.fillStyle = '#1f1d1a'; font(15); g.fillText('MOTHER EARTH', 0, 0, C * 0.8);
+      font(10); g.fillText('LABOR UPON MOTHER EARTH', 0, -C * 0.39, C * 0.95); g.fillText('PRODUCES WAGES', 0, C * 0.39, C * 0.95);
+    });
+    corner(10, () => { // Coal, with the jail
+      g.save(); g.beginPath(); g.arc(C * 0.18, C * 0.18, C * 0.36, 0, TAU); g.clip();
+      g.fillStyle = '#d8d0bc'; g.fillRect(-C, -C, 2 * C, 2 * C); g.lineWidth = 5; for (let x = -C / 2; x < C; x += 14) { g.beginPath(); g.moveTo(x, -C); g.lineTo(x, C); g.stroke(); }
+      g.restore(); g.lineWidth = 2.5; g.beginPath(); g.arc(C * 0.18, C * 0.18, C * 0.36, 0, TAU); g.stroke();
+      g.fillStyle = '#efe7d2'; g.fillRect(C * 0.18 - 30, C * 0.18 - 13, 60, 26); g.fillStyle = '#1f1d1a'; font(20); g.fillText('JAIL', C * 0.18, C * 0.18);
+      font(10); g.fillText('ABSOLUTE NECESSITY', -C * 0.12, -C * 0.36); font(14); g.fillText('COAL  $5', -C * 0.12, -C * 0.24);
+    });
+    corner(20, () => { // Public Park and the poorhouse
+      g.fillStyle = '#b9d3a8'; g.beginPath(); g.arc(0, 0, C * 0.2, 0, TAU); g.fill(); g.stroke();
+      g.fillStyle = '#1f1d1a'; font(14); g.fillText('PUBLIC PARK', 0, -C * 0.3); font(12); g.fillText('POOR HOUSE', 0, C * 0.32);
+    });
+    corner(30, () => { // Lord Blueblood's estate
+      g.fillStyle = '#1f1d1a'; font(12); g.fillText('NO TRESPASSING', 0, -C * 0.22); g.fillText('GO TO JAIL', 0, -C * 0.1);
+      font(9, true); g.fillText('Owner Lord Blueblood,', 0, C * 0.1); g.fillText('London, England', 0, C * 0.2);
+    });
+    // The centre: the four boxes of the patent.
+    const m = C + 40, cw = (N - 2 * m - 30) / 2;
+    [['R. R.', 0, 0], ['WAGES', 1, 0], ['BANK', 0, 1], ['PUBLIC TREASURY', 1, 1]].forEach(([t, cxi, cyi]) => {
+      const x = m + cxi * (cw + 30), y = m + cyi * (cw + 30);
+      g.lineWidth = 2.5; g.strokeRect(x, y, cw, cw); font(t.length > 8 ? 30 : 40); g.fillText(t, x + cw / 2, y + cw / 2, cw - 20);
+    });
+    font(16, true); g.fillText('THE LANDLORD\'S GAME · L. J. MAGIE · PAT. No. 748,626, 1904', N / 2, N / 2);
+  }), { roughness: 0.8 });
   const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.004, 0.16, 8), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3 }));
-  pen.rotation.z = Math.PI / 2; pen.rotation.y = -0.5; pen.position.set(W / 2 + 0.1, TOP + 0.02, 0.2); group.add(pen);
+  pen.rotation.z = Math.PI / 2; pen.rotation.y = -0.5; pen.position.set(B / 2 + 0.09, TOP + 0.006, 0.3); group.add(pen);
+  group.userData.display = [];
+  return TOP + 0.021;
 }
 
 /* --- Backfill displays: early dice, petteia, liubo and patolli */
@@ -2519,9 +2568,9 @@ const STOPS = [
     eyebrow: 'Wing V · Librarium Archives', status: null, begin: 'mansion',
     body: [
       'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
-      'Three tables are open: Reversi, Halma, and Dots and Boxes.'
+      'Four tables are open: Reversi, Halma, Dots and Boxes, and the Landlord\'s Game.'
     ],
-    facts: [['Tables', 'Reversi, Halma, Dots and Boxes'], ['Display', 'Mansion of Happiness, Game of Life, the Landlord\'s Game']],
+    facts: [['Tables', 'Reversi, Halma, Dots and Boxes, the Landlord\'s Game'], ['Display', 'Mansion of Happiness, Game of Life']],
   },
   { id: 'mansion', wing: 5, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
     eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'],
@@ -2567,8 +2616,8 @@ const STOPS = [
     facts: [['Grid', '4 × 4 boxes'], ['Score', 'Close a box, draw again'], ['Win', 'Most boxes']],
     build: buildDotsBoard },
   { id: 'landlord', wing: 5, title: 'The Landlord\'s Game', date: '1904 CE', rail: 'Landlord\'s Game',
-    eyebrow: 'United States', status: ['known', 'Rules survive in the patent'],
-    note: 'On display, as a patent sheet. The track drawn here is our own sketch, not a copy of the patent figure.',
+    eyebrow: 'United States', status: ['known', 'Rules survive in the patent'], game: 'landlord',
+    note: 'The board follows the drawing in Magie\'s patent, space for space. At the table you play the patent\'s rules against the Scribe, three times round by default or five as the patent has it.',
     body: [
       'Lizzie Magie was granted U.S. Patent 748,626 for The Landlord\'s Game on January 5, 1904. She meant it as a lesson. A follower of the economist Henry George, she wanted players to feel how land monopoly enriches landlords and ruins everyone else, and she gave the game two sets of rules: one that rewarded monopoly, and one that rewarded shared prosperity.',
       'For years players made their own boards, adding the streets of their own towns; Quakers in Atlantic City gave it theirs. In 1935 Parker Brothers bought a version from Charles Darrow, published it as Monopoly and credited him as its inventor. Magie\'s part came back to light in the 1970s, when Ralph Anspach dug up her patents while fighting Parker Brothers in court over his game Anti-Monopoly.'
@@ -2693,7 +2742,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -3603,6 +3652,58 @@ const BAO_P = {
   },
   score: () => { const G = GAMES.bao; return [['You', G.count(0)], ['Scribe', G.count(1)], 'seeds']; },
 };
+const LANDLORD_P = {
+  camW: 1.32, ringScale: 0.8,
+  intro() { return 'You play the pale checker and throw first. ' + this.prompt(); },
+  prompt() {
+    const G = GAMES.landlord;
+    if (G.ticketsOpen[0]) return `Your lot tickets: ${G.tickets[0].join(', ')}. Buy any of those lots now if you like, then start.`;
+    if (G.jailed[0]) return 'You are in jail. Pay the $50 fine, or throw for a double.';
+    const debt = G.notes[0] ? `, notes owed $${100 * G.notes[0]}` : '';
+    return G.laps[0] >= G.ROUNDS ? `You have been round ${G.ROUNDS} times${debt}. Throw when you are ready.` : `Round ${G.laps[0] + 1} of ${G.ROUNDS}. Cash $${G.cash[0]}${debt}. Throw when you are ready.`;
+  },
+  choosePrompt: () => 'Pick your checker, then the glowing space to go to.',
+  spot(pl, k) { const p = llSpace(k), side = Math.abs(p.ox) === 1 ? [0, 1] : Math.abs(p.oz) === 1 ? [1, 0] : [0.7, -0.7]; const o = (pl ? 1 : -1) * 0.016; return V3(p.x + p.ox * 0.025 + side[0] * o, GAMES.landlord.surface + 0.007, p.z + p.oz * 0.025 + side[1] * o); },
+  deedSpot(k) { const p = llSpace(k); return V3(p.x - p.ox * 0.03, GAMES.landlord.surface + 0.0015, p.z - p.oz * 0.03); },
+  setup(ex) {
+    const G = GAMES.landlord;
+    if (!ex.tokens) ex.tokens = [0, 1].map(pl => {
+      const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x1d1a17 : 0xe9dfc6, roughness: pl ? 0.3 : 0.45 });
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.017, 0.012, 24), mat); m.userData.mats = [mat]; ex.group.add(m); return m;
+    });
+    (ex.deeds || []).forEach(d => ex.group.remove(d)); ex.deeds = [];
+    this.ex = ex; this.deedAt = {};
+    ex.tokens.forEach((t, pl) => { t.visible = true; t.position.copy(this.spot(pl, G.pos[pl])); });
+  },
+  leave(ex) { (ex.tokens || []).forEach(t => { t.visible = false; }); (ex.deeds || []).forEach(d => ex.group.remove(d)); ex.deeds = []; },
+  async syncDeeds() { // a deed on every bought lot, a charter on every taken franchise
+    const G = GAMES.landlord, jobs = [];
+    const add = (k, pl, w, d) => {
+      const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x2b2622 : 0xf4ecd6, roughness: 0.8 });
+      const card = new THREE.Mesh(new THREE.BoxGeometry(w, 0.002, d), mat);
+      const p = llSpace(k); card.rotation.y = Math.abs(p.ox) === 1 ? Math.PI / 2 : 0;
+      card.position.copy(this.spot(pl, G.pos[pl])); card.position.y += 0.03; this.ex.group.add(card); this.ex.deeds.push(card); this.deedAt[k] = card;
+      jobs.push(hop(card, this.deedSpot(k), 0.4, 0.06));
+    };
+    for (let n = 1; n <= 22; n++) { const k = G.lotAt(n); if (G.owner[n] >= 0 && !this.deedAt[k]) add(k, G.owner[n], 0.05, 0.034); }
+    for (const k of [13, 27]) if (G.fran[k] >= 0 && !this.deedAt[k]) add(k, G.fran[k], 0.046, 0.03);
+    await Promise.all(jobs);
+  },
+  meshesFor(m) { return m.kind === 'move' ? [this.ex.tokens[m.pl]] : []; },
+  ringFor(m) { if (m.kind !== 'move') return null; const p = llSpace(m.to); return V3(p.x, GAMES.landlord.surface, p.z); },
+  fromFor(m) { if (m.kind !== 'move') return null; const p = llSpace(m.from); return V3(p.x, GAMES.landlord.surface, p.z); },
+  async play(m) {
+    const G = GAMES.landlord, tok = play.token, t = this.ex.tokens[m.pl];
+    if (m.kind === 'move') for (const k of G.steps(m)) { if (tok !== play.token) return {}; await hop(t, this.spot(m.pl, k), 0.15, 0.04); }
+    const res = G.apply(m);
+    if (tok !== play.token) return res;
+    const at = this.spot(m.pl, G.pos[m.pl]);
+    if (t.position.distanceTo(at) > 0.01) await hop(t, at, 0.5, 0.1);
+    await this.syncDeeds();
+    return res;
+  },
+  score: () => { const G = GAMES.landlord; return [['You', '$' + G.worth(0)], ['Scribe', '$' + G.worth(1)], 'worth']; },
+};
 const GO_P = {
   camW: 0.95, ringScale: 0.6, ringOpacity: 0.4,
   intro() { return 'You play black and move first. ' + this.prompt(); },
@@ -3761,7 +3862,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -3811,7 +3912,7 @@ function flyToPlay(stop, dur = 1.4) {
 /* ---------------------------------------------------- visitor progress
  * Kept in this browser only: exhibits visited, rules already shown, the
  * Scribe's level and the visitor's record at each table. */
-const STORE_KEY = 'librarium.museum.v1';
+const STORE_KEY = 'librarium.archives.v1';
 const store = (() => {
   let d = {};
   try { d = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (e) { d = {}; }
@@ -4258,7 +4359,9 @@ function beginTurn(pl, first) {
     }
   }
   if (pl === 0) {
-    if (g.dice) {
+    const pre = g.dice && g.preThrow ? g.preThrow(0) : null;
+    if (pre) { $('#lm-throwBtn').disabled = true; offer(pre, first ? P.intro() : P.prompt()); }
+    else if (g.dice) {
       play.phase = 'throw'; $('#lm-throwBtn').disabled = false;
       setMsg('Your turn', first ? P.intro() : P.prompt());
       $('#lm-throwBtn').focus({ preventScroll: true });
@@ -4301,7 +4404,7 @@ async function humanThrow() {
     await wait(400); if (tok !== play.token) return;
     return choose(moves[0]);
   }
-  offer(moves, `You threw ${rollText(g, r)}. Choose a glowing piece${moves.length === 1 ? ' (only one can move)' : ''}.`);
+  offer(moves, `You threw ${rollText(g, r)}. ` + (play.P.choosePrompt ? play.P.choosePrompt(moves) : `Choose a glowing piece${moves.length === 1 ? ' (only one can move)' : ''}.`));
 }
 async function choose(m) {
   if (play.phase !== 'choose') return;
@@ -4314,8 +4417,13 @@ async function choose(m) {
   sfx.move(g, m, res);
   updateScore();
   if (res.followUp && res.followUp.length) { offer(res.followUp, (res.note ? res.note + ' ' : '') + g.followPrompt); return; }
+  if (m.pre && res.thenThrow) { // a choice made before throwing, such as paying a fine
+    play.phase = 'throw'; $('#lm-throwBtn').disabled = false;
+    setMsg('Your turn', (res.note ? res.note + ' ' : '') + 'Now throw the dice.');
+    $('#lm-throwBtn').focus({ preventScroll: true }); return;
+  }
   if (g.dice) {
-    if (g.done(0)) return finish({ winner: 0, text: g.winText ? g.winText(0) : '' });
+    if (g.done(0)) return finish(g.final ? g.final() : { winner: 0, text: g.winText ? g.winText(0) : '' });
     if (g.extra(m, play.roll.value)) {
       setMsg('Your turn', (res.note ? res.note + ' ' : '') + g.extraNote);
       play.phase = 'throw'; $('#lm-throwBtn').disabled = false; return;
@@ -4328,6 +4436,14 @@ async function aiTurn() {
   const g = play.game, P = play.P, tok = play.token;
   await wait(650); if (tok !== play.token) return;
   if (g.dice) {
+    if (g.aiPre && g.preThrow(1)) { // choices before the throw: lot tickets, or the way out of jail
+      for (const step of g.aiPre(1)) {
+        const res = await P.play(step);
+        if (tok !== play.token) return;
+        updateScore();
+        if (res.note) { setMsg('The Scribe', res.note); await wait(Math.min(1600, readTime(res.note))); if (tok !== play.token) return; }
+      }
+    }
     const r = g.roll();
     if (!(await showRoll(r))) return;
     const moves = g.legal(1, r.value, r);
@@ -4351,7 +4467,7 @@ async function aiTurn() {
       updateScore();
       if (res.note) setMsg('The Scribe', res.note);
     }
-    if (g.done(1)) return finish({ winner: 1, text: g.winText ? g.winText(1) : '' });
+    if (g.done(1)) return finish(g.final ? g.final() : { winner: 1, text: g.winText ? g.winText(1) : '' });
     if (g.extra(m, r.value)) { setMsg('The Scribe', (res.note ? res.note + ' ' : '') + 'The Scribe throws again.'); await wait(900); if (tok !== play.token) return; aiTurn(); return; }
     if (res.note) { setMsg('The Scribe', res.note); await wait(readTime(res.note) + 250); if (tok !== play.token) return; }
     beginTurn(0);
@@ -4769,7 +4885,7 @@ async function boot() {
 }
 // Inspect the live state from the console with ?debug in the address.
 if (/[?&]debug\b/.test(location.search)) {
-  window.__museum = {
+  window.__archives = {
     play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop,
     // Put the camera at an exhibit straight away, without the glide (for slow test machines).
     jump(id) {

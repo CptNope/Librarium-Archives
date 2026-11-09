@@ -27,9 +27,9 @@ Visitors walk with the arrow keys or WASD, or on phones and tablets with an on-s
 
 Shortcode:
 
-`[librarium_museum]`
+`[librarium_archives]`
 
-`[librarium_museum height="720px" start="tables" shop_url="https://librarium.games/"]`
+`[librarium_archives height="720px" start="tables" shop_url="https://librarium.games/"]`
 
 * height: CSS height of the Archives box (px, vh, svh, dvh, em, rem or %). Default 80vh.
 * start: the exhibit to open on, for example senet, ur, morris, oware, brandubh, tables, shatranj, foxgeese, draughts or goose. Default: the entrance.
@@ -46,8 +46,12 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 
 == Changelog ==
 
+= 0.15.0 =
+* The shortcode is now [librarium_archives] and the plugin slug librarium-archives.
+* The Landlord's Game (1904) is playable, on a board read from the patent drawing.
+
 = 0.14.1 =
-* Renamed from the Museum of Play to the Librarium Archives. The shortcode and settings are unchanged.
+* Renamed from the Museum of Play to the Librarium Archives.
 
 = 0.14.0 =
 * Mahjong (with three Scribe players) and Bao are now playable.

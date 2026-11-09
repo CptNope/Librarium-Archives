@@ -2,7 +2,7 @@
 /**
  * Elementor widget: Librarium Archives.
  *
- * @package LibrariumMuseum
+ * @package LibrariumArchives
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -11,18 +11,18 @@ use Elementor\Controls_Manager;
 use Elementor\Widget_Base;
 
 /**
- * Places the museum on an Elementor page, with the same settings as the shortcode.
+ * Places the Archives on an Elementor page, with the same settings as the shortcode.
  */
-class Librarium_Museum_Widget extends Widget_Base {
+class Librarium_Archives_Widget extends Widget_Base {
 
 	/** @return string */
 	public function get_name() {
-		return 'librarium_museum';
+		return 'librarium_archives';
 	}
 
 	/** @return string */
 	public function get_title() {
-		return esc_html__( 'Librarium Archives', 'librarium-museum' );
+		return esc_html__( 'Librarium Archives', 'librarium-archives' );
 	}
 
 	/** @return string */
@@ -37,17 +37,17 @@ class Librarium_Museum_Widget extends Widget_Base {
 
 	/** @return string[] */
 	public function get_keywords() {
-		return array( 'museum', 'game', 'board game', '3d', 'librarium' );
+		return array( 'archives', 'museum', 'game', 'board game', '3d', 'librarium' );
 	}
 
 	/** @return string[] */
 	public function get_style_depends() {
-		return array( 'librarium-museum' );
+		return array( 'librarium-archives' );
 	}
 
 	/** @return string[] */
 	public function get_script_depends() {
-		return array( 'librarium-museum' );
+		return array( 'librarium-archives' );
 	}
 
 	/**
@@ -55,9 +55,9 @@ class Librarium_Museum_Widget extends Widget_Base {
 	 */
 	protected function register_controls() {
 		$this->start_controls_section(
-			'museum',
+			'archives',
 			array(
-				'label' => esc_html__( 'Museum', 'librarium-museum' ),
+				'label' => esc_html__( 'Archives', 'librarium-archives' ),
 				'tab'   => Controls_Manager::TAB_CONTENT,
 			)
 		);
@@ -65,7 +65,7 @@ class Librarium_Museum_Widget extends Widget_Base {
 		$this->add_control(
 			'height',
 			array(
-				'label'      => esc_html__( 'Height', 'librarium-museum' ),
+				'label'      => esc_html__( 'Height', 'librarium-archives' ),
 				'type'       => Controls_Manager::SLIDER,
 				'size_units' => array( 'vh', 'px' ),
 				'range'      => array(
@@ -79,9 +79,9 @@ class Librarium_Museum_Widget extends Widget_Base {
 		$this->add_control(
 			'start',
 			array(
-				'label'   => esc_html__( 'Open at', 'librarium-museum' ),
+				'label'   => esc_html__( 'Open at', 'librarium-archives' ),
 				'type'    => Controls_Manager::SELECT,
-				'options' => librarium_museum_exhibits(),
+				'options' => librarium_archives_exhibits(),
 				'default' => '',
 			)
 		);
@@ -89,8 +89,8 @@ class Librarium_Museum_Widget extends Widget_Base {
 		$this->add_control(
 			'shop_url',
 			array(
-				'label'       => esc_html__( 'Shop link', 'librarium-museum' ),
-				'description' => esc_html__( 'Where the "Visit Librarium Games" button at the end of the hall points.', 'librarium-museum' ),
+				'label'       => esc_html__( 'Shop link', 'librarium-archives' ),
+				'description' => esc_html__( 'Where the "Visit Librarium Games" button at the end of the hall points.', 'librarium-archives' ),
 				'type'        => Controls_Manager::URL,
 				'default'     => array( 'url' => 'https://librarium.games/' ),
 			)
@@ -111,19 +111,19 @@ class Librarium_Museum_Widget extends Widget_Base {
 		$start    = isset( $settings['start'] ) ? $settings['start'] : '';
 
 		if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
-			$exhibits = librarium_museum_exhibits();
+			$exhibits = librarium_archives_exhibits();
 			$label    = isset( $exhibits[ $start ] ) ? $exhibits[ $start ] : $exhibits[''];
 			printf(
 				'<div style="height:%1$s;min-height:240px;display:grid;place-items:center;background:#0b0907;color:#f6a01a;font-family:Georgia,serif;text-align:center;padding:24px;border:1px solid rgba(246,160,26,.32)"><div><strong style="font-size:22px">%2$s</strong><br><span style="color:#a8977a;font-size:14px">%3$s</span></div></div>',
 				esc_attr( $height ),
-				esc_html__( 'Librarium Archives', 'librarium-museum' ),
+				esc_html__( 'Librarium Archives', 'librarium-archives' ),
 				/* translators: %s: exhibit name */
-				esc_html( sprintf( __( 'The 3D hall appears on the live page. Opens at: %s', 'librarium-museum' ), $label ) )
+				esc_html( sprintf( __( 'The 3D hall appears on the live page. Opens at: %s', 'librarium-archives' ), $label ) )
 			);
 			return;
 		}
 
-		echo librarium_museum_render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+		echo librarium_archives_render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
 			array(
 				'height'   => $height,
 				'start'    => $start,

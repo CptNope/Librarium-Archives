@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: 20
       - name: Syntax check
-        run: node --check js/rules.js && node --check js/museum.js
+        run: node --check js/rules.js && node --check js/archives.js
       - name: Rules tests
         run: npm test
       - name: Artifact build
@@ -35,14 +35,14 @@ jobs:
       - name: Build the plugin
         run: npm run build:wp
       - name: Lint PHP
-        run: find dist/librarium-museum -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find dist/librarium-archives -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Render tests
         run: |
           php tests/plugin-render.test.php render
           php tests/plugin-render.test.php sanitize
       - name: Check three.js is bundled
-        run: test -s dist/librarium-museum/assets/vendor/three.min.js
+        run: test -s dist/librarium-archives/assets/vendor/three.min.js
       - uses: actions/upload-artifact@v4
         with:
-          name: librarium-museum-plugin
-          path: dist/librarium-museum.zip
+          name: librarium-archives-plugin
+          path: dist/librarium-archives.zip

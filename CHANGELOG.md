@@ -1,8 +1,14 @@
 # Changelog
 
+## 0.15.0: Archives all the way down, and the Landlord's Game
+
+- **The Landlord's Game** is playable. The board is redrawn from Lizzie Magie's 1904 patent, space for space, and the table plays the patent's rules against the Scribe: lot tickets, buying and renting, wages from Mother Earth, taxes on necessities, luxuries, franchises, railroads, jail, Bank notes and the poorhouse. Three rounds by default, five as in the patent.
+- Dice games can now offer choices before the throw (buying lot tickets, paying a jail fine), and a dice game can decide its winner by score at the end.
+- The rename is complete: the shortcode is now `[librarium_archives]`, the plugin is `librarium-archives` (`librarium-archives.zip`), the files are `js/archives.js` and `css/archives.css`, and the repository is `CptNope/Librarium-Archives`. Visitor progress is saved under `librarium.archives.v1`. Nothing was live yet, so there is no migration.
+
 ## 0.14.1: The Librarium Archives
 
-- The hall is renamed from the Museum of Play to the **Librarium Archives**, on the sign, the loading screen, the wing banners, the WordPress plugin and its Elementor widget. The `[librarium_museum]` shortcode, its settings and saved visitor progress are unchanged, so existing pages keep working.
+- The hall is renamed from the Museum of Play to the **Librarium Archives**, on the sign, the loading screen, the wing banners, the WordPress plugin and its Elementor widget. 
 - "Museum rule" is now "house rule" in the rules panels.
 
 ## 0.14.0: A table of four, and Bao

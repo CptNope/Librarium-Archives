@@ -7,12 +7,12 @@
  */
 
 define( 'ABSPATH', __DIR__ . '/' );
-$plugin = dirname( __DIR__ ) . '/dist/librarium-museum/';
+$plugin = dirname( __DIR__ ) . '/dist/librarium-archives/';
 
 // --- the WordPress functions the plugin touches, reduced to what this test needs
 $GLOBALS['actions'] = array(); $GLOBALS['enqueued'] = array(); $GLOBALS['can_edit'] = false;
 function plugin_dir_path( $f ) { return dirname( $f ) . '/'; }
-function plugin_dir_url( $f ) { return 'https://example.test/wp-content/plugins/librarium-museum/'; }
+function plugin_dir_url( $f ) { return 'https://example.test/wp-content/plugins/librarium-archives/'; }
 function add_action( $h, $cb ) { $GLOBALS['actions'][ $h ][] = $cb; }
 function add_shortcode( $tag, $cb ) { $GLOBALS['shortcode'] = $cb; }
 function shortcode_atts( $defaults, $atts ) { $atts = (array) $atts; $out = array(); foreach ( $defaults as $k => $v ) { $out[ $k ] = array_key_exists( $k, $atts ) ? $atts[ $k ] : $v; } return $out; }
@@ -26,7 +26,7 @@ function current_user_can( $c ) { return $GLOBALS['can_edit']; }
 function wp_enqueue_style( $h ) { $GLOBALS['enqueued'][] = $h; }
 function wp_enqueue_script( $h ) { $GLOBALS['enqueued'][] = $h; }
 
-require $plugin . 'librarium-museum.php';
+require $plugin . 'librarium-archives.php';
 
 $fails = 0;
 function check( $label, $cond ) { global $fails; echo ( $cond ? 'ok     ' : 'FAILED ' ) . $label . "\n"; if ( ! $cond ) { $fails++; } }
@@ -34,20 +34,20 @@ function check( $label, $cond ) { global $fails; echo ( $cond ? 'ok     ' : 'FAI
 $mode = isset( $argv[1] ) ? $argv[1] : 'render';
 
 if ( 'render' === $mode ) {
-	$html = librarium_museum_render( array( 'height' => '720px', 'start' => 'tables', 'shop_url' => 'https://librarium.games/marketplace/' ) );
-	check( 'wraps the museum in .lm-embed with the height', strpos( $html, '<div class="lm-embed" style="--lm-height:720px">' ) === 0 );
+	$html = librarium_archives_render( array( 'height' => '720px', 'start' => 'tables', 'shop_url' => 'https://librarium.games/marketplace/' ) );
+	check( 'wraps the Archives in .lm-embed with the height', strpos( $html, '<div class="lm-embed" style="--lm-height:720px">' ) === 0 );
 	check( 'passes the start exhibit', strpos( $html, 'data-start="tables"' ) !== false );
 	check( 'passes the shop link', strpos( $html, 'data-shop="https://librarium.games/marketplace/"' ) !== false );
-	check( 'includes the museum markup', strpos( $html, 'id="lm-scene"' ) !== false && strpos( $html, 'id="lm-hud"' ) !== false );
+	check( 'includes the Archives markup', strpos( $html, 'id="lm-scene"' ) !== false && strpos( $html, 'id="lm-hud"' ) !== false );
 	check( 'has no script tags in the markup', stripos( $html, '<script' ) === false );
-	check( 'enqueues the assets', in_array( 'librarium-museum', $GLOBALS['enqueued'], true ) );
+	check( 'enqueues the assets', in_array( 'librarium-archives', $GLOBALS['enqueued'], true ) );
 	check( 'registers the Elementor hook', isset( $GLOBALS['actions']['elementor/widgets/register'] ) );
-	check( 'a second museum on the page renders nothing for visitors', librarium_museum_render( array() ) === '' );
+	check( 'a second copy on the page renders nothing for visitors', librarium_archives_render( array() ) === '' );
 	$GLOBALS['can_edit'] = true;
-	check( 'a second museum shows editors a notice', strpos( librarium_museum_render( array() ), 'Only one copy of the Librarium Archives' ) !== false );
+	check( 'a second copy shows editors a notice', strpos( librarium_archives_render( array() ), 'Only one copy of the Librarium Archives' ) !== false );
 } else {
 	// Run in its own process so the one-per-page flag starts fresh.
-	$bad = librarium_museum_render( array( 'height' => '100%;background:red', 'start' => '<b>nope</b>', 'shop_url' => 'javascript:alert(1)' ) );
+	$bad = librarium_archives_render( array( 'height' => '100%;background:red', 'start' => '<b>nope</b>', 'shop_url' => 'javascript:alert(1)' ) );
 	check( 'rejects an unsafe height', strpos( $bad, '--lm-height:80vh' ) !== false );
 	check( 'rejects an unknown start exhibit', strpos( $bad, 'data-start=""' ) !== false );
 	check( 'rejects a javascript: shop link', strpos( $bad, 'data-shop=""' ) !== false );
