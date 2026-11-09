@@ -75,12 +75,13 @@ Through the fourth arch: games become products, sold by publishers and protected
 | Reversi | 1883 CE | Survive in print; played today as Othello | Playable, from the Othello opening |
 | Halma | 1883–84 CE | Still played, as Chinese checkers | Playable, two players with 19 men each |
 | Dots and Boxes | late 19th century CE | Survive in print (Lucas's *pipopipette*) | Playable, on a 4 × 4 or 5 × 5 grid of boxes |
-| The Landlord's Game | 1904 CE | Survive in the patent | On display (a patent sheet; the drawn track is our own sketch) |
+| The Landlord's Game | 1904 CE | Survive in the patent | Playable, on a board read from the patent drawing |
 
 Rule choices worth knowing:
 
 - **Reversi** starts from the four centre discs of Othello rather than the empty board of the 1880s. A player with no legal move passes; the game ends when neither can move.
 - **Dots and Boxes:** closing a box scores it and you must draw again. The Scribe plays the whole of its turn, so it may take several boxes in a row.
+- **The Landlord's Game** follows U.S. Patent 748,626 (1904). The board's forty spaces, prices, rents and taxes are read from the patent drawing: Mother Earth, 22 lots priced at ten times their number, four absolute necessities, four railroads, three luxuries, two franchises, Legacy, the Public Park and poorhouse, the jail, and Lord Blueblood's No Trespassing corner. The rules are the patent's, for two players: lot tickets at the start, buy or rent, $100 wages, $5 taxes and fares, $50 luxuries worth $60 at the end, franchise charters, jail with a $50 fine or a double, railroad rides on a double, Bank notes at $5 interest, and the poorhouse. It is three times round by default, or five as in the patent (a table variant). The patent's rule for two checkers sharing a lot is left out, and loans and repayments are made for you.
 - **Halma:** a man in the far camp may not leave it, and a full far camp with at least one of your men in it wins, so neither side can block by staying home. A house rule ends the game after two hundred moves each.
 - **Tarocchi:** the rules of the first tarot games of the 1440s were never written down, so the table plays a simplified two-player game built on what every tarot game still shares: follow suit, trump if you cannot, and the Fool as an excuse. Thirteen cards each; kings 5, queens 4, knights 3, jacks 2, trumps I and XXI and the Fool 5, and 1 for each trick.
 
@@ -117,7 +118,7 @@ Every sound is made on the spot with the Web Audio API, so there are no audio fi
 
 ## Table variants
 
-A game can offer variants, shown as a picker beside the Scribe's level (for now, Dots and Boxes on 4 × 4 or 5 × 5). Choosing one restarts the game, and the choice is remembered. A rule engine opts in with `variants`, `variant` and `setVariant(id)`.
+A game can offer variants, shown as a picker beside the Scribe's level: Dots and Boxes on 4 × 4 or 5 × 5, Pachisi's short or full game, and three or five rounds of the Landlord's Game. Choosing one restarts the game, and the choice is remembered. A rule engine opts in with `variants`, `variant` and `setVariant(id)`.
 
 ## The Scribe
 
@@ -132,6 +133,7 @@ The AI opponent has three levels, picked at any table and remembered: **Gentle**
 - **Mū tōrere, Kōnane and Fanorona** use the shared search. In Mū tōrere it looks up to sixteen moves ahead, which is enough to never lose; in Kōnane it counts how many captures each side has left; in Fanorona it searches whole capture chains as one turn.
 - **Mahjong** seats three Scribes, one at each other wind. Each counts how far its hand is from ready (shanten) and discards the tile that keeps the most useful draws open; it claims a discard only when that brings its hand closer. Gentle discards at random four times in ten and claims only half the time it could; Sharp also prefers to throw honour tiles that are already dead.
 - **Bao** uses the shared search, weighing seeds, the inner row and the best capture on offer. It is cheap to search, so Fair looks four plies ahead and Sharp up to twelve; over 40 games from varied openings Fair beat Gentle 31 to 9 and Sharp beat Fair 29 to 11. The side that moves first has a strong edge, and here that is you.
+- **The Landlord's Game** has a rule-of-thumb Scribe. It decides which lot tickets to buy, whether to buy or rent, whether to buy a luxury, whether to pay its way out of jail, and, when a double offers a railroad ride, which landing leaves it richer. Gentle decides by coin toss; Fair keeps a cash cushion; Sharp buys every lot it can afford, since land pays. Dice decide a lot: over 1,500 games Sharp beat Fair 52% of the time, and Fair beat Gentle 67%.
 - **Tarocchi** has its own Scribe. Gentle plays a sensible card half the time and a random legal one otherwise. Fair plays by rule of thumb: it wins a trick worth taking as cheaply as it can, and otherwise throws its least useful card. Sharp deals the cards it cannot see at random, many times over, keeping to what you have shown (a suit you could not follow, say), plays each deal to the end, and picks the card that scores best on average.
 - **Dots and Boxes** has its own Scribe. Gentle takes free boxes but often hands them back; Fair and Sharp avoid giving boxes away, and once only risky lines are left they solve the rest of the game exactly (Sharp from 22 open lines, Fair from 15), giving boxes away on purpose to keep control of the long chains.
 
@@ -252,7 +254,7 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - Live History India: Ludo's Indian roots
 - Library of Congress: The Mansion of Happiness (1843)
 - Wikipedia: The Mansion of Happiness, The Checkered Game of Life, Reversi, Halma, Chinese checkers, Dots and boxes, The Landlord's Game
-- Google Patents: US 748,626, Elizabeth J. Magie, Game-board (1904)
+- U.S. Patent 748,626, Lizzie J. Magie, Game-board (1904): drawing and text (Google Patents; transcription at landlordsgame.info)
 - Elwyn Berlekamp, *The Dots and Boxes Game: Sophisticated Child's Play* (2000)
 - Wikipedia: Kōnane, Fanorona, Yunnori, History of shogi, Bao (game)
 - Wikipedia: Pachisi; Masters of Games: The Rules of Pachisi & Chaupur
@@ -273,7 +275,8 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - [x] Wing VI: Games of the World (Mū tōrere, Kōnane, Fanorona to play; Shogi, Yut Nori, Bao on display)
 - [x] Backfill playable rules: chess, shogi, Yut Nori, Pachisi
 - [x] Playable Mahjong (with three Scribes) and Bao la Kujifunza
-- [ ] The Checkered Game of Life, the Mansion of Happiness and the Landlord's Game, once a square-by-square transcription of an original board and its rules can be checked
+- [x] The Landlord's Game, from the patent drawing and text
+- [ ] The Checkered Game of Life and the Mansion of Happiness, once a square-by-square transcription of an original board and its rules can be checked
 - [x] Larger Dots and Boxes grids (5 × 5, chosen at the table)
 - [x] A playable early card game: tarocchi for two
 - [x] Difficulty settings for the Scribe

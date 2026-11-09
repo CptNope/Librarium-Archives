@@ -1255,3 +1255,89 @@ for (const level of ['gentle', 'fair', 'sharp']) {
     rules.setLevel('fair');
   });
 }
+
+/* ------------------------------------------------- The Landlord's Game (1904) */
+const LLG = rules.landlord;
+const llFresh = () => { LLG.setVariant('3'); LLG.init(); LLG.ticketsOpen = [false, false]; };
+test('Landlord: the patent board has forty spaces, 22 lots priced ten times their number', () => {
+  const S = LLG.SPACES;
+  assert.equal(S.length, 40);
+  const lots = S.filter(sp => sp.t === 'lot');
+  assert.equal(lots.length, 22);
+  assert.ok(lots.every(sp => sp.price === 10 * sp.n && sp.rent === sp.n));
+  assert.equal(S[0].key, 'earth'); assert.equal(S[10].key, 'coal'); assert.equal(S[20].key, 'park'); assert.equal(S[30].t, 'trespass');
+  assert.equal(S.filter(sp => sp.t === 'rr').length, 4);
+  assert.equal(S.filter(sp => sp.t === 'lux').length, 3);
+  assert.equal(S.filter(sp => sp.t === 'need').length, 4);
+});
+test('Landlord: each player draws six lot tickets and may buy them before the first throw', () => {
+  LLG.init();
+  assert.equal(LLG.tickets[0].length, 6); assert.equal(LLG.tickets[1].length, 6);
+  const pre = LLG.preThrow(0), buy = pre.find(m => m.kind === 'ticket');
+  const r = LLG.apply(buy);
+  assert.equal(LLG.owner[buy.n], 0); assert.equal(LLG.cash[0], 500 - 10 * buy.n);
+  assert.ok(r.followUp.some(m => m.kind === 'endTickets'));
+  assert.ok(LLG.apply({ pl: 0, kind: 'endTickets', pre: true }).thenThrow);
+  assert.equal(LLG.preThrow(0), null);
+});
+test('Landlord: passing Mother Earth pays $100 wages and counts a round', () => {
+  llFresh(); LLG.pos[0] = 38;
+  LLG.apply({ pl: 0, kind: 'move', from: 38, steps: 4, dir: 1, to: 2 }); // lands on Bread
+  assert.equal(LLG.laps[0], 1); assert.equal(LLG.cash[0], 500 + 100 - 5);
+});
+test('Landlord: an unowned lot offers buy or rent; an owned one charges rent to the owner', () => {
+  llFresh();
+  const r = LLG.apply({ pl: 0, kind: 'move', from: 0, steps: 3, dir: 1, to: 3 });
+  assert.deepEqual(r.followUp.map(m => m.kind), ['buyLot', 'rentLot']);
+  LLG.apply(r.followUp[0]);
+  assert.equal(LLG.owner[2], 0); assert.equal(LLG.cash[0], 480);
+  LLG.apply({ pl: 1, kind: 'move', from: 0, steps: 3, dir: 1, to: 3 });
+  assert.equal(LLG.cash[1], 498); assert.equal(LLG.cash[0], 482);
+});
+test('Landlord: No Trespassing sends you to jail; a double gets you out', () => {
+  llFresh();
+  LLG.apply({ pl: 0, kind: 'move', from: 0, steps: 4, dir: 1, to: 4 });
+  assert.equal(LLG.pos[0], LLG.JAIL); assert.ok(LLG.jailed[0]);
+  assert.deepEqual(LLG.preThrow(0).map(m => m.kind), ['fine', 'tryDouble']);
+  assert.equal(LLG.legal(0, 7, { value: 7, faces: [3, 4] })[0].kind, 'stay');
+  const out = LLG.legal(0, 6, { value: 6, faces: [3, 3] })[0];
+  assert.ok(out.free); LLG.apply(out);
+  assert.ok(!LLG.jailed[0]);
+});
+test('Landlord: a double that passes a railroad may ride to the next one', () => {
+  llFresh(); LLG.pos[0] = 1;
+  const ms = LLG.legal(0, 8, { value: 8, faces: [4, 4] });
+  const ride = ms.find(m => m.ride !== undefined);
+  assert.ok(ride); assert.equal(ride.to, 15);
+});
+test('Landlord: declining a luxury loses the move', () => {
+  llFresh(); LLG.pos[0] = 5;
+  const r = LLG.apply({ pl: 0, kind: 'move', from: 5, steps: 3, dir: 1, to: 8 });
+  const dec = r.followUp.find(m => m.kind === 'declineLux');
+  LLG.apply(dec);
+  assert.equal(LLG.pos[0], 5); assert.equal(LLG.cash[0], 500);
+});
+test('Landlord: short of cash you borrow against your lots, and with none you go to the poorhouse', () => {
+  llFresh(); LLG.cash[0] = 0; LLG.owner[20] = 0; LLG.owner[2] = 1;
+  LLG.apply({ pl: 0, kind: 'move', from: 0, steps: 3, dir: 1, to: 3 });
+  assert.equal(LLG.notes[0], 1); assert.equal(LLG.cash[0], 98);
+  llFresh(); LLG.cash[0] = 0; LLG.owner[2] = 1;
+  LLG.apply({ pl: 0, kind: 'move', from: 0, steps: 3, dir: 1, to: 3 });
+  assert.equal(LLG.pos[0], LLG.PARK);
+});
+test('Landlord: simulated games end, and the worth adds up', () => {
+  for (const lv of ['gentle', 'fair', 'sharp']) {
+    rules.setLevel(lv);
+    for (let g = 0; g < 20; g++) {
+      LLG.setVariant(g % 2 ? '5' : '3'); LLG.init(); let pl = 0, t = 0;
+      while (!LLG.done() && t++ < 2000) {
+        for (const m of LLG.aiPre(pl)) LLG.apply(m);
+        const r = LLG.roll(); for (const m of LLG.aiPlan(pl, LLG.legal(pl, r.value, r))) LLG.apply(m);
+        assert.equal(LLG.pend, null); pl = 1 - pl;
+      }
+      assert.ok(LLG.done());
+      const f = LLG.final(); assert.ok([0, 1, -1].includes(f.winner));
+    }
+  }
+  rules.setLevel('fair'); LLG.setVariant('3');
+});

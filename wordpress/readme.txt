@@ -48,6 +48,7 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 
 = 0.15.0 =
 * The shortcode is now [librarium_archives] and the plugin slug librarium-archives.
+* The Landlord's Game (1904) is playable, on a board read from the patent drawing.
 
 = 0.14.1 =
 * Renamed from the Museum of Play to the Librarium Archives.
