@@ -1860,9 +1860,9 @@ function hxFace(n) { // the rhombus of hexagons for an n x n board, with red nea
     for (let i = 0; i < n * n; i++) {
       const p = hxCell(n, i), x = N / 2 + p.x * sc, y = Nh / 2 + p.z * sc, r = (i / n) | 0, c = i % n;
       const edge = r === 0 || r === n - 1 ? '#b3261e' : c === 0 || c === n - 1 ? '#1f4f9a' : null;
-      hexPath(x, y, rr * sc * 1.02); g.fillStyle = edge ? edge : '#e9dcc0'; g.globalAlpha = edge ? 0.55 : 1; g.fill(); g.globalAlpha = 1;
+      hexPath(x, y, rr * sc * 1.02); g.fillStyle = edge ? edge : '#e9dcc0'; g.fill();
       if ((r === 0 || r === n - 1) && (c === 0 || c === n - 1)) { g.fillStyle = '#6a3a7a'; g.globalAlpha = 0.35; g.fill(); g.globalAlpha = 1; }
-      hexPath(x, y, rr * sc * 0.86); g.fillStyle = '#f3ead6'; g.fill();
+      hexPath(x, y, rr * sc * 0.86); g.fillStyle = edge === '#b3261e' ? '#e9b4a6' : edge ? '#adc2e4' : '#f3ead6'; g.fill();
       hexPath(x, y, rr * sc * 1.02); g.strokeStyle = '#3a2a1c'; g.lineWidth = 2; g.stroke();
     }
   }), { roughness: 0.7, transparent: true });
