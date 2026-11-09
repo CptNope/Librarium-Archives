@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.16.0: Four new tables
+
+- **Dominoes** (Wing IV): the two-player Draw game with a double-six set, the Scribe's hand face away from you and the boneyard face down.
+- **Chinese checkers** (Wing V): Stern-Halma's star of 121 holes, ten marbles each, with chains of hops.
+- **Hex** (Wing V): Piet Hein's and John Nash's game on 7 × 7, 9 × 9 or 11 × 11, with the swap rule. The Scribe uses Monte Carlo search.
+- **Gomoku** (Wing VI): five in a row on a 15 × 15 board. Sharp hunts for wins by continuous fours.
+
 ## 0.15.0: Archives all the way down, and the Landlord's Game
 
 - **The Landlord's Game** is playable. The board is redrawn from Lizzie Magie's 1904 patent, space for space, and the table plays the patent's rules against the Scribe: lot tickets, buying and renting, wages from Mother Earth, taxes on necessities, luxuries, franchises, railroads, jail, Bank notes and the poorhouse. Three rounds by default, five as in the patent.
