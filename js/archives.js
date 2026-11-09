@@ -3653,7 +3653,7 @@ const BAO_P = {
   score: () => { const G = GAMES.bao; return [['You', G.count(0)], ['Scribe', G.count(1)], 'seeds']; },
 };
 const LANDLORD_P = {
-  camW: 1.12, ringScale: 0.8,
+  camW: 1.32, ringScale: 0.8,
   intro() { return 'You play the pale checker and throw first. ' + this.prompt(); },
   prompt() {
     const G = GAMES.landlord;
