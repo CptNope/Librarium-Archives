@@ -50,6 +50,7 @@ function librarium_archives_exhibits() {
 		'chaturanga' => 'Chaturanga',
 		'shatranj'   => 'Shatranj',
 		'xiangqi'    => __( 'Xiangqi (Chinese chess)', 'librarium-archives' ),
+		'chaturaji'  => __( 'Chaturaji (chess for four)', 'librarium-archives' ),
 		'lewis'      => __( 'The Lewis Chessmen', 'librarium-archives' ),
 		'cards'      => __( 'Playing cards', 'librarium-archives' ),
 		'tarot'      => __( 'Tarot', 'librarium-archives' ),

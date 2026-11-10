@@ -9,6 +9,7 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - National Museum of Ireland, The Ballinderry gaming board
 - Traditional Board Games (tradgames.org.uk), Nine Men's Morris
 - Masters Traditional Games, Brandubh rules
+- al-Biruni, *Kitab fi tahqiq ma li'l-Hind* (about 1030), as read by H. J. R. Murray, *A History of Chess* (1913); Wikipedia: Chaturaji, Cox–Forbes theory; Hans Bodlaender, Chaturanga for four players (chessvariants.com)
 - Wikipedia: Chaturanga, Shatranj, Tabula (game), Backgammon, Game pieces of the Lewis chessmen hoard
 - The World of Playing Cards (wopc.co.uk): early references; Mamluk cards and the making of the European deck
 - Tarot Heritage: tarot history chronology

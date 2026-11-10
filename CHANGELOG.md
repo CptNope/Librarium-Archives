@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.19.0: Chaturaji
+
+- **Chaturaji** (Wing III): chess for four with dice, as al-Biruni described it about 1030 and H. J. R. Murray read him. You play yellow against three Scribes, Black, Red and Green, each for itself. Two dice name the pieces that may move; kings can be taken; captures score; a boat that completes a square of four boats takes the other three. Take all three kings, or be the last king standing, to win.
+- The turn loop can now hand the turn round several Scribes (`passTurn`, `ended`, `scribeName`), names whichever Scribe is at play, and shows every player's score.
+- The Chaturanga placard points to its four-handed relative, and the plugin's exhibit list includes it.
+- 10 new rule tests (205 in all).
+
 ## 0.18.1: Documentation
 
 - The README is now a front page, and the documentation lives in `docs/`: a visitor guide, the exhibits by wing, the Scribe, architecture, the rule-engine contract, the WordPress plugin, development, sources and the roadmap.
