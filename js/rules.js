@@ -2739,7 +2739,12 @@
     variant: '61', variantLabel: 'Game',
     setVariant(id) { this.variant = id === '121' ? '121' : '61'; this.target = +this.variant; },
     show: crShow, peg: crPeg, name_: crName, rank: crRank, suit: crSuit, val: crVal,
-    followPrompt: '',
+    get followPrompt() {
+      const t = this.need.type;
+      if (t === 'discard') return `Lay one more card aside for ${this.dealer === 0 ? 'your' : 'the Scribe\'s'} crib.`;
+      if (t === 'next') return 'Press Next deal when you are ready.';
+      return `The count is ${this.count}. Click a card to play.`;
+    },
     rules: [
       'Each deal, you each get six cards and lay two aside, face down, for the crib, which scores for the dealer. The deal alternates; the Scribe deals first. Then a starter card is turned up, and if it is a jack the dealer pegs 2 for his heels.',
       'The play: starting with the player who did not deal, you take turns laying a card and calling the running total, which may not pass 31. Score 2 for making 15 or 31, 2 for a pair with the card before (6 for three of a kind, 12 for four), and 1 a card for a run of three or more. When neither of you can play without passing 31, the last to play pegs 1 for the go and the count starts again from nothing. The last card of all pegs 1.',

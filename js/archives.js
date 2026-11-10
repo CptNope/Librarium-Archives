@@ -1930,7 +1930,7 @@ function dmFace(t) {
 function dmTile(t) { const m = new THREE.Mesh(dmGeo, [dmSide, dmSide, dmFace(t), dmBack, dmSide, dmSide]); m.userData.mats = [dmSide]; m.userData.t = t; return m; }
 function buildDominoes(group) {
   const W = 1.12, D = 0.88;
-  const top = new THREE.Mesh(new THREE.BoxGeometry(W, 0.02, D), new THREE.MeshStandardMaterial({ color: 0x12301c, roughness: 1 }));
+  const top = new THREE.Mesh(new THREE.BoxGeometry(W, 0.02, D), new THREE.MeshStandardMaterial({ color: 0x0b2214, roughness: 1 }));
   top.position.y = TOP + 0.01; group.add(top);
   const rim = new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.5 });
   for (const [x, z, w, d] of [[0, D / 2, W + 0.04, 0.02], [0, -D / 2, W + 0.04, 0.02], [W / 2, 0, 0.02, D], [-W / 2, 0, 0.02, D]]) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, 0.03, d), rim); b.position.set(x, TOP + 0.015, z); group.add(b); }
@@ -2073,7 +2073,7 @@ function crHole(pl, s) {
 }
 function buildCribbage(group) {
   const W = 1.12, D = 0.86;
-  const baize = new THREE.Mesh(new THREE.BoxGeometry(W, 0.02, D), new THREE.MeshStandardMaterial({ color: 0x173a26, roughness: 1 }));
+  const baize = new THREE.Mesh(new THREE.BoxGeometry(W, 0.02, D), new THREE.MeshStandardMaterial({ color: 0x0b2214, roughness: 1 }));
   baize.position.y = TOP + 0.01; group.add(baize);
   // The board: a long plank of light wood with two lanes of holes.
   const L = 31 * CRB_DZ + 0.09, bw = 0.15, board = new THREE.Mesh(new THREE.BoxGeometry(bw, 0.022, L), new THREE.MeshStandardMaterial({ color: 0xc89a5a, roughness: 0.5 }));
