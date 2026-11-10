@@ -2617,7 +2617,7 @@
    * Pits 0-5 are the visitor's, left to right; 6 is the visitor's store (kalah, on
    * their right); 7-12 the Scribe's, running back the other way; 13 the Scribe's store. */
   const KALAH = {
-    id: 'kalah', name: 'Kalah', dice: false, first: 0, seeds: 4,
+    id: 'kalah', name: 'Kalah', dice: false, first: 0, seeds: 4, followPrompt: 'Choose another pit to sow.',
     variants: [{ id: '3', label: '3 seeds' }, { id: '4', label: '4 seeds' }, { id: '6', label: '6 seeds' }],
     variant: '4', variantLabel: 'Seeds',
     setVariant(id) { this.variant = ['3', '4', '6'].includes(id) ? id : '4'; this.seeds = +this.variant; },
