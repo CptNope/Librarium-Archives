@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.18.1: Documentation
+
+- The README is now a front page, and the documentation lives in `docs/`: a visitor guide, the exhibits by wing, the Scribe, architecture, the rule-engine contract, the WordPress plugin, development, sources and the roadmap.
+- 31 Mermaid diagrams: the hall, a timeline for each wing, the module map, the turn sequence, the table phases, the engine and presenter contract, the Scribe's search, the plugin's loading and input checks, the test and CI pipelines, and how the Archives grew.
+- Corrected counts throughout: 52 exhibits, 39 of them playable.
+- The plugin's exhibit list (the Elementor dropdown) is grouped by wing again, and its readme lists every table.
+
 ## 0.18.0: Ludo, Janggi and Morabaraba
 
 - **Ludo** (Wing IV): the 1896 game from Pachisi, red against yellow on the classic cross, with one die.

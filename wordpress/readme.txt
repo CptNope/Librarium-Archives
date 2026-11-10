@@ -14,12 +14,16 @@ A walkable 3D archive of the oldest board and card games, with tables visitors c
 
 Visitors walk a candlelit library hall in six wings, read the history of each game on its placard, and sit down to play:
 
-* Wing I, The Dawn of Play: Senet and the Royal Game of Ur (playable), Mehen, the Başur Höyük pieces, the first dice, Hounds and Jackals.
-* Wing II, Strategy Takes the Table: Go, Nine Men's Morris, Oware, Alquerque and Brandubh (playable), Petteia, Liubo, Ludus latrunculorum, Patolli.
-* Wing III, Kings, Cards and Courts: Tables (backgammon), Shatranj, Xiangqi and tarocchi (playable), Chaturanga, the Lewis Chessmen, playing cards, painted tarot trumps.
-* Wing IV, Printed Boards and Parlour Tables: Fox and Geese, chess (at the New Queen), Draughts, Pachisi, the Game of the Goose and Snakes and Ladders (playable), Mahjong.
-* Wing V, The Modern Board Game: Reversi, Halma and Dots and Boxes (playable), the Mansion of Happiness, the Checkered Game of Life, the Landlord's Game, and a lectern of Librarium's own games.
-* Wing VI, Games of the World: Mū tōrere, Shogi, Kōnane, Yut Nori and Fanorona (playable), Bao.
+52 exhibits, 39 of them playable:
+
+* Wing I, The Dawn of Play: Senet and the Royal Game of Ur (playable); Mehen, the Başur Höyük pieces, the first dice, Hounds and Jackals.
+* Wing II, Strategy Takes the Table: Go, Nine Men's Morris, Oware, Alquerque and Brandubh (playable); Petteia, Liubo, Ludus latrunculorum, Patolli.
+* Wing III, Kings, Cards and Courts: Tables (backgammon), Shatranj, Xiangqi and tarocchi (playable); Chaturanga, the Lewis Chessmen, playing cards.
+* Wing IV, Printed Boards and Parlour Tables: Fox and Geese, chess, Draughts, Pachisi, the Game of the Goose, Cribbage, Dominoes, Tablut, Snakes and Ladders, Ludo and Mahjong (all playable).
+* Wing V, The Modern Board Game: Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord's Game, Kalah and Hex (playable); the Mansion of Happiness and the Checkered Game of Life.
+* Wing VI, Games of the World: Mū tōrere, Shogi, Gomoku, Makruk, Kōnane, Yut Nori, Janggi, Fanorona, Bao and Morabaraba (all playable).
+
+The hall ends at a lectern of Librarium's own games.
 
 Visitors walk with the arrow keys or WASD, or on phones and tablets with an on-screen joystick or by tapping the floor, and pinch to zoom. The Scribe plays at three levels. Visitor progress (exhibits visited, records at each table) is kept in the visitor's own browser only; the plugin stores nothing on the server.
 
@@ -32,7 +36,7 @@ Shortcode:
 `[librarium_archives height="720px" start="tables" shop_url="https://librarium.games/"]`
 
 * height: CSS height of the Archives box (px, vh, svh, dvh, em, rem or %). Default 80vh.
-* start: the exhibit to open on, for example senet, ur, morris, oware, brandubh, tables, shatranj, foxgeese, draughts or goose. Default: the entrance.
+* start: the exhibit to open on, by its id: for example senet, go, tables, newqueen (chess), mahjong, hex or bao. Every id is listed in docs/wordpress.md in the repository. Default: the entrance.
 * shop_url: where the "Visit Librarium Games" button at the end of the hall points.
 
 Elementor: add the "Librarium Archives" widget. In the editor it shows a placeholder; the 3D hall runs on the live page.
@@ -45,6 +49,9 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 * Fonts Almendra SC, Amethysta and Montserrat from Google Fonts (SIL Open Font License).
 
 == Changelog ==
+
+= 0.18.1 =
+* Documentation rewritten; the Elementor exhibit list is now grouped by wing.
 
 = 0.18.0 =
 * New playable exhibits: Ludo, Janggi and Morabaraba (start values ludo, janggi, morabaraba).
