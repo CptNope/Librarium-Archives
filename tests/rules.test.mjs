@@ -1559,3 +1559,71 @@ test('Cribbage: a full game ends, every card is accounted for each deal, and sco
   }
   rules.setLevel('fair');
 });
+
+/* -------------------------------------------------------------- Morabaraba */
+const MBR = rules.morabaraba;
+test('Morabaraba: twelve cows each, and the diagonals carry moves and mills', () => {
+  MBR.init(); assert.deepEqual(MBR.hand, [12, 12]);
+  assert.ok(MBR.ADJ[0].includes(8) && MBR.ADJ[8].includes(16));
+  assert.ok(MBR.MILLS.some(m => m.join() === '0,8,16'));
+  MBR.board[0] = 0; MBR.board[8] = 0; MBR.hand[0] = 10;
+  const r = MBR.apply({ type: 'place', pl: 0, to: 16 });
+  assert.ok(r.followUp && r.followUp.length === 0 || r.followUp === undefined || r.followUp.every(m => m.type === 'remove'));
+  assert.ok(MBR.inMill(16, 0));
+});
+test('Morabaraba: Nine Men\'s Morris is unchanged by the shared code', () => {
+  const M = rules.morris; M.init();
+  assert.deepEqual(M.hand, [9, 9]); assert.equal(M.ADJ[0].length, 2); assert.equal(M.MILLS.length, 16);
+});
+test('Morabaraba: three cows each and ten quiet moves each is a draw', () => {
+  MBR.init(); MBR.hand = [0, 0]; MBR.board.fill(-1); [0, 2, 4].forEach(p => { MBR.board[p] = 0; }); [17, 19, 21].forEach(p => { MBR.board[p] = 1; });
+  MBR.quiet = 20; assert.equal(MBR.result(0).winner, -1);
+});
+
+/* -------------------------------------------------------------------- Ludo */
+const LDO = rules.ludo;
+test('Ludo: a 52-square track; a six brings a token out', () => {
+  assert.equal(LDO.TRACK.length, 52); assert.equal(new Set(LDO.TRACK.map(p => p.join())).size, 52);
+  LDO.init(); assert.equal(LDO.legal(0, 5).length, 0); assert.equal(LDO.legal(0, 6).length, 1);
+  LDO.apply(LDO.legal(0, 6)[0]); assert.deepEqual(LDO.pos[0], [0, -1, -1, -1]);
+  assert.ok(LDO.extra({ pl: 0 }, 6));
+});
+test('Ludo: landing on a Scribe token sends it home, and the finish needs the exact throw', () => {
+  LDO.init(); LDO.pos[0] = [24, -1, -1, -1]; LDO.pos[1] = [0, -1, -1, -1]; // the Scribe's start is square 26
+  const m = LDO.legal(0, 2)[0]; const r = LDO.apply(m);
+  assert.deepEqual(r.caps, [0]); assert.equal(LDO.pos[1][0], -1);
+  LDO.init(); LDO.pos[0] = [53, 56, 56, 56];
+  assert.equal(LDO.legal(0, 4).length, 0); assert.equal(LDO.legal(0, 3).length, 1);
+  LDO.apply(LDO.legal(0, 3)[0]); assert.ok(LDO.done(0));
+});
+test('Ludo: the home column is safe', () => {
+  LDO.init(); LDO.pos[0] = [52, -1, -1, -1]; LDO.pos[1] = [50, -1, -1, -1];
+  assert.equal(LDO.abs(0, 52), -1);
+});
+
+/* ------------------------------------------------------------------ Janggi */
+const JGI = rules.janggi;
+test('Janggi: the setup, the points (72 to 73.5) and no river', () => {
+  JGI.init(); assert.equal(JGI.points(0), 72); assert.equal(JGI.points(1), 73.5);
+  assert.equal(JGI.b[13], 1); assert.equal(JGI.b[76], 9);
+  assert.ok(JGI.legal(0).some(m => m.pass));
+});
+test('Janggi: a cannon needs a screen, and can neither jump nor take a cannon', () => {
+  JGI.init(); assert.ok(!JGI.legal(0).some(m => (JGI.b[m.from] & 7) === 6));
+  JGI.b.fill(0); JGI.b[4] = 1; JGI.b[85] = 9; JGI.b[40] = 6; JGI.b[42] = 7; JGI.b[38] = 14;
+  const to = JGI.legal(0).filter(m => m.from === 40).map(m => m.to).sort((a, b) => a - b);
+  assert.deepEqual(to, [43, 44]); // over the soldier to the right, but not over the Han cannon to the left
+});
+test('Janggi: the elephant moves one straight and two diagonally, and can be blocked', () => {
+  JGI.init(); JGI.b.fill(0); JGI.b[4] = 1; JGI.b[85] = 9; JGI.b[40] = 3;
+  const to = JGI.legal(0).filter(m => m.from === 40).map(m => m.to).sort((a, b) => a - b);
+  assert.equal(to.length, 8);
+  JGI.b[49] = 7; assert.equal(JGI.legal(0).filter(m => m.from === 40).length, 6);
+});
+test('Janggi: bikjang left unblocked goes to points', () => {
+  JGI.init(); JGI.b.fill(0); JGI.b[4] = 1; JGI.b[3] = 5; JGI.b[76] = 9; JGI.b[31] = 7;
+  JGI.apply({ pl: 0, from: 31, to: 30 }); // opens the file: generals face each other
+  assert.ok(JGI.facing());
+  JGI.apply({ pl: 1, pass: true });
+  assert.ok(JGI.over); assert.equal(JGI.over.winner, 0);
+});
