@@ -6,9 +6,9 @@ A walkable 3D archive of the oldest board and card games, built for [Librarium G
 | :---: | :---: | :---: | :---: | :---: |
 | from Senet (c. 3100 BCE) to Hex (1942) | every one with its own board and pieces | walked in date order | Gentle · Fair · Sharp | plus simulated games and AI timing |
 
-**Live:** [cptnope.github.io/Librarium-Museum](https://cptnope.github.io/Librarium-Museum/) (moves to `/Librarium-Archives` once the repository is renamed) · **Embedded:** the `[librarium_archives]` shortcode or the Elementor widget ([WordPress plugin](docs/wordpress.md))
+**Live:** [cptnope.github.io/Librarium-Archives](https://cptnope.github.io/Librarium-Archives/) · **Embedded:** the `[librarium_archives]` shortcode or the Elementor widget ([WordPress plugin](docs/wordpress.md))
 
-The Archives were first called the Librarium Museum of Play, and the repository was `Librarium-Museum` (GitHub redirects the old address).
+The Archives were first called the Librarium Museum of Play, and the repository was `Librarium-Museum`. GitHub redirects the old repository address, but not the old Pages address.
 
 ## The hall
 
