@@ -2100,12 +2100,12 @@ function buildCribbage(group) {
 /* --- Round five: Morabaraba, Ludo and Janggi */
 function buildMorabaraba(group) {
   const W = 0.86;
-  const slab = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, W), new THREE.MeshStandardMaterial({ color: 0x8a6a4a, roughness: 0.95 }));
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, W), new THREE.MeshStandardMaterial({ color: 0x4a3222, roughness: 0.95 }));
   slab.position.y = TOP + 0.02; group.add(slab);
   const px = 1024, sc = px / W, c = px / 2;
   // Scratched into hard earth and chalked, as herders draw it.
   topPlane(group, W, W, TOP + 0.0405, tex(px, px, (g) => {
-    g.fillStyle = '#9a7656'; g.fillRect(0, 0, px, px); speckle(g, px, px, 9000, ['#8a6646', '#a8866a', '#7a5a3e', '#b0907a'], 2.2);
+    g.fillStyle = '#5a3e2a'; g.fillRect(0, 0, px, px); speckle(g, px, px, 9000, ['#4e3422', '#6a4c36', '#43301f', '#725640'], 2.2);
     g.strokeStyle = '#efe6d2'; g.lineWidth = 8; g.lineCap = 'round';
     for (const sz of MO_S) g.strokeRect(c - sz * sc, c - sz * sc, 2 * sz * sc, 2 * sz * sc);
     g.beginPath();
@@ -4538,7 +4538,7 @@ const MORABARABA_P = Object.assign({}, MORRIS_P, {
   intro() { return 'You play the pale cows and go first. ' + this.prompt(); },
   setup(ex) {
     if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 12 }, () => {
-      const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x4a2a16 : 0xf0e6d0, roughness: 0.5 });
+      const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x1e120a : 0xf0e6d0, roughness: pl ? 0.35 : 0.5 });
       const m = new THREE.Mesh(morrisPieceGeo, mat); m.userData.mats = [mat]; ex.group.add(m); return m;
     }));
     MORRIS_P.setup.call(this, ex);
