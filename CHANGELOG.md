@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.0: Four more tables
+
+- **Cribbage** (Wing IV): two-player six-card cribbage with the crib, the starter, the play and the show all scored for you, and pegs that leapfrog along a cribbage board. To 61, or 121.
+- **Tablut** (Wing IV): Linnaeus's Lapland tafl of 1732, on a board of reindeer hide. You command the king and his Swedes.
+- **Kalah** (Wing V): William Champion's mancala of 1940, from Holbrook, Massachusetts, with 3, 4 or 6 seeds a pit.
+- **Makruk** (Wing VI): Thai chess, with cowrie-shell pawns, promotion on the sixth rank and the endgame counts.
+
 ## 0.16.0: Four new tables
 
 - **Dominoes** (Wing IV): the two-player Draw game with a double-six set, the Scribe's hand face away from you and the boneyard face down.

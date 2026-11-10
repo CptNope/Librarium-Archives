@@ -46,6 +46,9 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 
 == Changelog ==
 
+= 0.17.0 =
+* New playable exhibits: Cribbage, Tablut, Kalah and Makruk (start values cribbage, tablut, kalah, makruk).
+
 = 0.16.0 =
 * New playable exhibits: Dominoes, Chinese Checkers, Hex and Gomoku. Use dominoes, chinese, hex or gomoku as the start exhibit.
 
