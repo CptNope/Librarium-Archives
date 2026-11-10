@@ -29,10 +29,10 @@ pie showData
 - [ ] The Checkered Game of Life and the Mansion of Happiness, once a square-by-square transcription of an original board and its rules can be checked
 - [ ] A stronger Brandubh attacker
 - [ ] A stronger Sharp level for Janggi
-- [ ] Rename the GitHub repository to `Librarium-Archives` (Settings › General); the code already points there
 
 ## Done
 
+- [x] Renamed from the Librarium Museum of Play to the Librarium Archives, repository included
 - [x] WordPress plugin with a shortcode and an Elementor widget, loading the Archives only where it is shown
 - [x] Wing II: strategy games (Weiqi, Ludus latrunculorum, Nine Men's Morris, Oware, Brandubh)
 - [x] Wing III: kings, cards and courts (Tables, chaturanga, shatranj, Lewis chessmen, cards, tarot)
