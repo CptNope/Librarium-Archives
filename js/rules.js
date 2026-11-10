@@ -270,17 +270,17 @@
     source: 'Traditional rules, as played across Europe since the Middle Ages.',
     followPrompt: 'Pick one of the Scribe\'s pieces to remove.',
     ADJ: MORRIS_ADJ, MILLS: MORRIS_MILLS,
-    init() { this.board = Array(24).fill(-1); this.hand = [9, 9]; this.quiet = 0; },
+    init() { this.board = Array(24).fill(-1); this.hand = [this.N, this.N]; this.quiet = 0; },
     onBoard(pl) { let n = 0; for (const v of this.board) if (v === pl) n++; return n; },
     count(pl) { return this.hand[pl] + this.onBoard(pl); },
-    inMill(p, pl) { return MORRIS_MILLS.some(m => m.includes(p) && m.every(q => this.board[q] === pl)); },
+    inMill(p, pl) { return this.MILLS.some(m => m.includes(p) && m.every(q => this.board[q] === pl)); },
     legal(pl) {
       const b = this.board, out = [];
       if (this.hand[pl] > 0) { for (let p = 0; p < 24; p++) if (b[p] < 0) out.push({ type: 'place', pl, to: p }); return out; }
       const fly = this.onBoard(pl) === 3;
       for (let p = 0; p < 24; p++) {
         if (b[p] !== pl) continue;
-        const targets = fly ? b.map((v, q) => (v < 0 ? q : -1)).filter(q => q >= 0) : MORRIS_ADJ[p].filter(q => b[q] < 0);
+        const targets = fly ? b.map((v, q) => (v < 0 ? q : -1)).filter(q => q >= 0) : this.ADJ[p].filter(q => b[q] < 0);
         for (const q of targets) out.push({ type: 'move', pl, from: p, to: q, fly });
       }
       return out;
@@ -330,7 +330,7 @@
     evaluate(pl) {
       const opp = 1 - pl;
       let s = (this.count(pl) - this.count(opp)) * 12;
-      for (const mill of MORRIS_MILLS) {
+      for (const mill of this.MILLS) {
         let a = 0, o = 0, e = 0;
         for (const q of mill) { const v = this.board[q]; if (v === pl) a++; else if (v === opp) o++; else e++; }
         if (a === 2 && e === 1) s += 3; if (o === 2 && e === 1) s -= 3;
@@ -2902,6 +2902,248 @@
     },
   };
 
+  /* -------------------------------------------------------------- Morabaraba
+   * The morris board with diagonals joining the corners of the three squares,
+   * and twelve cows a side. The diagonals are lines of the board: they carry moves and make mills. */
+  const MB_ADJ = MORRIS_ADJ.map(a => a.slice());
+  for (const k of [0, 2, 4, 6]) { MB_ADJ[k].push(k + 8); MB_ADJ[k + 8].push(k, k + 16); MB_ADJ[k + 16].push(k + 8); }
+  const MB_MILLS = MORRIS_MILLS.concat([0, 2, 4, 6].map(k => [k, k + 8, k + 16]));
+  const MORABARABA = Object.assign({}, MORRIS, {
+    id: 'morabaraba', name: 'Morabaraba', N: 12, ADJ: MB_ADJ, MILLS: MB_MILLS,
+    rules: [
+      'Take turns placing your twelve cows on empty points. You play the pale cows and go first.',
+      'Three of your cows in a row along any line, the diagonals included, make a mill. Each new mill lets you shoot one of the Scribe\'s cows. Cows in a mill are safe unless every one of them is in a mill.',
+      'Once every cow is placed, move one cow along a line to a neighbouring empty point.',
+      'A player down to three cows may fly them to any empty point.',
+      'You lose when you have two cows left or cannot move. If both sides are down to three and no cow is shot in ten moves each, the game is drawn.'
+    ],
+    source: 'Morabaraba as Mind Sports South Africa plays it, on the board with diagonals, without the rule that stops a broken mill being remade at once.',
+    result(pl) {
+      for (const p of [0, 1]) if (this.count(p) < 3) return { winner: 1 - p, text: p === 0 ? 'You are down to two cows.' : 'The Scribe is down to two cows.' };
+      if (!this.legal(pl).length) return { winner: 1 - pl, text: pl === 0 ? 'You have no legal move.' : 'The Scribe has no legal move.' };
+      if (this.count(0) === 3 && this.count(1) === 3 && !this.hand[0] && !this.hand[1] && this.quiet >= 20) return { winner: -1, text: 'Three cows each and no shot in ten moves. The game is drawn.' };
+      if (this.quiet >= 160) return { winner: -1, text: 'A long stretch with no shots. The game is drawn.' };
+      return null;
+    },
+  });
+  MORABARABA.apply = function (m) {
+    const r = MORRIS.apply.call(this, m);
+    if (m.type === 'remove') r.note = m.pl === 0 ? 'You shoot one of the Scribe\'s cows.' : 'The Scribe shoots one of your cows.';
+    return r;
+  };
+
+  /* -------------------------------------------------------------------- Ludo
+   * The cross of 52 squares on a 15 x 15 grid. Square k of the track lies at LD_TRACK[k] (x right,
+   * y away from the visitor); each colour starts at its own square and runs 51 squares round,
+   * then five up its home column and into the centre. Position: -1 in the yard, 0-50 on the track
+   * (counted from that colour's start), 51-55 the home column, 56 home. */
+  const LD_TRACK = (() => {
+    const t = [], seg = (x0, y0, dx, dy, n) => { for (let k = 0; k < n; k++) t.push([x0 + dx * k, y0 + dy * k]); };
+    seg(1, 6, 1, 0, 5); seg(6, 5, 0, -1, 6); t.push([7, 0]); seg(8, 0, 0, 1, 6); seg(9, 6, 1, 0, 6); t.push([14, 7]);
+    seg(14, 8, -1, 0, 6); seg(8, 9, 0, 1, 6); t.push([7, 14]); seg(6, 14, 0, -1, 6); seg(5, 8, -1, 0, 6); t.push([0, 7]); t.push([0, 6]);
+    return t;
+  })();
+  const LD_START = [0, 26];
+  const LUDO = {
+    id: 'ludo', name: 'Ludo', dice: true, oneDie: true, pipDice: true, autoMove: true, first: 0, N: 4, TRACK: LD_TRACK, START: LD_START,
+    extraNote: 'A six: throw again.',
+    rules: [
+      'You play red and the Scribe yellow, from opposite corners. Each of you has four tokens in your yard. You throw first.',
+      'Throw one die. A six brings a token out onto your starting square, or moves one six squares, and earns another throw.',
+      'Tokens run once round the board, clockwise, then turn up your own coloured column to the centre. You need the exact throw to finish.',
+      'Land on a Scribe token and it goes back to its yard. Your home column is safe from capture.',
+      'The first to bring all four tokens home wins. If no token can move, the turn passes.'
+    ],
+    source: 'Ludo as patented in England in 1896, with the common rules: a six to come out, a six to throw again, capture by landing, and an exact throw home.',
+    init() { this.pos = [[-1, -1, -1, -1], [-1, -1, -1, -1]]; this.ply = 0; },
+    roll() { const v = 1 + ((Math.random() * 6) | 0); return { value: v, faces: [v] }; },
+    abs(pl, rel) { return rel < 0 || rel > 50 ? -1 : (rel + LD_START[pl]) % 52; },
+    legal(pl, value) {
+      const out = [];
+      this.pos[pl].forEach((rel, k) => {
+        if (rel === 56) return;
+        if (rel < 0) { if (value === 6) out.push({ pl, k, from: -1, to: 0 }); return; }
+        if (rel + value <= 56) out.push({ pl, k, from: rel, to: rel + value });
+      });
+      // Tokens of one colour on one square move the same way: offer one of them.
+      const seen = new Set();
+      return out.filter(m => { const key = m.from + ':' + m.to; if (seen.has(key)) return false; seen.add(key); return true; });
+    },
+    steps(m) { if (m.from < 0) return [0]; return Array.from({ length: m.to - m.from }, (_, i) => m.from + i + 1); },
+    apply(m) {
+      const pl = m.pl; this.pos[pl][m.k] = m.to; this.ply++;
+      const caps = [], a = this.abs(pl, m.to);
+      if (a >= 0) this.pos[1 - pl].forEach((rel, k) => { if (this.abs(1 - pl, rel) === a) { this.pos[1 - pl][k] = -1; caps.push(k); } });
+      let note = '';
+      if (m.from < 0) note = pl === 0 ? 'A token comes out.' : 'A Scribe token comes out.';
+      if (caps.length) note = pl === 0 ? `You send ${caps.length > 1 ? caps.length + ' Scribe tokens' : 'a Scribe token'} back to its yard.` : `The Scribe sends ${caps.length > 1 ? caps.length + ' of your tokens' : 'one of your tokens'} back to your yard.`;
+      if (m.to === 56) note = pl === 0 ? 'A token reaches home.' : 'A Scribe token reaches home.';
+      return { note, caps };
+    },
+    extra(m, value) { return value === 6 && !this.done(m.pl); },
+    done(pl) { return this.pos[pl].every(r => r === 56); },
+    home(pl) { return this.pos[pl].filter(r => r === 56).length; },
+    winText: pl => (pl === 0 ? 'All four of your tokens are home.' : 'All four Scribe tokens are home.'),
+    snapshot() { return this.pos.map(a => a.slice()); },
+    restore(s) { this.pos = s.map(a => a.slice()); },
+    // How many enemy tokens could reach this square with one throw.
+    danger(pl, rel) {
+      if (rel < 1 || rel > 50) return 0;
+      const a = this.abs(pl, rel); let d = 0;
+      for (const r of this.pos[1 - pl]) {
+        if (r < 0 || r > 50) { if (r < 0 && a === LD_START[1 - pl]) d += 0.3; continue; }
+        const ea = this.abs(1 - pl, r), gap = (a - ea + 52) % 52;
+        if (gap >= 1 && gap <= 6 && r + gap <= 50) d++;
+      }
+      return d;
+    },
+    aiPlan(pl, moves) {
+      if (moves.length === 1 || LEVEL.name === 'gentle') return [moves[(Math.random() * moves.length) | 0]];
+      const sharp = LEVEL.name === 'sharp';
+      const val = m => {
+        const s = this.snapshot(), r = this.apply(m); let v = 0;
+        v += r.caps.length * (sharp ? 12 + 0.25 * r.caps.length : 10);
+        if (m.from < 0) v += 8;
+        if (m.to === 56) v += 9;
+        if (m.to > 50 && m.from <= 50) v += 6;
+        v += (m.to - Math.max(m.from, 0)) * 0.1;
+        if (sharp) { v -= this.danger(pl, m.to) * 4 * (0.4 + m.to / 50); v += this.danger(pl, m.from) * 3 * (0.4 + m.from / 50); }
+        this.restore(s); return v;
+      };
+      return [moves.reduce((a, b) => (val(b) > val(a) ? b : a))];
+    },
+  };
+
+  /* ------------------------------------------------------------------ Janggi
+   * Korean chess on 9 files x 10 rows, index r*9+c, row 0 nearest the visitor (Cho, blue).
+   * Codes: 1 general, 2 guard, 3 elephant, 4 horse, 5 chariot, 6 cannon, 7 soldier; +8 for Han (the Scribe). */
+  const JG_VAL = [0, 0, 3, 3, 5, 13, 7, 2];
+  const jgPal = i => { const r = (i / 9) | 0, c = i % 9; return c >= 3 && c <= 5 && (r <= 2 || r >= 7); };
+  // Palace diagonals: the corners join the centre.
+  const JG_DIAG = (() => {
+    const d = Array.from({ length: 90 }, () => []);
+    for (const [r0, cr] of [[0, 1], [7, 8]]) {
+      const ctr = cr * 9 + 4;
+      for (const [dr, dc] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) { const k = (cr + dr) * 9 + 4 + dc; d[ctr].push(k); d[k].push(ctr); }
+    }
+    return d;
+  })();
+  const JANGGI = {
+    id: 'janggi', name: 'Janggi', dice: false, first: 0, VAL: JG_VAL,
+    rules: [
+      'You play Cho (blue) and move first. Checkmate Han\'s general to win. Pieces stand on the points, as in Chinese chess, but there is no river.',
+      'General and guards: one step along the lines of their palace, diagonals included, never leaving it. Chariot: any distance in a straight line, and along the palace diagonals. Horse: one step straight then one diagonal, blocked by a piece on the first step. Elephant: one step straight then two diagonal, blocked by any piece on the way.',
+      'Cannon: must jump over exactly one piece to move or to capture, landing anywhere beyond. It can neither jump over nor take another cannon. In a palace it may jump along a diagonal over the centre.',
+      'Soldier: one step forward or sideways, and diagonally forward inside the enemy palace.',
+      'You may pass instead of moving, unless you are in check. If the generals face each other on an open file and the next player does not block it, the game ends and is decided on points (chariot 13, cannon 7, horse 5, elephant 3, guard 3, soldier 2, and 1.5 to Han for moving second). Two passes in a row, or two hundred moves each, are decided the same way.'
+    ],
+    source: 'Janggi as played in Korea today, with the inner elephants setup for both sides and bikjang decided on points.',
+    init() {
+      const b = new Array(90).fill(0), back = [5, 4, 3, 2, 0, 2, 3, 4, 5];
+      for (let c = 0; c < 9; c++) { b[c] = back[c]; if (back[c]) b[81 + c] = back[c] + 8; }
+      b[13] = 1; b[76] = 9;
+      for (const c of [1, 7]) { b[18 + c] = 6; b[63 + c] = 14; }
+      for (const c of [0, 2, 4, 6, 8]) { b[27 + c] = 7; b[54 + c] = 15; }
+      this.b = b; this.ply = 0; this.passes = 0; this.over = null;
+    },
+    side: v => (v ? (v > 8 ? 1 : 0) : -1),
+    gen(pl) { return this.b.indexOf(pl ? 9 : 1); },
+    facing() { const a = this.gen(0), b = this.gen(1); if (a < 0 || b < 0 || a % 9 !== b % 9) return false; for (let i = a + 9; i < b; i += 9) if (this.b[i]) return false; return true; },
+    points(pl) { let s = pl ? 1.5 : 0; for (const v of this.b) if (v && this.side(v) === pl) s += JG_VAL[v & 7]; return s; },
+    pseudo(pl) {
+      const b = this.b, out = [];
+      const own = j => b[j] && this.side(b[j]) === pl;
+      const at = (r, c) => (r < 0 || r > 9 || c < 0 || c > 8 ? -1 : r * 9 + c);
+      for (let i = 0; i < 90; i++) {
+        const v = b[i]; if (!v || this.side(v) !== pl) continue;
+        const t = v & 7, r = (i / 9) | 0, c = i % 9, add = j => { if (j >= 0 && !own(j)) out.push({ pl, from: i, to: j }); };
+        if (t === 1 || t === 2) {
+          for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const j = at(r + dr, c + dc); if (j >= 0 && jgPal(j) && (r <= 2) === (((j / 9) | 0) <= 2)) add(j); }
+          for (const j of JG_DIAG[i]) add(j);
+        } else if (t === 4 || t === 3) {
+          for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const s1 = at(r + dr, c + dc); if (s1 < 0 || b[s1]) continue;
+            for (const side of [-1, 1]) {
+              const ddr = dr || side, ddc = dc || side;
+              if (t === 4) add(at(r + dr + ddr, c + dc + ddc));
+              else { const s2 = at(r + dr + ddr, c + dc + ddc); if (s2 < 0 || b[s2]) continue; add(at(r + dr + 2 * ddr, c + dc + 2 * ddc)); }
+            }
+          }
+        } else if (t === 5) {
+          for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { let rr = r + dr, cc = c + dc; for (;;) { const j = at(rr, cc); if (j < 0) break; add(j); if (b[j]) break; rr += dr; cc += dc; } }
+          for (const j of JG_DIAG[i]) { add(j); if (!b[j] && JG_DIAG[j].length === 4) { const far = 2 * j - i; add(far); } }
+        } else if (t === 6) {
+          for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            let rr = r + dr, cc = c + dc, screen = false;
+            for (;;) {
+              const j = at(rr, cc); if (j < 0) break;
+              if (!screen) { if (b[j]) { if ((b[j] & 7) === 6) break; screen = true; } }
+              else { if (b[j]) { if ((b[j] & 7) !== 6) add(j); break; } add(j); }
+              rr += dr; cc += dc;
+            }
+          }
+          for (const j of JG_DIAG[i]) { if (JG_DIAG[j].length !== 4 || !b[j] || (b[j] & 7) === 6) continue; const far = 2 * j - i; if (!b[far] || ((b[far] & 7) !== 6 && !own(far))) add(far); }
+        } else if (t === 7) {
+          const f = pl === 0 ? 1 : -1;
+          add(at(r + f, c)); add(at(r, c - 1)); add(at(r, c + 1));
+          for (const j of JG_DIAG[i]) if (((j / 9) | 0) - r === f && jgPal(i)) add(j);
+        }
+      }
+      return out;
+    },
+    attacked(pl) { // is pl's general attacked?
+      const g = this.gen(pl); if (g < 0) return true;
+      return this.pseudo(1 - pl).some(m => m.to === g);
+    },
+    legal(pl) {
+      if (this.over) return [];
+      const out = this.pseudo(pl).filter(m => { const s = this.snapshot(); this.move(m); const ok = !this.attacked(pl); this.restore(s); return ok; });
+      if (!this.attacked(pl)) out.push({ pl, pass: true, label: 'Pass' });
+      return out;
+    },
+    move(m) { if (!m.pass) { this.b[m.to] = this.b[m.from]; this.b[m.from] = 0; } this.ply++; },
+    apply(m) {
+      const before = this.facing(), cap = m.pass ? 0 : this.b[m.to];
+      this.move(m);
+      this.passes = m.pass ? this.passes + 1 : 0;
+      let note = m.pass ? (m.pl === 0 ? 'You pass.' : 'The Scribe passes.') : '';
+      const byPoints = why => { const a = this.points(0), b = this.points(1); this.over = { winner: a > b ? 0 : 1, text: `${why} On points: you ${a}, the Scribe ${b}.` }; };
+      if (before && this.facing()) byPoints('The generals face each other and no one blocked them (bikjang).');
+      else if (this.passes >= 2) byPoints('Both sides passed.');
+      else if (this.ply >= 400) byPoints('Two hundred moves each.');
+      else if (this.facing()) note = (note ? note + ' ' : '') + (m.pl === 0 ? 'Bikjang: the generals face each other. The Scribe must block, or the game goes to points.' : 'Bikjang: the generals face each other. Block the file, or the game goes to points.');
+      else if (this.attacked(1 - m.pl)) note = (note ? note + ' ' : '') + (m.pl === 0 ? 'Janggun! Check.' : 'Janggun! Your general is in check.');
+      return { note, caps: cap ? [m.to] : [] };
+    },
+    result(pl) {
+      if (this.over) return this.over;
+      const ms = this.legal(pl);
+      if (ms.length === 1 && ms[0].pass && this.attacked(pl)) return { winner: 1 - pl, text: pl === 0 ? 'Checkmate. The Scribe wins.' : 'Checkmate.' };
+      if (!ms.length) return { winner: 1 - pl, text: pl === 0 ? 'Checkmate. The Scribe wins.' : 'Checkmate.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.ply, this.passes, this.over]; },
+    restore(s) { this.b = s[0].slice(); this.ply = s[1]; this.passes = s[2]; this.over = s[3]; },
+    turns(pl) {
+      const ms = this.legal(pl).filter(m => !m.pass || this.passes === 0);
+      const val = m => (m.pass ? -5 : this.b[m.to] ? 10 * JG_VAL[this.b[m.to] & 7] - JG_VAL[this.b[m.from] & 7] : 0);
+      ms.sort((a, b) => val(b) - val(a));
+      return ms.map(m => [m]);
+    },
+    terminal(pl, depth) {
+      if (this.over) return this.over.winner === pl ? 1000 + depth : -1000 - depth;
+      const ms = this.legal(pl);
+      if (!ms.length || (ms.length === 1 && ms[0].pass && this.attacked(pl))) return -1000 - depth;
+      return null;
+    },
+    evaluate(pl) {
+      let s = this.points(pl) - this.points(1 - pl);
+      for (let i = 0; i < 90; i++) { const v = this.b[i]; if ((v & 7) === 7) { const p = this.side(v), r = (i / 9) | 0, adv = p === 0 ? r - 3 : 6 - r; s += (p === pl ? 1 : -1) * 0.15 * adv; } }
+      return s;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 4); },
+  };
+
   /* ----------------------------------------------------------- Fox and Geese
    * The 33-point cross board: point (r, c) exists when r or c is 2, 3 or 4.
    * Lines run along rows and columns, and diagonally through the points whose
@@ -4448,7 +4690,7 @@
     },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE };
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);

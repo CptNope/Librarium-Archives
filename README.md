@@ -60,6 +60,7 @@ Through the third arch: games are printed, sold and brought home.
 | Dominoes | 18th century CE (Europe) | Still played | Playable: the two-player Draw game |
 | Tablut | recorded 1732 CE (Linnaeus) | Partly reconstructed | Playable, as the king's side |
 | Snakes and Ladders (gyan chaupar) | 18th–19th century CE | Still played | Playable, with virtues and vices from an old Indian board |
+| Ludo | 1896 CE | Still played | Playable: red against yellow, one die |
 | Mahjong | mid-1800s CE | Still played | Playable at a table of four: you and three Scribes |
 
 Rule choices worth knowing:
@@ -92,6 +93,7 @@ Rule choices worth knowing:
 - **Dots and Boxes:** closing a box scores it and you must draw again. The Scribe plays the whole of its turn, so it may take several boxes in a row.
 - **The Landlord's Game** follows U.S. Patent 748,626 (1904). The board's forty spaces, prices, rents and taxes are read from the patent drawing: Mother Earth, 22 lots priced at ten times their number, four absolute necessities, four railroads, three luxuries, two franchises, Legacy, the Public Park and poorhouse, the jail, and Lord Blueblood's No Trespassing corner. The rules are the patent's, for two players: lot tickets at the start, buy or rent, $100 wages, $5 taxes and fares, $50 luxuries worth $60 at the end, franchise charters, jail with a $50 fine or a double, railroad rides on a double, Bank notes at $5 interest, and the poorhouse. It is three times round by default, or five as in the patent (a table variant). The patent's rule for two checkers sharing a lot is left out, and loans and repayments are made for you.
 - **Chinese checkers:** ten marbles each in opposite points of the star. A move is a step or a chain of hops over single marbles of either colour; nothing is captured. A full far point with at least one of your marbles in it wins. House rule: after a hundred and fifty moves each, more marbles home wins.
+- **Ludo:** two players, red and yellow, from opposite corners. A six brings a token out or moves one, and earns another throw; landing on an enemy token sends it to its yard; your home column is safe; the finish needs the exact throw. There are no blocks or safe squares on the track.
 - **Kalah:** sow anticlockwise past your own store but never the Scribe's; a last seed in your store moves again, and one in your own empty pit captures the pit opposite (if it holds seeds). When a side is empty, the other side keeps its seeds.
 - **Hex:** red (you) joins the near and far edges, blue the sides. After your first stone the Scribe may use the swap rule: it takes the stone, reflected across the board into blue, and you move again.
 - **Halma:** a man in the far camp may not leave it, and a full far camp with at least one of your men in it wins, so neither side can block by staying home. A house rule ends the game after two hundred moves each.
@@ -109,8 +111,10 @@ Through the fifth arch: games from the Pacific, Africa and East Asia that the lo
 | Makruk | traditional | Still played | Playable, with the counting rules kept for you |
 | Kōnane | by 1778–79 (Cook's expedition) | Still played | Playable on an 8 × 8 papamū |
 | Yut Nori | traditional | Still played | Playable, with shortcuts, stacking and extra throws |
+| Janggi | traditional | Still played | Playable, with passing and bikjang decided on points |
 | Fanorona | traditional | Still played | Playable (fanoron-tsivy, 5 × 9) |
 | Bao | in verse by the 1820s | Still played | Playable (Bao la Kujifunza, the learners' game) |
+| Morabaraba | traditional | Still played | Playable: twelve cows each, on the board with diagonals |
 
 Rule choices worth knowing:
 
@@ -124,6 +128,8 @@ Rule choices worth knowing:
 - **Yut Nori:** a piece that starts its move on a corner or the centre takes the shortcut; your own pieces stack and move together; a yut, a mo or a capture earns another throw. Each throw is moved at once rather than saved up, and there is no back-do.
 - **Mahjong:** a basic Chinese game with the 136 tiles (no flowers or seasons). Go out with four sets and a pair, seven pairs or the thirteen orphans. You may claim a discard for a pung or kong from anyone, a chow only from the player on your left, and a win from anyone; a win beats a pung or kong, which beats a chow. A kong draws a replacement tile. There is no scoring: whoever goes out first wins the hand, and an empty wall is a draw.
 - **Bao la Kujifunza:** every pit starts with two seeds and the house is an ordinary pit. A move sows a pit of two or more seeds either way round your own sixteen pits. If you can capture you must: a last seed landing in an occupied pit of your inner row takes the Scribe's seeds opposite, which are sown from an end of your row (the nearer end for a capture in the two pits at either end, otherwise the end that keeps your direction). Landing in any other occupied pit picks it up and sows on; a turn ends in an empty pit. A turn that cannot capture must start from the inner row if it can, and never captures. An empty inner row, or no move, loses. House rule: after a hundred moves each, the side with more seeds wins.
+- **Janggi:** the inner-elephant setup for both sides (horse, elephant, elephant, horse). Pieces move as in Korea, cannons included; you may pass unless in check. If the generals face each other on an open file (bikjang) and the next player does not block it, or both sides pass in a row, or after two hundred moves each, the game is decided on points: chariot 13, cannon 7, horse 5, elephant 3, guard 3, soldier 2, and 1.5 to Han. Repetition is not policed.
+- **Morabaraba:** Mind Sports South Africa's rules on the board with diagonals: twelve cows each, mills along any line including the diagonals, flying at three, and a draw when both sides have three and no cow is shot in ten moves each. The rule that a broken mill cannot be remade at once is left out, and a mill always shoots.
 - **Fanorona:** captures by approach or withdrawal take the whole unbroken line. You choose a capture by clicking the first enemy stone it would take, which also settles approach against withdrawal. A capture chain may not revisit a point or repeat a direction, and the **Stop** button ends it early. House rule: twenty moves each without a capture is a draw.
 
 The hall ends at a lectern featuring Librarium's own games, with links to Phoenix Farm, Calendra, The Great Chase and Royal Threadcount, under an arch signed *Different fables for different tables*.
@@ -148,6 +154,8 @@ The AI opponent has three levels, picked at any table and remembered: **Gentle**
 - **Yut Nori and Pachisi** have rule-of-thumb Scribes that weigh progress, captures, safety and (in Pachisi) castles; Gentle adds a lot of randomness. Over many games Fair beats Gentle about 55% of the time in Yut Nori and 72% in Pachisi.
 - **Mū tōrere, Kōnane and Fanorona** use the shared search. In Mū tōrere it looks up to sixteen moves ahead, which is enough to never lose; in Kōnane it counts how many captures each side has left; in Fanorona it searches whole capture chains as one turn.
 - **Mahjong** seats three Scribes, one at each other wind. Each counts how far its hand is from ready (shanten) and discards the tile that keeps the most useful draws open; it claims a discard only when that brings its hand closer. Gentle discards at random four times in ten and claims only half the time it could; Sharp also prefers to throw honour tiles that are already dead.
+- **Janggi and Morabaraba** use the shared search: Janggi counts points and pushes soldiers, Morabaraba reuses the Nine Men's Morris evaluation. Fair beat Gentle in every game of both; Sharp beat Fair 4 to 2 at Morabaraba and drew level 2 to 2 in short Janggi matches.
+- **Ludo:** Gentle moves any token; Fair prefers captures, bringing tokens out and getting them home; Sharp also counts how many enemy tokens could reach a square with one throw before moving there. Over hundreds of games Fair beat Gentle 81% and Sharp beat Fair 65%.
 - **Bao** uses the shared search, weighing seeds, the inner row and the best capture on offer. It is cheap to search, so Fair looks four plies ahead and Sharp up to twelve; over 40 games from varied openings Fair beat Gentle 31 to 9 and Sharp beat Fair 29 to 11. The side that moves first has a strong edge, and here that is you.
 - **The Landlord's Game** has a rule-of-thumb Scribe. It decides which lot tickets to buy, whether to buy or rent, whether to buy a luxury, whether to pay its way out of jail, and, when a double offers a railroad ride, which landing leaves it richer. Gentle decides by coin toss; Fair keeps a cash cushion; Sharp buys every lot it can afford, since land pays. Dice decide a lot: over 1,500 games Sharp beat Fair 52% of the time, and Fair beat Gentle 67%.
 - **Chinese checkers** uses the shared search, like Halma, weighing how far each marble has to go.
@@ -281,7 +289,7 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - Elwyn Berlekamp, *The Dots and Boxes Game: Sophisticated Child's Play* (2000)
 - Wikipedia: Kōnane, Fanorona, Yunnori, History of shogi, Bao (game), Hex (board game), Renju, Dominoes, Chinese checkers
 - pagat.com: Draw dominoes, and the history of dominoes
-- Wikipedia: Tafl games (Tablut), Makruk, Cribbage; Mancala World: Kalah
+- Wikipedia: Tafl games (Tablut), Makruk, Cribbage, Janggi, Ludo, Morabaraba; Mancala World: Kalah; igGameCenter: Morabaraba rules
 - Wikipedia: Pachisi; Masters of Games: The Rules of Pachisi & Chaupur
 - Te Ara, the Encyclopedia of New Zealand: Traditional Māori games (mū tōrere)
 - Wikipedia: Dice, Polis (board game), Liubo, Patolli, Alquerque, Xiangqi, Snakes and ladders, Royal Game of Ur
@@ -303,6 +311,8 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - [x] The Landlord's Game, from the patent drawing and text
 - [x] New exhibits: Dominoes, Chinese checkers, Hex and Gomoku
 - [x] New exhibits: Cribbage, Tablut, Kalah and Makruk
+- [x] New exhibits: Ludo, Janggi and Morabaraba
+- [ ] Hare and Hounds (the French military game), once the lines of its eleven-point board can be checked against a primary source
 - [ ] The Checkered Game of Life and the Mansion of Happiness, once a square-by-square transcription of an original board and its rules can be checked
 - [x] Larger Dots and Boxes grids (5 × 5, chosen at the table)
 - [x] A playable early card game: tarocchi for two
