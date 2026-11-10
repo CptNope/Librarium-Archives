@@ -46,6 +46,9 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 
 == Changelog ==
 
+= 0.18.0 =
+* New playable exhibits: Ludo, Janggi and Morabaraba (start values ludo, janggi, morabaraba).
+
 = 0.17.0 =
 * New playable exhibits: Cribbage, Tablut, Kalah and Makruk (start values cribbage, tablut, kalah, makruk).
 

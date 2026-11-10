@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.0: Ludo, Janggi and Morabaraba
+
+- **Ludo** (Wing IV): the 1896 game from Pachisi, red against yellow on the classic cross, with one die.
+- **Janggi** (Wing VI): Korean chess on a riverless board with octagonal pieces in three sizes, passing, and bikjang decided on points.
+- **Morabaraba** (Wing VI): southern Africa's mill game, with twelve cows and the diagonals. Nine Men's Morris and Morabaraba now share one engine and one table.
+
 ## 0.17.0: Four more tables
 
 - **Cribbage** (Wing IV): two-player six-card cribbage with the crib, the starter, the play and the show all scored for you, and pegs that leapfrog along a cribbage board. To 61, or 121.
