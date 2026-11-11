@@ -32,7 +32,7 @@ pie showData
 - [ ] Swap the type-set wordmark for Librarium's logo files
 - [ ] Hare and Hounds (the French military game), once the lines of its eleven-point board can be checked against a primary source
 - [ ] A stronger Brandubh attacker
-- [ ] A stronger Sharp level for Janggi and Latrunculi
+- [ ] A stronger Sharp level for Janggi, Latrunculi and Rithmomachia
 
 ## Done
 
