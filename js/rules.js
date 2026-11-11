@@ -4718,7 +4718,7 @@
   const cjHit = k => 1 - Math.pow((6 - k) / 6, 2); // chance two dice show at least one of k faces
 
   const CHATURAJI = {
-    id: 'chaturaji', name: 'Chaturaji', dice: true, pipDice: true, first: 0, ROUNDS: CJ_ROUNDS, SEATS: CJ_SEAT, NAME: CJ_NAME, VAL: CJ_VAL,
+    id: 'chaturaji', name: 'Chaturaji', dice: true, pipDice: true, first: 0, extraNote: '', ROUNDS: CJ_ROUNDS, SEATS: CJ_SEAT, NAME: CJ_NAME, VAL: CJ_VAL,
     stopLabel: 'Skip',
     rules: [
       'Four armies, each for itself. You play yellow, nearest you; Black, Red and Green are three Scribes, and play passes clockwise, to your left.',
@@ -5153,7 +5153,7 @@
   const TB_DIR = [1, -1, 1, -1];
   const TB_P = { 1: 4 / 16, 2: 6 / 16, 3: 4 / 16, 4: 1 / 16, 6: 1 / 16 }; // chances of each throw
   const TAB = {
-    id: 'tab', name: 'Tâb', dice: true, first: 0, W: 9,
+    id: 'tab', name: 'Tâb', dice: true, first: 0, W: 9, extraNote: 'A tâb, a 4 or a 6: throw again.',
     rules: [
       'You have a row of nine dark stones nearest you; the Scribe has nine pieces of red tile at the far side. Pieces travel through the rows as the arrows show: along your own row, back along the next, out along the third, and then round the two middle rows.',
       'Throw four palm sticks and count the white sides: one white is a tâb (1), two count 2, three count 3, four count 4, and none counts 6. A tâb, a 4 or a 6 earns another throw. Each throw moves one piece.',
@@ -5630,7 +5630,7 @@
      0 (not yet on the board) to 29 (the goal). */
   const HJ_GOAL = 29, HJ_BACK = { 20: 6, 10: 8 }, HJ_AGAIN = [15, 25];
   const HOUNDS = {
-    id: 'hounds', name: 'Hounds and Jackals', dice: true, first: 0, N: 5, sides: ['hounds', 'jackals'],
+    id: 'hounds', name: 'Hounds and Jackals', dice: true, first: 0, N: 5, sides: ['hounds', 'jackals'], extraNote: '',
     rules: [
       'This is a modern reconstruction. No ancient rules survive; the table follows the route Howard Carter proposed in 1912, when he found the set.',
       'You have five hounds on the left track, the Scribe five jackals on the right. Each side races up its own 29 holes to the goal at the top.',
@@ -5678,10 +5678,16 @@
         let v = m.end - m.from;
         if (m.end === HJ_GOAL) v += 6;
         if (HJ_AGAIN.includes(m.end) && m.end === m.to) v += 5;
-        if (LEVEL.name === 'sharp') { // keep pins off the holes just below a slide, and spread out to keep exact throws open
-          if ([5, 6, 7, 8, 9].includes(m.end) && m.from === 0) v += 0.5;
-          for (const t of [16, 17, 18, 19]) if (m.end === t) v -= 0.6;
-          if (m.end > 24 && m.end < HJ_GOAL) v -= 0.3 * (this.pos[pl].filter(p => p > 24 && p < HJ_GOAL).length);
+        if (LEVEL.name === 'sharp') { // look one throw ahead: how much the best move after this one is worth, on average
+          const save = this.pos[pl][m.k]; this.pos[pl][m.k] = m.end;
+          let ev = 0;
+          for (const [t, p] of [[1, 4 / 16], [2, 6 / 16], [3, 4 / 16], [4, 1 / 16], [5, 1 / 16]]) {
+            let b2 = 0;
+            for (const n of this.legal(pl, t)) b2 = Math.max(b2, n.end - n.from + (n.end === HJ_GOAL ? 6 : 0) + (HJ_AGAIN.includes(n.end) && n.end === n.to ? 5 : 0));
+            ev += p * b2;
+          }
+          this.pos[pl][m.k] = save;
+          v += 0.8 * ev;
         }
         v += Math.random() * pick(2, 0.3, 0.05);
         if (v > bv) { bv = v; best = m; }
@@ -5775,9 +5781,15 @@
       e += (sp.filter(m => m.cap).length - so.filter(m => m.cap).length) * 2 + (sp.length - so.length) * 0.15;
       return e;
     },
+    // Placing: keep counters in touch with friends, but in contact with the enemy and near the middle, where the fighting is.
     placeScore(pl, i) {
-      const x = i & 7, y = i >> 3; let s = 0;
-      for (const [dx, dy] of LT_D4) { const nx = x + dx, ny = y + dy; if (nx < 0 || nx > 7 || ny < 0 || ny > 7) { s += 0.4; continue; } const v = this.b[ny * 8 + nx]; if (v === pl + 1) s += 1; else if (v) s -= 0.3; }
+      const x = i & 7, y = i >> 3; let s = -0.12 * (Math.abs(x - 3.5) + Math.abs(y - 3.5));
+      for (const [dx, dy] of LT_D4) {
+        const nx = x + dx, ny = y + dy; if (nx < 0 || nx > 7 || ny < 0 || ny > 7) continue;
+        const v = this.b[ny * 8 + nx];
+        if (v === pl + 1) s += 0.6;
+        else if (v) { s += 0.5; const bx = x + 2 * dx, by = y + 2 * dy; if (bx >= 0 && bx < 8 && by >= 0 && by < 8 && !this.b[by * 8 + bx]) s += 0.4; } // an enemy that could be trapped from beyond
+      }
       if (LT_CORNER[i]) s -= 1.5;
       return s;
     },
@@ -5801,7 +5813,7 @@
   const PT_N = 52, PT_MARKERS = 6, PT_TREASURE = 6, PT_LIMIT = 300;
   const PT_KIND = h => { const a = h % 13; return a === 0 ? 'centre' : a === 6 || a === 7 ? 'tip' : a === 4 || a === 9 ? 'dark' : ''; };
   const PATOLLI = {
-    id: 'patolli', name: 'Patolli', dice: true, first: 0, START: [0, 26], KIND: PT_KIND,
+    id: 'patolli', name: 'Patolli', dice: true, first: 0, START: [0, 26], KIND: PT_KIND, extraNote: '',
     rules: [
       'This is a modern reconstruction. Spanish writers such as Diego Durán describe the mat, the beans, the six markers and the stakes, but not every rule; the table follows the reconstruction most often given today.',
       'You have six red markers and six treasures; the Scribe has six blue markers and six treasures. Throw five beans and count the marked sides: 1 to 4 move that many houses, all five move 10, and none means you pay a treasure as an offering to the god Macuilxochitl.',

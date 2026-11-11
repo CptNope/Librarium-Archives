@@ -8,6 +8,7 @@ Three exhibits whose rules are lost or only partly recorded are now playable. Ea
 - **Ludus latrunculorum** (Wing II): the "Piso" rules of the Locus Ludi project (University of Fribourg). Twenty glass counters each, placed one at a time, then stepped; a counter trapped between two enemies is taken.
 - **Patolli** (Wing II): the reconstruction most often given today, from Diego Durán's account. Six markers and six treasures each, five beans, captures in the centre, treasure paid on the dark houses.
 - Placards can show a note beside the play button.
+- Fixed: Tâb printed "undefined" after a throw that earns another.
 - 9 new rule tests (230 in all).
 
 ## 0.20.0: Seega, Tâb, Bagh-chal and Four Seasons chess

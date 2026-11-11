@@ -31,7 +31,7 @@ pie showData
 - [ ] Hare and Hounds (the French military game), once the lines of its eleven-point board can be checked against a primary source
 - [ ] The Checkered Game of Life and the Mansion of Happiness, once a square-by-square transcription of an original board and its rules can be checked
 - [ ] A stronger Brandubh attacker
-- [ ] A stronger Sharp level for Janggi
+- [ ] A stronger Sharp level for Janggi and Latrunculi
 
 ## Done
 
