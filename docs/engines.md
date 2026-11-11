@@ -219,6 +219,7 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Ludo | `ludo` | Race, one die | Heuristic with danger | `extra` on a six |
 | Mahjong | `mahjong` | Tiles, four seats | Shanten and ukeire | own turn order, claims |
 | The Mansion of Happiness | `mansion` | Race, teetotum | None needed | `autoMove`, `skipTurn` for sentences, `extra` |
+| The Checkered Game of Life | `lifegame` | Race on a board, teetotum, points | Heuristic, Sharp looks one spin ahead | `skipTurn` for Prison |
 | Reversi | `reversi` | Placement | Search, exact endgame | `skipTurn` for passes |
 | Halma | `halma` | Race on a board | Search | `skipTurn` |
 | Dots and Boxes | `dotsboxes` | Lines | Exact endgame solver | `followUp`, `variants` |

@@ -16,21 +16,20 @@ timeline
     0.19 : Chaturaji, chess for four with dice
     0.20 : Seega · Tâb · Bagh-chal · Four Seasons chess
     0.21 : Hounds and Jackals · Latrunculi · Patolli, as modern reconstructions
-    0.22 : The Mansion of Happiness, from a scan of the 1843 board
+    0.22 : The Mansion of Happiness and the Checkered Game of Life, from board scans
 ```
 
 ```mermaid
 pie showData
     title Exhibits
-    "Playable" : 48
-    "On display" : 9
+    "Playable" : 49
+    "On display" : 8
 ```
 
 ## Open
 
 - [ ] Swap the type-set wordmark for Librarium's logo files
 - [ ] Hare and Hounds (the French military game), once the lines of its eleven-point board can be checked against a primary source
-- [ ] The Checkered Game of Life, once a square-by-square transcription of an original board and its rules can be checked
 - [ ] A stronger Brandubh attacker
 - [ ] A stronger Sharp level for Janggi and Latrunculi
 
@@ -49,6 +48,7 @@ pie showData
 - [x] The Landlord's Game, from the patent drawing and text
 - [x] New exhibits: Dominoes, Chinese checkers, Hex and Gomoku
 - [x] New exhibits: Cribbage, Tablut, Kalah and Makruk
+- [x] The Checkered Game of Life playable, from a scan of the board of about 1911 and Bradley's patent of 1866
 - [x] The Mansion of Happiness playable, every square read from a scan of the 1843 Ives board
 - [x] Hounds and Jackals, Ludus latrunculorum and Patolli playable as clearly labelled modern reconstructions
 - [x] Seega and Tâb from Lane's Egypt, Bagh-chal from Nepal, and Alfonso X's Four Seasons chess

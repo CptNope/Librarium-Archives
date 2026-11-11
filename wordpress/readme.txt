@@ -14,13 +14,13 @@ A walkable 3D archive of the oldest board and card games, with tables visitors c
 
 Visitors walk a candlelit library hall in six wings, read the history of each game on its placard, and sit down to play:
 
-57 exhibits, 48 of them playable:
+57 exhibits, 49 of them playable:
 
 * Wing I, The Dawn of Play: Senet, the Royal Game of Ur and Hounds and Jackals (playable, Senet and Hounds and Jackals as modern reconstructions); Mehen, the Başur Höyük pieces, the first dice.
 * Wing II, Strategy Takes the Table: Go, Ludus latrunculorum, Patolli, Nine Men's Morris, Oware, Alquerque and Brandubh (playable; latrunculi and patolli as modern reconstructions); Petteia, Liubo.
 * Wing III, Kings, Cards and Courts: Tables (backgammon), Shatranj, Xiangqi, Chaturaji, Four Seasons chess and tarocchi (playable); Chaturanga, the Lewis Chessmen, playing cards.
 * Wing IV, Printed Boards and Parlour Tables: Fox and Geese, chess, Draughts, Pachisi, the Game of the Goose, Cribbage, Dominoes, Tablut, Snakes and Ladders, Ludo and Mahjong (all playable).
-* Wing V, The Modern Board Game: the Mansion of Happiness, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord's Game, Kalah and Hex (playable); the Checkered Game of Life.
+* Wing V, The Modern Board Game: the Mansion of Happiness, the Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord's Game, Kalah and Hex (all playable).
 * Wing VI, Games of the World: Mū tōrere, Shogi, Gomoku, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega and Tâb (all playable).
 
 The hall ends at a lectern of Librarium's own games.
@@ -51,7 +51,7 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 == Changelog ==
 
 = 0.22.0 =
-* The Mansion of Happiness (1843) is playable, with every square read from the original board.
+* The Mansion of Happiness (1843) and the Checkered Game of Life (1860) are playable, with every square read from scans of original boards.
 
 = 0.21.0 =
 * Hounds and Jackals, Ludus latrunculorum and Patolli are now playable as modern reconstructions, and their placards say so and name whose.

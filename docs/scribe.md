@@ -117,6 +117,7 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Tâb | 85% | 61% | 400 and 600 |
 | Hounds and Jackals | 75% | 55% | 400 and 1,000; the two tracks never meet, so luck decides most games |
 | Patolli | 91% | 73% | 400 and 600 |
+| Checkered Game of Life | 71% | 50% | 1,000 each; the spin decides most games |
 | Latrunculi | 4–1, 1 draw | 3–4, 1 draw | 6 and 8 |
 | Dominoes | 61% | 62% | 400 and 600 hands |
 | Cribbage | 60% | 57% | 300 each |
