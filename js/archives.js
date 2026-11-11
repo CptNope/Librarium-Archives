@@ -5585,7 +5585,7 @@ const COURIER_P = {
 };
 // Hazard is played at the first dice: two new bone dice and a pile of shillings.
 const HZ_UP = { 1: [0, 0, Math.PI / 2], 6: [0, 0, -Math.PI / 2], 2: [0, 0, 0], 5: [Math.PI, 0, 0], 3: [-Math.PI / 2, 0, 0], 4: [Math.PI / 2, 0, 0] }; // turns that bring each face to the top
-const hzCoinGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.004, 20);
+const hzCoinGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.006, 24);
 const HAZARD_P = {
   camW: 1.0,
   intro() { return 'You cast first. ' + this.prompt(); },
@@ -5612,8 +5612,8 @@ const HAZARD_P = {
   },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); if (ex.pieces) { ex.pieces.dice.forEach(d => { d.visible = false; }); ex.pieces.coins.forEach(c => { c.visible = false; }); } },
   // Each purse is a few stacks of shillings in front of its owner; a stake sits in the middle.
-  coinSpot(pl, k) { return V3(-0.3 + ((k / 5) | 0) * 0.045, GAMES.hazard.surface + 0.002 + (k % 5) * 0.0042, pl ? -0.2 : 0.2); },
-  potSpot(k) { return V3(0.24 + ((k / 5) | 0) * 0.04, GAMES.hazard.surface + 0.002 + (k % 5) * 0.0042, 0); },
+  coinSpot(pl, k) { return V3(-0.33 + ((k / 5) | 0) * 0.055, GAMES.hazard.surface + 0.003 + (k % 5) * 0.0062, pl ? -0.2 : 0.2); },
+  potSpot(k) { return V3(0.26 + ((k / 5) | 0) * 0.05, GAMES.hazard.surface + 0.003 + (k % 5) * 0.0062, 0); },
   layCoins(instant) {
     const G = GAMES.hazard, coins = this.ex.pieces.coins, jobs = [];
     const staked = G.stage === 'main' || G.stage === 'throw' ? G.stake : 0, c = G.caster;
@@ -5652,7 +5652,7 @@ const HAZARD_P = {
 // Piquet is played at the playing-cards exhibit, with a 32-card French pack.
 const PIQUET_P = {
   camW: 1.2,
-  intro() { return 'The Scribe deals first, so you are elder hand. ' + this.prompt(); },
+  intro() { return 'The Scribe deals first. ' + this.prompt(); },
   prompt() {
     const G = GAMES.piquet, first = G.stage === 'play' && G.tricks[0] + G.tricks[1] === 0 && G.declNote;
     return (first ? G.declNote + ' ' : '') + G.prompt0();

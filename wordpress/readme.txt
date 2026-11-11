@@ -14,11 +14,11 @@ A walkable 3D archive of the oldest board and card games, with tables visitors c
 
 Visitors walk a candlelit library hall in six wings, read the history of each game on its placard, and sit down to play:
 
-60 exhibits, 53 of them playable:
+61 exhibits, 57 of them playable:
 
-* Wing I, The Dawn of Play: Senet, the Royal Game of Ur and Hounds and Jackals (playable, Senet and Hounds and Jackals as modern reconstructions); Mehen, the Başur Höyük pieces, the first dice.
+* Wing I, The Dawn of Play: Senet, the Royal Game of Ur, Hazard at the first dice, and Hounds and Jackals (playable, Senet and Hounds and Jackals as modern reconstructions); Mehen, the Başur Höyük pieces.
 * Wing II, Strategy Takes the Table: Go, Ludus latrunculorum, Patolli, Nine Men's Morris, Oware, Alquerque and Brandubh (playable; latrunculi and patolli as modern reconstructions); Petteia, Liubo.
-* Wing III, Kings, Cards and Courts: Tables (backgammon), Chaturanga, Shatranj, Xiangqi, Chaturaji, Rithmomachia, Four Seasons chess and tarocchi (playable; Chaturanga and Rithmomachia as modern reconstructions); the Lewis Chessmen, playing cards.
+* Wing III, Kings, Cards and Courts: Tables (backgammon), Chaturanga, Shatranj, Xiangqi, Chaturaji, Rithmomachia, medieval chess on the Lewis Chessmen, Courier chess, Four Seasons chess, Piquet at the playing cards, and tarocchi (all playable; Chaturanga, Rithmomachia and medieval chess as modern reconstructions).
 * Wing IV, Printed Boards and Parlour Tables: Fox and Geese, chess, Draughts, Pachisi, the Game of the Goose, Cribbage, Dominoes, Tablut, Whist, Snakes and Ladders, Ludo and Mahjong (all playable).
 * Wing V, The Modern Board Game: the Mansion of Happiness, the Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord's Game, Kalah and Hex (all playable).
 * Wing VI, Games of the World: Mū tōrere, Shogi, Gomoku, Jungle, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega and Tâb (all playable).
@@ -49,6 +49,10 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 * Fonts Almendra SC, Amethysta and Montserrat from Google Fonts (SIL Open Font License).
 
 == Changelog ==
+
+= 0.24.0 =
+* Courier chess is a new playable exhibit.
+* The Lewis Chessmen (medieval chess, a labelled modern reconstruction), the first dice (Hazard) and the playing cards (Piquet) are now playable.
 
 = 0.23.0 =
 * Jungle (dou shou qi) and Whist are playable, Whist with a Scribe as your partner.

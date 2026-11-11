@@ -1,6 +1,6 @@
 {
   "name": "librarium-archives",
-  "version": "0.23.0",
+  "version": "0.24.0",
   "private": true,
   "description": "Librarium Archives: a walkable 3D hall of 57 historical board and card games, 49 of them playable against an AI opponent.",
   "scripts": {

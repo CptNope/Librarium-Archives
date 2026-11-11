@@ -193,6 +193,7 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Game | id | Kind | Scribe | Special hooks |
 | --- | --- | --- | --- | --- |
 | Senet | `senet` | Race, sticks | Heuristic | `extra` on throws of 1, 4 and 5 |
+| Hazard | `hazard` | Dice, stakes | Calls a main of 7; stakes by level | `preThrow` and `aiPre` for stake and main, `extra` while the chance is open, `passTurn` for the caster |
 | Royal Game of Ur | `ur` | Race, dice | Heuristic | `extra` on rosettes |
 | Hounds and Jackals | `hounds` | Race, sticks (modern reconstruction) | Heuristic | `extra` on holes 15 and 25, `steps` with slides |
 | Weiqi (Go) | `go` | Placement | MCTS with RAVE | `canPass` |
@@ -207,6 +208,9 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Four Seasons chess | `fourseasons` | Chess family, four seats | Every move, then the next player's reply | `passTurn`, `scribeName`, armies change hands |
 | Chaturanga | `chaturanga` | Chess family (modern reconstruction) | Search | shatranj's engine under Sanskrit names |
 | Shatranj | `shatranj` | Chess family | Search | |
+| Medieval chess | `lewischess` | Chess family (modern reconstruction) | Search | shatranj's engine; only checkmate wins |
+| Courier chess | `courier` | Chess family, 12 × 8 | Search | opening leaps made before play |
+| Piquet | `piquet` | Cards: exchange, declarations, tricks | Sampled exchange (Sharp), card-play heuristic | `followUp` to mark discards, `passTurn`, `variants`, a labelled Next deal move |
 | Xiangqi | `xiangqi` | Chess family | Search | |
 | Rithmomachia | `rithmo` | Number captures (modern reconstruction) | Search | captures made for the mover after each move |
 | Tarocchi | `tarocchi` | Trick-taking | Sampling over hidden cards | `followUp` to lead |
