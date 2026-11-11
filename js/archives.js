@@ -4896,7 +4896,7 @@ const HOUNDS_P = {
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(p => { p.visible = false; }); },
   side: pl => (pl ? 1 : -1),
   hole(pl, h) { return play.ex.group.userData.holes[this.side(pl)][h - 1].clone(); },
-  waitSpot(pl, k) { return V3((pl ? 1 : -1) * (0.3 + (k % 2) * 0.04), TOP, 0.5 - k * 0.045); },
+  waitSpot(pl, k) { return V3((pl ? 1 : -1) * (0.3 + (k % 2) * 0.05), TOP, 0.28 - k * 0.06); }, // beside the foot of the board
   pos(pl, h, k) {
     if (h === 0) return this.waitSpot(pl, k);
     const p = this.hole(pl, h);
