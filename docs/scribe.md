@@ -14,6 +14,7 @@ mindmap
       Fox and Geese · Draughts · Reversi · Halma
       Chinese checkers · Kalah · Bao · Tablut
       Mū tōrere · Kōnane · Fanorona · Morabaraba
+      Seega · Bagh-chal
     Monte Carlo
       random playouts with RAVE
       Go · Hex
@@ -23,10 +24,12 @@ mindmap
     Rules of thumb
       scored moves for dice games
       Senet · Ur · Tables · Goose
-      Yut Nori · Pachisi · Ludo · Landlord's Game
+      Yut Nori · Pachisi · Ludo · Landlord's Game · Tâb
     Every way to use the throw
       both dice tried in both orders, scored by danger and threats
       Chaturaji, three Scribes at once
+    Every move, then the next player's reply
+      Four Seasons chess, three Scribes at once
     Exact and threat search
       Dots and Boxes endgame solver
       Gomoku continuous fours
@@ -136,4 +139,8 @@ Known weak spots: in Brandubh the visitor's side still wins most games against S
 | Ludo | Captures, coming out, getting home. Sharp counts how many enemy tokens could reach a square in one throw |
 | The Landlord's Game | Lot tickets, buy or rent, luxuries, the jail fine, railroad rides. Sharp buys every lot it can afford, since land pays |
 | Yut Nori, Pachisi | Progress, captures, safety, and castles in Pachisi |
+| Tâb | Captures, starting pieces, raids on the home row, and the chance an enemy can land on a square with one throw. Sharp weighs every piece on the board that way after each move |
+| Seega | Placing: solid blocks that cannot be trapped. Moving: material, threats, room to move and pieces that cannot be trapped, searched with whole capture chains as one turn |
+| Bagh-chal | Goats taken, goats open to a jump, and how much room the tigers have; the same score read from either side |
+| Four Seasons chess | Its own strength against the others', pieces left hanging (with what defends them) and the squares round its king. Sharp also lets the next player answer each of its best eight moves |
 | Chaturaji | Every way to use both dice, in either order or not at all, scored by points taken, rivals knocked out, and the odds that each piece is taken before its next turn. Sharp also checks its best dozen plans for two-move attacks on its king. Each of the three Scribes plays for itself |

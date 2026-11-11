@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.20.0: Seega, Tâb, Bagh-chal and Four Seasons chess
+
+- **Seega** (Wing VI): Edward Lane's five-cup game from Egypt (1836). Twelve stones each placed two at a time, a first move into the centre, pincer captures that chain, and a way opened for a player who is boxed in.
+- **Tâb** (Wing VI): Lane's race-and-capture game on four rows of nine, with four palm-stick dice. A piece needs a tâb to set out, and may raid the enemy's home row once.
+- **Bagh-chal** (Wing VI): Nepal's four tigers against twenty goats on the alquerque board. Lead either side; positions may not repeat once the goats are down.
+- **Four Seasons chess** (Wing III): Alfonso X's chess for four (1283), against three Scribes. An army in each corner, alfils that leap, no leaving your king in check, and a mated army passing to the player who mated it.
+- The turn loop lets several Scribes take turns in games without dice too, and names whoever moves first.
+- 16 new rule tests (221 in all).
+
 ## 0.19.0: Chaturaji
 
 - **Chaturaji** (Wing III): chess for four with dice, as al-Biruni described it about 1030 and H. J. R. Murray read him. You play yellow against three Scribes, Black, Red and Green, each for itself. Two dice name the pieces that may move; kings can be taken; captures score; a boat that completes a square of four boats takes the other three. Take all three kings, or be the last king standing, to win.

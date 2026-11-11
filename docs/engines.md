@@ -135,7 +135,7 @@ flowchart TD
 
 ### Turn order that is not simple alternation
 
-Most games alternate. Chaturaji's three Scribes each take a turn through `passTurn`. Three more use a small state machine of their own, and always hand the visitor's choices back through `legal(0)` and `followUp`:
+Most games alternate. The three Scribes of Chaturaji and Four Seasons chess each take a turn through `passTurn`. Three more use a small state machine of their own, and always hand the visitor's choices back through `legal(0)` and `followUp`:
 
 ```mermaid
 stateDiagram-v2
@@ -200,6 +200,7 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Brandubh | `brandubh` | Tafl | Search | |
 | Tables | `tables` | Race, dice | Full-turn scoring | `followUp` for the second die |
 | Chaturaji | `chaturaji` | Chess family, dice, four seats | Every use of the throw, with danger odds | `followUp` for the second die, `stopLabel`, `passTurn`, `scribeName` |
+| Four Seasons chess | `fourseasons` | Chess family, four seats | Every move, then the next player's reply | `passTurn`, `scribeName`, armies change hands |
 | Shatranj | `shatranj` | Chess family | Search | |
 | Xiangqi | `xiangqi` | Chess family | Search | |
 | Tarocchi | `tarocchi` | Trick-taking | Sampling over hidden cards | `followUp` to lead |
@@ -231,6 +232,9 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Fanorona | `fanorona` | Captures | Search | capture chains, `stopLabel` |
 | Bao | `bao` | Sowing | Search | |
 | Morabaraba | `morabaraba` | Placement, then moves | Search | shared morris engine |
+| Bagh-chal | `baghchal` | Hunt, placement then moves | Search | `variants` choose your side; no repeated positions |
+| Seega | `seega` | Placement, then custodian captures | Search over capture chains | `followUp` for the second placement, chains and opening a way; `skipTurn` |
+| Tâb | `tab` | Race and capture, sticks | Heuristic with danger | `extra` on 1, 4 and 6; `steps` |
 
 ## Adding a game
 

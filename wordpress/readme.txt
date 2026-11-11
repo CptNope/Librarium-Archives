@@ -14,14 +14,14 @@ A walkable 3D archive of the oldest board and card games, with tables visitors c
 
 Visitors walk a candlelit library hall in six wings, read the history of each game on its placard, and sit down to play:
 
-53 exhibits, 40 of them playable:
+57 exhibits, 44 of them playable:
 
 * Wing I, The Dawn of Play: Senet and the Royal Game of Ur (playable); Mehen, the Başur Höyük pieces, the first dice, Hounds and Jackals.
 * Wing II, Strategy Takes the Table: Go, Nine Men's Morris, Oware, Alquerque and Brandubh (playable); Petteia, Liubo, Ludus latrunculorum, Patolli.
-* Wing III, Kings, Cards and Courts: Tables (backgammon), Shatranj, Xiangqi, Chaturaji and tarocchi (playable); Chaturanga, the Lewis Chessmen, playing cards.
+* Wing III, Kings, Cards and Courts: Tables (backgammon), Shatranj, Xiangqi, Chaturaji, Four Seasons chess and tarocchi (playable); Chaturanga, the Lewis Chessmen, playing cards.
 * Wing IV, Printed Boards and Parlour Tables: Fox and Geese, chess, Draughts, Pachisi, the Game of the Goose, Cribbage, Dominoes, Tablut, Snakes and Ladders, Ludo and Mahjong (all playable).
 * Wing V, The Modern Board Game: Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord's Game, Kalah and Hex (playable); the Mansion of Happiness and the Checkered Game of Life.
-* Wing VI, Games of the World: Mū tōrere, Shogi, Gomoku, Makruk, Kōnane, Yut Nori, Janggi, Fanorona, Bao and Morabaraba (all playable).
+* Wing VI, Games of the World: Mū tōrere, Shogi, Gomoku, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega and Tâb (all playable).
 
 The hall ends at a lectern of Librarium's own games.
 
@@ -49,6 +49,9 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 * Fonts Almendra SC, Amethysta and Montserrat from Google Fonts (SIL Open Font License).
 
 == Changelog ==
+
+= 0.20.0 =
+* New playable exhibits: Seega and Tâb from Egypt, Bagh-chal from Nepal, and Four Seasons chess from Alfonso X's Book of Games (start values seega, tab, baghchal, fourseasons).
 
 = 0.19.0 =
 * Chaturaji, chess for four with dice as al-Biruni described it about 1030: you against three Scribes.

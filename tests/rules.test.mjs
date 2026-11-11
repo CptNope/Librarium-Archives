@@ -1767,3 +1767,199 @@ test('Chaturaji: simulated games end, and every point scored is a piece off the 
   }
   rules.setLevel('fair');
 });
+
+/* ---------------------------------------------------------- Seega */
+
+const SG = rules.seega;
+const sgMid = () => { SG.init(); SG.placed = [12, 12]; SG.started = true; SG.b.fill(0); };
+test('Seega: pieces go down two at a time, never on the centre, and the first move fills it', () => {
+  SG.init();
+  const first = SG.legal(0);
+  assert.equal(first.length, 24);
+  assert.ok(!first.some(m => m.place === 12));
+  const r = SG.apply(first[0]);
+  assert.ok(r.followUp && r.followUp.every(m => m.pl === 0));
+  assert.equal(SG.apply(r.followUp[0]).followUp, undefined);
+  SG.init();
+  let pl = 0;
+  while (SG.placing()) { const r2 = SG.apply(SG.legal(pl)[0]); if (r2.followUp) SG.apply(r2.followUp[0]); pl = 1 - pl; }
+  assert.equal(SG.count(0), 12); assert.equal(SG.count(1), 12);
+  const ms = SG.legal(0);
+  assert.ok(ms.length && ms.every(m => m.to === 12));
+});
+
+test('Seega: a piece trapped between the mover and a friend is taken; moving between two is safe', () => {
+  sgMid(); SG.b[1] = 1; SG.b[2] = 2; SG.b[8] = 1; SG.b[20] = 2; SG.b[24] = 1;
+  assert.deepEqual(SG.apply({ pl: 0, from: 8, to: 3 }).taken, [2]); // c1 between b1 and d1
+  sgMid(); SG.b[11] = 2; SG.b[13] = 2; SG.b[17] = 1; SG.b[0] = 1; SG.b[24] = 2;
+  const r = SG.apply({ pl: 0, from: 17, to: 12 });
+  assert.equal(r.taken.length, 0); assert.equal(SG.b[12], 1); // safe between two enemies
+});
+
+test('Seega: after a capture the mover goes on capturing, and a boxed-in side gets a way opened', () => {
+  sgMid(); SG.b[5] = 1; SG.b[7] = 2; SG.b[8] = 1; SG.b[18] = 2; SG.b[19] = 1; SG.b[0] = 2; SG.b[22] = 1;
+  const r = SG.apply({ pl: 0, from: 5, to: 6 }); // takes c2; then c5 to c4 would trap d4 against e4
+  assert.deepEqual(r.taken, [7]);
+  assert.ok(r.followUp && r.followUp.length && r.followUp.every(m => m.cap));
+  sgMid(); SG.b[0] = 2; SG.b[2] = 1; SG.b[5] = 1; SG.b[24] = 1;
+  const b = SG.apply({ pl: 0, from: 2, to: 1 });
+  assert.ok(b.followUp && b.followUp.every(m => m.lift !== undefined), 'the Scribe is boxed in at a1');
+  SG.apply(b.followUp[0]);
+  assert.ok(SG.steps(1).length > 0);
+});
+
+test('Seega: taking every enemy piece wins, and twenty quiet moves each go to the larger side', () => {
+  sgMid(); SG.b[1] = 1; SG.b[2] = 2; SG.b[8] = 1;
+  SG.apply({ pl: 0, from: 8, to: 3 });
+  assert.equal(SG.over.winner, 0);
+  sgMid(); SG.b[0] = 1; SG.b[1] = 1; SG.b[24] = 2; SG.quiet = 39;
+  SG.apply({ pl: 0, from: 1, to: 2 });
+  assert.equal(SG.over.winner, 0);
+});
+
+/* ---------------------------------------------------------- Tâb */
+
+const TBG = rules.tab;
+test('Tâb: throws count white sides, with none as 6, and 1, 4 and 6 throw again', () => {
+  TBG.init();
+  for (let k = 0; k < 200; k++) { const r = TBG.roll(); const w = r.faces.reduce((a, b) => a + b, 0); assert.equal(r.value, w || 6); }
+  assert.ok(TBG.extra(null, 1) && TBG.extra(null, 4) && TBG.extra(null, 6));
+  assert.ok(!TBG.extra(null, 2) && !TBG.extra(null, 3));
+});
+
+test('Tâb: only a tâb starts a piece, and pieces follow the rows round', () => {
+  TBG.init();
+  assert.equal(TBG.legal(0, 2).length, 0);
+  const ms = TBG.legal(0, 1);
+  assert.deepEqual(ms.map(m => m.from), [8]); // only the front piece has room
+  assert.equal(ms[0].to, 17);
+  TBG.apply(ms[0]);
+  assert.deepEqual(TBG.legal(0, 3).map(m => m.to), [14]); // along the second row, to the left
+  // From the end of the third row a piece may go on into the enemy row, or round the middle.
+  const p = TBG.pc[8]; TBG.at[p.cell] = -1; p.cell = 2 * 9 + 8; TBG.at[p.cell] = 8;
+  assert.deepEqual(TBG.walk(p, 2).map(d => d.cell).sort((a, b) => a - b), [16, 34]);
+});
+
+test('Tâb: landing on an enemy takes it; a raider waits while pieces remain at home', () => {
+  TBG.init();
+  const p = TBG.pc[8]; TBG.at[p.cell] = -1; p.cell = 2 * 9 + 7; p.conv = true; TBG.at[p.cell] = 8;
+  const m = TBG.legal(0, 2).find(x => x.to === 35);
+  assert.ok(m && m.cap); // onto the Scribe's piece on its home row
+  TBG.apply(m);
+  assert.equal(TBG.count(1), 8);
+  assert.equal(TBG.legal(0, 2).filter(x => x.piece === 8).length, 0); // your other pieces are still at home
+});
+
+test('Tâb: games between Scribes end with one side wiped out', () => {
+  for (const level of ['gentle', 'sharp']) {
+    rules.setLevel(level);
+    TBG.init(); let pl = 0, n = 0;
+    while (!TBG.over && n++ < 5000) {
+      const r = TBG.roll(), ms = TBG.legal(pl, r.value, r); let m = null;
+      if (ms.length) { m = TBG.aiPlan(pl, ms)[0]; TBG.apply(m); }
+      if (!TBG.over && !TBG.extra(m, r.value)) pl = 1 - pl;
+    }
+    assert.ok(TBG.over);
+  }
+  rules.setLevel('fair');
+});
+
+/* ---------------------------------------------------------- Bagh-chal */
+
+const BC = rules.baghchal;
+test('Bagh-chal: tigers on the corners, goats placed first, and goats wait until all twenty are down', () => {
+  BC.setVariant('goats'); BC.init();
+  assert.equal(BC.first, 0);
+  assert.deepEqual([0, 4, 20, 24].map(i => BC.b[i]), [2, 2, 2, 2]);
+  assert.equal(BC.legal(0).length, 21);
+  assert.ok(BC.legal(0).every(m => m.place !== undefined));
+  BC.setVariant('tigers'); BC.init();
+  assert.equal(BC.first, 1);
+  assert.ok(BC.legal(0).every(m => m.from !== undefined));
+  BC.setVariant('goats');
+});
+
+test('Bagh-chal: a tiger jumps a goat along a line, but not along a diagonal that is not drawn', () => {
+  BC.setVariant('goats'); BC.init(); BC.b.fill(0); BC.inHand = 0;
+  BC.b[12] = 2; BC.b[13] = 1; BC.b[17] = 1; BC.b[18] = 1;
+  assert.deepEqual(BC.legal(1).filter(m => m.cap).map(m => m.to).sort((a, b) => a - b), [14, 22, 24]);
+  BC.b.fill(0); BC.b[7] = 2; BC.b[13] = 1; // b2 has no diagonal
+  assert.equal(BC.legal(1).filter(m => m.cap).length, 0);
+});
+
+test('Bagh-chal: five goats win it for the tigers; hemmed-in tigers lose; positions may not repeat', () => {
+  BC.setVariant('goats'); BC.init(); BC.b.fill(0); BC.inHand = 0; BC.taken = 4;
+  BC.b[0] = 2; BC.b[1] = 1; BC.b[24] = 1;
+  BC.apply({ pl: 1, from: 0, to: 2, over: 1, cap: 1 });
+  assert.equal(BC.over.winner, 1);
+  BC.init(); BC.b.fill(0); BC.inHand = 0;
+  BC.b[0] = 2; BC.b[1] = 1; BC.b[2] = 1; BC.b[5] = 1; BC.b[10] = 1; BC.b[6] = 1; BC.b[12] = 1;
+  assert.equal(BC.result(1).winner, 0);
+  BC.init(); BC.b.fill(0); BC.inHand = 0; BC.b[0] = 2; BC.b[24] = 1;
+  BC.apply({ pl: 0, from: 24, to: 23 }); BC.apply({ pl: 1, from: 0, to: 1 }); BC.apply({ pl: 0, from: 23, to: 24 }); BC.apply({ pl: 1, from: 1, to: 0 });
+  assert.ok(!BC.legal(0).some(m => m.from === 24 && m.to === 23)); // that would bring back a position already seen
+});
+
+/* ---------------------------------------------------------- Four Seasons chess */
+
+const FS = rules.fourseasons;
+const fsPiece = (s, t, d = 0) => (s << 5) | (d << 3) | t;
+const fsKings = () => { FS.init(); FS.b.fill(0); FS.b[0] = fsPiece(0, 1); FS.b[7] = fsPiece(1, 1); FS.b[63] = fsPiece(2, 1); FS.b[56] = fsPiece(3, 1); };
+test('Four Seasons chess: four corner armies, Green first, then round to Red, Black and White', () => {
+  FS.init();
+  for (let s = 0; s < 4; s++) { let n = 0; for (const v of FS.b) if (v && (v >> 5) === s) n++; assert.equal(n, 8); }
+  assert.equal(FS.first, 1); assert.equal(FS.seat, 3);
+  assert.equal(FS.passTurn(), 0); assert.equal(FS.passTurn(), 1); assert.equal(FS.seat, 1);
+  FS.init();
+  const mine = FS.legal(0).map(m => `${m.from}-${m.to}`);
+  assert.ok(mine.includes('16-24') && mine.includes('2-3') && mine.includes('9-27')); // a3 up, c1 across, the alfil b2 to d4
+  assert.ok(!mine.some(m => m.startsWith('0-'))); // the king is boxed in
+});
+
+test('Four Seasons chess: the alfil leaps two diagonally, and pawns become generals at the edge', () => {
+  fsKings(); FS.b[27] = fsPiece(0, 4); FS.b[36] = fsPiece(1, 5, 3);
+  assert.deepEqual(FS.legal(0).filter(m => m.from === 27).map(m => m.to).sort((a, b) => a - b), [9, 13, 41, 45]); // over e5 too
+  fsKings(); FS.b[51] = fsPiece(0, 5, 0); // a red pawn marching up, on d7
+  const r = FS.apply({ seat: 0, pl: 0, from: 51, to: 59 });
+  assert.ok(r.promo); assert.equal(FS.b[59] & 7, 6);
+});
+
+test('Four Seasons chess: you may not stay in check; a mate hands the army to the mater', () => {
+  fsKings(); FS.b[16] = fsPiece(1, 2);
+  assert.ok(FS.legal(0).every(m => m.from === 0 && m.to !== 8)); // the rook on a3 checks: the king must leave the a-file
+  fsKings(); FS.b[48] = fsPiece(3, 5, 2); FS.b[49] = fsPiece(3, 5, 2); FS.b[25] = fsPiece(3, 3); FS.b[36] = fsPiece(1, 2);
+  const m = FS.apply({ seat: 1, pl: 1, from: 36, to: 60 }); // Black's rook to e8: Green's king on a8 is boxed by its pawns
+  assert.match(m.note, /Black checkmates Green/);
+  assert.equal(FS.alive[3], false);
+  assert.equal(FS.b[56], 0);
+  assert.equal(FS.b[25] >> 5, 1); // Green's knight now serves Black
+});
+
+test('Four Seasons chess: a stalemated army leaves the board, and the last army left wins', () => {
+  fsKings(); FS.b[17] = fsPiece(0, 2); FS.b[18] = fsPiece(0, 2); FS.b[40] = fsPiece(3, 5, 2);
+  // Green has a king on a8 and a pawn on a6, blocked by a red pawn on a5. The rook on b3 covers b7 and b8; the rook from c3 to c7 covers a7.
+  FS.b[32] = fsPiece(0, 5, 0);
+  const r = FS.apply({ seat: 0, pl: 0, from: 18, to: 50 });
+  assert.match(r.note, /Green is stalemated/);
+  assert.ok(!FS.b[56] && !FS.b[40]);
+  fsKings(); FS.alive = [true, false, false, true]; FS.b[7] = 0; FS.b[63] = 0;
+  FS.b[48] = fsPiece(3, 5, 2); FS.b[49] = fsPiece(3, 5, 2); FS.b[25] = fsPiece(3, 3); FS.b[36] = fsPiece(0, 2);
+  FS.apply({ seat: 0, pl: 0, from: 36, to: 60 });
+  assert.equal(FS.over && FS.over.winner, 0);
+});
+
+test('Four Seasons chess: simulated games end, and every Scribe move is legal', () => {
+  for (const level of ['gentle', 'fair', 'sharp']) {
+    rules.setLevel(level);
+    FS.init(); let pl = FS.first, n = 0;
+    while (n++ < 400) {
+      if (FS.result(pl) || FS.ended()) break;
+      if (pl === 0) FS.seat = 0;
+      for (const m of FS.aiPlan()) { assert.ok(FS.movesOf(FS.seat).some(x => x.from === m.from && x.to === m.to)); m.pl = pl; FS.apply(m); }
+      if (FS.over) break;
+      pl = FS.passTurn();
+    }
+    assert.ok(FS.over, 'the game ends');
+  }
+  rules.setLevel('fair');
+});

@@ -52,6 +52,7 @@ function librarium_archives_exhibits() {
 		'xiangqi'    => __( 'Xiangqi (Chinese chess)', 'librarium-archives' ),
 		'chaturaji'  => __( 'Chaturaji (chess for four)', 'librarium-archives' ),
 		'lewis'      => __( 'The Lewis Chessmen', 'librarium-archives' ),
+		'fourseasons' => __( 'Four Seasons chess', 'librarium-archives' ),
 		'cards'      => __( 'Playing cards', 'librarium-archives' ),
 		'tarot'      => __( 'Tarot', 'librarium-archives' ),
 		'wing4'      => __( 'Wing IV: Printed Boards and Parlour Tables', 'librarium-archives' ),
@@ -81,12 +82,15 @@ function librarium_archives_exhibits() {
 		'shogi'      => 'Shogi',
 		'gomoku'     => __( 'Gomoku', 'librarium-archives' ),
 		'makruk'     => __( 'Makruk', 'librarium-archives' ),
+		'baghchal'   => __( 'Bagh-chal (tigers and goats)', 'librarium-archives' ),
 		'konane'     => __( 'Kōnane', 'librarium-archives' ),
 		'yut'        => 'Yut Nori',
 		'janggi'     => __( 'Janggi', 'librarium-archives' ),
 		'fanorona'   => 'Fanorona',
 		'bao'        => 'Bao',
 		'morabaraba' => __( 'Morabaraba', 'librarium-archives' ),
+		'seega'      => __( 'Seega', 'librarium-archives' ),
+		'tab'        => __( 'Tâb', 'librarium-archives' ),
 		'next'       => __( 'Librarium lectern', 'librarium-archives' ),
 	);
 }
