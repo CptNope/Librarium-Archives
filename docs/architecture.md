@@ -144,7 +144,7 @@ stateDiagram-v2
 
 | Convention | Rule |
 | --- | --- |
-| Players | `0` is the visitor, `1` the Scribe (Mahjong, Chaturaji and Four Seasons chess seat four, with seat 0 the visitor and `1` standing for whichever Scribe is at play) |
+| Players | `0` is the visitor, `1` the Scribe (Mahjong, Chaturaji, Four Seasons chess and Whist seat four, with seat 0 the visitor and `1` standing for whichever Scribe is at play) |
 | Board rows | Row 0 is nearest the visitor; world `+z` points toward the visitor |
 | Moves | Plain objects. `label` makes a move a button instead of a piece-and-ring choice |
 | Notes | `apply()` returns `note` text in the visitor's voice ("You capture…", "The Scribe…") |

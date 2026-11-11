@@ -2158,3 +2158,157 @@ test('Checkered Game of Life: points, Jail, Prison, Speculation and the hundred'
   CL.apply({ pl: 0, from: 15, via: 7, to: 7, hand: false });
   assert.equal(CL.over.winner, 0);
 });
+
+/* ---------------------------------------------------------- Jungle (Dou Shou Qi) */
+
+const JU = rules.jungle;
+const juEmpty = () => { JU.init(); JU.b.fill(0); JU.seen.clear(); JU.trail = []; };
+test('Jungle: the opening array, the rivers and the dens', () => {
+  JU.init();
+  assert.equal(JU.count(0), 8); assert.equal(JU.count(1), 8);
+  assert.equal(JU.b[6], 7); assert.equal(JU.b[0], 6); // your lion on the right, tiger on the left
+  assert.equal(JU.b[14], 8); assert.equal(JU.b[42], 11); // your elephant faces the Scribe's rat
+  assert.equal(JU.WATER.filter(Boolean).length, 12);
+  assert.equal(JU.legal(0).length, 24);
+  juEmpty(); JU.b[10] = 3; JU.b[56] = 13; // a dog beside its own den may not step in
+  assert.ok(!JU.legal(0).some(m => m.to === 3));
+});
+
+test('Jungle: rank, the rat and the elephant, and traps', () => {
+  juEmpty(); JU.b[8] = 8; JU.b[9] = 11; // elephant beside an enemy rat on land
+  assert.ok(!JU.legal(0).some(m => m.to === 9));
+  assert.ok(JU.legal(1).some(m => m.from === 9 && m.to === 8)); // the rat takes the elephant
+  juEmpty(); JU.b[7] = 3; JU.b[8] = 14; // a dog cannot take a wolf...
+  assert.ok(!JU.legal(0).some(m => m.to === 8));
+  juEmpty(); JU.b[9] = 2; JU.b[10] = 18; // ...but a cat takes an elephant standing in your trap
+  assert.ok(JU.legal(0).some(m => m.from === 9 && m.to === 10));
+});
+
+test('Jungle: only the rat swims, and it cannot take while entering or leaving', () => {
+  juEmpty(); JU.b[21] = 1; JU.b[22] = 0; JU.b[35] = 4;
+  assert.ok(JU.legal(0).some(m => m.from === 21 && m.to === 22)); // the rat swims
+  JU.b[21] = 4; assert.ok(!JU.legal(0).some(m => m.from === 21 && m.to === 22)); // a wolf cannot
+  juEmpty(); JU.b[21] = 1; JU.b[22] = 11; // an enemy rat in the water cannot be taken from the bank
+  assert.ok(!JU.legal(0).some(m => m.to === 22));
+  JU.b[23] = 1; JU.b[21] = 0; JU.b[22] = 0; JU.b[30] = 11; JU.b[29] = 1; // both rats in the water: one may take the other
+  assert.ok(JU.legal(0).some(m => m.from === 29 && m.to === 30));
+});
+
+test('Jungle: the lion and tiger leap the rivers unless a rat blocks them', () => {
+  juEmpty(); JU.b[15] = 7; // lion below the left river
+  assert.ok(JU.legal(0).some(m => m.from === 15 && m.to === 43 && m.leap));
+  JU.b[29] = 11; assert.ok(!JU.legal(0).some(m => m.from === 15 && m.to === 43));
+  juEmpty(); JU.b[28] = 6; // tiger on the bank leaps sideways too
+  assert.ok(JU.legal(0).some(m => m.from === 28 && m.to === 31 && m.leap));
+  juEmpty(); JU.b[15] = 5; assert.ok(!JU.legal(0).some(m => m.from === 15 && m.to !== 8 && m.to !== 14 && m.to !== 16)); // a leopard cannot
+});
+
+test('Jungle: entering the den wins, and the Scribe takes a free den', () => {
+  juEmpty(); JU.b[52] = 2; JU.b[0] = 18;
+  JU.apply({ pl: 0, from: 52, to: 59 });
+  assert.equal(JU.result(1).winner, 0);
+  juEmpty(); JU.b[10] = 12; JU.b[62] = 8; JU.b[46] = 3;
+  const plan = JU.aiPlan(1, 2);
+  assert.equal(plan[0].to, 3);
+});
+
+/* ---------------------------------------------------------- Chaturanga (reconstruction) */
+
+const CRG = rules.chaturanga;
+test('Chaturanga: plays by shatranj rules under Sanskrit names, and says it is a reconstruction', () => {
+  CRG.init(); rules.shatranj.init();
+  assert.deepEqual(CRG.b, rules.shatranj.b);
+  assert.equal(CRG.legal(0).length, rules.shatranj.legal(0).length);
+  assert.match(CRG.rules[0], /modern reconstruction/);
+  assert.equal(CRG.pieceName(CRG.SH.E), 'gaja');
+  const e = CRG.legal(0).find(m => CRG.type(CRG.b[m.from]) === CRG.SH.E);
+  assert.equal(Math.abs((e.to >> 3) - (e.from >> 3)), 2); // the gaja leaps two squares diagonally
+  CRG.b.fill(0); CRG.b[0] = CRG.SH.K; CRG.b[2] = CRG.SH.R; CRG.b[63] = CRG.SH.K + 8;
+  assert.match(CRG.result(1).text, /raja is bare/);
+});
+
+/* ---------------------------------------------------------- Whist */
+
+const WS = rules.whist;
+const wsDeck = () => Array.from({ length: 52 }, (_, i) => i);
+test('Whist: the deal, the turned trump and the first lead', () => {
+  WS.init(wsDeck());
+  assert.equal(WS.dealer, 3); assert.equal(WS.toMove, 0);
+  assert.ok(WS.hands.every(h => h.length === 13));
+  assert.equal(WS.turnUp, 51); assert.ok(WS.hands[3].includes(51)); assert.equal(WS.trump, 3); // the dealer's last card: clubs
+  assert.equal(WS.legal(0).length, 13); assert.equal(WS.legal(1).length, 0);
+});
+
+test('Whist: follow suit, trumps win, and the winner leads', () => {
+  WS.init(wsDeck());
+  WS.hands = [[1, 14], [2, 40], [3, 30], [27, 44]]; WS.toMove = 0; WS.trump = 3;
+  WS.apply({ seat: 0, card: 1, kind: 'play' }); // a two of spades
+  assert.deepEqual(WS.legalCards(WS.hands[1]), [2]); // West must follow
+  WS.apply({ seat: 1, card: 2, kind: 'play' }); WS.apply({ seat: 2, card: 3, kind: 'play' });
+  assert.deepEqual(WS.legalCards(WS.hands[3]).sort(), [27, 44]); // East has no spade
+  const res = WS.apply({ seat: 3, card: 44, kind: 'play' }); // and trumps with a club
+  assert.equal(WS.lastTrick.winner, 3); assert.equal(WS.toMove, 3); assert.deepEqual(WS.tricks, [0, 1]);
+  assert.match(res.note, /East takes the trick/);
+});
+
+test('Whist: odd tricks, honours and the side at four', () => {
+  WS.init(wsDeck());
+  WS.tricks = [9, 4]; WS.honours = [0, 4]; WS.start = [0, 0]; WS.score = [0, 0];
+  const notes = []; WS.endHand(notes);
+  assert.deepEqual(WS.score, [3, 4]); assert.equal(WS.need, 'next');
+  WS.tricks = [5, 8]; WS.honours = [3, 0]; WS.start = [4, 1]; WS.score = [4, 1];
+  WS.endHand([]); // the side at four cannot score its honours
+  assert.deepEqual(WS.score, [4, 3]);
+  WS.tricks = [8, 5]; WS.honours = [0, 4]; WS.start = [4, 3]; WS.score = [4, 3];
+  WS.endHand([]); // tricks score first, so you reach five before their honours
+  assert.equal(WS.over.winner, 0); assert.deepEqual(WS.score, [6, 3]);
+});
+
+test('Whist: every Scribe plays a legal card through a whole game', () => {
+  rules.setLevel('fair'); WS.init();
+  let n = 0;
+  while (!WS.over && n++ < 2000) {
+    if (WS.need === 'next') { WS.apply({ pl: 0, kind: 'next' }); WS.passTurn(); continue; }
+    const s = WS.toMove, [m] = WS.aiPlan();
+    assert.ok(WS.legalCards(WS.hands[s]).includes(m.card));
+    WS.apply(m); WS.passTurn();
+  }
+  assert.ok(WS.over && WS.score[WS.over.winner] >= 5);
+});
+
+/* ---------------------------------------------------------- Rithmomachia (reconstruction) */
+
+const RM = rules.rithmo;
+const rmEmpty = () => { RM.init(); RM.b.fill(null); };
+test('Rithmomachia: Boissière\'s array, and moves of one, two and three', () => {
+  RM.init();
+  assert.equal(RM.count(0), 24); assert.equal(RM.count(1), 24);
+  const sum = pl => RM.b.reduce((n, p) => n + (p && p.pl === pl ? 1 : 0), 0);
+  assert.equal(sum(0), 24);
+  assert.equal(RM.b[9].shape, 'p'); assert.equal(RM.b[9].v, 91); assert.equal(RM.b[112].v, 190);
+  rmEmpty(); RM.b[60] = { pl: 0, shape: 't', v: 6 };
+  assert.deepEqual(RM.legal(0).map(m => m.to).sort((a, b) => a - b), [44, 58, 62, 76]); // a triangle moves exactly two
+  RM.b[52] = { pl: 1, shape: 'c', v: 3 }; // and cannot pass over a piece
+  assert.ok(!RM.legal(0).some(m => m.to === 44));
+});
+
+test('Rithmomachia: meeting, assault, ambuscade and siege', () => {
+  rmEmpty(); RM.b[60] = { pl: 0, shape: 'c', v: 9 }; RM.b[68] = { pl: 1, shape: 'c', v: 9 }; RM.b[0] = { pl: 0, shape: 'p', v: 91 }; RM.b[127] = { pl: 1, shape: 'p', v: 190 };
+  const meet = RM.legal(0).find(m => m.to === 68); assert.ok(meet.meet);
+  RM.apply(meet); assert.equal(RM.taken[0], 1); assert.equal(RM.b[68].pl, 0);
+  rmEmpty(); RM.b[0] = { pl: 0, shape: 'p', v: 91 }; RM.b[127] = { pl: 1, shape: 'p', v: 190 };
+  RM.b[3] = { pl: 0, shape: 'c', v: 4 }; RM.b[35] = { pl: 1, shape: 't', v: 12 }; // 4 times three empty squares makes 12
+  assert.deepEqual(RM.caught(0).map(x => x[1]), ['assault']);
+  rmEmpty(); RM.b[0] = { pl: 0, shape: 'p', v: 91 }; RM.b[127] = { pl: 1, shape: 'p', v: 190 };
+  RM.b[42] = { pl: 0, shape: 'c', v: 9 }; RM.b[44] = { pl: 0, shape: 'c', v: 16 }; RM.b[43] = { pl: 1, shape: 'c', v: 25 };
+  assert.deepEqual(RM.caught(0).map(x => x[1]), ['ambuscade']);
+  rmEmpty(); RM.b[127] = { pl: 0, shape: 'p', v: 91 }; RM.b[0] = { pl: 1, shape: 'c', v: 7 }; RM.b[1] = { pl: 0, shape: 'c', v: 2 }; RM.b[8] = { pl: 0, shape: 'c', v: 8 };
+  assert.deepEqual(RM.caught(0), [[0, 'siege']]); // in the corner, closed by two pieces and two edges
+});
+
+test('Rithmomachia: taking the pyramid wins at once', () => {
+  rmEmpty(); RM.b[0] = { pl: 0, shape: 'p', v: 91 }; RM.b[64] = { pl: 0, shape: 'c', v: 25 }; RM.b[74] = { pl: 0, shape: 'c', v: 165 }; RM.b[127] = { pl: 1, shape: 'p', v: 190 };
+  RM.b[73] = { pl: 1, shape: 'p', v: 190 }; RM.b[127] = null;
+  RM.apply({ pl: 0, from: 64, to: 72 }); // 25 and 165 now flank the 190
+  assert.equal(RM.result(1).winner, 0);
+});

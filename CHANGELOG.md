@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.23.0: Jungle, Chaturanga, Rithmomachia and Whist
+
+- **Jungle** (dou shou qi, Wing VI): eight ranked animals a side on a 7 × 9 board with two rivers. The rat swims and kills the elephant, the lion and tiger leap the water unless a rat blocks them, traps strip an animal of its rank, and you win by walking into the Scribe's den.
+- **Chaturanga** (Wing III) is now playable, as a modern reconstruction after H. J. R. Murray: shatranj's rules under the Sanskrit names, with the gaja leaping two squares diagonally. The placard and the line by the play button say so.
+- **Rithmomachia** (Wing III), the medieval philosophers' battle of numbers, as a modern reconstruction: Claude de Boissière's array and moves of 1556 on an 8 × 16 board, with the four classic captures (meeting, assault, ambuscade and siege). Take the pyramid or five pieces to win.
+- **Whist** (Wing IV): short whist to 5 points, with honours. You sit South with a Scribe as your partner, North, against two more Scribes.
+- Every exhibit in Wings IV, V and VI is playable.
+- 13 new rule tests (250 in all).
+
 ## 0.22.1: Hex
 
 - In Hex you always move first, and the swap rule is now an option, off by default, so the first move stays yours. Turn it on above the board for an even game. Tables can now offer on-off rules like this beside their variants.

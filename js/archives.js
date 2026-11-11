@@ -950,12 +950,73 @@ function buildChaturanga(group) {
   const y0 = TOP + 0.021;
   const cell = (r, c) => V3((c - 3.5) * S, y0, (r - 3.5) * S);
   const mats = [new THREE.MeshStandardMaterial({ color: 0xe9dcc0, roughness: 0.45 }), new THREE.MeshStandardMaterial({ color: 0x8e2a1e, roughness: 0.45 })];
-  const back = ['ratha', 'ashva', 'gaja', 'raja', 'mantri', 'gaja', 'ashva', 'ratha'];
+  const back = ['ratha', 'ashva', 'gaja', 'raja', 'mantri', 'gaja', 'ashva', 'ratha'], shown = [];
   for (const side of [0, 1]) {
     const m = mats[side], r0 = side ? 7 : 0, r1 = side ? 6 : 1, face = side ? Math.PI / 2 : -Math.PI / 2;
-    back.forEach((k, c) => { const o = CR_MAKE[k](m); o.position.copy(cell(r0, c)); o.rotation.y = face; group.add(o); });
-    for (let c = 0; c < 8; c++) { const o = CR_MAKE.padati(m); o.position.copy(cell(r1, c)); group.add(o); }
+    back.forEach((k, c) => { const o = CR_MAKE[k](m); o.position.copy(cell(r0, c)); o.rotation.y = face; group.add(o); shown.push(o); });
+    for (let c = 0; c < 8; c++) { const o = CR_MAKE.padati(m); o.position.copy(cell(r1, c)); group.add(o); shown.push(o); }
   }
+  group.userData.display = shown;
+  return y0;
+}
+const CRG_S = 0.088;
+const CRG_KIND = [null, 'raja', 'mantri', 'gaja', 'ashva', 'ratha', 'padati']; // in the shatranj engine's order
+const CRG_MATS = [new THREE.MeshStandardMaterial({ color: 0xe9dcc0, roughness: 0.45 }), new THREE.MeshStandardMaterial({ color: 0x8e2a1e, roughness: 0.45 })];
+
+/* --- Wing III: Rithmomachia, the philosophers' game, on a board of 8 x 16 */
+const RM_S = 0.054;
+function rmCell(i) { const r = i >> 3, c = i & 7; return { x: (c - 3.5) * RM_S, z: (7.5 - r) * RM_S }; }
+const rmTexCache = {};
+function rmFace(pl, v) {
+  const key = pl + ':' + v;
+  if (!rmTexCache[key]) rmTexCache[key] = tex(128, 128, (g, w) => {
+    g.fillStyle = pl ? '#1c1814' : '#efe6d2'; g.fillRect(0, 0, w, w);
+    g.fillStyle = pl ? '#efe6d2' : '#1c1814'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `700 ${v >= 100 ? 50 : 60}px "Amethysta",Georgia,serif`; g.fillText(String(v), 64, 66);
+  });
+  return rmTexCache[key];
+}
+const rmGeo = {
+  c: new THREE.CylinderGeometry(0.021, 0.021, 0.014, 28),
+  t: new THREE.CylinderGeometry(0.027, 0.027, 0.014, 3),
+  s: new THREE.CylinderGeometry(0.026, 0.026, 0.014, 4),
+};
+const rmSideMat = [new THREE.MeshStandardMaterial({ color: 0xe6dcc4, roughness: 0.45 }), new THREE.MeshStandardMaterial({ color: 0x2a221b, roughness: 0.4 })];
+function rmPiece(p) {
+  const top = new THREE.MeshStandardMaterial({ map: rmFace(p.pl, p.v), roughness: 0.45 });
+  let o;
+  if (p.shape === 'p') { // the pyramid: a stepped stack of square, triangle and round, its total on a plaque at the top
+    o = new THREE.Group();
+    [[0.026, 4, 0], [0.022, 3, 0.012], [0.017, 28, 0.024]].forEach(([rad, seg, y]) => {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad, 0.012, seg), [rmSideMat[p.pl], seg === 28 ? top : rmSideMat[p.pl], rmSideMat[p.pl]]);
+      m.position.y = y + 0.006; if (seg === 4) m.rotation.y = Math.PI / 4; if (seg === 3) m.rotation.y = p.pl ? Math.PI : 0; o.add(m);
+    });
+  } else {
+    o = new THREE.Mesh(rmGeo[p.shape], [rmSideMat[p.pl], top, rmSideMat[p.pl]]);
+    o.position.y = 0.007;
+    const pivot = new THREE.Group(); pivot.add(o);
+    if (p.shape === 's') o.rotation.y = Math.PI / 4;
+    if (p.shape === 't') o.rotation.y = p.pl ? Math.PI : 0; // triangles point at the enemy
+    o = pivot;
+  }
+  o.userData.mats = [top];
+  return o;
+}
+function buildRithmo(group) {
+  const W = 8 * RM_S + 0.08, D = 16 * RM_S + 0.08;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, D), new THREE.MeshStandardMaterial({ color: 0x3e2614, roughness: 0.55 }));
+  board.position.y = TOP + 0.015; group.add(board);
+  const pw = 512, ph = 1024, sx = RM_S * pw / W, sy = RM_S * ph / D, ox = pw / 2 - 4 * sx, oy = ph / 2 - 8 * sy;
+  topPlane(group, W, D, TOP + 0.0305, tex(pw, ph, (g) => {
+    g.fillStyle = '#3e2614'; g.fillRect(0, 0, pw, ph);
+    for (let r = 0; r < 16; r++) for (let c = 0; c < 8; c++) { g.fillStyle = (r + c) % 2 ? '#d9c39a' : '#8c6a42'; g.fillRect(ox + c * sx, oy + r * sy, sx, sy); }
+    g.strokeStyle = '#1e1208'; g.lineWidth = 4; g.strokeRect(ox, oy, 8 * sx, 16 * sy);
+    g.strokeStyle = 'rgba(30,18,8,.7)'; g.lineWidth = 4; g.beginPath(); g.moveTo(ox, oy + 8 * sy); g.lineTo(ox + 8 * sx, oy + 8 * sy); g.stroke(); // the line between the two halves
+  }), { roughness: 0.55 });
+  const y = TOP + 0.031, shown = [], R = window.LibrariumRules.rithmo;
+  R.init(); R.b.forEach((p, i) => { if (!p) return; const o = rmPiece(p), c = rmCell(i); o.position.set(c.x, y, c.z); group.add(o); shown.push(o); });
+  group.userData.display = shown;
+  return y;
 }
 
 /* --- Wing III: Chaturaji, four-handed chaturanga with dice */
@@ -1060,6 +1121,100 @@ function buildTab(group) {
   }), { roughness: 0.75 });
   const y = TOP + 0.031, shown = [];
   for (let c = 0; c < 9; c++) for (const pl of [0, 1]) { const p = tabPiece(pl), at = tabCell(pl ? 27 + c : c); p.position.set(at.x, y + 0.007, at.z); group.add(p); shown.push(p); }
+  group.userData.display = shown;
+  return y;
+}
+
+/* --- Wing IV: Whist, four hands round a baize card table */
+// Seats clockwise from you: 0 South (near), 1 West (left), 2 North (far), 3 East (right).
+const WS_YAW = [0, -Math.PI / 2, Math.PI, Math.PI / 2];
+function wsHandSpot(seat, i, n, y) {
+  if (seat === 0) return V3((i - (n - 1) / 2) * 0.058, y + i * 0.0004, 0.36);
+  const t = (i - (n - 1) / 2) * 0.036;
+  if (seat === 2) return V3(-t, y + i * 0.0004, -0.36);
+  return seat === 1 ? V3(-0.44, y + i * 0.0004, t) : V3(0.44, y + i * 0.0004, -t);
+}
+function wsTrickSpot(seat, y) { return [V3(0, y, 0.1), V3(-0.1, y, 0), V3(0, y, -0.1), V3(0.1, y, 0)][seat]; }
+function buildWhist(group) {
+  const W = 1.1, D = 0.96;
+  const table = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, D), new THREE.MeshStandardMaterial({ color: 0x4a2a16, roughness: 0.5 }));
+  table.position.y = TOP + 0.015; group.add(table);
+  topPlane(group, W - 0.06, D - 0.06, TOP + 0.0305, tex(512, 448, (g, w, h) => {
+    g.fillStyle = '#1d4a2a'; g.fillRect(0, 0, w, h);
+    speckle(g, w, h, 5000, ['#163d22', '#245834', '#12351d'], 1.2);
+    g.strokeStyle = 'rgba(220,200,140,.35)'; g.lineWidth = 3; g.strokeRect(14, 14, w - 28, h - 28);
+  }), { roughness: 0.95 });
+  const y = TOP + 0.031, shown = [];
+  // Display: four hands dealt face down, and a trick of four cards in the middle.
+  for (let s = 0; s < 4; s++) for (let i = 0; i < 12; i++) {
+    const m = crCard(s * 13 + i), at = wsHandSpot(s, i, 12, y + 0.001);
+    m.position.copy(at); m.rotation.set(0, WS_YAW[s], Math.PI); group.add(m); shown.push(m);
+  }
+  [26 + 12, 26 + 0, 26 + 10, 13 + 4].forEach((c, s) => { const m = crCard(c); m.position.copy(wsTrickSpot(s, y + 0.001 + s * 0.0004)); m.rotation.set(0, WS_YAW[s] + (s - 1.5) * 0.12, 0); group.add(m); shown.push(m); });
+  group.userData.display = shown;
+  return y;
+}
+
+/* --- Wing VI: Jungle (dou shou qi), on a 7 x 9 board with two rivers */
+const JU_S = 0.078;
+function juCell(i) { const r = (i / 7) | 0, c = i % 7; return { x: (c - 3) * JU_S, z: (4 - r) * JU_S }; }
+const JU_CHARS = [null, '鼠', '貓', '狗', '狼', '豹', '虎', '獅', '象'];
+const JU_LATIN = [null, 'RAT', 'CAT', 'DOG', 'WOLF', 'LEOPARD', 'TIGER', 'LION', 'ELEPHANT'];
+const juTexCache = {};
+function juFace(pl, k) {
+  const key = pl * 10 + k;
+  if (!juTexCache[key]) juTexCache[key] = tex(128, 128, (g, w) => {
+    g.fillStyle = '#f2ead6'; g.fillRect(0, 0, w, w);
+    const ink = pl ? '#a8231b' : '#1f4f9a';
+    g.strokeStyle = ink; g.lineWidth = 6; g.beginPath(); g.arc(64, 64, 54, 0, TAU); g.stroke();
+    g.fillStyle = ink; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = 'bold 58px "Noto Serif CJK TC","Noto Serif CJK SC","Noto Sans CJK TC","Songti TC","PMingLiU","Microsoft JhengHei",serif';
+    g.fillText(JU_CHARS[k], 64, 54);
+    g.font = '700 13px "Montserrat",sans-serif'; g.fillText(`${k} ${JU_LATIN[k]}`, 64, 101); // rank and name for readers without Chinese fonts
+  });
+  return juTexCache[key];
+}
+const juDiscGeo = new THREE.CylinderGeometry(0.03, 0.031, 0.016, 32);
+const juSideMat = [new THREE.MeshStandardMaterial({ color: 0x2c5aa0, roughness: 0.45 }), new THREE.MeshStandardMaterial({ color: 0xa8281e, roughness: 0.45 })];
+function juPiece(v) {
+  const pl = v > 10 ? 1 : 0, k = v % 10;
+  const top = new THREE.MeshStandardMaterial({ map: juFace(pl, k), roughness: 0.45 });
+  const m = new THREE.Mesh(juDiscGeo, [juSideMat[pl], top, juSideMat[pl]]);
+  m.rotation.y = pl ? Math.PI : 0; // each side reads its own pieces
+  m.userData.mats = [top];
+  return m;
+}
+function buildJungle(group) {
+  const W = 7 * JU_S + 0.1, D = 9 * JU_S + 0.1;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, D), new THREE.MeshStandardMaterial({ color: 0x3c2a18, roughness: 0.6 }));
+  board.position.y = TOP + 0.015; group.add(board);
+  const pw = 896, ph = Math.round(pw * D / W), sc = pw / W, st = JU_S * sc, ox = pw / 2 - 3.5 * st, oy = ph / 2 - 4.5 * st;
+  const R = window.LibrariumRules.jungle;
+  topPlane(group, W, D, TOP + 0.0305, tex(pw, ph, (g) => {
+    g.fillStyle = '#3c2a18'; g.fillRect(0, 0, pw, ph);
+    for (let i = 0; i < 63; i++) {
+      const r = (i / 7) | 0, c = i % 7, x = ox + c * st, y = oy + (8 - r) * st; // canvas y runs down, so row 0 is at the bottom
+      g.fillStyle = R.WATER[i] ? '#3f7fae' : (r + c) % 2 ? '#8fae5a' : '#9cba66';
+      g.fillRect(x, y, st, st);
+      if (R.WATER[i]) { // ripples
+        g.strokeStyle = 'rgba(220,240,255,.5)'; g.lineWidth = 3;
+        for (const f of [0.35, 0.65]) { g.beginPath(); for (let k = 0; k <= 8; k++) { const xx = x + 8 + k * (st - 16) / 8, yy = y + f * st + Math.sin(k * 1.6) * 4; k ? g.lineTo(xx, yy) : g.moveTo(xx, yy); } g.stroke(); }
+      }
+      if (R.TRAP[i] >= 0) { // a pit of crossed stakes
+        g.strokeStyle = '#5a3a1c'; g.lineWidth = 5;
+        for (let k = 1; k < 4; k++) { g.beginPath(); g.moveTo(x + k * st / 4, y + 10); g.lineTo(x + k * st / 4, y + st - 10); g.moveTo(x + 10, y + k * st / 4); g.lineTo(x + st - 10, y + k * st / 4); g.stroke(); }
+      }
+      if (R.DEN.includes(i)) {
+        g.fillStyle = '#4a2c14'; g.beginPath(); g.ellipse(x + st / 2, y + st * 0.6, st * 0.36, st * 0.28, 0, Math.PI, 0); g.lineTo(x + st * 0.86, y + st * 0.84); g.lineTo(x + st * 0.14, y + st * 0.84); g.closePath(); g.fill();
+        g.fillStyle = '#f2ead6'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.font = `bold ${(st * 0.3) | 0}px "Noto Serif CJK TC","Noto Serif CJK SC",serif`; g.fillText('獸穴', x + st / 2, y + st * 0.68);
+      }
+      g.strokeStyle = 'rgba(40,30,12,.55)'; g.lineWidth = 2; g.strokeRect(x, y, st, st);
+    }
+    g.strokeStyle = '#21160b'; g.lineWidth = 6; g.strokeRect(ox, oy, 7 * st, 9 * st);
+  }), { roughness: 0.65 });
+  const y = TOP + 0.031, shown = [];
+  R.init(); R.b.forEach((v, i) => { if (!v) return; const p = juPiece(v), c = juCell(i); p.position.set(c.x, y + 0.008, c.z); group.add(p); shown.push(p); });
   group.userData.display = shown;
   return y;
 }
@@ -3080,9 +3235,9 @@ const STOPS = [
     eyebrow: 'Wing III · Librarium Archives', status: null, begin: 'tables',
     body: [
       'Board games became courtly pastimes. In this wing chess travels from India through Persia to the far North, the dice games of Rome and Persia settle into tables, and paper cards arrive from the East and change how Europe plays.',
-      'Six tables are open: Tables, the family of games that became backgammon; Shatranj, the chess of the caliphs\' courts; Xiangqi, the chess of China; Chaturaji, chess for four with dice; Four Seasons chess, from Alfonso X\'s Book of Games; and a game of tarocchi, the card game that tarot was made for.'
+      'Eight tables are open: Tables, the family of games that became backgammon; Chaturanga, in a modern reconstruction; Shatranj, the chess of the caliphs\' courts; Xiangqi, the chess of China; Chaturaji, chess for four with dice; Rithmomachia, the scholars\' battle of numbers, also reconstructed; Four Seasons chess, from Alfonso X\'s Book of Games; and a game of tarocchi, the card game that tarot was made for.'
     ],
-    facts: [['Tables', 'Tables, Shatranj, Xiangqi, Chaturaji, Four Seasons chess, Tarocchi'], ['Display', 'Chaturanga, Lewis chessmen, cards, tarot']],
+    facts: [['Tables', 'Tables, Chaturanga, Shatranj, Xiangqi, Chaturaji, Rithmomachia, Four Seasons chess, Tarocchi'], ['Display', 'Lewis chessmen, cards, tarot']],
   },
   { id: 'tables', wing: 3, title: 'Tables', short: 'Tables (Backgammon)', date: 'c. 480 CE onward', rail: 'Tables',
     eyebrow: 'Rome, Persia and medieval Europe', status: ['known', 'Rules survive in modern backgammon'], game: 'tables',
@@ -3094,8 +3249,8 @@ const STOPS = [
     facts: [['Board', '24 points in four quarters'], ['Pieces', '15 each'], ['Moves', 'Two dice, doubles count twice'], ['Goal', 'Bear all fifteen off']],
     build: buildTablesBoard },
   { id: 'chaturanga', wing: 3, title: 'Chaturanga', date: 'by c. 600 CE', rail: 'Chaturanga',
-    eyebrow: 'India · Gupta period', status: ['recon', 'Rules partly lost'],
-    note: 'On display. Nobody knows how the elephant moved, so we play its Persian successor, shatranj, and the four-handed chaturaji instead.',
+    eyebrow: 'India · Gupta period', status: ['recon', 'Modern reconstruction'], game: 'chaturanga',
+    note: 'No rules survive from chaturanga\'s own time. This table plays a modern reconstruction, after H. J. R. Murray: shatranj\'s rules with the Sanskrit pieces, the elephant leaping two squares diagonally.',
     body: [
       'Chaturanga means "four limbs", the four arms of an ancient Indian army: elephants, chariots, cavalry and infantry. It is the oldest known ancestor of chess. The earliest clear references come from north India in the 6th century CE, and the name itself appears in Banabhatta\'s Harsha Charita, written around 625.',
       'It was played on the ashtapada, an uncheckered 8 × 8 board whose marked squares may come from an older race game. The raja, the ratha (chariot) and the ashva (horse) moved like today\'s king, rook and knight, and the mantri stepped one square diagonally. How the gaja, the elephant, moved is still uncertain.'
@@ -3127,6 +3282,16 @@ const STOPS = [
     ],
     facts: [['Board', '8 × 8, four armies of eight'], ['Dice', '1 or 5 king or pawn · 2 boat · 3 horse · 4 or 6 elephant'], ['Scores', 'King 5, elephant 4, horse 3, boat 2, pawn 1'], ['Goal', 'Take all three kings']],
     build: buildChaturaji },
+  { id: 'rithmo', wing: 3, title: 'Rithmomachia', short: 'Rithmomachia (The Philosophers\' Game)', date: 'c. 1030 CE', rail: 'Rithmomachia',
+    eyebrow: 'Southern Germany · monastery schools', status: ['recon', 'Modern reconstruction'], game: 'rithmo',
+    note: 'Its rules were never standardised. This table plays a modern reconstruction: Claude de Boissière\'s array and moves of 1556, with the four classic captures.',
+    body: [
+      'Rithmomachia, "the battle of numbers", was a game for scholars. The first written evidence dates from around 1030, when a monk named Asilo, probably the later Bishop Adalbero of Würzburg, devised it to illustrate the number theory of Boethius\' De institutione arithmetica, the standard arithmetic textbook of the day.',
+      'It spread through the schools and monasteries of southern Germany and France. Roger Bacon recommended it to his students, and Thomas More let the citizens of his Utopia play it. Printed books on it appeared in the 16th century, but the rules were never settled, and it faded in the 17th century along with Boethian arithmetic.',
+      'Every piece carries a number drawn from Boethius\' ratios. The Evens and the Odds each field rounds, triangles, squares and a pyramid whose value is the sum of a stack of square numbers.'
+    ],
+    facts: [['Board', '8 × 16'], ['Pieces', '24 a side, each with a number'], ['First record', 'c. 1030, Asilo of Würzburg'], ['Rules', 'Never standardised']],
+    build: buildRithmo },
   { id: 'lewis', wing: 3, title: 'The Lewis Chessmen', short: 'Lewis Chessmen', date: 'c. 1150–1200 CE', rail: 'Lewis Chessmen',
     eyebrow: 'Norway and the Hebrides · 12th century', status: ['known', 'Chess as Europe played it'],
     note: 'On display. The figures here are our own simplified carvings, not copies.',
@@ -3167,9 +3332,9 @@ const STOPS = [
     eyebrow: 'Wing IV · Librarium Archives', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
-      'Eleven tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Pachisi; the Game of the Goose; Cribbage; Dominoes; Tablut; Snakes and Ladders; Ludo; and Mahjong, with three Scribes.'
+      'Twelve tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Pachisi; the Game of the Goose; Cribbage; Dominoes; Tablut; Whist, with a Scribe as your partner; Snakes and Ladders; Ludo; and Mahjong, with three Scribes.'
     ],
-    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Pachisi, the Goose, Cribbage, Dominoes, Tablut, Snakes and Ladders, Ludo, Mahjong']],
+    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Pachisi, the Goose, Cribbage, Dominoes, Tablut, Whist, Snakes and Ladders, Ludo, Mahjong']],
   },
   { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
@@ -3240,6 +3405,15 @@ const STOPS = [
     ],
     facts: [['Recorded', 'Carl Linnaeus, Lapland, 1732'], ['Board', '9 × 9, of reindeer hide'], ['Sides', 'King and 8 Swedes against 16 Muscovites']],
     build: buildTablut },
+  { id: 'whist', wing: 4, title: 'Whist', date: '1742 CE', rail: 'Whist',
+    eyebrow: 'England · Hoyle\'s treatise', status: ['known', 'Rules in print since 1742'], game: 'whist',
+    body: [
+      'Whist grew out of ruff and honours, one of the English trick-taking games descended from triumph, and the name itself dates from the 1600s. Daines Barrington wrote that gentlemen first played it seriously at the Crown Coffee House in Bedford Row, London, around 1728.',
+      'In 1742 Edmond Hoyle published A Short Treatise on the Game of Whist. It set the standard rules for the next hundred years and made his name a byword: "according to Hoyle" still means "by the rules". Long whist was played to 10 points; short whist, to 5, later replaced it in Britain.',
+      'Whist is a partnership game, and its descendants include bridge. You play with the Scribe as your partner, North, against two more Scribes.'
+    ],
+    facts: [['Players', 'Four, in two partnerships'], ['Deck', '52 cards, thirteen each'], ['Trumps', 'The dealer\'s last card, turned up'], ['Game', '5 points, short whist']],
+    build: buildWhist },
   { id: 'snakes', wing: 4, title: 'Snakes and Ladders', date: '18th–19th century CE', rail: 'Snakes and Ladders',
     eyebrow: 'India, then England', status: ['known', 'Still played today'], game: 'snakes',
     body: [
@@ -3355,9 +3529,9 @@ const STOPS = [
     eyebrow: 'Wing VI · Librarium Archives', status: null, begin: 'mutorere',
     body: [
       'The other wings follow one long road, from Egypt and Mesopotamia through Europe to the shop shelf. But play has many homelands. This wing gathers games from the Pacific, Africa and Asia: some ancient, some first written down by visitors, all still played today.',
-      'All thirteen tables are open: Mū tōrere from Aotearoa New Zealand, Shogi and Gomoku from Japan, Makruk from Thailand, Bagh-chal from Nepal, Kōnane from Hawaiʻi, Yut Nori and Janggi from Korea, Fanorona from Madagascar, Bao from the Swahili coast, Morabaraba from southern Africa, and Seega and Tâb from Egypt.'
+      'All fourteen tables are open: Mū tōrere from Aotearoa New Zealand, Shogi and Gomoku from Japan, Jungle from China, Makruk from Thailand, Bagh-chal from Nepal, Kōnane from Hawaiʻi, Yut Nori and Janggi from Korea, Fanorona from Madagascar, Bao from the Swahili coast, Morabaraba from southern Africa, and Seega and Tâb from Egypt.'
     ],
-    facts: [['Tables', 'Mū tōrere, Shogi, Gomoku, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega, Tâb']],
+    facts: [['Tables', 'Mū tōrere, Shogi, Gomoku, Jungle, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega, Tâb']],
   },
   { id: 'mutorere', wing: 6, title: 'Mū tōrere', date: 'first described in 1917', rail: 'Mū tōrere',
     eyebrow: 'Aotearoa New Zealand · Māori', status: ['known', 'Still played'], game: 'mutorere',
@@ -3400,6 +3574,15 @@ const STOPS = [
     ],
     facts: [['Board', '5 × 5 points with diagonals'], ['Sides', '4 tigers, 20 goats'], ['Tigers win', 'By taking five goats'], ['Goats win', 'By leaving no tiger a move']],
     build: buildBaghchal },
+  { id: 'jungle', wing: 6, title: 'Jungle', short: 'Jungle (Dou Shou Qi)', date: '20th century', rail: 'Jungle',
+    eyebrow: 'China', status: ['known', 'Still played'], game: 'jungle',
+    body: [
+      'Dou shou qi, "the game of fighting animals", is a Chinese board game known in English as Jungle. Its history is obscure: it is a modern game, played in China in the 20th century, and it reached Britain in printed sets such as Waddington\'s Jungle King in the 1950s.',
+      'Each side has eight animals, ranked from the elephant down to the rat, and a stronger animal eats a weaker one. The rat is the exception: it alone can kill the elephant, by creeping into its ear, so the story goes. The rat can also swim, while the lion and the tiger leap the rivers in one bound.',
+      'The aim is not to take every animal but to walk one into the enemy\'s den, past the three traps that guard it, where even an elephant is helpless.'
+    ],
+    facts: [['Board', '7 × 9, with two rivers'], ['Animals', 'Eight each, elephant down to rat'], ['Win', 'Enter the enemy den']],
+    build: buildJungle },
   { id: 'konane', wing: 6, title: 'Kōnane', date: 'by 1778–79', rail: 'Kōnane',
     eyebrow: 'Hawaiʻi', status: ['known', 'Still played'], game: 'konane',
     body: [
@@ -3528,7 +3711,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -5081,6 +5264,171 @@ const LIFEGAME_P = {
   },
   score: () => { const G = GAMES.lifegame; return [['You', G.score[0]], ['Scribe', G.score[1]], 'points of 100']; },
 };
+const JUNGLE_P = {
+  camW: 0.95,
+  intro() { return 'You play blue and move first. Walk any animal into the Scribe\'s den, at the far end, to win. ' + this.prompt(); },
+  prompt: () => 'Pick an animal, then a ring.',
+  setup(ex) {
+    const G = GAMES.jungle;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = [];
+    this.ex = ex; this.cell = Array(63).fill(null); this.lost = [0, 0];
+    G.b.forEach((v, i) => { if (!v) return; const p = juPiece(v); p.position.copy(this.pos(i)); ex.group.add(p); ex.pieces.push(p); this.cell[i] = p; });
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = []; },
+  pos(i) { const c = juCell(i); return V3(c.x, GAMES.jungle.surface + 0.008, c.z); },
+  // Taken animals line up beside the board, on the side of the player who lost them.
+  lostSpot(owner, k) { return V3((owner ? -1 : 1) * (0.37 + ((k / 4) | 0) * 0.07), TOP + 0.008, (owner ? -1 : 1) * (0.22 - (k % 4) * 0.075)); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  ringTone: m => (m.cap || m.to === GAMES.jungle.DEN[1 - m.pl] ? 'ember' : 'gold'),
+  async play(m) {
+    const G = GAMES.jungle, tok = play.token, mesh = this.cell[m.from], victim = this.cell[m.to];
+    this.cell[m.from] = null; this.cell[m.to] = mesh;
+    const res = G.apply(m);
+    await hop(mesh, this.pos(m.to), m.leap ? 0.5 : 0.28, m.leap ? 0.1 : 0.03);
+    if (tok !== play.token) return res;
+    if (victim) { const owner = 1 - m.pl; hop(victim, this.lostSpot(owner, this.lost[owner]++), 0.4, 0.12); }
+    return res;
+  },
+  score: () => { const G = GAMES.jungle; return [['You', G.count(0)], ['Scribe', G.count(1)], 'animals']; },
+};
+const CHATURANGA_P = {
+  camW: 1.2,
+  intro() { return 'A modern reconstruction, played with shatranj\'s rules. You play the ivory pieces and move first. ' + this.prompt(); },
+  prompt: () => 'Pick one of your pieces, then where it should go.',
+  setup(ex) {
+    const G = GAMES.chaturanga;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = [];
+    this.ex = ex; this.cell = Array(64).fill(null); this.lost = [0, 0];
+    G.b.forEach((v, i) => { if (v) this.cell[i] = this.spawn(G.type(v), G.owner(v), i); });
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = []; },
+  spawn(type, pl, i) {
+    const o = CR_MAKE[CRG_KIND[type]](CRG_MATS[pl]);
+    o.position.copy(this.pos(i)); o.rotation.y = pl ? -Math.PI / 2 : Math.PI / 2;
+    this.ex.group.add(o); this.ex.pieces.push(o);
+    return o;
+  },
+  pos(i) { const r = i >> 3, c = i & 7; return V3((c - 3.5) * CRG_S, GAMES.chaturanga.surface, (3.5 - r) * CRG_S); },
+  lostSpot(owner, k) { return V3((owner ? -1 : 1) * (0.43 + (k % 2) * 0.065), TOP, (owner ? -1 : 1) * (0.3 - ((k / 2) | 0) * 0.075)); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.chaturanga, tok = play.token, mesh = this.cell[m.from], victim = this.cell[m.to];
+    const type = G.type(G.b[m.from]);
+    this.cell[m.from] = null; this.cell[m.to] = mesh;
+    const res = G.apply(m);
+    await hop(mesh, this.pos(m.to), 0.3, type === G.SH.N || type === G.SH.E ? 0.07 : 0.025);
+    if (tok !== play.token) return res;
+    if (victim) { const owner = 1 - m.pl; hop(victim, this.lostSpot(owner, this.lost[owner]++), 0.4, 0.12); }
+    if (m.promo) { mesh.visible = false; this.cell[m.to] = this.spawn(G.SH.F, m.pl, m.to); }
+    return res;
+  },
+  score: () => { const G = GAMES.chaturanga; return [['You', G.material(0) + 1], ['Scribe', G.material(1) + 1], 'pieces']; },
+};
+const WHIST_P = {
+  camW: 1.25,
+  intro() { return 'You sit South, nearest you. North, across the table, is your partner; West and East play against you. ' + this.prompt(); },
+  prompt() {
+    const G = GAMES.whist, T = G.SUITS[G.trump];
+    if (G.need === 'next') return (G.notes.length ? G.notes.slice(1).join(' ') + ' ' : '') + 'Press Next deal when you are ready.';
+    if (!G.trick.length) return `${T[0].toUpperCase() + T.slice(1)} are trumps. Lead any card.`;
+    const led = G.SUITS[G.suit(G.trick[0].card)];
+    return G.hands[0].some(c => G.suit(c) === G.suit(G.trick[0].card)) ? `${T[0].toUpperCase() + T.slice(1)} are trumps. Follow with a ${led.slice(0, -1)}.` : `You have no ${led}: play any card. ${T[0].toUpperCase() + T.slice(1)} are trumps.`;
+  },
+  setup(ex) {
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    this.ex = ex; this.redeal();
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.whist.surface + 0.001,
+  card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
+  // Tricks won stack face down on the right: your side's nearer you, theirs further away.
+  pileSpot(side, k) { return V3(0.22 + (k % 7) * 0.016, this.y() + 0.001 + k * 0.0018, side ? -0.25 : 0.25); },
+  redeal() {
+    const G = GAMES.whist;
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map(); this.piles = [0, 0];
+    for (let s = 0; s < 4; s++) this.layHand(s, true);
+  },
+  layHand(seat, instant) {
+    const G = GAMES.whist, h = G.hands[seat], jobs = [];
+    h.forEach((c, i) => {
+      const m = this.card(c), to = wsHandSpot(seat, i, h.length, this.y());
+      const up = seat === 0 || (G.upShown && c === G.turnUp); // the turned trump stays face up until the dealer plays
+      m.rotation.set(0, WS_YAW[seat], up ? 0 : Math.PI);
+      if (instant) m.position.copy(to); else jobs.push(hop(m, to, 0.2, 0.008));
+    });
+    return Promise.all(jobs);
+  },
+  meshesFor(m) { return m.kind === 'play' && m.seat === 0 ? [this.mesh.get(m.card)] : []; },
+  ringFor: () => null,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.whist, tok = play.token, trickBefore = G.trick.length;
+    const res = G.apply(m);
+    for (const e of res.events) {
+      if (tok !== play.token) return res;
+      if (e.type === 'deal') { this.redeal(); continue; }
+      if (e.type === 'play') {
+        const mc = this.card(e.card), flip = mc.rotation.z !== 0, at = wsTrickSpot(e.seat, this.y() + 0.002 + trickBefore * 0.0005);
+        sfx.card();
+        if (flip) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        await hop(mc, at, 0.3, 0.05);
+        mc.rotation.set(0, WS_YAW[e.seat] + (Math.random() - 0.5) * 0.2, 0);
+        await this.layHand(e.seat);
+      }
+      if (e.type === 'trick') {
+        await wait(700); if (tok !== play.token) return res;
+        const side = e.winner & 1, k = this.piles[side]++, to = this.pileSpot(side, k);
+        const cards = G.lastTrick.cards.map(c => this.card(c));
+        await Promise.all(cards.map((mc, j) => { tween(0.3, t => { mc.rotation.z = Math.PI * t; }); return hop(mc, V3(to.x, to.y + j * 0.0004, to.z), 0.35, 0.03); }));
+        cards.forEach(mc => { mc.rotation.set(0, Math.PI / 2 + (k % 2) * 0.08, Math.PI); });
+      }
+    }
+    return res;
+  },
+  score() {
+    const G = GAMES.whist, T = G.SUITS[G.trump];
+    return [['You and North', G.score[0]], ['West and East', G.score[1]], `of 5 · tricks ${G.tricks[0]}–${G.tricks[1]} · ${T} trumps`];
+  },
+};
+const RITHMO_P = {
+  camW: 1.15, ringScale: 0.62,
+  intro() { return 'A modern reconstruction. You play the white Evens and move first. ' + this.prompt(); },
+  prompt() { const G = GAMES.rithmo; return `Pick a piece, then a ring. Take the Scribe's pyramid (190) or any ${G.WIN} pieces to win.`; },
+  setup(ex) {
+    const G = GAMES.rithmo;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = [];
+    this.ex = ex; this.cell = Array(128).fill(null); this.lost = [0, 0];
+    G.b.forEach((p, i) => { if (!p) return; const o = rmPiece(p); o.position.copy(this.pos(i)); ex.group.add(o); ex.pieces.push(o); this.cell[i] = o; });
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = []; },
+  pos(i) { const c = rmCell(i); return V3(c.x, GAMES.rithmo.surface, c.z); },
+  // Taken pieces line up beside the board, on the side of the player who lost them.
+  lostSpot(owner, k) { return V3((owner ? -1 : 1) * (0.33 + (k % 2) * 0.06), TOP, (owner ? -1 : 1) * (0.4 - ((k / 2) | 0) * 0.065)); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  ringTone: m => (m.meet ? 'ember' : 'gold'),
+  async play(m) {
+    const G = GAMES.rithmo, tok = play.token, mesh = this.cell[m.from];
+    const res = G.apply(m);
+    const victims = res.caps.map(i => [i, i === m.to ? this.cell[m.to] : this.cell[i]]);
+    this.cell[m.from] = null;
+    await hop(mesh, this.pos(m.to), 0.3, 0.025);
+    if (tok !== play.token) return res;
+    this.cell[m.to] = mesh;
+    for (const [i, v] of victims) { if (i !== m.to) this.cell[i] = null; const owner = 1 - m.pl; if (v) hop(v, this.lostSpot(owner, this.lost[owner]++), 0.4, 0.12); }
+    return res;
+  },
+  score: () => { const G = GAMES.rithmo; return [['You took', G.taken[0]], ['Scribe took', G.taken[1]], `of ${G.WIN}`]; },
+};
 const KALAH_P = {
   camW: 1.2, ringScale: 1.2,
   intro() { return 'Your six pits are the row nearest you, and your store is on your right. ' + this.prompt(); },
@@ -5433,7 +5781,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };

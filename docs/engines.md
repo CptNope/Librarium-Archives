@@ -205,8 +205,10 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Tables | `tables` | Race, dice | Full-turn scoring | `followUp` for the second die |
 | Chaturaji | `chaturaji` | Chess family, dice, four seats | Every use of the throw, with danger odds | `followUp` for the second die, `stopLabel`, `passTurn`, `scribeName` |
 | Four Seasons chess | `fourseasons` | Chess family, four seats | Every move, then the next player's reply | `passTurn`, `scribeName`, armies change hands |
+| Chaturanga | `chaturanga` | Chess family (modern reconstruction) | Search | shatranj's engine under Sanskrit names |
 | Shatranj | `shatranj` | Chess family | Search | |
 | Xiangqi | `xiangqi` | Chess family | Search | |
+| Rithmomachia | `rithmo` | Number captures (modern reconstruction) | Search | captures made for the mover after each move |
 | Tarocchi | `tarocchi` | Trick-taking | Sampling over hidden cards | `followUp` to lead |
 | Fox and Geese | `foxgeese` | Hunt | Search (as the geese) | |
 | Chess | `chess` | Chess | Search | |
@@ -216,6 +218,7 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Cribbage | `cribbage` | Cards | Heuristic over every starter | own turn order, `variants` |
 | Dominoes | `dominoes` | Tiles | Heuristic, hidden hand | `followUp` to draw |
 | Tablut | `tablut` | Tafl | Search | Scribe moves first |
+| Whist | `whist` | Trick-taking, four seats in partnerships | Card-play heuristic | `passTurn`, `scribeName`, a labelled Next deal move |
 | Snakes and Ladders | `snakes` | Race, one die | None needed | `oneDie` |
 | Ludo | `ludo` | Race, one die | Heuristic with danger | `extra` on a six |
 | Mahjong | `mahjong` | Tiles, four seats | Shanten and ukeire | own turn order, claims |
@@ -231,6 +234,7 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Mū tōrere | `mutorere` | Blocking | Search | |
 | Shogi | `shogi` | Chess family | Search | drops |
 | Gomoku | `gomoku` | Placement | Threat search | |
+| Jungle | `jungle` | Animal ranks, rivers and dens | Search | threefold repetition is a draw |
 | Makruk | `makruk` | Chess family | Search | endgame counts |
 | Kōnane | `konane` | Captures | Search | |
 | Yut Nori | `yut` | Race, sticks | Heuristic | `extra`, stacking |

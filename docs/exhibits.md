@@ -2,17 +2,17 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**57 exhibits, 49 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**60 exhibits, 53 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
     title Exhibits by wing (playable tables)
     "Wing I · 3 of 6" : 6
     "Wing II · 7 of 9" : 9
-    "Wing III · 6 of 9" : 9
-    "Wing IV · 11 of 11" : 11
+    "Wing III · 8 of 10" : 10
+    "Wing IV · 12 of 12" : 12
     "Wing V · 9 of 9" : 9
-    "Wing VI · 13 of 13" : 13
+    "Wing VI · 14 of 14" : 14
 ```
 
 ```mermaid
@@ -102,7 +102,7 @@ timeline
     c. 480 CE onward : Tables (backgammon)
     by c. 600 CE : Chaturanga : Shatranj
     c. 800 CE : Xiangqi
-    c. 1030 CE : Chaturaji (described by al-Biruni)
+    c. 1030 CE : Chaturaji (described by al-Biruni) : Rithmomachia
     c. 900–1400 CE : Playing cards
     c. 1150–1200 CE : The Lewis Chessmen
     1283 CE : Four Seasons chess (Alfonso X)
@@ -112,10 +112,11 @@ timeline
 | Exhibit | Date | Rules | In the Archives |
 | --- | --- | --- | --- |
 | Tables (backgammon) | c. 480 CE onward | Modern backgammon, no cube | Playable |
-| Chaturanga | by c. 600 CE | Partly lost (the elephant's move) | On display, on an ashtapada board |
+| Chaturanga | by c. 600 CE | Lost (the elephant's move is unknown) | Playable as a modern reconstruction (after H. J. R. Murray), on an ashtapada board |
 | Shatranj | c. 600–1200 CE | Survive in writing (al-Adli, as-Suli) | Playable |
 | Xiangqi (Chinese chess) | c. 800 CE | Modern rules, settled by the Song dynasty | Playable |
 | Chaturaji (chess for four) | described c. 1030 CE | Partly reconstructed (al-Biruni, read by Murray) | Playable, you and three Scribes |
+| Rithmomachia | c. 1030 CE | Never standardised | Playable as a modern reconstruction (Boissière's array, 1556) |
 | The Lewis Chessmen | c. 1150–1200 CE | Medieval European chess | On display (simplified figures, not copies) |
 | Four Seasons chess | 1283 CE | Partly reconstructed (Alfonso X's Book of Games) | Playable, you and three Scribes |
 | Playing cards | c. 900–1400 CE | Earliest games lost | On display (new designs in old styles) |
@@ -123,6 +124,8 @@ timeline
 
 Rule choices:
 
+- **Chaturanga:** no rules survive from its own time, so the table plays H. J. R. Murray's reconstruction: shatranj's rules under the Sanskrit names. The gaja (elephant) leaps two squares diagonally like the alfil, the mantri steps one diagonally, the padati promotes to a mantri, and you win by checkmate, stalemate or baring the raja. Other reconstructions move the gaja differently; the placard says so.
+- **Rithmomachia:** a modern reconstruction. Claude de Boissière's 1556 array (as set out by J. F. C. Richards and Jeff Joyner) on an 8 × 16 board: rounds move one square, triangles two and squares three, orthogonally and never leaping, the pyramid one to three. Captures are the four classic ones: meeting (move onto an equal enemy), and after your move, assault (your piece times the empty squares between makes the enemy), ambuscade (two pieces either side add up to it) and siege (closed in on four sides). Pyramids are taken only whole. Win by taking the pyramid or five pieces; after 150 moves each, the more pieces taken wins.
 - **Chaturaji:** al-Biruni's game as H. J. R. Murray read it, each of the four armies for itself. Two ordinary dice: 1 or 5 moves the king or a pawn, 2 the boat, 3 the horse, 4 or 6 the elephant; each die is one optional move, in either order. The elephant moves like a rook and the boat jumps two squares diagonally; there is no check, and kings are captured. A pawn on the far edge becomes the piece whose line it reached, but only if that piece has been lost. A boat that completes a square of four boats takes the other three. Captures score king 5, elephant 4, horse 3, boat 2, pawn 1. A player without a king is out, and that army stays on the board. You win by being the last king standing (taking all three yourself is chaturaji) and lose with your king; after 30 rounds the highest score among the kings left wins. Left out: partnerships, the throne rule (sinhasana) and ransoming kings, on which accounts differ.
 - **Four Seasons chess:** Alfonso X's acedrex de los quatro tiempos as Murray and Bodlaender read it, each army for itself and without dice. Armies of king, rook, knight, alfil and four pawns start in the corners (you are Red, in a1); Green moves first and play goes Green, Red, Black, White. The alfil leaps exactly two squares diagonally; pawns step one square without a double step, two of each army's pawns going along the files and two along the ranks, and become generals (one square diagonally) at the edge. You may not leave your king in check. A player checkmated is out and the whole army passes to the mater; taking a king counts the same; a player stalemated is out and the army leaves the board. Mates and stalemates are judged as soon as a move is made. The last army left wins; after 60 rounds the strongest army still in play wins (rook 5, knight 3, general 2, alfil 1½, pawn 1). The centre diagonals are decoration.
 - **Tarocchi:** the rules of the first tarot games of the 1440s were never written down, so the table plays a simplified two-player game built on what every tarot game still shares: follow suit, trump if you cannot, and the Fool as an excuse. Thirteen cards each; kings 5, queens 4, knights 3, jacks 2, trumps I and XXI and the Fool 5, and 1 for each trick.
@@ -140,6 +143,7 @@ timeline
     1630s CE : Cribbage
     18th century CE : Dominoes : Snakes and Ladders
     1732 CE : Tablut
+    1742 CE : Whist (Hoyle)
     mid-1800s CE : Mahjong
     1896 CE : Ludo
 ```
@@ -154,6 +158,7 @@ timeline
 | Cribbage | 1630s CE | Still played | Playable: two-player six-card cribbage, to 61 or 121, pegged on a board |
 | Dominoes | 18th century CE (Europe) | Still played | Playable: the two-player Draw game |
 | Tablut | recorded 1732 CE (Linnaeus) | Partly reconstructed | Playable, as the king's side |
+| Whist | 1742 CE (Hoyle) | Survive in print; short whist still played | Playable: you and a Scribe partner against two Scribes |
 | Snakes and Ladders (gyan chaupar) | 18th–19th century CE | Still played | Playable, with virtues and vices from an old Indian board |
 | Ludo | 1896 CE | Still played | Playable: red against yellow, one die |
 | Mahjong | mid-1800s CE | Still played | Playable at a table of four: you and three Scribes |
@@ -167,6 +172,7 @@ Rule choices:
 - **Cribbage:** the standard two-player six-card game. The Scribe deals first and the deal alternates; the play, the go and the show are scored for you, and pegs leapfrog along the board. One game to 61 by default, or 121 (a lurch is noted but not doubled).
 - **Dominoes:** the Draw game for two from pagat.com: seven tiles each, draw from the boneyard until you can play but never the last two, and the lower pip count wins when the hand ends. One hand is played rather than a game to 100.
 - **Tablut:** Linnaeus's 9 × 9 game read as most players read it today: the Muscovites move first, the king escapes to any edge square, he is armed, and he is captured by two except on or beside the throne (four, or three and the throne). Only the king may stop on the throne. House rule: a hundred moves each without a result is a draw.
+- **Whist:** short whist as on pagat.com: thirteen cards each, the dealer's last card turned for trumps, a point for every trick over six, honours (4 for all four, 2 for three; not for a side at four), tricks before honours, and one game to 5 points rather than a rubber. Gentle and Fair Scribes play some cards carelessly; Sharp plays every card by the book (cash winners, second hand low, third hand high, ruff when an opponent is winning).
 - **Ludo:** two players, red and yellow, from opposite corners. A six brings a token out or moves one, and earns another throw; landing on an enemy token sends it to its yard; your home column is safe; the finish needs the exact throw. There are no blocks or safe squares on the track.
 - **Mahjong:** a basic Chinese game with the 136 tiles (no flowers or seasons). Go out with four sets and a pair, seven pairs or the thirteen orphans. You may claim a discard for a pung or kong from anyone, a chow only from the player on your left, and a win from anyone; a win beats a pung or kong, which beats a chow. A kong draws a replacement tile. There is no scoring: whoever goes out first wins the hand, and an empty wall is a draw.
 
@@ -220,6 +226,7 @@ mindmap
     East Asia
       Shogi
       Gomoku
+      Jungle
       Yut Nori
       Janggi
     South and Southeast Asia
@@ -242,6 +249,7 @@ mindmap
 | Mū tōrere | first described in 1917 (Elsdon Best) | Accounts differ | Playable |
 | Shogi | oldest pieces c. 1058 CE (Kōfuku-ji) | Unbroken tradition | Playable, with drops |
 | Gomoku | named renju in 1899 | Still played | Playable, freestyle on 15 × 15 |
+| Jungle (dou shou qi) | 20th century | Still played | Playable on the 7 × 9 board with two rivers |
 | Makruk | traditional | Still played | Playable, with the counting rules kept for you |
 | Bagh-chal | traditional | Still played | Playable as either side |
 | Kōnane | by 1778–79 (Cook's expedition) | Still played | Playable on an 8 × 8 papamū |
@@ -258,6 +266,7 @@ Rule choices:
 - **Mū tōrere:** a man may move into the centre only from an arm next to an enemy man, the rule most often given today (without it the first player can win at once). House rule: thirty moves each is a draw; perfect play draws anyway.
 - **Shogi:** drops follow the full rules (no second unpromoted pawn on a file, no dead pieces, no pawn-drop mate). Promotion is automatic whenever it is allowed, and a 150-move limit replaces the repetition rule.
 - **Gomoku:** freestyle: five or more in a row wins, with none of renju's restrictions on black.
+- **Jungle:** modern Chinese rules. Blue moves first; animals step one square orthogonally and take equal or lower ranks; the rat takes the elephant (only from land), swims, and blocks leaps; the lion and the tiger both leap the rivers along rows and columns (some sets allow only the lion sideways). An animal in an enemy trap has no rank. Win by entering the den or taking every animal. A threefold repetition, a side with no move, or 50 moves each without a capture is a draw.
 - **Makruk:** Thai rules: no castling, no double pawn step, promotion on the sixth rank to a met, stalemate drawn. The counts: once no unpromoted pawn is left, mate must come within 64 moves; once a side has only its khun, the other must mate within a limit set by its pieces (8 with two rueas, 16 with one, 22 with two khons, 32 with two horses, 44 with one khon, otherwise 64), counted from the number of pieces on the board.
 - **Kōnane:** black lifts a stone from the centre or a corner, white lifts one beside the gap, and from then on every move is a capture. Multiple jumps run in a straight line and may stop anywhere. The first player who cannot capture loses.
 - **Yut Nori:** a piece that starts its move on a corner or the centre takes the shortcut; your own pieces stack and move together; a yut, a mo or a capture earns another throw. Each throw is moved at once rather than saved up, and there is no back-do.
@@ -275,7 +284,6 @@ Rule choices:
 | --- | --- |
 | Mehen, Başur Höyük pieces | No rules survive. |
 | Petteia, Liubo | Only partial or competing reconstructions. |
-| Chaturanga | The elephant's move is uncertain. Its four-handed relative, chaturaji, is playable next to Xiangqi. |
 | The Lewis Chessmen, Playing cards | Shown as objects; their games are covered at Shatranj and Tarocchi. |
 | Hare and Hounds (not yet an exhibit) | Sources disagree on the lines of its eleven-point board. |
 
