@@ -2,13 +2,13 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**57 exhibits, 44 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**57 exhibits, 47 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
     title Exhibits by wing (playable tables)
-    "Wing I · 2 of 6" : 6
-    "Wing II · 5 of 9" : 9
+    "Wing I · 3 of 6" : 6
+    "Wing II · 7 of 9" : 9
     "Wing III · 6 of 9" : 9
     "Wing IV · 11 of 11" : 11
     "Wing V · 7 of 9" : 9
@@ -56,9 +56,11 @@ timeline
 | Başur Höyük pieces | c. 3000 BCE | Game unknown | On display |
 | Royal Game of Ur | c. 2600–2400 BCE | Survive in writing (tablet, c. 177 BCE; Finkel) | Playable |
 | The first dice | c. 2800–1900 BCE | Still rolled | On display (Burnt City and Indus-style dice, newly made) |
-| Hounds and Jackals | c. 2000 BCE | Lost | On display |
+| Hounds and Jackals | c. 2000 BCE | Lost | Playable as a modern reconstruction (Howard Carter, 1912) |
 
-Senet's rules were never written down, so the table plays a modern reconstruction (after Kendall). The Royal Game of Ur follows Irving Finkel's reading of a Babylonian rules tablet of c. 177 BCE. Mehen, Hounds and Jackals and the Başur Höyük pieces are shown without rules because none survive.
+Senet's rules were never written down, so the table plays a modern reconstruction (after Kendall). The Royal Game of Ur follows Irving Finkel's reading of a Babylonian rules tablet of c. 177 BCE. Mehen and the Başur Höyük pieces are shown without rules because none survive.
+
+- **Hounds and Jackals:** a modern reconstruction, and the placard says so. It follows the route Howard Carter proposed in 1912, which "Hounds and Jackals in Modern Times" (ISAW Papers 22.4) calls the likeliest. Each side races five pins up its own track of 29 holes to the goal; one pin to a hole, the goal by exact throw. Landing on 20 slides a pin back to 6, and landing on 10 back to 8; holes 15 and 25 (the "good" signs) give another throw. The four stick dice (1 to 4 white sides, none counting 5) are our choice; Carter suggested dice or knucklebones.
 
 ## Wing II: Strategy Takes the Table (c. 500 BCE – 1000 CE)
 
@@ -80,12 +82,17 @@ timeline
 | Petteia | by 443 BCE | Mostly lost | On display (the board is our guess) |
 | Liubo | by the 4th century BCE | Lost; reconstructions only | On display (after the Mawangdui set) |
 | Weiqi (Go) | by the 4th century BCE | Unbroken tradition | Playable on a 9 × 9 board; the 17 × 17 Han-style board is on display |
-| Ludus latrunculorum | by the 1st century BCE | Uncertain, reconstructed | On display |
-| Patolli | by c. 300 CE | Partly known | On display (reed mat, beans and stones) |
+| Ludus latrunculorum | by the 1st century BCE | Lost | Playable as a modern reconstruction (Locus Ludi, "Piso" rules) |
+| Patolli | by c. 300 CE | Partly recorded (Durán) | Playable as a modern reconstruction (reed mat, beans and stones) |
 | Nine Men's Morris | Roman era onward | Survive in tradition | Playable |
 | Mancala (Oware) | c. 6th–7th century CE (Aksum) | Survive in tradition (abapa) | Playable |
 | Alquerque | by the 10th century CE | Reconstructed (R. C. Bell, from Alfonso X) | Playable |
 | Brandubh | c. 900–1000 CE (Ballinderry board) | Reconstructed | Playable, as the king's side |
+
+Rule choices, each a modern reconstruction stated as such on the placard:
+
+- **Ludus latrunculorum:** the "Piso" rules of Locus Ludi (University of Fribourg). An 8 × 8 board; twenty counters each, placed one at a time with no captures. Then a counter steps one square orthogonally, and may not step straight back to the square it just left. A counter trapped between the mover and another enemy counter along a line is taken, several at once if so; a counter in a corner is trapped by the two squares beside it; moving between two enemies is safe. The game ends when a player is down to one counter or cannot move, and whoever has taken more wins. House rule: 30 moves each without a capture also ends it.
+- **Patolli:** the reconstruction most often given today, from Diego Durán's account. 52 houses; six markers and six treasures each; five beans (1 to 4 marks move that many, all five move 10, none costs an offering to Macuilxochitl). A 1 enters a marker on its centre house; markers run the whole circuit clockwise and leave by exact count. No landing on an occupied house except in the centre, where an enemy is sent back and its owner pays a treasure. Dark houses cost a treasure; red tips give another throw. Our choices: a treasure is paid for each completed circuit, the game is one round, and when one side has all six markers home (or after 150 throws each) the side with more treasures wins. A player who cannot pay loses.
 
 ## Wing III: Kings, Cards and Courts (c. 480–1450 CE)
 
@@ -263,8 +270,8 @@ Rule choices:
 
 | Exhibit | Why it stays on display |
 | --- | --- |
-| Mehen, Hounds and Jackals, Başur Höyük pieces | No rules survive. |
-| Petteia, Liubo, Ludus latrunculorum, Patolli | Only partial or competing reconstructions. |
+| Mehen, Başur Höyük pieces | No rules survive. |
+| Petteia, Liubo | Only partial or competing reconstructions. |
 | Chaturanga | The elephant's move is uncertain. Its four-handed relative, chaturaji, is playable next to Xiangqi. |
 | The Lewis Chessmen, Playing cards | Shown as objects; their games are covered at Shatranj and Tarocchi. |
 | The Mansion of Happiness, The Checkered Game of Life | The rules sit square by square on the original boards; we need a checkable scan or transcription. |

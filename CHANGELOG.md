@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.0: Three modern reconstructions
+
+Three exhibits whose rules are lost or only partly recorded are now playable. Each placard says plainly that the table plays a modern reconstruction and whose, and a line beside the "Take a seat and play" button repeats it.
+
+- **Hounds and Jackals** (Wing I): Howard Carter's reconstruction of 1912. Five pins a side race up their own tracks; the lines from 20 to 6 and 10 to 8 send a pin back, and the "good" holes 15 and 25 give another throw.
+- **Ludus latrunculorum** (Wing II): the "Piso" rules of the Locus Ludi project (University of Fribourg). Twenty glass counters each, placed one at a time, then stepped; a counter trapped between two enemies is taken.
+- **Patolli** (Wing II): the reconstruction most often given today, from Diego Durán's account. Six markers and six treasures each, five beans, captures in the centre, treasure paid on the dark houses.
+- Placards can show a note beside the play button.
+- 9 new rule tests (230 in all).
+
 ## 0.20.0: Seega, Tâb, Bagh-chal and Four Seasons chess
 
 - **Seega** (Wing VI): Edward Lane's five-cup game from Egypt (1836). Twelve stones each placed two at a time, a first move into the centre, pincer captures that chain, and a way opened for a player who is boxed in.

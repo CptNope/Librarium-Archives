@@ -1963,3 +1963,112 @@ test('Four Seasons chess: simulated games end, and every Scribe move is legal', 
   }
   rules.setLevel('fair');
 });
+
+/* ---------------------------------------------------------- Hounds and Jackals */
+
+const HJ = rules.hounds;
+test('Hounds and Jackals: pins enter from the bottom, one to a hole, and reach the goal exactly', () => {
+  HJ.init();
+  const ms = HJ.legal(0, 3);
+  assert.equal(ms.length, 1); // all five waiting pins are alike
+  HJ.apply(ms[0]);
+  assert.deepEqual(HJ.legal(0, 3).map(m => m.to), [6]); // hole 3 is taken, so no new pin can enter
+  HJ.pos[0] = [27, 0, 0, 0, 0];
+  assert.ok(!HJ.legal(0, 3).some(m => m.from === 27)); // 30 would overshoot the goal
+  assert.ok(HJ.legal(0, 2).some(m => m.from === 27 && m.end === 29));
+});
+
+test('Hounds and Jackals: holes 20 and 10 slide back down their lines; 15 and 25 throw again', () => {
+  HJ.init(); HJ.pos[0] = [17, 7, 0, 0, 0];
+  const m = HJ.legal(0, 3).find(x => x.from === 17);
+  assert.equal(m.to, 20); assert.equal(m.end, 6);
+  assert.equal(HJ.legal(0, 3).find(x => x.from === 7).end, 8);
+  HJ.init(); HJ.pos[0] = [12, 0, 0, 0, 0];
+  const g = HJ.legal(0, 3).find(x => x.from === 12); HJ.apply(g);
+  assert.ok(HJ.extra(g));
+  HJ.init(); HJ.pos[0] = [29, 29, 29, 29, 27];
+  HJ.apply(HJ.legal(0, 2).find(x => x.from === 27));
+  assert.equal(HJ.over.winner, 0);
+});
+
+/* ---------------------------------------------------------- Latrunculi */
+
+const LT = rules.latrunculi;
+const ltMid = () => { LT.init(); LT.placed = [20, 20]; LT.b.fill(0); };
+test('Latrunculi: twenty counters each, placed one at a time on any empty square', () => {
+  LT.init();
+  assert.equal(LT.legal(0).length, 64);
+  let pl = 0; while (LT.placing()) { LT.apply(LT.legal(pl)[0]); pl = 1 - pl; }
+  assert.equal(LT.count(0), 20); assert.equal(LT.count(1), 20);
+  assert.ok(LT.legal(0).every(m => m.from !== undefined));
+});
+
+test('Latrunculi: a counter trapped between two enemies is taken; corners need only the two beside them', () => {
+  ltMid(); LT.b[10] = 1; LT.b[11] = 2; LT.b[20] = 1; LT.b[40] = 2; LT.b[50] = 1;
+  const r = LT.apply({ pl: 0, from: 20, to: 12 });
+  assert.deepEqual(r.taken, [11]);
+  ltMid(); LT.b[0] = 2; LT.b[8] = 1; LT.b[2] = 1; LT.b[40] = 2; LT.b[50] = 1;
+  assert.deepEqual(LT.apply({ pl: 0, from: 2, to: 1 }).taken, [0]);
+  ltMid(); LT.b[11] = 2; LT.b[13] = 2; LT.b[20] = 1; LT.b[40] = 2; LT.b[50] = 1;
+  LT.apply({ pl: 0, from: 20, to: 12 });
+  assert.equal(LT.b[12], 1); // safe between two
+});
+
+test('Latrunculi: no stepping straight back, and the game ends at one counter', () => {
+  ltMid(); LT.b[20] = 1; LT.b[50] = 1; LT.b[40] = 2; LT.b[44] = 2;
+  LT.apply({ pl: 0, from: 20, to: 21 });
+  assert.ok(!LT.legal(0).some(m => m.from === 21 && m.to === 20));
+  ltMid(); LT.b[10] = 1; LT.b[11] = 2; LT.b[20] = 1; LT.b[50] = 1;
+  LT.apply({ pl: 0, from: 20, to: 12 });
+  assert.equal(LT.over.winner, 0); // the Scribe's last counter is gone
+});
+
+/* ---------------------------------------------------------- Patolli */
+
+const PT = rules.patolli;
+test('Patolli: five beans count their marks, all five count 10, and none means an offering', () => {
+  PT.init();
+  for (let k = 0; k < 200; k++) { const r = PT.roll(); const n = r.faces.reduce((a, b) => a + b, 0); assert.equal(r.value, n === 5 ? 10 : n); }
+  const o = PT.legal(0, 0); assert.ok(o[0].offering);
+  PT.apply(o[0]); assert.equal(PT.treasure[0], 5); assert.equal(PT.pot, 1);
+});
+
+test('Patolli: a 1 enters a marker; markers may not land on others except in the centre', () => {
+  PT.init();
+  assert.equal(PT.legal(0, 2).length, 0);
+  const e = PT.legal(0, 1); assert.equal(e.length, 1); assert.ok(e[0].enter);
+  PT.apply(e[0]);
+  PT.pos[1][0] = 24; // the Scribe's marker sits on our house 50
+  PT.pos[0][1] = 47;
+  assert.ok(!PT.legal(0, 3).some(m => m.k === 1)); // house 50 is taken, and not a centre house
+  PT.pos[1][0] = 13; // now on house 39, a centre house
+  PT.pos[0][1] = 37;
+  const c = PT.legal(0, 2).find(m => m.k === 1); assert.ok(c && c.cap);
+  PT.apply(c);
+  assert.equal(PT.pos[1][0], -1); assert.equal(PT.treasure[1], 5); assert.equal(PT.treasure[0], 7);
+});
+
+test('Patolli: dark houses cost a treasure, tips throw again, and the circuit ends by exact count', () => {
+  PT.init(); PT.pos[0][0] = 1;
+  const d = PT.legal(0, 3)[0]; assert.equal(PT.KIND(d.house), 'dark'); PT.apply(d);
+  assert.equal(PT.treasure[0], 5);
+  PT.init(); PT.pos[0][0] = 3;
+  const t = PT.legal(0, 3)[0]; PT.apply(t); assert.ok(PT.extra(t));
+  PT.init(); PT.pos[0][0] = 49;
+  assert.equal(PT.legal(0, 3).length, 0); // 52 is past the last house
+  const off = PT.legal(0, 2)[0]; assert.ok(off.off); PT.apply(off);
+  assert.equal(PT.home(0), 1); assert.equal(PT.treasure[0], 7);
+});
+
+test('Patolli and Hounds and Jackals: games between Scribes end', () => {
+  for (const G of [PT, HJ]) for (const level of ['gentle', 'sharp']) {
+    rules.setLevel(level); G.init(); let pl = 0, n = 0;
+    while (!G.over && n++ < 5000) {
+      const r = G.roll(), ms = G.legal(pl, r.value, r); let m = null;
+      if (ms.length) { m = G.aiPlan(pl, ms)[0]; G.apply(m); }
+      if (!G.over && !(m && G.extra(m, r.value))) pl = 1 - pl;
+    }
+    assert.ok(G.over);
+  }
+  rules.setLevel('fair');
+});

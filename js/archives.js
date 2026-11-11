@@ -604,6 +604,17 @@ function buildTokens(group) {
 }
 
 /* --- Hounds and Jackals */
+// A hound or jackal pin: s < 0 the gold hounds (the visitor's), s > 0 the dark jackals.
+const hjMats = { '-1': new THREE.MeshStandardMaterial({ color: 0xcaa24e, metalness: 0.5, roughness: 0.35 }), '1': new THREE.MeshStandardMaterial({ color: 0x2b211a, roughness: 0.45 }) };
+function hjPin(s) {
+  const m = hjMats[s].clone(), pin = new THREE.Group();
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.006, 0.12, 8), m); stick.position.y = 0.06; pin.add(stick);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.012, 10, 8), m); head.scale.set(1.5, 0.9, 0.9); head.position.set(0.006, 0.124, 0); pin.add(head);
+  if (s < 0) { for (const e of [-1, 1]) { const ear = new THREE.Mesh(new THREE.SphereGeometry(0.006, 8, 6), m); ear.scale.set(0.6, 1.4, 0.6); ear.position.set(-0.004, 0.132, e * 0.008); pin.add(ear); } }
+  else { for (const e of [-1, 1]) { const ear = new THREE.Mesh(new THREE.ConeGeometry(0.005, 0.026, 6), m); ear.position.set(-0.004, 0.145, e * 0.006); pin.add(ear); } }
+  pin.rotation.y = s < 0 ? 0 : Math.PI; pin.userData.mats = [m];
+  return pin;
+}
 function buildHounds(group) {
   const ivory = new THREE.MeshStandardMaterial({ color: 0xe0d0aa, roughness: 0.55 });
   const ebony = new THREE.MeshStandardMaterial({ color: 0x1a120c, roughness: 0.5 });
@@ -618,16 +629,25 @@ function buildHounds(group) {
   const hz = z => (H + W / 2) / 2 - z; // board-local y → group z
   const holeGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.004, 10);
   const holeMat = new THREE.MeshBasicMaterial({ color: 0x1a120c });
-  const holes = [];
+  const holes = { '-1': [], '1': [] };
   for (const s of [-1, 1]) {
     const track = [];
     for (let i = 0; i < 18; i++) track.push([s * (W / 2 - 0.035), 0.04 + i * (H - 0.04) / 17]);
     for (let i = 1; i <= 11; i++) { const a = Math.PI / 2 - s * (Math.PI / 2) * (1 - i / 12); track.push([Math.cos(a) * (W / 2 - 0.035), H + Math.sin(a) * (W / 2 - 0.035)]); }
     track.forEach(([x, y], i) => {
       const h = new THREE.Mesh(i === 28 ? new THREE.CylinderGeometry(0.013, 0.013, 0.004, 14) : holeGeo, holeMat);
-      h.position.set(x, topY, hz(y)); group.add(h); holes.push({ x, y, s, i });
+      h.position.set(x, topY, hz(y)); group.add(h); holes[s].push(V3(x, topY, hz(y)));
     });
+    // The lines joining holes 6 and 20, and 8 and 10, and the "good" signs by holes 15 and 25.
+    for (const [a, b] of [[5, 19], [7, 9]]) {
+      const p = holes[s][a], q = holes[s][b], mid = p.clone().add(q).multiplyScalar(0.5), len = p.distanceTo(q);
+      const bow = V3(-s * (a === 5 ? 0.07 : 0.03), 0, 0);
+      const curve = new THREE.QuadraticBezierCurve3(p.clone().setY(topY + 0.001), mid.clone().add(bow).setY(topY + 0.001), q.clone().setY(topY + 0.001));
+      const line = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.0025, 6, false), holeMat); group.add(line); void len;
+    }
+    for (const k of [14, 24]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.0025, 6, 18), new THREE.MeshStandardMaterial({ color: 0xc9962e, metalness: 0.4, roughness: 0.4 })); ring.rotation.x = -Math.PI / 2; ring.position.copy(holes[s][k]).add(V3(-s * 0.024, 0.001, 0)); group.add(ring); }
   }
+  group.userData.holes = holes;
   const palmM = new THREE.MeshStandardMaterial({ color: 0x5a3a1c, roughness: 0.6 });
   const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.004, 0.36), palmM); trunk.position.set(0, topY, hz(0.26)); group.add(trunk);
   for (let k = 0; k < 7; k++) {
@@ -635,20 +655,10 @@ function buildHounds(group) {
     const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 6), new THREE.MeshStandardMaterial({ color: 0x3d5a32, roughness: 0.6 }));
     leaf.scale.set(1, 0.06, 0.28); leaf.rotation.y = -a; leaf.position.set(Math.cos(a) * 0.05, topY, hz(0.46) + Math.sin(a) * 0.05); group.add(leaf);
   }
-  const pinMat = new THREE.MeshStandardMaterial({ color: 0xcaa24e, metalness: 0.5, roughness: 0.35 });
-  const pinMat2 = new THREE.MeshStandardMaterial({ color: 0x2b211a, roughness: 0.45 });
-  for (const s of [-1, 1]) {
-    for (let k = 0; k < 5; k++) {
-      const h = holes.find(o => o.s === s && o.i === k * 2 + 1);
-      const m = s < 0 ? pinMat : pinMat2;
-      const pin = new THREE.Group();
-      const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.006, 0.12, 8), m); stick.position.y = 0.06; pin.add(stick);
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.012, 10, 8), m); head.scale.set(1.5, 0.9, 0.9); head.position.set(0.006, 0.124, 0); pin.add(head);
-      if (s < 0) { for (const e of [-1, 1]) { const ear = new THREE.Mesh(new THREE.SphereGeometry(0.006, 8, 6), m); ear.scale.set(0.6, 1.4, 0.6); ear.position.set(-0.004, 0.132, e * 0.008); pin.add(ear); } }
-      else { for (const e of [-1, 1]) { const ear = new THREE.Mesh(new THREE.ConeGeometry(0.005, 0.026, 6), m); ear.position.set(-0.004, 0.145, e * 0.006); pin.add(ear); } }
-      pin.position.set(h.x, topY, hz(h.y)); pin.rotation.y = s < 0 ? 0 : Math.PI; group.add(pin);
-    }
-  }
+  const shown = [];
+  for (const s of [-1, 1]) for (let k = 0; k < 5; k++) { const pin = hjPin(s); pin.position.copy(holes[s][k * 2 + 1]); group.add(pin); shown.push(pin); }
+  group.userData.display = shown;
+  return topY;
 }
 
 /* --- Wing II: shared helpers */
@@ -737,8 +747,13 @@ function buildGo(group) {
 }
 
 /* --- Ludus latrunculorum: an incised stone board with glass counters */
+const LT_CS = 0.085;
+const ltGlass = [0x2f5fb3, 0xe6eef2];
+const ltCounterGeo = new THREE.SphereGeometry(0.03, 20, 12); // squashed into a bun-shaped counter
+function ltCounter(pl) { const m = new THREE.MeshStandardMaterial({ color: ltGlass[pl], roughness: 0.12, metalness: 0.05, transparent: true, opacity: 0.9 }); const c = new THREE.Mesh(ltCounterGeo, m); c.scale.set(1, 0.42, 1); c.userData.mats = [m]; return c; }
+function ltCell(i) { const x = i & 7, y = i >> 3; return { x: (x - 3.5) * LT_CS, z: (3.5 - y) * LT_CS }; }
 function buildLatrunculi(group) {
-  const W = 0.84, D = 0.74, n = 8, cs = 0.085;
+  const W = 0.84, D = 0.74, n = 8, cs = LT_CS;
   const slabMat = new THREE.MeshStandardMaterial({ color: 0xb3a68f, roughness: 0.9, map: stoneTex() });
   const slab = new THREE.Mesh(new THREE.BoxGeometry(W, 0.06, D), slabMat); slab.position.y = TOP + 0.03; group.add(slab);
   const px = 1024;
@@ -756,18 +771,16 @@ function buildLatrunculi(group) {
     }
   });
   topPlane(group, W, D, TOP + 0.0605, map, { roughness: 0.9 });
-  const glass = [0x2f5fb3, 0xe6eef2].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.12, metalness: 0.05, transparent: true, opacity: 0.88 }));
-  const cGeo = new THREE.SphereGeometry(0.03, 20, 12); // squashed into a bun-shaped counter
-  const R = seeded(116);
-  const taken = new Set();
+  const R = seeded(116), taken = new Set(), shown = [];
   const place = (c, r, side) => {
     if (taken.has(c + ',' + r)) return; taken.add(c + ',' + r);
-    const m = new THREE.Mesh(cGeo, glass[side]); m.scale.set(1, 0.42, 1);
-    m.position.set((c - 3.5) * cs, TOP + 0.072, (r - 3.5) * cs); group.add(m);
+    const m = ltCounter(side); m.position.set((c - 3.5) * cs, TOP + 0.072, (r - 3.5) * cs); group.add(m); shown.push(m);
   };
   for (let c = 0; c < 8; c++) { if (R() > 0.3) place(c, 0, 0); if (R() > 0.5) place(c, 1, 0); if (R() > 0.3) place(c, 7, 1); if (R() > 0.5) place(c, 6, 1); }
   for (let k = 0; k < 6; k++) place((R() * 8) | 0, 2 + ((R() * 4) | 0), k % 2);
-  for (let k = 0; k < 5; k++) { const m = new THREE.Mesh(cGeo, glass[k % 2]); m.scale.set(1, 0.42, 1); m.position.set(W / 2 + 0.1 + (k % 2) * 0.07, TOP + 0.013, -0.2 + k * 0.08); group.add(m); }
+  for (let k = 0; k < 5; k++) { const m = ltCounter(k % 2); m.position.set(W / 2 + 0.1 + (k % 2) * 0.07, TOP + 0.013, -0.2 + k * 0.08); group.add(m); shown.push(m); }
+  group.userData.display = shown;
+  return TOP + 0.072;
 }
 
 /* --- Nine Men's Morris board */
@@ -2473,8 +2486,29 @@ function buildLiubo(group) {
   // Six throwing sticks laid side by side, flat face down.
   for (let k = 0; k < 6; k++) { const st = new THREE.Mesh(stick, sm); st.rotation.set(-Math.PI / 2, 0, 0); st.position.set(W / 2 + 0.06 + k * 0.022, TOP, 0); group.add(st); }
 }
+// The 52 houses of the patolli mat in circuit order, clockwise, starting at the visitor's centre house.
+// The mat is drawn rotated 45 degrees; each arm is two lanes of six houses.
+const PT_W = 0.84;
+const ptHouses = (() => {
+  const px = 1024, c = px / 2, sq = 50, rot = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+  const at = (k, j, i) => { let [x, y] = [j * sq + sq / 2, i * sq + sq / 2]; if (k >= 0) [x, y] = rot(x, y, k * Math.PI / 2); [x, y] = rot(x, y, Math.PI / 4); return [(c + x) / px * PT_W - PT_W / 2, (c + y) / px * PT_W - PT_W / 2]; };
+  const centres = [[-1, -1], [-1, 0], [0, -1], [0, 0]].map(([j, i]) => at(-1, j, i));
+  const cells = [];
+  for (let k = 0; k < 4; k++) {
+    for (let i = 1; i <= 6; i++) cells.push(at(k, 0, i));
+    for (let i = 6; i >= 1; i--) cells.push(at(k, -1, i));
+    cells.push(null);
+  }
+  for (let n = 0; n < cells.length; n++) if (!cells[n]) {
+    const a = cells[n - 1], b = cells[(n + 1) % cells.length];
+    cells[n] = centres.reduce((best, ce) => { const d = Math.hypot(ce[0] - a[0], ce[1] - a[1]) + Math.hypot(ce[0] - b[0], ce[1] - b[1]); return d < best[0] ? [d, ce] : best; }, [1e9, null])[1];
+  }
+  return [cells[51], ...cells.slice(0, 51)];
+})();
+const ptStoneGeo = new THREE.SphereGeometry(0.017, 14, 10);
+function ptStone(pl) { const m = new THREE.MeshStandardMaterial({ color: pl ? 0x2a4a8a : 0xa8322a, roughness: 0.45 }); const o = new THREE.Mesh(ptStoneGeo, m); o.scale.y = 0.6; o.userData.mats = [m]; return o; }
 function buildPatolli(group) {
-  const W = 0.84;
+  const W = PT_W;
   const px = 1024;
   topPlane(group, W, W, TOP + 0.004, tex(px, px, (g, w) => {
     // A reed mat, with the X-shaped track of 52 houses painted on it.
@@ -2496,6 +2530,7 @@ function buildPatolli(group) {
     for (const j of [-1, 0]) for (const i of [-1, 0]) cell(j * sq, i * sq, '#d8b878');
     g.restore();
   }), { roughness: 0.95 });
+  const shown = [];
   const bean = new THREE.SphereGeometry(0.014, 12, 8);
   const bm = new THREE.MeshStandardMaterial({ color: 0x1a120c, roughness: 0.5 }), wm = new THREE.MeshStandardMaterial({ color: 0xf0e8d8, roughness: 0.5 });
   const R = seeded(1521);
@@ -2503,12 +2538,11 @@ function buildPatolli(group) {
     const b = new THREE.Mesh(bean, bm); b.scale.set(1.3, 0.6, 0.9); b.position.set(0.3 + R() * 0.08, TOP + 0.013, 0.24 + k * 0.03); b.rotation.y = R() * TAU; group.add(b);
     if (R() < 0.5) { const dot = new THREE.Mesh(new THREE.CircleGeometry(0.005, 10), wm); dot.rotation.x = -Math.PI / 2; dot.position.set(b.position.x, TOP + 0.022, b.position.z); group.add(dot); }
   }
-  const stone = new THREE.SphereGeometry(0.016, 12, 8);
-  const sm = [new THREE.MeshStandardMaterial({ color: 0xa8322a, roughness: 0.45 }), new THREE.MeshStandardMaterial({ color: 0x2a4a8a, roughness: 0.45 })];
   for (let pl = 0; pl < 2; pl++) for (let k = 0; k < 6; k++) {
-    const m = new THREE.Mesh(stone, sm[pl]); m.scale.y = 0.6;
-    m.position.set((pl ? 0.33 : -0.33) + (k % 2) * 0.035, TOP + 0.014, -0.3 + ((k / 2) | 0) * 0.035); group.add(m);
+    const m = ptStone(pl); m.position.set((pl ? 0.33 : -0.33) + (k % 2) * 0.035, TOP + 0.014, -0.3 + ((k / 2) | 0) * 0.035); group.add(m); shown.push(m);
   }
+  group.userData.display = shown;
+  return TOP + 0.014;
 }
 
 /* --- Backfill tables: Alquerque, Xiangqi, Snakes and Ladders */
@@ -2897,12 +2931,14 @@ const STOPS = [
     facts: [['Oldest', 'Burnt City, Iran, c. 2800–2500 BCE'], ['Indus', 'Mohenjo-daro, 2500–1900 BCE'], ['Faces', 'Opposites adding to seven, on one Indus die']],
     build: buildDice },
   { id: 'hounds', wing: 1, title: 'Hounds and Jackals', date: 'c. 2000 BCE', rail: 'Hounds and Jackals',
-    eyebrow: 'Egypt · Middle Kingdom', status: ['lost', 'Rules lost'],
+    eyebrow: 'Egypt · Middle Kingdom', status: ['recon', 'Modern reconstruction'], game: 'hounds',
+    note: 'The ancient rules are lost. This table plays a modern reconstruction: Howard Carter\'s, of 1912.',
     body: [
       'Howard Carter, later famous for Tutankhamun\'s tomb, found a complete set of this game in a Theban tomb in 1910. It is now at the Metropolitan Museum of Art in New York. Ten slender pins fit its holes: five topped with hound heads and five with jackals.',
-      'The board has 58 holes in two tracks, which is why archaeologists also call it 58 Holes. Boards like it turn up from Egypt to Mesopotamia, Anatolia and the Levant. The larger hole near the top looks like the finish, but the rest of the rules are lost.'
+      'The board has 58 holes in two tracks, which is why archaeologists also call it 58 Holes. Boards like it turn up from Egypt to Mesopotamia, Anatolia and the Levant. The larger hole near the top looks like the finish, but the rules themselves are lost.',
+      'The table plays a modern reconstruction, not the ancient rules. It follows the route Carter himself proposed in 1912, which most scholars still think the likeliest: each side races up its own track to the goal, the lines joining holes 6 and 20, and 8 and 10, send a pin back, and the holes marked "good" give another throw. The stick dice are our choice.'
     ],
-    facts: [['Board', '58 holes, palm tree inlay'], ['Pieces', '5 hounds, 5 jackals'], ['Spread', 'Egypt to Anatolia'], ['Rules', 'Unknown']],
+    facts: [['Board', '58 holes, palm tree inlay'], ['Pieces', '5 hounds, 5 jackals'], ['Spread', 'Egypt to Anatolia'], ['Rules', 'Lost; modern reconstruction (Carter, 1912)']],
     build: buildHounds },
 
   { id: 'wing2', wing: 2, title: 'Strategy Takes the Table', short: 'Wing II', date: 'c. 500 BCE – 1000 CE', rail: 'Wing II',
@@ -2942,22 +2978,24 @@ const STOPS = [
     facts: [['Board', '17 × 17 on display; 9 × 9 at the table'], ['Pieces', 'Black and white stones'], ['Goal', 'Surround more territory']],
     build: buildGo },
   { id: 'latrunculi', wing: 2, title: 'Ludus Latrunculorum', date: 'by the 1st century BCE', rail: 'Latrunculi',
-    eyebrow: 'Rome · Late Republic to Empire', status: ['recon', 'Rules uncertain'],
-    note: 'On display. Scholars still disagree about how the pieces moved.',
+    eyebrow: 'Rome · Late Republic to Empire', status: ['recon', 'Modern reconstruction'], game: 'latrunculi',
+    note: 'The full Roman rules are lost. This table plays a modern reconstruction: the "Piso" rules of the Locus Ludi project.',
     body: [
       'The "game of soldiers", or of brigands, was Rome\'s war game. The scholar Varro mentions it in the 1st century BCE, Ovid alludes to it, and a 1st-century CE poem, the Laus Pisonis, praises a player commanding an army of glass pieces.',
-      'Boards scratched into stone turn up wherever the legions went. Sixteen have been found at the fort of Vindolanda on Hadrian\'s Wall alone, and sizes vary from 7 × 8 to 9 × 10 squares. A piece seems to have been captured by trapping it between two enemies, but how pieces moved is still debated, and every modern version is a reconstruction.'
+      'Boards scratched into stone turn up wherever the legions went. Sixteen have been found at the fort of Vindolanda on Hadrian\'s Wall alone, and sizes vary from 7 × 8 to 9 × 10 squares. A piece seems to have been captured by trapping it between two enemies, but how pieces moved is still debated, and every modern version is a reconstruction.',
+      'The table plays one such modern reconstruction, not a rulebook from Rome: the "Piso" rules of Locus Ludi, a research project on ancient games at the University of Fribourg. Counters are placed one at a time on the empty board, as the Laus Pisonis suggests, then step one square at a time, and a counter trapped between two enemies is taken.'
     ],
-    facts: [['Board', '7 × 8 to 9 × 10 (8 × 8 here)'], ['Pieces', 'Glass counters'], ['Capture', 'Trap between two'], ['Rules', 'Reconstructed']],
+    facts: [['Board', '7 × 8 to 9 × 10 (8 × 8 here)'], ['Pieces', 'Glass counters, 20 a side here'], ['Capture', 'Trap between two'], ['Rules', 'Lost; modern reconstruction (Locus Ludi)']],
     build: buildLatrunculi },
   { id: 'patolli', wing: 2, title: 'Patolli', date: 'by c. 300 CE', rail: 'Patolli',
-    eyebrow: 'Mesoamerica', status: ['recon', 'Rules partly known'],
-    note: 'On display. The mat, beans and stones are new.',
+    eyebrow: 'Mesoamerica', status: ['recon', 'Modern reconstruction'], game: 'patolli',
+    note: 'Only parts of the rules were written down. This table plays a modern reconstruction.',
     body: [
       'Patolli was played across Mesoamerica for more than a thousand years: by the Maya from around 300 CE, and later by the Toltecs and the Aztecs. Its track of 52 houses ran in an X across a reed mat, and each player raced six markers by throwing black beans marked on one side.',
-      'It was a gambler\'s game. Players staked blankets, precious stones, gold and food, and sometimes their homes or their freedom. The Dominican friar Diego Durán, writing in the 16th century, described players who carried the mat under an arm the way gamblers of his day carried cards. Moctezuma liked to watch his nobles play; the Spanish suppressed the game.'
+      'It was a gambler\'s game. Players staked blankets, precious stones, gold and food, and sometimes their homes or their freedom. The Dominican friar Diego Durán, writing in the 16th century, described players who carried the mat under an arm the way gamblers of his day carried cards. Moctezuma liked to watch his nobles play; the Spanish suppressed the game.',
+      'Durán and others recorded the mat, the beans, the markers and the stakes, but not a full set of rules. The table plays a modern reconstruction built on those accounts, the version most often given today: a 1 to enter, captures only in the centre, a treasure paid on the dark houses and another throw on the red tips. The mat, beans and stones are new.'
     ],
-    facts: [['Track', '52 houses in an X'], ['Moves', 'Thrown beans, marked on one side'], ['Markers', 'Six a side']],
+    facts: [['Track', '52 houses in an X'], ['Moves', 'Five beans, marked on one side'], ['Markers', 'Six a side'], ['Rules', 'Partly recorded; modern reconstruction']],
     build: buildPatolli },
   { id: 'morris', wing: 2, title: "Nine Men's Morris", date: 'Roman era onward', rail: "Nine Men's Morris",
     eyebrow: 'The Roman world to medieval Europe', status: ['known', 'Rules survive in tradition'], game: 'morris',
@@ -3442,7 +3480,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -4845,6 +4883,103 @@ const FOURSEASONS_P = {
   },
   score() { const L = this.scores(); return [L[0], L[1], L.slice(2).map(x => Array.isArray(x) ? x.join(' ') : x).join(' · ')]; },
 };
+const HOUNDS_P = {
+  camW: 0.9,
+  intro() { return 'This table plays Howard Carter\'s 1912 reconstruction. Your hounds race up the left track; throw the sticks to begin.'; },
+  prompt() { return 'Throw the sticks.'; },
+  choosePrompt: moves => (moves.length > 1 ? 'Pick a glowing pin, then its ring.' : 'Pick the glowing pin to move it.'),
+  setup(ex) {
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) ex.pieces = [-1, 1].map(s => Array.from({ length: 5 }, () => { const p = hjPin(s); ex.group.add(p); return p; }));
+    ex.pieces.forEach((list, pl) => list.forEach((p, k) => { p.visible = true; p.position.copy(this.waitSpot(pl, k)); }));
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(p => { p.visible = false; }); },
+  side: pl => (pl ? 1 : -1),
+  hole(pl, h) { return play.ex.group.userData.holes[this.side(pl)][h - 1].clone(); },
+  waitSpot(pl, k) { return V3((pl ? 1 : -1) * (0.3 + (k % 2) * 0.04), TOP, 0.5 - k * 0.045); },
+  pos(pl, h, k) {
+    if (h === 0) return this.waitSpot(pl, k);
+    const p = this.hole(pl, h);
+    if (h === 29) { const n = GAMES.hounds.pos[pl].slice(0, k).filter(x => x === 29).length; p.x += (n - 2) * 0.012 * (pl ? -1 : 1); } // pins in the goal stand side by side
+    return p;
+  },
+  meshesFor(m) { return [play.ex.pieces[m.pl][m.k]]; },
+  ringFor(m) { return this.pos(m.pl, m.end, m.k); },
+  fromFor(m) { return m.from ? this.hole(m.pl, m.from) : null; },
+  async play(m) {
+    const G = GAMES.hounds, tok = play.token, pin = play.ex.pieces[m.pl][m.k];
+    const res = G.apply(m);
+    for (const h of G.steps(m)) { if (tok !== play.token) return res; await hop(pin, this.pos(m.pl, h, m.k), 0.13, 0.03); }
+    return res;
+  },
+  score: () => { const G = GAMES.hounds; return [['You', G.home(0)], ['Scribe', G.home(1)], 'home of 5']; },
+};
+
+const LATRUNCULI_P = {
+  camW: 1.0,
+  intro() { return 'This table plays a modern reconstruction. You have the blue glass; place your counters one at a time.'; },
+  prompt() { const G = GAMES.latrunculi; return G.placing() ? `Place a counter (${20 - G.placed[0]} left).` : 'Pick a counter, then a ring. Trap a counter between two of yours to take it.'; },
+  setup(ex) {
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 20 }, () => { const c = ltCounter(pl); ex.group.add(c); return c; }));
+    this.cell = Array(64).fill(null); this.used = [0, 0]; this.lost = [0, 0];
+    ex.pieces.forEach((list, pl) => list.forEach((c, k) => { c.visible = true; c.position.copy(this.handSpot(pl, k)); }));
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(c => { c.visible = false; }); },
+  pos(i) { const c = ltCell(i); return V3(c.x, GAMES.latrunculi.surface, c.z); },
+  // Counters wait in a column beside the slab, the visitor's on the left; taken counters go to the taker's side.
+  handSpot(pl, k) { return V3((pl ? 1 : -1) * (0.5 + (k % 2) * 0.065), TOP + 0.013, -0.3 + ((k / 2) | 0) * 0.065); },
+  lostSpot(owner, k) { return V3((owner ? -1 : 1) * (0.63 + ((k / 10) | 0) * 0.065), TOP + 0.013, -0.3 + (k % 10) * 0.065); },
+  meshesFor(m) { return m.place !== undefined ? [] : [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.place !== undefined ? m.place : m.to); },
+  fromFor(m) { return m.from !== undefined ? this.pos(m.from) : null; },
+  ringTone: m => (m.cap ? 'ember' : 'gold'),
+  async play(m) {
+    const G = GAMES.latrunculi, tok = play.token, ex = play.ex;
+    if (m.place !== undefined) { const c = ex.pieces[m.pl][this.used[m.pl]++]; this.cell[m.place] = c; const res = G.apply(m); await hop(c, this.pos(m.place), 0.3, 0.07); return res; }
+    const c = this.cell[m.from]; this.cell[m.from] = null; this.cell[m.to] = c;
+    const res = G.apply(m);
+    await hop(c, this.pos(m.to), 0.24, 0.025);
+    if (tok !== play.token) return res;
+    for (const j of res.taken) { const v = this.cell[j]; this.cell[j] = null; if (v) hop(v, this.lostSpot(1 - m.pl, this.lost[1 - m.pl]++), 0.4, 0.12); }
+    return res;
+  },
+  score: () => { const G = GAMES.latrunculi; return [['You took', G.taken[0]], ['Scribe took', G.taken[1]], G.placing() ? '' : `· ${G.count(0)} v ${G.count(1)} on the board`]; },
+};
+
+const PATOLLI_P = {
+  camW: 0.95,
+  intro() { return 'This table plays a modern reconstruction. You have the red markers and six treasures. Throw the beans: a 1 brings a marker onto the mat.'; },
+  prompt() { return 'Throw the beans.'; },
+  choosePrompt: moves => (moves[0] && moves[0].offering ? 'No marked beans: press the button to pay your offering.' : moves.length > 1 ? 'Pick a glowing marker, then its ring.' : 'Pick the glowing marker to move it.'),
+  setup(ex) {
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 6 }, () => { const o = ptStone(pl); ex.group.add(o); return o; }));
+    ex.pieces.forEach((list, pl) => list.forEach((o, k) => { o.visible = true; o.position.copy(this.waitSpot(pl, k)); }));
+    this.homeN = [0, 0];
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(o => { o.visible = false; }); },
+  house(h) { const [x, z] = ptHouses[h]; return V3(x, GAMES.patolli.surface, z); },
+  waitSpot(pl, k) { return V3((pl ? 1 : -1) * (0.36 + (k % 2) * 0.04), TOP + 0.014, (pl ? -1 : 1) * (0.26 + ((k / 2) | 0) * 0.04)); },
+  homeSpot(pl, k) { return V3((pl ? -1 : 1) * (0.36 + (k % 2) * 0.04), TOP + 0.014, (pl ? -1 : 1) * (0.26 + ((k / 2) | 0) * 0.04)); },
+  meshesFor(m) { return m.offering ? [] : [play.ex.pieces[m.pl][m.k]]; },
+  ringFor(m) { return m.offering ? null : m.off ? this.homeSpot(m.pl, this.homeN[m.pl]) : this.house(m.house); },
+  fromFor(m) { return m.offering || m.from < 0 ? null : this.house(GAMES.patolli.house(m.pl, m.from)); },
+  ringTone: m => (m.cap ? 'ember' : 'gold'),
+  async play(m) {
+    const G = GAMES.patolli, tok = play.token;
+    if (m.offering) return G.apply(m);
+    const o = play.ex.pieces[m.pl][m.k];
+    const res = G.apply(m);
+    const path = G.steps(m);
+    if (m.off) path.pop();
+    for (const h of path) { if (tok !== play.token) return res; await hop(o, this.house(h), 0.11, 0.025); }
+    if (m.off) await hop(o, this.homeSpot(m.pl, this.homeN[m.pl]++), 0.3, 0.06);
+    if (res.sent) { const [p, k] = res.sent; hop(play.ex.pieces[p][k], this.waitSpot(p, k), 0.45, 0.12); }
+    return res;
+  },
+  score: () => { const G = GAMES.patolli; return [['Your treasures', G.treasure[0]], ['Scribe\'s', G.treasure[1]], `· offerings ${G.pot} · home ${G.home(0)} v ${G.home(1)}`]; },
+};
 const KALAH_P = {
   camW: 1.2, ringScale: 1.2,
   intro() { return 'Your six pits are the row nearest you, and your store is on your right. ' + this.prompt(); },
@@ -5197,7 +5332,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -5389,6 +5524,7 @@ function renderPlacard(s) {
   body.scrollTop = 0;
   const act = $('#lm-placardActions'); act.innerHTML = '';
   if (s.game) {
+    if (s.note) { const n = document.createElement('span'); n.className = 'soon recon'; n.textContent = s.note; act.appendChild(n); } // e.g. that the table plays a modern reconstruction
     const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Take a seat and play';
     b.addEventListener('click', () => startGame(s)); act.appendChild(b);
   } else if (s.link) {
@@ -5653,7 +5789,7 @@ const scribeName = g => g.scribeName || 'The Scribe';
 const nextPl = (g, other) => (g.passTurn ? g.passTurn() : other);
 function renderDice(g, r, shaking = false) {
   const d = $('#lm-dice'); d.innerHTML = ''; d.classList.toggle('shake', shaking);
-  const faces = r ? r.faces : g.pipDice ? (g.oneDie ? [1] : [1, 1]) : [0, 0, 0, 0];
+  const faces = r ? r.faces : g.pipDice ? (g.oneDie ? [1] : [1, 1]) : g.id === 'patolli' ? [0, 0, 0, 0, 0] : [0, 0, 0, 0];
   faces.forEach(f => {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', '0 0 30 30');
@@ -5666,6 +5802,10 @@ function renderDice(g, r, shaking = false) {
       const e = document.createElementNS(ns, 'ellipse'); e.setAttribute('cx', '15'); e.setAttribute('cy', '15'); e.setAttribute('rx', '9'); e.setAttribute('ry', '13');
       e.setAttribute('fill', r && f ? '#f2ead8' : '#c9b79a'); e.setAttribute('stroke', '#a8977a'); e.setAttribute('stroke-width', '1.2'); svg.appendChild(e);
       if (r && f) { const l = document.createElementNS(ns, 'path'); l.setAttribute('d', 'M15 5 Q12 15 15 25'); l.setAttribute('stroke', '#5a4a3a'); l.setAttribute('stroke-width', '2'); l.setAttribute('fill', 'none'); svg.appendChild(l); }
+    } else if (g.id === 'patolli') { // a black bean, its marked side a white dot
+      const e = document.createElementNS(ns, 'ellipse'); e.setAttribute('cx', '15'); e.setAttribute('cy', '15'); e.setAttribute('rx', '8'); e.setAttribute('ry', '12');
+      e.setAttribute('fill', '#1d140c'); e.setAttribute('stroke', '#a8977a'); e.setAttribute('stroke-width', '1.2'); svg.appendChild(e);
+      if (r && f) { const c = document.createElementNS(ns, 'circle'); c.setAttribute('cx', '15'); c.setAttribute('cy', '15'); c.setAttribute('r', '4'); c.setAttribute('fill', '#f2ead8'); svg.appendChild(c); }
     } else if (g.id === 'ur') {
       const p = document.createElementNS(ns, 'path'); p.setAttribute('d', 'M15 3 L27 26 L3 26 Z');
       p.setAttribute('fill', '#2a2018'); p.setAttribute('stroke', '#a8977a'); p.setAttribute('stroke-width', '1.4'); svg.appendChild(p);

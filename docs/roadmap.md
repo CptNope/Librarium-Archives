@@ -15,13 +15,14 @@ timeline
     0.18 : Ludo · Janggi · Morabaraba
     0.19 : Chaturaji, chess for four with dice
     0.20 : Seega · Tâb · Bagh-chal · Four Seasons chess
+    0.21 : Hounds and Jackals · Latrunculi · Patolli, as modern reconstructions
 ```
 
 ```mermaid
 pie showData
     title Exhibits
-    "Playable" : 44
-    "On display" : 13
+    "Playable" : 47
+    "On display" : 10
 ```
 
 ## Open
@@ -47,6 +48,7 @@ pie showData
 - [x] The Landlord's Game, from the patent drawing and text
 - [x] New exhibits: Dominoes, Chinese checkers, Hex and Gomoku
 - [x] New exhibits: Cribbage, Tablut, Kalah and Makruk
+- [x] Hounds and Jackals, Ludus latrunculorum and Patolli playable as clearly labelled modern reconstructions
 - [x] Seega and Tâb from Lane's Egypt, Bagh-chal from Nepal, and Alfonso X's Four Seasons chess
 - [x] Chaturaji, four-handed chess with dice, against three Scribes
 - [x] New exhibits: Ludo, Janggi and Morabaraba
