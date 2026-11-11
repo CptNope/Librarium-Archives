@@ -2312,3 +2312,87 @@ test('Rithmomachia: taking the pyramid wins at once', () => {
   RM.apply({ pl: 0, from: 64, to: 72 }); // 25 and 165 now flank the 190
   assert.equal(RM.result(1).winner, 0);
 });
+
+/* ---------------------------------------------------------- Medieval chess (Lewis chessmen) */
+
+const LW = rules.lewischess;
+test('Medieval chess: shatranj moves under European names, and only checkmate wins', () => {
+  LW.init();
+  rules.shatranj.init(); assert.equal(LW.legal(0).length, rules.shatranj.legal(0).length);
+  assert.match(LW.rules[0], /modern reconstruction/);
+  assert.equal(LW.pieceName(LW.SH.F), 'queen'); assert.equal(LW.pieceName(LW.SH.E), 'bishop');
+  LW.b.fill(0); LW.b[0] = LW.SH.K; LW.b[2] = LW.SH.R; LW.b[63] = LW.SH.K + 8; // a bare king is no longer a loss
+  assert.equal(LW.result(1), null);
+  LW.b.fill(0); LW.b[56] = LW.SH.K + 8; LW.b[41] = LW.SH.K; LW.b[50] = LW.SH.F; // the Scribe's king in the corner, stalemated
+  assert.equal(LW.result(1).winner, -1);
+});
+
+/* ---------------------------------------------------------- Courier chess */
+
+const CO = rules.courier;
+test('Courier chess: twelve files, the opening leaps made, and the new pieces', () => {
+  CO.init(); const P = CO.CO;
+  assert.equal(CO.b.length, 96); assert.equal(CO.material(0), 23);
+  assert.equal(CO.b[5], P.K); assert.equal(CO.b[30], P.F); assert.equal(CO.b[36], P.P); assert.equal(CO.b[47], P.P); // king f1, queen g3, pawns a4 and l4
+  assert.equal(CO.b[66], P.F + 16); assert.equal(CO.b[48], P.P + 16);
+  CO.b.fill(0); CO.b[0] = P.K; CO.b[95] = P.K + 16;
+  CO.b[40] = P.C; assert.equal(CO.legal(0).filter(m => m.from === 40).length, 4 + 4 + 3 + 3); // the courier slides diagonally
+  CO.b[40] = P.S; assert.equal(CO.legal(0).filter(m => m.from === 40).length, 4); // the schleich steps straight
+  CO.b[40] = P.M; assert.equal(CO.legal(0).filter(m => m.from === 40).length, 8); // the sage steps like a king
+});
+
+test('Courier chess: check, mate and promotion', () => {
+  CO.init(); const P = CO.CO;
+  CO.b.fill(0); CO.b[0] = P.K; CO.b[95] = P.K + 16; CO.b[84] = P.R; CO.b[72] = P.R; // two rooks mate on the back rank
+  assert.equal(CO.result(1).winner, 0);
+  CO.b.fill(0); CO.b[0] = P.K; CO.b[95] = P.K + 16; CO.b[78] = P.P;
+  const pr = CO.legal(0).find(m => m.from === 78); assert.ok(pr.promo);
+  CO.apply(pr); assert.equal(CO.b[90], P.F);
+});
+
+/* ---------------------------------------------------------- Hazard */
+
+const HZ = rules.hazard;
+test('Hazard: nicks, outs and the chance', () => {
+  for (const [main, v, nick, out] of [[7, 7, true, false], [7, 11, true, false], [7, 12, false, true], [6, 12, true, false], [8, 11, false, true], [5, 12, false, true], [9, 3, false, true], [5, 6, false, false]]) {
+    assert.equal(HZ.nick(main, v), nick, `${main}/${v}`); assert.equal(HZ.out(main, v), out, `${main}/${v}`);
+  }
+  HZ.init();
+  assert.deepEqual(HZ.preThrow(0).map(m => m.n), [1, 2, 5]);
+  HZ.apply({ pl: 0, kind: 'stake', n: 2 }); HZ.apply({ pl: 0, kind: 'main', n: 7 });
+  HZ.apply({ pl: 0, kind: 'throw', value: 6 }); assert.ok(HZ.extra()); assert.equal(HZ.chance, 6);
+  HZ.apply({ pl: 0, kind: 'throw', value: 4 }); assert.ok(HZ.extra());
+  HZ.apply({ pl: 0, kind: 'throw', value: 6 }); assert.ok(!HZ.extra());
+  assert.deepEqual(HZ.purse, [12, 8]);
+});
+
+test('Hazard: the dice pass after three losses running', () => {
+  HZ.init();
+  for (let k = 0; k < 3; k++) { HZ.apply({ pl: 0, kind: 'stake', n: 1 }); HZ.apply({ pl: 0, kind: 'main', n: 7 }); HZ.apply({ pl: 0, kind: 'throw', value: 2 }); }
+  assert.equal(HZ.caster, 1); assert.deepEqual(HZ.purse, [7, 13]); assert.equal(HZ.passTurn(), 1);
+});
+
+/* ---------------------------------------------------------- Piquet */
+
+const PQ = rules.piquet;
+const pq = (r, su) => su * 13 + r; // rank 0 is the ace
+test('Piquet: declarations of point, sequence and sets', () => {
+  const d = PQ_DECLARE([pq(0, 0), pq(12, 0), pq(11, 0), pq(10, 0), pq(9, 0), pq(0, 1), pq(0, 2), pq(0, 3), pq(12, 1), pq(12, 2), pq(7, 3), pq(6, 3)]);
+  assert.equal(d.point.len, 5); assert.equal(d.seqs[0].len, 5); assert.equal(d.sets[0].n, 4); assert.equal(d.sets[1].n, 3);
+  assert.ok(!d.blanche);
+});
+const PQ_DECLARE = h => rules.piquet.declareHand(h);
+
+test('Piquet: exchange, scoring the deal, and a full partie between Scribes', () => {
+  rules.setLevel('fair'); PQ.setVariant('2'); PQ.init();
+  assert.equal(PQ.hands[0].length, 12); assert.equal(PQ.talon.length, 8); assert.equal(PQ.elder, 0);
+  PQ.apply({ pl: 0, kind: 'mark', c: PQ.hands[0][0] }); assert.equal(PQ.legal(0).filter(m => m.kind === 'exchange').length, 1);
+  let n = 0;
+  while (!PQ.over && n++ < 500) {
+    const pl = PQ.toMove;
+    if (PQ.stage === 'next') { PQ.apply({ pl, kind: 'next' }); continue; }
+    for (const m of PQ.aiPlan(pl)) { if (m.kind === 'play') assert.ok(PQ.legalCards(pl).includes(m.c)); PQ.apply(m); }
+  }
+  assert.ok(PQ.over); assert.equal(PQ.deals, 2);
+  PQ.setVariant('6');
+});

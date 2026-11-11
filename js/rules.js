@@ -6158,6 +6158,472 @@
     },
   });
 
+  /* ---------------------------------------------------------- Medieval chess
+   * Chess as Europe played it around 1200, for the Lewis chessmen: shatranj's
+   * moves under European names, with only checkmate winning. */
+  const LW_NAMES = ['', 'king', 'queen', 'bishop', 'knight', 'rook', 'pawn'];
+  const LEWISCHESS = Object.assign({}, SHATRANJ, {
+    id: 'lewischess', name: 'Medieval chess',
+    rules: [
+      'This is a modern reconstruction of chess as Europe played it around 1200, when the Lewis chessmen were carved. The moves are those Europe took over from shatranj, after H. J. R. Murray.',
+      'The king moves one square in any direction. The rook moves like a modern rook and the knight like a modern knight.',
+      'The queen, still the old fers or counsellor, steps only one square diagonally. The bishop, the alfin, jumps exactly two squares diagonally, over anything in between.',
+      'The pawn steps one square forward and takes one square diagonally forward, never two at once. On the far rank it becomes a queen.',
+      'Only checkmate wins. A stalemate, a long stretch with no capture or pawn move, or two bare kings is a draw. There is no castling: the king\'s and queen\'s first-move leaps of the later Middle Ages are left out.'
+    ],
+    source: 'A modern reconstruction after H. J. R. Murray, A History of Chess (1913). Medieval rules for stalemate and the bare king varied from place to place; this table treats both as in modern chess.',
+    pieceName(v) { return LW_NAMES[this.type(v)]; },
+    apply(m) {
+      const res = SHATRANJ.apply.call(this, m);
+      res.note = res.note.replace('The baidaq becomes a firzan.', 'The pawn becomes a queen.').replace('Shah! ', 'Check! ');
+      return res;
+    },
+    result(pl) {
+      const moves = this.legal(pl);
+      if (!moves.length) return this.inCheck(pl)
+        ? { winner: 1 - pl, text: pl === 0 ? 'Checkmate. The Scribe wins.' : 'Checkmate. The Scribe\'s king is taken in the net.' }
+        : { winner: -1, text: pl === 0 ? 'You are stalemated: a draw.' : 'The Scribe is stalemated: a draw.' };
+      if (!this.material(0) && !this.material(1)) return { winner: -1, text: 'Both kings stand bare. The game is drawn.' };
+      if (this.quiet >= 100) return { winner: -1, text: 'A long stretch with no capture or pawn move. The game is drawn.' };
+      return null;
+    },
+    terminal(pl, depth) {
+      if (!this.pseudo(pl).some(m => { const s = this.snapshot(); this.raw(m); const ok = !this.inCheck(pl); this.restore(s); return ok; })) return this.inCheck(pl) ? -1000 - depth : 0;
+      if (this.quiet >= 100 || (!this.material(0) && !this.material(1))) return 0;
+      return null;
+    },
+  });
+
+  /* ---------------------------------------------------------- Courier chess
+   * A 12 x 8 board: square i = r * 12 + c, row 0 the visitor's back rank.
+   * A piece is pl * 16 + type. The old opening leaps (the rook pawns, the
+   * queen's pawn and the queen, two squares each) are already made. */
+  const CO = { K: 1, F: 2, E: 3, C: 4, S: 5, M: 6, N: 7, R: 8, P: 9 };
+  const CO_NAME = ['', 'king', 'queen', 'bishop', 'courier', 'schleich', 'sage', 'knight', 'rook', 'pawn'];
+  const CO_VAL = [0, 0, 1.6, 1.3, 4.2, 1.7, 3, 3, 5, 1];
+  const CO_KING8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const CO_DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]], CO_ORTH = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const CO_KNIGHT = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]];
+  const COURIER = {
+    id: 'courier', name: 'Courier chess', dice: false, first: 0, CO, NAME: CO_NAME,
+    rules: [
+      'You play white and move first, on a board of twelve files. The old opening leaps are already made: your rook pawns and queen\'s pawn have jumped two squares, and so has your queen.',
+      'The king moves one square any way, the rook and knight as in modern chess. The courier, the piece the game is named for, runs any distance diagonally like a modern bishop.',
+      'The queen (fers) steps one square diagonally, and the bishop (alfil) jumps exactly two squares diagonally. The sage (Mann) moves like a king but is not royal. The schleich (fool) steps one square straight.',
+      'Pawns step one square forward and take one square diagonally forward, never two at once. On the far rank a pawn becomes a queen.',
+      'Checkmate wins. There is no castling. A stalemate, two bare kings, or a long stretch with no capture or pawn move is a draw.'
+    ],
+    source: 'Courier chess as Gustavus Selenus described it in 1616, as played at Ströbeck. Stalemate is not recorded, so it is a draw here, and a pawn becomes a queen at once rather than by the slower old procedures.',
+    init() {
+      const b = Array(96).fill(0);
+      const back = [CO.R, CO.N, CO.E, CO.C, CO.M, CO.K, CO.F, CO.S, CO.C, CO.E, CO.N, CO.R];
+      for (let c = 0; c < 12; c++) { b[c] = back[c]; b[12 + c] = CO.P; b[84 + c] = back[c] + 16; b[72 + c] = CO.P + 16; }
+      for (const c of [0, 6, 11]) { b[12 + c] = 0; b[36 + c] = CO.P; b[72 + c] = 0; b[48 + c] = CO.P + 16; } // the opening leaps
+      b[6] = 0; b[24 + 6] = CO.F; b[84 + 6] = 0; b[60 + 6] = CO.F + 16;
+      this.b = b; this.quiet = 0; this.ply = 0;
+    },
+    owner: v => v >> 4,
+    type: v => v & 15,
+    on: (r, c) => r >= 0 && r < 8 && c >= 0 && c < 12,
+    kingAt(pl) { return this.b.indexOf(CO.K + pl * 16); },
+    attacked(sq, by) {
+      const b = this.b, r = (sq / 12) | 0, c = sq % 12;
+      const is = (rr, cc, ...ts) => { if (!this.on(rr, cc)) return false; const v = b[rr * 12 + cc]; return v && (v >> 4) === by && ts.includes(v & 15); };
+      for (const [dr, dc] of CO_KNIGHT) if (is(r + dr, c + dc, CO.N)) return true;
+      for (const [dr, dc] of CO_KING8) if (is(r + dr, c + dc, CO.K, CO.M)) return true;
+      for (const [dr, dc] of CO_DIAG) if (is(r + dr, c + dc, CO.F) || is(r + 2 * dr, c + 2 * dc, CO.E)) return true;
+      for (const [dr, dc] of CO_ORTH) if (is(r + dr, c + dc, CO.S)) return true;
+      const pr = by === 0 ? r - 1 : r + 1;
+      if (is(pr, c - 1, CO.P) || is(pr, c + 1, CO.P)) return true;
+      for (const [dirs, t] of [[CO_DIAG, CO.C], [CO_ORTH, CO.R]]) for (const [dr, dc] of dirs) {
+        let rr = r + dr, cc = c + dc;
+        while (this.on(rr, cc)) { const v = b[rr * 12 + cc]; if (v) { if ((v >> 4) === by && (v & 15) === t) return true; break; } rr += dr; cc += dc; }
+      }
+      return false;
+    },
+    inCheck(pl) { const k = this.kingAt(pl); return k >= 0 && this.attacked(k, 1 - pl); },
+    pseudo(pl) {
+      const b = this.b, out = [];
+      for (let i = 0; i < 96; i++) {
+        const v = b[i]; if (!v || (v >> 4) !== pl) continue;
+        const t = v & 15, r = (i / 12) | 0, c = i % 12;
+        const add = (rr, cc, capOnly, quietOnly) => {
+          if (!this.on(rr, cc)) return false;
+          const j = rr * 12 + cc, w = b[j];
+          if (w && (w >> 4) === pl) return false;
+          if (w && quietOnly) return false;
+          if (!w && capOnly) return true;
+          const m = { pl, from: i, to: j, cap: w };
+          if (t === CO.P && rr === (pl ? 0 : 7)) m.promo = true;
+          out.push(m); return !w;
+        };
+        const slide = dirs => { for (const [dr, dc] of dirs) { let rr = r + dr, cc = c + dc; while (add(rr, cc)) { rr += dr; cc += dc; } } };
+        if (t === CO.K || t === CO.M) CO_KING8.forEach(([dr, dc]) => add(r + dr, c + dc));
+        else if (t === CO.F) CO_DIAG.forEach(([dr, dc]) => add(r + dr, c + dc));
+        else if (t === CO.E) CO_DIAG.forEach(([dr, dc]) => add(r + 2 * dr, c + 2 * dc));
+        else if (t === CO.S) CO_ORTH.forEach(([dr, dc]) => add(r + dr, c + dc));
+        else if (t === CO.N) CO_KNIGHT.forEach(([dr, dc]) => add(r + dr, c + dc));
+        else if (t === CO.C) slide(CO_DIAG);
+        else if (t === CO.R) slide(CO_ORTH);
+        else if (t === CO.P) { const f = pl ? -1 : 1; add(r + f, c, false, true); add(r + f, c - 1, true); add(r + f, c + 1, true); }
+      }
+      return out;
+    },
+    raw(m) {
+      const b = this.b, v = b[m.from];
+      b[m.to] = m.promo ? CO.F + 16 * m.pl : v; b[m.from] = 0;
+      this.quiet = m.cap || (v & 15) === CO.P ? 0 : this.quiet + 1; this.ply++;
+    },
+    legal(pl) { return this.pseudo(pl).filter(m => { const s = this.snapshot(); this.raw(m); const ok = !this.inCheck(pl); this.restore(s); return ok; }); },
+    material(pl) { let n = 0; for (const v of this.b) if (v && (v >> 4) === pl && (v & 15) !== CO.K) n++; return n; },
+    apply(m) {
+      this.raw(m);
+      const parts = [], you = m.pl === 0;
+      if (m.cap) parts.push(you ? `You take the Scribe's ${CO_NAME[m.cap & 15]}.` : `The Scribe takes your ${CO_NAME[m.cap & 15]}.`);
+      if (m.promo) parts.push(you ? 'Your pawn becomes a queen.' : 'The Scribe\'s pawn becomes a queen.');
+      if (this.inCheck(1 - m.pl)) parts.push(you ? 'Check.' : 'Check!');
+      return { note: parts.join(' '), caps: m.cap ? [m.to] : [] };
+    },
+    result(pl) {
+      if (!this.legal(pl).length) return this.inCheck(pl)
+        ? { winner: 1 - pl, text: pl === 0 ? 'Checkmate. The Scribe wins.' : 'Checkmate.' }
+        : { winner: -1, text: pl === 0 ? 'You are stalemated: a draw.' : 'The Scribe is stalemated: a draw.' };
+      if (!this.material(0) && !this.material(1)) return { winner: -1, text: 'Both kings stand bare. The game is drawn.' };
+      if (this.quiet >= 100) return { winner: -1, text: 'Fifty moves each with no capture or pawn move. The game is drawn.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.quiet, this.ply]; },
+    restore(s) { this.b = s[0].slice(); this.quiet = s[1]; this.ply = s[2]; },
+    turns(pl) {
+      const val = m => (m.cap ? 10 * CO_VAL[m.cap & 15] - CO_VAL[this.b[m.from] & 15] : 0) + (m.promo ? 5 : 0);
+      return this.legal(pl).sort((a, b) => val(b) - val(a)).map(m => [m]);
+    },
+    terminal(pl, depth) {
+      if (!this.pseudo(pl).some(m => { const s = this.snapshot(); this.raw(m); const ok = !this.inCheck(pl); this.restore(s); return ok; })) return this.inCheck(pl) ? -1000 - depth : 0;
+      if (this.quiet >= 100) return 0;
+      return null;
+    },
+    evaluate(pl) {
+      let s = 0;
+      for (let i = 0; i < 96; i++) {
+        const v = this.b[i]; if (!v) continue;
+        const o = v >> 4, t = v & 15, r = (i / 12) | 0, c = i % 12;
+        let x = CO_VAL[t];
+        if (t === CO.P) x += 0.05 * (o === 0 ? r - 1 : 6 - r);
+        else if (t !== CO.K && t !== CO.R) x += 0.06 * (3.5 - Math.max(Math.abs(r - 3.5), Math.abs(c - 5.5) / 1.5));
+        s += o === pl ? x : -x;
+      }
+      return s;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 4); },
+  };
+
+  /* ---------------------------------------------------------------- Hazard
+   * Two players, each with a purse of shillings. The caster stakes, calls a main
+   * from 5 to 9, and throws two dice; the other player sets (covers) the stake.
+   * The caster keeps the dice until losing three times running. */
+  const HZ_START = 10, HZ_ROUNDS = 24, HZ_STAKES = [1, 2, 5];
+  const HAZARD = {
+    id: 'hazard', name: 'Hazard', dice: true, pipDice: true, first: 0, autoMove: true,
+    N: 0, STAKES: HZ_STAKES, ROUNDS: HZ_ROUNDS,
+    rules: [
+      'You each begin with ten shillings. Whoever casts stakes 1, 2 or 5 shillings, which the other covers, then calls a main: any number from 5 to 9.',
+      'On the first throw of two dice, the main wins (a nick). So does 11 with a main of 7, and 12 with a main of 6 or 8. A 2 or 3 always loses (throwing out), and so does any other 11 or 12.',
+      'Any other total becomes your chance. Keep throwing: the chance wins, the main loses, and anything else is thrown again.',
+      'The caster keeps the dice until losing three times in a row; then they pass. The game ends when a purse is empty, or after 24 mains, when the fuller purse wins.'
+    ],
+    source: 'English hazard as Hoyle\'s Games set it down by 1790. The bank\'s side bets and odds on the chance are left out: every cast is an even-money stake.',
+    get followPrompt() { return 'Now call your main.'; },
+    get extraNote() { return this.pending ? `Throw again: you need ${this.chance} before ${this.main}.` : ''; },
+    init() {
+      this.purse = [HZ_START, HZ_START]; this.caster = 0; this.losses = 0; this.rounds = 0;
+      this.stage = 'stake'; this.stake = 0; this.main = 0; this.chance = 0; this.pending = false; this.over = null; this.last = null;
+    },
+    roll() { const a = 1 + ((Math.random() * 6) | 0), b = 1 + ((Math.random() * 6) | 0); return { faces: [a, b], value: a + b }; },
+    who(pl, cap) { return pl === 0 ? (cap ? 'You' : 'you') : 'the Scribe'; },
+    maxStake() { return Math.min(this.purse[this.caster], this.purse[1 - this.caster]); },
+    preThrow(pl) {
+      if (this.over || pl !== this.caster) return null;
+      if (this.stage === 'stake') return HZ_STAKES.filter(n => n <= this.maxStake()).concat(this.maxStake() < 5 && !HZ_STAKES.includes(this.maxStake()) ? [this.maxStake()] : [])
+        .map(n => ({ pl, pre: true, kind: 'stake', n, label: `Stake ${n} shilling${n > 1 ? 's' : ''}` }));
+      if (this.stage === 'main') return [5, 6, 7, 8, 9].map(n => ({ pl, pre: true, kind: 'main', n, label: `Main ${n}` }));
+      return null;
+    },
+    legal(pl, value, roll) { return this.stage === 'throw' && pl === this.caster ? [{ pl, kind: 'throw', value, faces: roll ? roll.faces : null }] : []; },
+    nick(main, v) { return v === main || (v === 11 && main === 7) || (v === 12 && (main === 6 || main === 8)); },
+    out(main, v) { return v === 2 || v === 3 || ((v === 11 || v === 12) && !this.nick(main, v)); },
+    apply(m) {
+      const pl = m.pl, Y = pl === 0;
+      if (m.kind === 'stake') { this.stake = m.n; this.stage = 'main'; return { note: Y ? `You stake ${m.n}.` : `The Scribe stakes ${m.n} shilling${m.n > 1 ? 's' : ''}.`, followUp: Y ? this.preThrow(pl) : null }; }
+      if (m.kind === 'main') { this.main = m.n; this.stage = 'throw'; this.pending = false; return { note: Y ? `Your main is ${m.n}.` : `The Scribe calls a main of ${m.n}.`, thenThrow: true }; }
+      const v = m.value;
+      if (!this.pending) {
+        if (this.nick(this.main, v)) return this.settle(true, `${v}: a nick!`);
+        if (this.out(this.main, v)) return this.settle(false, `${v}: thrown out.`);
+        this.chance = v; this.pending = true;
+        return { note: `${v}: ${Y ? 'your' : 'the Scribe\'s'} chance is ${v}, against a main of ${this.main}.` };
+      }
+      if (v === this.chance) return this.settle(true, `${v}: the chance comes up.`);
+      if (v === this.main) return this.settle(false, `${v}: the main comes up first.`);
+      return { note: `${v}.` };
+    },
+    settle(won, what) {
+      const c = this.caster, s = this.stake, Y = c === 0;
+      this.purse[c] += won ? s : -s; this.purse[1 - c] -= won ? s : -s;
+      this.pending = false; this.stage = 'stake'; this.rounds++; this.last = { won, caster: c };
+      let note = `${what} ${Y ? (won ? `You win ${s}.` : `You lose ${s}.`) : (won ? `The Scribe wins ${s}.` : `The Scribe loses ${s}.`)}`;
+      this.losses = won ? 0 : this.losses + 1;
+      if (this.losses === 3) { this.caster = 1 - c; this.losses = 0; note += Y ? ' Three losses running: the dice pass to the Scribe.' : ' Three losses running: the dice pass to you.'; }
+      if (!this.purse[0]) this.over = { winner: 1, text: 'Your purse is empty. The Scribe sweeps up the shillings.' };
+      else if (!this.purse[1]) this.over = { winner: 0, text: 'The Scribe\'s purse is empty. You win every shilling.' };
+      else if (this.rounds >= HZ_ROUNDS) {
+        const [a, b] = this.purse;
+        this.over = { winner: a > b ? 0 : b > a ? 1 : -1, title: a > b ? 'You win' : b > a ? 'The Scribe wins' : 'Even purses', text: `After ${HZ_ROUNDS} mains you have ${a} shillings and the Scribe ${b}.` };
+      }
+      return { note, settled: true };
+    },
+    extra() { return this.pending && !this.over; },
+    done() { return !!this.over; },
+    ended() { return !!this.over; },
+    final() { return this.over; },
+    home() { return 0; },
+    passTurn() { return this.caster; },
+    // The Scribe calls 7, the main with the smallest disadvantage; Gentle calls any main.
+    // Staking: the caster always has the worse of the bet, so Sharp stakes little unless it must catch up.
+    aiPre(pl) {
+      const max = this.maxStake(), opts = HZ_STAKES.filter(n => n <= max);
+      if (!opts.length) opts.push(max);
+      const left = HZ_ROUNDS - this.rounds, behind = this.purse[1 - pl] - this.purse[pl];
+      const stake = LEVEL.name === 'gentle' ? opts[(Math.random() * opts.length) | 0]
+        : LEVEL.name === 'sharp' ? (behind > 0 && left < 6 ? opts[opts.length - 1] : opts[0])
+          : opts[Math.min(1, opts.length - 1)];
+      const main = LEVEL.name === 'gentle' ? 5 + ((Math.random() * 5) | 0) : 7;
+      return [{ pl, pre: true, kind: 'stake', n: stake }, { pl, pre: true, kind: 'main', n: main }];
+    },
+    aiPlan(pl, moves) { return [moves[0]]; },
+  };
+
+  /* ---------------------------------------------------------------- Piquet
+   * 32 cards with the cribbage numbering (suit * 13 + rank, rank 0 the ace);
+   * pqPow ranks 7 low to ace high. Player 0 is the visitor. Elder hand is the
+   * non-dealer. A partie is six deals, or two in the short game. */
+  const PQ_DECK = []; for (let su = 0; su < 4; su++) for (const rk of [0, 6, 7, 8, 9, 10, 11, 12]) PQ_DECK.push(su * 13 + rk);
+  const pqSuit = c => (c / 13) | 0, pqRank = c => c % 13;
+  const pqPow = c => (pqRank(c) === 0 ? 7 : pqRank(c) - 6); // 7 is 0 ... ace is 7
+  const pqVal = c => (pqRank(c) === 0 ? 11 : pqRank(c) >= 9 ? 10 : pqRank(c) + 1);
+  const PQ_RANK = ['seven', 'eight', 'nine', 'ten', 'jack', 'queen', 'king', 'ace'];
+  const PQ_RANKS = ['sevens', 'eights', 'nines', 'tens', 'jacks', 'queens', 'kings', 'aces'];
+  const PQ_SUIT = ['spades', 'hearts', 'diamonds', 'clubs'];
+  const PQ_SEQ = ['', '', '', 'tierce', 'quart', 'quint', 'sixième', 'septième', 'huitième'];
+  const pqSeqScore = n => (n < 3 ? 0 : n <= 4 ? n : n + 10);
+  const pqName = c => `${PQ_RANK[pqPow(c)]} of ${PQ_SUIT[pqSuit(c)]}`;
+  function pqDeclare(hand) { // the best of each kind a hand holds, and what all its sequences and sets are worth
+    const bySuit = [0, 1, 2, 3].map(su => hand.filter(c => pqSuit(c) === su).map(pqPow).sort((a, b) => a - b));
+    let point = { len: 0, val: 0, suit: -1 };
+    bySuit.forEach((p, su) => { const val = hand.filter(c => pqSuit(c) === su).reduce((n, c) => n + pqVal(c), 0); if (p.length > point.len || (p.length === point.len && val > point.val)) point = { len: p.length, val, suit: su }; });
+    const seqs = [];
+    bySuit.forEach((p, su) => { let run = 1; for (let k = 1; k <= p.length; k++) { if (k < p.length && p[k] === p[k - 1] + 1) run++; else { if (run >= 3) seqs.push({ len: run, top: p[k - 1], suit: su }); run = 1; } } });
+    seqs.sort((a, b) => b.len - a.len || b.top - a.top);
+    const sets = [];
+    for (let pw = 3; pw <= 7; pw++) { const n = hand.filter(c => pqPow(c) === pw).length; if (n >= 3) sets.push({ n, pw }); }
+    sets.sort((a, b) => b.n - a.n || b.pw - a.pw);
+    const blanche = !hand.some(c => pqRank(c) >= 10 && pqRank(c) <= 12);
+    return { point, seqs, sets, blanche };
+  }
+  const PIQUET = {
+    id: 'piquet', name: 'Piquet', dice: false, first: 0,
+    variants: [{ id: '6', label: 'Partie of six' }, { id: '2', label: 'Two deals' }], variant: '6', variantLabel: 'Game',
+    setVariant(id) { this.variant = id === '2' ? '2' : '6'; },
+    get followPrompt() { return this.prompt0(); },
+    rules: [
+      'A 32-card pack, sevens up to aces. Each of you is dealt twelve cards; the other eight are the talon. The player who does not deal is elder hand. The deal alternates.',
+      'Exchange: elder hand discards one to five cards and draws as many from the talon; younger hand may then discard up to as many as are left. Click cards to mark them, then exchange.',
+      'Declarations are scored for you. Point: the longest suit scores a point a card (ties go to the higher card values). Sequence: three or more in a row in one suit; tierce 3, quart 4, quint 15, sixième 16 and so on. The best sequence scores all its holder\'s sequences. Sets: four aces, kings, queens, jacks or tens score 14, three of them 3; the best set scores all its holder\'s sets. A hand with no court card is carte blanche, 10. Equal declarations score nothing.',
+      'Then twelve tricks with no trumps: follow suit if you can. You score 1 for each card you lead, 1 for winning a trick the other led, 1 more for the last trick, and 10 for winning more tricks, or 40 for winning them all (capot).',
+      'Reaching 30 from declarations alone before the other scores anything is a repique, worth 60 more. Elder hand reaching 30 in declarations and play before younger scores anything makes a pique, worth 30 more. After six deals the higher total wins.'
+    ],
+    source: 'Piquet as Cavendish set out its rules in 1882, after pagat.com. Combinations are declared for you, in full, and a tie after the last deal is a draw.',
+    init() { this.total = [0, 0]; this.deals = 0; this.dealer = 1; this.over = null; this.deal(); },
+    deal() {
+      const d = PQ_DECK.slice(); for (let i = d.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+      const sort = h => h.sort((a, b) => pqSuit(a) - pqSuit(b) || pqPow(a) - pqPow(b));
+      this.hands = [sort(d.slice(0, 12)), sort(d.slice(12, 24))]; this.talon = d.slice(24);
+      this.elder = 1 - this.dealer; this.deals++;
+      this.stage = 'exchange'; this.toMove = this.elder; this.taken = 0; this.marked = []; this.discards = [[], []];
+      this.score = [0, 0]; this.declScore = [0, 0]; this.trick = []; this.tricks = [0, 0]; this.played = []; this.notes = []; this.declNote = '';
+      this.void = [[false, false, false, false], [false, false, false, false]]; this.piqueOpen = true; this.lastTrick = null;
+    },
+    get limit() { return +this.variant; },
+    declareHand: pqDeclare,
+    who(pl) { return pl === 0 ? 'You' : 'The Scribe'; },
+    prompt0() {
+      if (this.stage === 'exchange') {
+        const max = this.toMove === this.elder ? 5 : this.talon.length;
+        return `You are ${this.toMove === this.elder ? 'elder' : 'younger'} hand. Click up to ${max} cards to discard, then exchange.`;
+      }
+      if (this.stage === 'next') return this.notes.join(' ') + ' Press Next deal when you are ready.';
+      return this.trick.length ? 'Follow suit if you can.' : 'Lead a card.';
+    },
+    legal(pl) {
+      if (this.over || pl !== this.toMove) return [];
+      if (this.stage === 'next') return [{ pl, kind: 'next', label: this.deals >= this.limit ? 'See the result' : 'Next deal' }];
+      if (this.stage === 'exchange') {
+        const max = pl === this.elder ? Math.min(5, this.talon.length) : this.talon.length, n = this.marked.length, out = this.hands[pl].map(c => ({ pl, kind: 'mark', c }));
+        if (n >= 1 && n <= max) out.push({ pl, kind: 'exchange', cards: this.marked.slice(), label: `Exchange ${n} card${n > 1 ? 's' : ''}` });
+        return out;
+      }
+      return this.legalCards(pl).map(c => ({ pl, kind: 'play', c }));
+    },
+    legalCards(pl) { const h = this.hands[pl]; if (!this.trick.length) return h.slice(); const su = pqSuit(this.trick[0].c), f = h.filter(c => pqSuit(c) === su); return f.length ? f : h.slice(); },
+    add(pl, n, play) { // score, watching for pique: elder reaches 30 before younger scores anything
+      if (!n) return '';
+      this.score[pl] += n;
+      if (play === 'trick' && pl !== this.elder) this.piqueOpen = false;
+      if (play === 'trick' && pl === this.elder && this.piqueOpen && this.score[pl] >= 30 && !this.score[1 - pl]) { this.piqueOpen = false; this.score[pl] += 30; return pl === 0 ? ' Pique: 30 more to you!' : ' Pique: 30 more to the Scribe.'; }
+      return '';
+    },
+    apply(m) {
+      const pl = m.pl, Y = pl === 0;
+      if (m.kind === 'next') {
+        this.total[0] += this.score[0]; this.total[1] += this.score[1];
+        if (this.deals >= this.limit) { this.finishPartie(); return { note: '' }; }
+        this.dealer = 1 - this.dealer; this.deal();
+        return { note: this.elder === 0 ? 'The Scribe deals. You are elder hand.' : 'You deal. The Scribe is elder hand.', events: [{ type: 'deal' }] };
+      }
+      if (m.kind === 'mark') {
+        const i = this.marked.indexOf(m.c); if (i >= 0) this.marked.splice(i, 1); else this.marked.push(m.c);
+        return { note: '', events: [{ type: 'mark', c: m.c, on: i < 0 }], followUp: this.legal(pl) };
+      }
+      if (m.kind === 'exchange') {
+        const n = m.cards.length, h = this.hands[pl];
+        for (const c of m.cards) { h.splice(h.indexOf(c), 1); this.discards[pl].push(c); }
+        const drawn = this.talon.splice(0, n); h.push(...drawn); h.sort((a, b) => pqSuit(a) - pqSuit(b) || pqPow(a) - pqPow(b));
+        this.marked = [];
+        const events = [{ type: 'exchange', pl, out: m.cards, drawn }];
+        let note = `${this.who(pl)} ${Y ? 'exchange' : 'exchanges'} ${n} card${n > 1 ? 's' : ''}.`;
+        if (pl === this.elder) { this.toMove = 1 - pl; return { note, events }; }
+        note += ' ' + this.declare(); this.stage = 'play'; this.toMove = this.elder;
+        return { note, events };
+      }
+      // A card played to a trick.
+      const h = this.hands[pl]; h.splice(h.indexOf(m.c), 1); this.played.push(m.c);
+      const events = [{ type: 'play', pl, c: m.c }]; let note = '';
+      if (!this.trick.length) { this.trick.push({ pl, c: m.c }); note = this.add(pl, 1, 'trick'); this.toMove = 1 - pl; return { note: note.trim(), events }; }
+      const lead = this.trick[0]; if (pqSuit(m.c) !== pqSuit(lead.c)) this.void[pl][pqSuit(lead.c)] = true;
+      this.trick.push({ pl, c: m.c });
+      const w = pqSuit(m.c) === pqSuit(lead.c) && pqPow(m.c) > pqPow(lead.c) ? pl : lead.pl;
+      this.tricks[w]++; this.lastTrick = { cards: this.trick.map(t => t.c), winner: w }; this.trick = []; this.toMove = w;
+      events.push({ type: 'trick', winner: w });
+      if (w !== lead.pl) note += this.add(w, 1, 'trick');
+      const notes = [`${this.who(w)} ${w ? 'takes' : 'take'} the trick.${note}`];
+      if (!this.hands[0].length && !this.hands[1].length) this.endDeal(w, notes);
+      return { note: notes.join(' '), events };
+    },
+    declare() { // compare both hands category by category, in the order they are counted
+      const d = [this.hands[0], this.hands[1]].map(pqDeclare), parts = [], got = [0, 0];
+      let repique = -1;
+      const score = (pl, n) => { if (!n) return; got[pl] += n; this.add(pl, n); if (repique < 0 && got[pl] >= 30 && !got[1 - pl]) repique = pl; };
+      const name = pl => (pl === 0 ? 'You' : 'The Scribe'), verb = pl => (pl === 0 ? 'score' : 'scores');
+      for (const pl of [this.elder, 1 - this.elder]) if (d[pl].blanche) { score(pl, 10); parts.push(`${name(pl)} ${pl ? 'has' : 'have'} carte blanche: 10.`); }
+      const pt = d.map(x => x.point), pw = pt[0].len - pt[1].len || pt[0].val - pt[1].val;
+      if (pw) { const p = pw > 0 ? 0 : 1; score(p, pt[p].len); parts.push(`${name(p)} ${verb(p)} the point, ${pt[p].len} in ${PQ_SUIT[pt[p].suit]}: ${pt[p].len}.`); } else parts.push('The points are equal.');
+      const s0 = d[0].seqs[0], s1 = d[1].seqs[0];
+      const sw = !s0 && !s1 ? 0 : !s1 ? 1 : !s0 ? -1 : s0.len - s1.len || s0.top - s1.top;
+      if (sw) { const p = sw > 0 ? 0 : 1, all = d[p].seqs, n = all.reduce((t, q) => t + pqSeqScore(q.len), 0); score(p, n); parts.push(`${name(p)} ${verb(p)} for sequences (${all.map(q => PQ_SEQ[Math.min(q.len, 8)] + ' to the ' + PQ_RANK[q.top]).join(', ')}): ${n}.`); } else if (s0) parts.push('The sequences are equal.');
+      const t0 = d[0].sets[0], t1 = d[1].sets[0];
+      const tw = !t0 && !t1 ? 0 : !t1 ? 1 : !t0 ? -1 : t0.n - t1.n || t0.pw - t1.pw;
+      if (tw) { const p = tw > 0 ? 0 : 1, all = d[p].sets, n = all.reduce((t, q) => t + (q.n === 4 ? 14 : 3), 0); score(p, n); parts.push(`${name(p)} ${verb(p)} for sets (${all.map(q => (q.n === 4 ? 'four ' : 'three ') + PQ_RANKS[q.pw]).join(', ')}): ${n}.`); }
+      if (repique >= 0) { this.add(repique, 60); parts.push(repique === 0 ? 'Repique: 60 more to you!' : 'Repique: 60 more to the Scribe.'); this.piqueOpen = false; }
+      else if (got[1 - this.elder]) this.piqueOpen = false; // younger hand has scored, so elder cannot make a pique
+      this.declScore = got; this.declNote = parts.join(' ');
+      return this.declNote;
+    },
+    endDeal(last, notes) {
+      this.score[last] += 1; notes.push(`${last ? 'The Scribe scores' : 'You score'} 1 for the last trick.`);
+      const [a, b] = this.tricks;
+      if (a === 12 || b === 12) { const p = a === 12 ? 0 : 1; this.score[p] += 40; notes.push(`Capot! ${p ? 'The Scribe takes' : 'You take'} every trick: 40.`); }
+      else if (a !== b) { const p = a > b ? 0 : 1; this.score[p] += 10; notes.push(`${p ? 'The Scribe wins' : 'You win'} the cards, ${Math.max(a, b)} tricks to ${Math.min(a, b)}: 10.`); }
+      else notes.push('Six tricks each: nobody scores for the cards.');
+      notes.push(`This deal: you ${this.score[0]}, the Scribe ${this.score[1]}.`);
+      this.notes = notes.slice(1); this.stage = 'next'; this.toMove = 0;
+    },
+    finishPartie() {
+      const [a, b] = this.total;
+      if (a === b) { this.over = { winner: -1, title: 'A drawn partie', text: `${a} points each after ${this.deals} deals.` }; return; }
+      const w = a > b ? 0 : 1, lo = Math.min(a, b), hi = Math.max(a, b), owed = lo >= 100 ? hi - lo + 100 : hi + lo + 100;
+      const rub = this.limit === 6 ? ` ${w ? 'You' : 'The Scribe'} ${lo >= 100 ? 'crossed' : 'did not cross'} the Rubicon of 100, so the loser owes ${owed}.` : '';
+      this.over = { winner: w, title: w ? 'The Scribe wins the partie' : 'You win the partie', text: `${hi} points to ${lo} after ${this.deals} deals.${rub}` };
+    },
+    passTurn() { return this.over ? 0 : this.toMove; },
+    ended() { return !!this.over; },
+    final() { return this.over; },
+    result() { return this.over || null; },
+    // What a card is worth keeping: high cards, sets in the making, and long suits.
+    keepValue(h, c) {
+      const su = pqSuit(c), pw = pqPow(c), len = h.filter(x => pqSuit(x) === su).length;
+      const same = h.filter(x => pqPow(x) === pw).length;
+      const nb = h.filter(x => pqSuit(x) === su && Math.abs(pqPow(x) - pw) === 1).length;
+      return pw * 1.2 + (pw === 7 ? 4 : 0) + len * 1.5 + (pw >= 3 && same >= 2 ? same * 2 : 0) + nb * 1.3;
+    },
+    // Sharp tries every way to throw out its weakest cards, draws the talon at random many times for each,
+    // and keeps the discard that leaves the strongest hand on average.
+    strength(h) {
+      const d = pqDeclare(h);
+      return d.point.len * 1.4 + d.seqs.reduce((t, q) => t + pqSeqScore(q.len), 0) + d.sets.reduce((t, q) => t + (q.n === 4 ? 14 : 3), 0) * 0.8
+        + h.filter(c => pqPow(c) === 7).length * 2.5 + h.filter(c => pqPow(c) === 6).length;
+    },
+    sharpExchange(pl, n) {
+      const h = this.hands[pl], unseen = PQ_DECK.filter(c => !h.includes(c)), drawFrom = this.talon.length;
+      const pool = h.map(c => [c, this.keepValue(h, c)]).sort((a, b) => a[1] - b[1]).slice(0, Math.min(h.length, n + 3)).map(x => x[0]);
+      const combos = []; const pickc = (start, cur) => { if (cur.length === n) { combos.push(cur.slice()); return; } for (let i = start; i < pool.length; i++) { cur.push(pool[i]); pickc(i + 1, cur); cur.pop(); } };
+      pickc(0, []);
+      let best = combos[0], bv = -Infinity;
+      for (const out of combos) {
+        const keep = h.filter(c => !out.includes(c)); let tot = 0;
+        for (let k = 0; k < 24; k++) {
+          const u = unseen.slice(); for (let i = u.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [u[i], u[j]] = [u[j], u[i]]; }
+          tot += this.strength(keep.concat(u.slice(0, Math.min(n, drawFrom))));
+        }
+        if (tot > bv) { bv = tot; best = out; }
+      }
+      return best;
+    },
+    aiExchange(pl) {
+      const h = this.hands[pl], max = pl === this.elder ? Math.min(5, this.talon.length) : this.talon.length;
+      if (LEVEL.name === 'sharp') return this.sharpExchange(pl, max);
+      const n = LEVEL.name === 'gentle' ? Math.max(1, max - ((Math.random() * 3) | 0)) : max;
+      const noise = pick(4, 1, 0);
+      return h.map(c => [c, this.keepValue(h, c) + Math.random() * noise]).sort((a, b) => a[1] - b[1]).slice(0, n).map(x => x[0]);
+    },
+    aiCard(pl) {
+      const ms = this.legalCards(pl), h = this.hands[pl], opp = 1 - pl;
+      if (ms.length === 1) return ms[0];
+      if (LEVEL.name === 'gentle' && Math.random() < 0.35) return ms[(Math.random() * ms.length) | 0];
+      const seen = new Set(this.played.concat(h, this.discards[pl]));
+      const master = c => { for (let p = pqPow(c) + 1; p < 8; p++) { const x = PQ_DECK.find(y => pqSuit(y) === pqSuit(c) && pqPow(y) === p); if (!seen.has(x)) return false; } return true; };
+      const low = a => a.reduce((x, y) => (pqPow(y) < pqPow(x) ? y : x)), high = a => a.reduce((x, y) => (pqPow(y) > pqPow(x) ? y : x));
+      if (!this.trick.length) {
+        const cash = ms.filter(master); if (cash.length) return high(cash);
+        const len = su => h.filter(c => pqSuit(c) === su).length;
+        const suits = [0, 1, 2, 3].filter(su => len(su)).sort((a, b) => len(b) - len(a));
+        const su = suits.find(s2 => !this.void[opp][s2]) ?? suits[0];
+        return low(h.filter(c => pqSuit(c) === su)); // lead low from the longest suit, to set it up
+      }
+      const lead = this.trick[0].c, su = pqSuit(lead);
+      const win = ms.filter(c => pqSuit(c) === su && pqPow(c) > pqPow(lead));
+      if (win.length) return low(win);
+      if (pqSuit(ms[0]) === su) return low(ms);
+      const spare = ms.filter(c => !master(c)); // throw a card that will not take a trick later
+      const pool = spare.length ? spare : ms;
+      const shortest = pool.reduce((x, y) => (h.filter(c => pqSuit(c) === pqSuit(y)).length < h.filter(c => pqSuit(c) === pqSuit(x)).length ? y : x));
+      return low(pool.filter(c => pqSuit(c) === pqSuit(shortest)));
+    },
+    aiPlan(pl) {
+      if (this.stage === 'exchange') { const cards = this.aiExchange(pl); return [{ pl, kind: 'exchange', cards }]; }
+      return [{ pl, kind: 'play', c: this.aiCard(pl) }];
+    },
+  };
+
   /* ----------------------------------------------------------------- Whist
    * Four seats round the table, clockwise: 0 you (South), 1 West, 2 North, your
    * partner, 3 East. Cards use the cribbage numbering, suit * 13 + rank with
@@ -6559,7 +7025,7 @@
     aiPlan(pl, depth) { return bestPlan(this, pl, depth, 6); },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, rithmo: RITHMO };
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, rithmo: RITHMO, lewischess: LEWISCHESS, courier: COURIER, hazard: HAZARD, piquet: PIQUET };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);
