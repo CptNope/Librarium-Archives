@@ -23,7 +23,8 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - Masters Traditional Games, Fox and Geese; Traditional Board Games (tradgames.org.uk), Draughts
 - Kasparov–Wilson (kwabc.org): Scachs d'amor; ISTC: Lucena, *Repetición de amores y arte de ajedrez*
 - Live History India: Ludo's Indian roots
-- Library of Congress: The Mansion of Happiness (1843)
+- Library of Congress: The Mansion of Happiness (1843); a scan of the 1843 W. & S. B. Ives board, supplied for the Archives, from which every square was read
+- The rules of The Mansion of Happiness as printed with the game, reprinted in Brian Love, *Great Board Games 1895–1955* (quoted by giochidelloca.it)
 - Wikipedia: The Mansion of Happiness, The Checkered Game of Life, Reversi, Halma, Chinese checkers, Dots and boxes, The Landlord's Game
 - U.S. Patent 748,626, Lizzie J. Magie, Game-board (1904): drawing and text (Google Patents; transcription at landlordsgame.info)
 - Elwyn Berlekamp, *The Dots and Boxes Game: Sophisticated Child's Play* (2000)
