@@ -2,7 +2,7 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**57 exhibits, 47 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**57 exhibits, 48 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
@@ -11,7 +11,7 @@ pie showData
     "Wing II · 7 of 9" : 9
     "Wing III · 6 of 9" : 9
     "Wing IV · 11 of 11" : 11
-    "Wing V · 7 of 9" : 9
+    "Wing V · 8 of 9" : 9
     "Wing VI · 13 of 13" : 13
 ```
 
@@ -187,7 +187,7 @@ timeline
 
 | Exhibit | Date | Rules | In the Archives |
 | --- | --- | --- | --- |
-| The Mansion of Happiness | 1843 CE | Survive in print | On display (a spiral of virtues and vices, with a teetotum) |
+| The Mansion of Happiness | 1843 CE | Survive in print | Playable: all 67 squares of the 1843 Ives board, with a teetotum |
 | The Checkered Game of Life | 1860 CE | Survive in print | On display |
 | Reversi | 1883 CE | Survive in print; played today as Othello | Playable, from the Othello opening |
 | Halma | 1883–84 CE | Still played, as Chinese checkers | Playable, two players with 19 men each |
@@ -196,6 +196,8 @@ timeline
 | The Landlord's Game | 1904 CE | Survive in the patent | Playable, on a board read from the patent drawing |
 | Kalah | 1940 CE | Survive in print | Playable, with 3, 4 or 6 seeds a pit |
 | Hex | 1942 CE | Still played | Playable on 7 × 7, 9 × 9 or 11 × 11, with the swap rule |
+
+- **The Mansion of Happiness:** every square read from a scan of the 1843 W. & S. B. Ives board, played by the seventeen rules printed with the game (as reprinted for the 1894 edition). A teetotum of 1 to 6. Poverty, the Whipping Post, the Pillory, the Stocks, Prison and Ruin are not counted when moving. The thirteen virtues advance six squares; Audacity, Cruelty, Immodesty and Ingratitude send you back to where you were; the Water (6) carries you to 10 and the Inn (9) to 12. Passion goes to the Water, Idleness to Poverty, the Road to Folly back to Prudence, a Sabbath Breaker to the Whipping Post, a Perjurer to the Pillory, a Drunkard to the Stocks and the Summit of Dissipation to Ruin; a Cheat spends one turn in the House of Correction and a Robber two in Prison, then begin again, unless freed by another player guilty of the same crime. Landing on another counter sends it back to where you came from. Exact count to 67; an overshoot goes to the Seat of Expectation (60), a second one to the start. Left out: two clauses of the rule for crimes on an occupied square. The squares reached by a virtue's six do not act again. You play the red counter against one Scribe.
 
 Rule choices:
 
@@ -274,7 +276,7 @@ Rule choices:
 | Petteia, Liubo | Only partial or competing reconstructions. |
 | Chaturanga | The elephant's move is uncertain. Its four-handed relative, chaturaji, is playable next to Xiangqi. |
 | The Lewis Chessmen, Playing cards | Shown as objects; their games are covered at Shatranj and Tarocchi. |
-| The Mansion of Happiness, The Checkered Game of Life | The rules sit square by square on the original boards; we need a checkable scan or transcription. |
+| The Checkered Game of Life | The rules sit square by square on the original board; we need a checkable scan or transcription. |
 | Hare and Hounds (not yet an exhibit) | Sources disagree on the lines of its eleven-point board. |
 
 See the [roadmap](roadmap.md).

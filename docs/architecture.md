@@ -31,8 +31,8 @@ flowchart TB
 | --- | ---: | --- |
 | `index.html` | ~100 | Markup for the HUD, placard, rail, index dialog and table controls; script order |
 | `css/archives.css` | ~210 | All styles, scoped under `#lm-app`; ids are prefixed `lm-`; phone layout by container query |
-| `js/rules.js` | ~5,900 | 47 rule engines, the shared negamax search, Monte Carlo searches (Go, Hex), card and tile AIs. UMD: `module.exports` in Node, `window.LibrariumRules` in the browser |
-| `js/archives.js` | ~6,400 | The three.js hall, 57 exhibit builders, the `STOPS` list, 47 table presenters, the turn loop, navigation, sound, storage |
+| `js/rules.js` | ~6,050 | 48 rule engines, the shared negamax search, Monte Carlo searches (Go, Hex), card and tile AIs. UMD: `module.exports` in Node, `window.LibrariumRules` in the browser |
+| `js/archives.js` | ~6,400 | The three.js hall, 57 exhibit builders, the `STOPS` list, 48 table presenters, the turn loop, navigation, sound, storage |
 | `tests/rules.test.mjs` | ~1,600 | Rule tests, simulated games, AI timing checks |
 | `tests/plugin-render.test.php` | | Renders the shortcode with stubbed WordPress functions |
 | `wordpress/` | | Plugin PHP, Elementor widget, `readme.txt` |

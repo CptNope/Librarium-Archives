@@ -218,6 +218,7 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Snakes and Ladders | `snakes` | Race, one die | None needed | `oneDie` |
 | Ludo | `ludo` | Race, one die | Heuristic with danger | `extra` on a six |
 | Mahjong | `mahjong` | Tiles, four seats | Shanten and ukeire | own turn order, claims |
+| The Mansion of Happiness | `mansion` | Race, teetotum | None needed | `autoMove`, `skipTurn` for sentences, `extra` |
 | Reversi | `reversi` | Placement | Search, exact endgame | `skipTurn` for passes |
 | Halma | `halma` | Race on a board | Search | `skipTurn` |
 | Dots and Boxes | `dotsboxes` | Lines | Exact endgame solver | `followUp`, `variants` |

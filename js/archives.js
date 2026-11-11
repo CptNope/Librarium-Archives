@@ -1758,36 +1758,64 @@ function agedPaper(g, w, h) {
 }
 
 /* --- Wing V: The Mansion of Happiness (display) */
+// The 67 squares of the 1843 board on a spiral running clockwise and inward from the top left,
+// with the Mansion of Happiness in the middle. Positions are in canvas pixels of the board texture.
+const MH_W = 0.92, MH_D = 0.74, MH_PX = 2048, MH_PY = Math.round(2048 * 0.74 / 0.92);
+const mhLayout = (() => {
+  // Sample the spiral finely, then space the squares evenly along it, as on the printed board.
+  const cx = MH_PX / 2, cy = MH_PY / 2 + 20, rx = MH_PX * 0.46, ry = MH_PY * 0.43, turns = 3, a0 = -Math.PI * 0.78, inner = 0.3;
+  const at = t => { const a = a0 + t * turns * TAU, sc = 1 - t * (1 - inner); return [cx + Math.cos(a) * rx * sc, cy + Math.sin(a) * ry * sc]; };
+  const N = 6000, pts = [], len = [0];
+  for (let i = 0; i <= N; i++) { pts.push(at(i / N)); if (i) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); }
+  const out = [null], total = len[N];
+  for (let k = 0, i = 0; k < 66; k++) { const want = total * k / 65; while (i < N && len[i] < want) i++; out.push(pts[i]); }
+  out.push([cx, cy]);
+  return out;
+})();
+function mhSquare(n) { const [x, y] = mhLayout[n]; return { x: (x / MH_PX - 0.5) * MH_W, z: (y / MH_PY - 0.5) * MH_D }; }
+const MH_FILL = { virtue: '#d4e3b4', vice: '#f1cfa9', crime: '#e8a99a', place: '#cdbfa6', jail: '#bba489', water: '#b2d0e2', inn: '#e8d59f', plain: '#f0e4c6', goal: '#f4e7c4' };
 function buildMansion(group) {
-  const W = 0.78;
-  const board = new THREE.Mesh(new THREE.BoxGeometry(W + 0.04, 0.02, W + 0.04), new THREE.MeshStandardMaterial({ color: 0x3a2312, roughness: 0.6 }));
+  const W = MH_W, D = MH_D, G = window.LibrariumRules.mansion;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W + 0.04, 0.02, D + 0.04), new THREE.MeshStandardMaterial({ color: 0x3a2312, roughness: 0.6 }));
   board.position.y = TOP + 0.01; group.add(board);
-  const px = 1024;
-  topPlane(group, W, W, TOP + 0.0205, tex(px, px, (g) => {
-    agedPaper(g, px, px);
-    const cx = px / 2, cy = px / 2, R = px * 0.46, turns = 3.2, n = 60;
-    // Hand-coloured squares along a spiral, virtues in green and gold, vices in red.
-    for (let k = 0; k < n; k++) {
-      const t = k / n, a = t * turns * TAU, r = R * (1 - t * 0.78);
-      const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
-      g.save(); g.translate(x, y); g.rotate(a + Math.PI / 2);
-      const s = 44 * (1 - t * 0.45);
-      g.fillStyle = k % 7 === 3 ? '#b8432e' : k % 5 === 1 ? '#6a8a3a' : k % 4 === 0 ? '#d4a23a' : '#e9d9b0';
-      g.fillRect(-s / 2, -s / 2, s, s); g.strokeStyle = '#4a2c14'; g.lineWidth = 2; g.strokeRect(-s / 2, -s / 2, s, s);
-      g.restore();
+  topPlane(group, W, D, TOP + 0.0205, tex(MH_PX, MH_PY, (g) => {
+    agedPaper(g, MH_PX, MH_PY);
+    // The track: a band joining the squares in order.
+    g.strokeStyle = 'rgba(110,120,60,.35)'; g.lineWidth = 190; g.lineJoin = 'round'; g.beginPath();
+    for (let k = 1; k <= 66; k++) { const [x, y] = mhLayout[k]; if (k === 1) g.moveTo(x, y); else g.lineTo(x, y); } g.stroke();
+    const oct = (x, y, r) => { g.beginPath(); for (let i = 0; i < 8; i++) { const a = Math.PI / 8 + i * Math.PI / 4; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.closePath(); };
+    for (let k = 1; k <= 66; k++) {
+      const [x, y] = mhLayout[k], nx = mhLayout[k + 1] || mhLayout[k - 1], gap = Math.hypot(nx[0] - x, nx[1] - y);
+      const r = Math.min(86, gap * 0.5), sq = G.SQ[k];
+      oct(x, y, r); g.fillStyle = sq ? MH_FILL[sq[1]] : '#9c9a62'; g.fill();
+      g.lineWidth = 4; g.strokeStyle = '#4a3a1c'; g.stroke();
+      g.fillStyle = '#2a1c0c'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `bold ${Math.round(r * 0.46)}px Georgia, serif`; g.fillText(String(k), x, sq ? y + r * 0.52 : y);
+      if (sq) {
+        const words = sq[0].replace(/^(The|A) /, '').split(' '), fs = Math.round(r * (words.length > 1 ? 0.27 : 0.31));
+        g.font = `${fs}px Georgia, serif`;
+        const lines = words.length > 2 ? [words.slice(0, 2).join(' '), words.slice(2).join(' ')] : words.length === 2 && sq[0].length > 11 ? words : [words.join(' ')];
+        lines.forEach((ln, i) => g.fillText(ln.toUpperCase(), x, y - r * 0.18 + (i - (lines.length - 1) / 2) * fs * 1.1, r * 1.7));
+      }
     }
-    // The mansion at the centre.
-    g.fillStyle = '#d9c08a'; g.fillRect(cx - 52, cy - 20, 104, 64);
-    g.fillStyle = '#8a3a22'; g.beginPath(); g.moveTo(cx - 64, cy - 20); g.lineTo(cx, cy - 66); g.lineTo(cx + 64, cy - 20); g.fill();
-    g.fillStyle = '#4a2c14'; g.fillRect(cx - 10, cy + 10, 20, 34);
-    for (const dx of [-34, 24]) g.fillRect(cx + dx, cy - 6, 12, 14);
-    g.fillStyle = '#3a2412'; g.font = 'italic 34px Georgia, serif'; g.textAlign = 'center';
-    g.fillText('An Instructive, Moral and Entertaining Amusement', cx, px - 36, px - 80);
+    // The Mansion of Happiness at the centre.
+    const [mx, my] = mhLayout[67];
+    g.fillStyle = '#f4e7c4'; g.strokeStyle = '#4a3a1c'; g.lineWidth = 6; g.fillRect(mx - 150, my - 120, 300, 240); g.strokeRect(mx - 150, my - 120, 300, 240);
+    g.fillStyle = '#d9c08a'; g.fillRect(mx - 80, my - 30, 160, 90);
+    g.fillStyle = '#8a3a22'; g.beginPath(); g.moveTo(mx - 96, my - 30); g.lineTo(mx, my - 92); g.lineTo(mx + 96, my - 30); g.fill();
+    g.fillStyle = '#4a2c14'; g.fillRect(mx - 14, my + 14, 28, 46); for (const dx of [-60, 34]) g.fillRect(mx + dx, my - 14, 26, 22);
+    g.fillStyle = '#2a1c0c'; g.font = 'italic 30px Georgia, serif'; g.fillText('The Mansion of Happiness', mx, my + 92); g.font = 'bold 30px Georgia, serif'; g.fillText('67', mx, my - 104 + 10);
+    g.fillStyle = '#3a2412'; g.font = 'italic 44px Georgia, serif';
+    g.fillText('The Mansion of Happiness: An Instructive, Moral and Entertaining Amusement', MH_PX / 2, 46, MH_PX - 120);
   }), { roughness: 0.85 });
-  const tt = teetotum(); tt.position.set(W / 2 + 0.12, TOP, 0.1); group.add(tt);
-  const pawn = c => { const m = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.04, 12), new THREE.MeshStandardMaterial({ color: c, roughness: 0.5 })); m.position.y = 0.02; const g = new THREE.Group(); g.add(m); return g; };
-  [0x8a1e1e, 0x1e3a7a].forEach((c, k) => { const p = pawn(c); p.position.set(W / 2 + 0.1 + k * 0.05, TOP, -0.12); group.add(p); });
+  const tt = teetotum(); tt.position.set(W / 2 + 0.1, TOP, 0.12); group.add(tt);
+  const shown = [];
+  [0, 1].forEach(pl => { const p = mhPawn(pl); p.position.copy(mhStart(pl)); group.add(p); shown.push(p); });
+  group.userData.display = shown;
+  return TOP + 0.021;
 }
+function mhPawn(pl) { const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x1e3a7a : 0x8a1e1e, roughness: 0.5 }); const m = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.046, 14), mat); m.position.y = 0.023; const g = new THREE.Group(); g.add(m); const head = new THREE.Mesh(new THREE.SphereGeometry(0.009, 10, 8), mat); head.position.y = 0.05; g.add(head); g.userData.mats = [mat]; return g; }
+function mhStart(pl) { return V3(-MH_W / 2 - 0.06, TOP, -0.18 + pl * 0.06); }
 
 /* --- Wing V: The Checkered Game of Life (display) */
 function buildCheckeredLife(group) {
@@ -3223,18 +3251,19 @@ const STOPS = [
     eyebrow: 'Wing V · Librarium Archives', status: null, begin: 'mansion',
     body: [
       'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
-      'Seven tables are open: Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
+      'Eight tables are open: the Mansion of Happiness, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
     ],
-    facts: [['Tables', 'Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex'], ['Display', 'Mansion of Happiness, Game of Life']],
+    facts: [['Tables', 'Mansion of Happiness, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex'], ['Display', 'Game of Life']],
   },
   { id: 'mansion', wing: 5, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
-    eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'],
-    note: 'On display. Note the teetotum: dice were thought too close to gambling.',
+    eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'], game: 'mansion',
+    note: 'Note the teetotum: dice were thought too close to gambling.',
     body: [
       'In 1843 W. & S. B. Ives of Salem, Massachusetts, published The Mansion of Happiness, "an instructive, moral and entertaining amusement". The Library of Congress calls it possibly the first board game published in the United States. It was close to a copy of an English game of 1800, and who adapted it is uncertain: Anne Abbott, who designed other games for the same publisher, has often been credited.',
-      'Players spun a numbered top called a teetotum and moved along a spiral. Virtues such as temperance and generosity carried them toward the mansion at the centre; vices such as idleness sent them back toward the pillory.'
+      'Players spun a numbered top called a teetotum and moved along a spiral. Virtues such as temperance and generosity carried them toward the mansion at the centre; vices such as idleness sent them back toward the pillory.',
+      'The table follows the original: all 67 squares in their places on the 1843 board, and the rules printed with the game. A Cheat spends a month in the House of Correction and a Robber two in Prison, a Drunkard goes to the Stocks and a Sabbath Breaker to the Whipping Post, and the Mansion must be reached by an exact spin. The board here is newly drawn, and the squares carry their names instead of the original engravings.'
     ],
-    facts: [['Publisher', 'W. & S. B. Ives, Salem'], ['Moves', 'A spinning teetotum'], ['Goal', 'Reach the mansion at the centre']],
+    facts: [['Publisher', 'W. & S. B. Ives, Salem'], ['Board', '67 squares on a spiral'], ['Moves', 'A spinning teetotum'], ['Goal', 'Reach the mansion at the centre']],
     build: buildMansion },
   { id: 'lifegame', wing: 5, title: 'The Checkered Game of Life', short: 'Checkered Game of Life', date: '1860 CE', rail: 'Game of Life',
     eyebrow: 'Springfield, Massachusetts', status: ['known', 'Rules survive in print'],
@@ -3480,7 +3509,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -4980,6 +5009,33 @@ const PATOLLI_P = {
   },
   score: () => { const G = GAMES.patolli; return [['Your treasures', G.treasure[0]], ['Scribe\'s', G.treasure[1]], `· offerings ${G.pot} · home ${G.home(0)} v ${G.home(1)}`]; },
 };
+const MANSION_P = {
+  camW: 1.0,
+  intro() { return 'You have the red counter, the Scribe the blue. Spin the teetotum and follow the spiral to the Mansion of Happiness.'; },
+  prompt() { return 'Spin the teetotum.'; },
+  choosePrompt: () => 'Pick your counter to move it.',
+  setup(ex) {
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) ex.pieces = [0, 1].map(pl => { const p = mhPawn(pl); ex.group.add(p); return p; });
+    ex.pieces.forEach((p, pl) => { p.visible = true; p.position.copy(this.pos(pl, 0)); });
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(p => { p.visible = false; }); },
+  pos(pl, n) { if (!n) return mhStart(pl); const c = mhSquare(n); return V3(c.x + (pl ? 0.012 : -0.012), GAMES.mansion.surface, c.z); },
+  meshesFor(m) { return [play.ex.pieces[m.pl]]; },
+  ringFor(m) { return this.pos(m.pl, m.to); },
+  fromFor(m) { return m.from ? this.pos(m.pl, m.from) : null; },
+  async play(m) {
+    const G = GAMES.mansion, tok = play.token, pawn = play.ex.pieces[m.pl];
+    const res = G.apply(m);
+    for (const n of m.path) { if (tok !== play.token) return res; await hop(pawn, this.pos(m.pl, n), 0.14, 0.03); }
+    if (res.bumped !== null) await hop(play.ex.pieces[res.bumped], this.pos(res.bumped, G.pos[res.bumped]), 0.35, 0.08);
+    if (res.freed !== null) await hop(play.ex.pieces[res.freed], this.pos(res.freed, 0), 0.4, 0.1);
+    return res;
+  },
+  // Keep the counters where the rules put them (a served sentence sends one back to the start between moves).
+  sync() { const G = GAMES.mansion, ex = play.ex; if (!ex || !ex.pieces || play.game !== G) return; ex.pieces.forEach((p, pl) => { const to = this.pos(pl, G.pos[pl]); if (p.position.distanceTo(to) > 0.03 && play.phase !== 'anim' && play.phase !== 'ai') p.position.copy(to); }); },
+  score() { this.sync(); const G = GAMES.mansion; return [['You', G.pos[0]], ['Scribe', G.pos[1]], 'of 67']; },
+};
 const KALAH_P = {
   camW: 1.2, ringScale: 1.2,
   intro() { return 'Your six pits are the row nearest you, and your store is on your right. ' + this.prompt(); },
@@ -5332,7 +5388,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -5793,7 +5849,7 @@ function renderDice(g, r, shaking = false) {
   faces.forEach(f => {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', '0 0 30 30');
-    if (g.pipDice) {
+    if (g.pipDice && g.id !== 'mansion') {
       const p = document.createElementNS(ns, 'rect'); p.setAttribute('x', '3'); p.setAttribute('y', '3'); p.setAttribute('width', '24'); p.setAttribute('height', '24'); p.setAttribute('rx', '5');
       p.setAttribute('fill', '#ecdfc3'); p.setAttribute('stroke', '#a8977a'); p.setAttribute('stroke-width', '1.2'); svg.appendChild(p);
       const pips = { 1: [[15, 15]], 2: [[9, 9], [21, 21]], 3: [[9, 9], [15, 15], [21, 21]], 4: [[9, 9], [21, 9], [9, 21], [21, 21]], 5: [[9, 9], [21, 9], [15, 15], [9, 21], [21, 21]], 6: [[9, 8], [21, 8], [9, 15], [21, 15], [9, 22], [21, 22]] }[r ? f : 1];
@@ -5802,6 +5858,11 @@ function renderDice(g, r, shaking = false) {
       const e = document.createElementNS(ns, 'ellipse'); e.setAttribute('cx', '15'); e.setAttribute('cy', '15'); e.setAttribute('rx', '9'); e.setAttribute('ry', '13');
       e.setAttribute('fill', r && f ? '#f2ead8' : '#c9b79a'); e.setAttribute('stroke', '#a8977a'); e.setAttribute('stroke-width', '1.2'); svg.appendChild(e);
       if (r && f) { const l = document.createElementNS(ns, 'path'); l.setAttribute('d', 'M15 5 Q12 15 15 25'); l.setAttribute('stroke', '#5a4a3a'); l.setAttribute('stroke-width', '2'); l.setAttribute('fill', 'none'); svg.appendChild(l); }
+    } else if (g.id === 'mansion') { // a teetotum seen from above: a hexagon with the number it fell on
+      const p = document.createElementNS(ns, 'path'); p.setAttribute('d', 'M15 2 L27 9 L27 21 L15 28 L3 21 L3 9 Z');
+      p.setAttribute('fill', '#ecdfc3'); p.setAttribute('stroke', '#a8977a'); p.setAttribute('stroke-width', '1.2'); svg.appendChild(p);
+      const t = document.createElementNS(ns, 'text'); t.setAttribute('x', '15'); t.setAttribute('y', '20'); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '13'); t.setAttribute('font-family', 'Georgia, serif');
+      t.setAttribute('fill', r ? '#1d140c' : '#c9b79a'); t.textContent = r ? f : '?'; svg.appendChild(t);
     } else if (g.id === 'patolli') { // a black bean, its marked side a white dot
       const e = document.createElementNS(ns, 'ellipse'); e.setAttribute('cx', '15'); e.setAttribute('cy', '15'); e.setAttribute('rx', '8'); e.setAttribute('ry', '12');
       e.setAttribute('fill', '#1d140c'); e.setAttribute('stroke', '#a8977a'); e.setAttribute('stroke-width', '1.2'); svg.appendChild(e);

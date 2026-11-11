@@ -2072,3 +2072,49 @@ test('Patolli and Hounds and Jackals: games between Scribes end', () => {
   }
   rules.setLevel('fair');
 });
+
+/* ---------------------------------------------------------- The Mansion of Happiness */
+
+const MH = rules.mansion;
+const mhMove = (pl, from, v) => { MH.pos[pl] = from; return MH.legal(pl, v, { faces: [v], value: v })[0]; };
+test('Mansion of Happiness: every virtue and vice on the 1843 board is where the rules expect it', () => {
+  const kind = k => Object.entries(MH.SQ).filter(([, v]) => v[1] === k).map(([n, v]) => v[0]);
+  assert.equal(kind('virtue').length, 13);
+  assert.deepEqual(kind('vice').sort(), ['Audacity', 'Cruelty', 'Immodesty', 'Ingratitude']);
+  assert.equal(MH.SQ[6][0], 'The Water'); assert.equal(MH.SQ[9][0], 'The Inn'); assert.equal(MH.SQ[60][0], 'Seat of Expectation');
+});
+
+test('Mansion of Happiness: virtues advance six, vices send you back, the Water and the Inn carry you on', () => {
+  MH.init();
+  assert.equal(mhMove(0, 0, 2).to, 8); // Piety
+  assert.equal(mhMove(0, 3, 4).to, 3); // Audacity at 7: back where you were
+  assert.equal(mhMove(0, 0, 6).to, 10); // the Water
+  assert.equal(mhMove(0, 5, 4).to, 12); // the Inn
+  assert.equal(mhMove(0, 10, 1).to, 12); // Poverty (11) is not counted
+});
+
+test('Mansion of Happiness: crimes are punished, and cheats and robbers lose turns and begin again', () => {
+  MH.init();
+  assert.equal(mhMove(0, 12, 1).to, 19); // Temperance (13), then six more
+  assert.equal(mhMove(0, 17, 1).to, 25); // Prudence (18): six on, not counting the Whipping Post (22); Immodesty there does not act again
+  MH.init();
+  assert.equal(mhMove(0, 10, 3).to, 6); // Passion (14): to the Water
+  const c = mhMove(0, 32, 2); assert.equal(c.to, 30); assert.equal(c.jail, 1); MH.apply(c);
+  assert.match(MH.skipTurn(0), /begin the game again/);
+  assert.equal(MH.pos[0], 0);
+  assert.equal(MH.skipTurn(0), '');
+  MH.init();
+  const r = mhMove(1, 56, 1); assert.equal(r.to, 50); assert.equal(r.jail, 2); MH.apply(r);
+  assert.match(MH.skipTurn(1), /serves a month/); assert.match(MH.skipTurn(1), /begins again/);
+});
+
+test('Mansion of Happiness: landing on a counter sends it back; 67 needs an exact count', () => {
+  MH.init(); MH.pos[1] = 5;
+  const m = mhMove(0, 3, 2); MH.apply(m);
+  assert.equal(MH.pos[0], 5); assert.equal(MH.pos[1], 3);
+  MH.init();
+  const o = mhMove(0, 65, 4); assert.equal(o.to, 60); MH.apply(o);
+  const o2 = mhMove(0, 64, 6); assert.equal(o2.to, 0); // a second overshoot: begin again
+  MH.init();
+  MH.apply(mhMove(0, 64, 3)); assert.equal(MH.won.winner, 0);
+});

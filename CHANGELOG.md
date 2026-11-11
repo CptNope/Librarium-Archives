@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.22.0: The Mansion of Happiness
+
+- **The Mansion of Happiness** (Wing V) is playable. Every one of its 67 squares was read from a scan of the 1843 W. & S. B. Ives board, and the game follows the seventeen rules printed with it: thirteen virtues that advance six, four vices that send you back, crimes punished at the Water, Poverty, the Whipping Post, the Pillory and the Stocks, a month in the House of Correction for a Cheat and two in Prison for a Robber, and an exact spin to reach the Mansion. A newly drawn spiral board names each square, and the teetotum has its own face.
+- 4 new rule tests (234 in all).
+
 ## 0.21.0: Three modern reconstructions
 
 Three exhibits whose rules are lost or only partly recorded are now playable. Each placard says plainly that the table plays a modern reconstruction and whose, and a line beside the "Take a seat and play" button repeats it.
