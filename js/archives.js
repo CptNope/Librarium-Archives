@@ -1015,11 +1015,11 @@ function buildSeega(group) {
 }
 
 /* --- Wing VI: Tâb, four rows of squares scratched in a plank, stone and tile pieces */
-const TAB_S = 0.07;
+const TAB_S = 0.088;
 function tabCell(i) { const W = 9, r = (i / W) | 0, c = i % W; return { x: (c - 4) * TAB_S, z: (1.5 - r) * TAB_S }; }
-const tabPieceGeo = new THREE.CylinderGeometry(0.024, 0.026, 0.014, 18);
+const tabPieceGeo = new THREE.CylinderGeometry(0.03, 0.032, 0.016, 20);
 function tabPiece(pl) {
-  const mat = new THREE.MeshStandardMaterial({ color: pl ? 0xb04a26 : 0x2a2622, roughness: pl ? 0.8 : 0.5 });
+  const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x9c3e1c : 0x121010, roughness: pl ? 0.8 : 0.4 });
   const m = new THREE.Mesh(tabPieceGeo, mat); m.userData.mats = [mat];
   const band = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.003, 6, 20), new THREE.MeshStandardMaterial({ color: 0xf1e3bf, roughness: 0.5 }));
   band.rotation.x = -Math.PI / 2; band.position.y = 0.0075; band.visible = false; m.add(band); m.userData.band = band;
@@ -4744,7 +4744,7 @@ const TAB_P = {
   },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => { m.visible = false; }); },
   pos(i) { const c = tabCell(i); return V3(c.x, GAMES.tab.surface + 0.007, c.z); },
-  lostSpot(owner, k) { return V3(-0.28 + (k % 9) * 0.07, TOP + 0.007, owner ? -0.24 : 0.24); },
+  lostSpot(owner, k) { return V3(-0.32 + (k % 9) * 0.08, TOP + 0.008, owner ? -0.28 : 0.28); },
   meshesFor(m) { return [play.ex.pieces[m.piece]]; },
   ringFor(m) { return this.pos(m.to); },
   fromFor(m) { return this.pos(m.from); },
