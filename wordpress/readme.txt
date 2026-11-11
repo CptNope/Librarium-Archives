@@ -50,6 +50,9 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 
 == Changelog ==
 
+= 0.22.1 =
+* Hex: you always move first; the swap rule is optional and off by default.
+
 = 0.22.0 =
 * The Mansion of Happiness (1843) and the Checkered Game of Life (1860) are playable, with every square read from scans of original boards.
 

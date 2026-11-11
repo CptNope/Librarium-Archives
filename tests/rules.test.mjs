@@ -1381,12 +1381,21 @@ test('Hex: a full board always has exactly one winner', () => {
     assert.notEqual(HX.joined(b, 1), HX.joined(b, 2));
   }
 });
-test('Hex: the swap reflects the opening stone into blue', () => {
-  HX.setVariant('9'); HX.init(); HX.apply({ pl: 0, at: 2 * 9 + 5 });
+test('Hex: you move first, and the swap rule is off unless you turn it on', () => {
+  HX.setVariant('9'); HX.setToggle('swap', false); HX.init();
+  assert.equal(HX.first, 0);
+  HX.apply({ pl: 0, at: 4 * 9 + 4 });
+  assert.ok(!HX.legal(1).some(m => m.swap));
+  rules.setLevel('sharp'); assert.ok(!HX.aiPlan(1).some(m => m.swap)); rules.setLevel('fair');
+  assert.match(HX.rules[3], /swap rule is off/);
+});
+test('Hex: with the swap rule on, the swap reflects the opening stone into blue', () => {
+  HX.setVariant('9'); HX.setToggle('swap', true); HX.init(); HX.apply({ pl: 0, at: 2 * 9 + 5 });
   const sw = HX.legal(1).find(m => m.swap); assert.ok(sw);
   HX.apply(sw);
   assert.equal(HX.b[5 * 9 + 2], 2); assert.equal(HX.b[2 * 9 + 5], 0);
   assert.ok(!HX.legal(1).some(m => m.swap));
+  HX.setToggle('swap', false);
 });
 test('Hex: the Scribe answers on a 9 × 9 board in good time', () => {
   rules.setLevel('fair'); HX.setVariant('9'); HX.init(); HX.apply({ pl: 0, at: 0 });

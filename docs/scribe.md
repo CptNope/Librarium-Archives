@@ -80,7 +80,7 @@ flowchart LR
     B -. "budget spent" .-> M(["play the most-visited move"])
 ```
 
-RAVE lets a point that won when played *later* in a random game count a little toward playing it *now*. That is a good guess in both games, since stones never move. In Go the Scribe passes after you do if the count already favours it. In Hex, Fair and Sharp take a central opening stone with the swap rule.
+RAVE lets a point that won when played *later* in a random game count a little toward playing it *now*. That is a good guess in both games, since stones never move. In Go the Scribe passes after you do if the count already favours it. In Hex, when the visitor turns the swap rule on, Fair and Sharp take a central opening stone.
 
 ## Games with hidden cards and tiles
 
