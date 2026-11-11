@@ -3347,7 +3347,7 @@ const STOPS = [
     eyebrow: 'Copenhagen and Princeton', status: ['known', 'Rules survive in print'], game: 'hex',
     body: [
       'The Danish poet and mathematician Piet Hein invented Hex at the Niels Bohr Institute in Copenhagen and published it in the newspaper Politiken on 26 December 1942, under the name Polygon. In 1948 or 1949 John Nash came up with the same game at Princeton, where his fellow students called it Nash, or John. Parker Brothers sold it as Hex in 1952, and Martin Gardner wrote it up in Scientific American in 1957.',
-      'Hex has two remarkable properties. It can never be drawn, because a full board always holds exactly one winning chain. And Nash proved that the first player can always win with perfect play, without showing how: the argument is called strategy stealing. That is why players today use the swap rule.'
+      'Hex has two remarkable properties. It can never be drawn, because a full board always holds exactly one winning chain. And Nash proved that the first player can always win with perfect play, without showing how: the argument is called strategy stealing. That is why players today often use the swap rule. Here you always move first, and you can turn the swap rule on for an even game.'
     ],
     facts: [['Invented', 'Piet Hein, 1942; John Nash, 1948–49'], ['Board', 'A rhombus of hexagons, 11 × 11 by tradition'], ['Draws', 'Impossible']],
     build: buildHex },
@@ -5785,9 +5785,20 @@ function setScribeLevel(name) {
 levelButtons.forEach(b => b.addEventListener('click', () => setScribeLevel(b.dataset.level)));
 setScribeLevel(store.level || 'fair');
 // Some tables offer variants (a bigger grid, say). Choosing one restarts the game.
+function toggleOn(g, t) { const v = ((store.toggles || {})[g.id] || {})[t.id]; return v === undefined ? !!t.default : !!v; }
 function renderVariants(g) {
   const box = $('#lm-variant'); box.innerHTML = '';
-  box.hidden = !g.variants;
+  box.hidden = !g.variants && !g.toggles;
+  // On-off rules, such as Hex's swap rule. Changing one restarts the game, like a variant.
+  for (const t of g.toggles || []) {
+    const on = toggleOn(g, t), b = document.createElement('button');
+    b.textContent = `${t.label}: ${on ? 'on' : 'off'}`; b.setAttribute('aria-pressed', String(on));
+    b.addEventListener('click', () => {
+      store.toggles = store.toggles || {}; store.toggles[g.id] = Object.assign(store.toggles[g.id] || {}, { [t.id]: !on }); save();
+      const ex = play.ex; play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex);
+    });
+    box.appendChild(b);
+  }
   if (!g.variants) return;
   const label = document.createElement('span'); label.textContent = g.variantLabel || 'Size'; box.appendChild(label);
   for (const v of g.variants) {
@@ -5821,6 +5832,7 @@ async function startGame(ex) {
   $('#lm-choices').hidden = true;
   g.surface = ex.surface;
   if (g.variants) g.setVariant((store.variants || {})[g.id] || g.variant);
+  for (const t of g.toggles || []) g.setToggle(t.id, toggleOn(g, t));
   renderVariants(g);
   g.init(); P.setup(ex);
   showPlacard(false); $('#lm-hint').style.opacity = 0; rail.hidden = true; index.hidden = true; indexBtn.setAttribute('aria-expanded', 'false');

@@ -108,6 +108,7 @@ With these, `aiPlan(pl, depth)` is usually one line: `return bestPlan(this, pl, 
 | `done(pl)` / `home(pl)` | Has `pl` finished, and how many pieces are home. Dice games end on `done`, not `result` |
 | `final()` | Optional: decide the winner on points when the game ends (the Landlord's Game) |
 | `preThrow(pl)` | Optional: choices before throwing (lot tickets, paying a jail fine) |
+| `toggles`, `setToggle(id, on)` | Optional: on-off rules shown beside the variants and remembered per table (Hex's swap rule). Changing one restarts the game |
 | `passTurn()`, `ended()`, `scribeName` | Optional, for several Scribes (Chaturaji): `passTurn` moves play to the next seat and returns `0` for the visitor or `1` for a Scribe; `ended` is checked at the start of every turn; `scribeName` names the Scribe at play in the message bar |
 | `aiPlan(pl, moves)` | The Scribe's pick from this throw's moves |
 
@@ -226,7 +227,7 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Chinese checkers | `chinese` | Race on a board | Search | `skipTurn` |
 | The Landlord's Game | `landlord` | Race, dice, money | Heuristic | `preThrow`, `final`, `variants` |
 | Kalah | `kalah` | Sowing | Search over move chains | `followUp`, `variants` |
-| Hex | `hex` | Connection | MCTS with RAVE | swap rule, `variants` |
+| Hex | `hex` | Connection | MCTS with RAVE | `toggles` (the swap rule, off by default), `variants` |
 | Mū tōrere | `mutorere` | Blocking | Search | |
 | Shogi | `shogi` | Chess family | Search | drops |
 | Gomoku | `gomoku` | Placement | Threat search | |

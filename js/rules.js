@@ -2019,12 +2019,19 @@
     variants: [{ id: '7', label: '7 × 7' }, { id: '9', label: '9 × 9' }, { id: '11', label: '11 × 11' }],
     variant: '9', variantLabel: 'Board',
     setVariant(id) { this.variant = ['7', '9', '11'].includes(id) ? id : '9'; this.n = +this.variant; },
-    rules: [
-      'You play red and move first. Join the red edges, nearest and farthest from you, with an unbroken chain of red hexagons. The Scribe plays blue and joins the left and right edges.',
-      'On your turn, place one stone on any empty hexagon. Stones never move and are never taken.',
-      'Someone always wins: a full board always holds exactly one winning chain, so Hex cannot be drawn.',
-      'The swap rule: going first is a big advantage, so after your first stone the Scribe may take it for itself instead of playing. The stone is then reflected across the board into blue, and you move again.'
-    ],
+    // The swap rule is off unless the visitor turns it on, so the first move stays the visitor's.
+    toggles: [{ id: 'swap', label: 'Swap rule', default: false }], swapRule: false,
+    setToggle(id, on) { if (id === 'swap') this.swapRule = !!on; },
+    get rules() {
+      return [
+        'You play red and always move first. Join the red edges, nearest and farthest from you, with an unbroken chain of red hexagons. The Scribe plays blue and joins the left and right edges.',
+        'On your turn, place one stone on any empty hexagon. Stones never move and are never taken.',
+        'Someone always wins: a full board always holds exactly one winning chain, so Hex cannot be drawn.',
+        this.swapRule
+          ? 'The swap rule is on: going first is a big advantage, so after your first stone the Scribe may take it for itself instead of playing. The stone is then reflected across the board into blue, and you move again.'
+          : 'The swap rule is off, so the first move, and its advantage, stays yours. Turn the swap rule on above for an even game: the Scribe may then take your opening stone for itself.'
+      ];
+    },
     source: 'Hex as Piet Hein published it in 1942 and John Nash rediscovered it, with the swap rule from the modern game.',
     init() { const N = this.n * this.n; this.b = new Uint8Array(N); this.ply = 0; this.swapped = false; this.last = -1; this.win = -1; },
     nb(i) { const n = this.n, r = (i / n) | 0, c = i % n, out = []; for (const [dr, dc] of [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0]]) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < n && cc >= 0 && cc < n) out.push(rr * n + cc); } return out; },
@@ -2042,7 +2049,7 @@
       if (this.win >= 0) return [];
       const out = [];
       for (let i = 0; i < this.b.length; i++) if (!this.b[i]) out.push({ pl, at: i });
-      if (pl === 1 && this.ply === 1 && !this.swapped) out.push({ pl, swap: true, label: 'Swap' });
+      if (pl === 1 && this.ply === 1 && !this.swapped && this.swapRule) out.push({ pl, swap: true, label: 'Swap' });
       return out;
     },
     apply(m) {
@@ -2066,7 +2073,7 @@
       return r >= m && r <= n - 1 - m && c >= m && c <= n - 1 - m;
     },
     aiPlan(pl, budget) {
-      if (pl === 1 && this.ply === 1 && !this.swapped && this.wantSwap()) return [{ pl, swap: true }];
+      if (pl === 1 && this.ply === 1 && !this.swapped && this.swapRule && this.wantSwap()) return [{ pl, swap: true }];
       const at = hexSearch(this, pl, budget || BUDGET_MS[LEVEL.name]);
       return [{ pl, at }];
     },
