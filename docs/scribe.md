@@ -110,6 +110,10 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Tarocchi | | 16–14 (by +3.4 points a game) | 30 |
 | Ludo | 81% | 65% | 600 and 1,000 |
 | Chaturaji (one seat against three) | 41% against Gentle | 46% against Fair | 300 each; an even seat wins about 1 in 4 |
+| Four Seasons chess (one seat against three) | 67% against Gentle | 47% against Fair | 60 each; an even seat wins about 1 in 4 |
+| Bagh-chal | 19–0, 1 draw | 16–4 | 20 each, sides swapped |
+| Seega | 7–2, 3 draws | 4–2, 6 draws | 12 each; many games end on the 20-move count |
+| Tâb | 85% | 61% | 400 and 600 |
 | Dominoes | 61% | 62% | 400 and 600 hands |
 | Cribbage | 60% | 57% | 300 each |
 | The Landlord's Game | 67% | 52% | 600 and 1,500 |

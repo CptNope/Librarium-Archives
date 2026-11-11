@@ -988,7 +988,7 @@ const SG_S = 0.1;
 function sgCell(i) { const x = i % 5, y = (i / 5) | 0; return { x: (x - 2) * SG_S, z: (2 - y) * SG_S }; }
 const sgStoneGeo = new THREE.SphereGeometry(0.032, 20, 12);
 function sgStone(pl) {
-  const mat = new THREE.MeshStandardMaterial({ color: pl ? 0xb5532c : 0x26221e, roughness: pl ? 0.75 : 0.45 });
+  const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x9c3e1c : 0x121010, roughness: pl ? 0.75 : 0.4 });
   const m = new THREE.Mesh(sgStoneGeo, mat); m.scale.set(1, 0.5, 0.88); m.userData.mats = [mat]; return m;
 }
 function buildSeega(group) {
