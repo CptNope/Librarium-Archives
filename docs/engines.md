@@ -193,7 +193,10 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | --- | --- | --- | --- | --- |
 | Senet | `senet` | Race, sticks | Heuristic | `extra` on throws of 1, 4 and 5 |
 | Royal Game of Ur | `ur` | Race, dice | Heuristic | `extra` on rosettes |
+| Hounds and Jackals | `hounds` | Race, sticks (modern reconstruction) | Heuristic | `extra` on holes 15 and 25, `steps` with slides |
 | Weiqi (Go) | `go` | Placement | MCTS with RAVE | `canPass` |
+| Ludus latrunculorum | `latrunculi` | Placement, then custodian captures (modern reconstruction) | Search | no stepping straight back |
+| Patolli | `patolli` | Race, beans, stakes (modern reconstruction) | Heuristic with danger | a labelled offering move, `extra` on the tips |
 | Nine Men's Morris | `morris` | Placement, then moves | Search | `followUp` removals; shares its engine with Morabaraba |
 | Oware | `oware` | Sowing | Search | |
 | Alquerque | `alquerque` | Captures | Search | |

@@ -1,11 +1,14 @@
 # Historical notes and sources
 
-The placard text is written for the Archives. Where scholarship is uncertain, the placards say so: Senet's rules were never written down, so the playable version is a modern reconstruction; the Royal Game of Ur follows Irving Finkel's translation of a Babylonian rules tablet; Mehen, Hounds and Jackals, and the Başur Höyük pieces are shown without rules because none survive.
+The placard text is written for the Archives. Where scholarship is uncertain, the placards say so: Senet's rules were never written down, so the playable version is a modern reconstruction; the Royal Game of Ur follows Irving Finkel's translation of a Babylonian rules tablet; Hounds and Jackals, Ludus latrunculorum and Patolli are played as modern reconstructions, named on each placard; Mehen and the Başur Höyük pieces are shown without rules because none survive.
 
 - Smithsonian Magazine, "The Best Board Games of the Ancient World"
 - History.com, "The Oldest Board Games in the World"
 - Wikipedia: Royal Game of Ur, Senet, Hounds and jackals, History of Go, Ludus latrunculorum, Tafl games
 - The Metropolitan Museum of Art, Game of Hounds and Jackals (26.7.1287a–k)
+- Carnarvon and Carter, *Five Years' Explorations at Thebes* (1912); "Hounds and Jackals in Modern Times", ISAW Papers 22.4 (NYU)
+- Locus Ludi (University of Fribourg), *Ludus latrunculorum* rules, Seneca and Piso variants; Ulrich Schädler, "Latrunculi, a forgotten Roman game of strategy reconstructed" (2001)
+- Diego Durán, *Historia de las Indias de Nueva España* (16th century), on patolli; Wikipedia: Patolli
 - National Museum of Ireland, The Ballinderry gaming board
 - Traditional Board Games (tradgames.org.uk), Nine Men's Morris
 - Masters Traditional Games, Brandubh rules

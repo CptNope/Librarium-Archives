@@ -14,7 +14,7 @@ mindmap
       Fox and Geese · Draughts · Reversi · Halma
       Chinese checkers · Kalah · Bao · Tablut
       Mū tōrere · Kōnane · Fanorona · Morabaraba
-      Seega · Bagh-chal
+      Seega · Bagh-chal · Latrunculi
     Monte Carlo
       random playouts with RAVE
       Go · Hex
@@ -25,6 +25,7 @@ mindmap
       scored moves for dice games
       Senet · Ur · Tables · Goose
       Yut Nori · Pachisi · Ludo · Landlord's Game · Tâb
+      Hounds and Jackals · Patolli
     Every way to use the throw
       both dice tried in both orders, scored by danger and threats
       Chaturaji, three Scribes at once
@@ -114,6 +115,9 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Bagh-chal | 19–0, 1 draw | 16–4 | 20 each, sides swapped |
 | Seega | 7–2, 3 draws | 4–2, 6 draws | 12 each; many games end on the 20-move count |
 | Tâb | 85% | 61% | 400 and 600 |
+| Hounds and Jackals | 75% | 55% | 400 and 1,000; the two tracks never meet, so luck decides most games |
+| Patolli | 91% | 73% | 400 and 600 |
+| Latrunculi | 4–1, 1 draw | 3–4, 1 draw | 6 and 8 |
 | Dominoes | 61% | 62% | 400 and 600 hands |
 | Cribbage | 60% | 57% | 300 each |
 | The Landlord's Game | 67% | 52% | 600 and 1,500 |
@@ -121,7 +125,7 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Yut Nori | about 55% | | hundreds |
 | Mū tōrere | | | Sharp looks 16 moves ahead and never loses |
 
-Known weak spots: in Brandubh the visitor's side still wins most games against Sharp, and Janggi's Sharp is barely stronger than Fair in short matches. Both are on the [roadmap](roadmap.md).
+Known weak spots: in Brandubh the visitor's side still wins most games against Sharp, and the Sharp level of Janggi and Latrunculi is barely stronger than Fair in short matches. Both are on the [roadmap](roadmap.md).
 
 ## Game by game
 
@@ -143,6 +147,9 @@ Known weak spots: in Brandubh the visitor's side still wins most games against S
 | Ludo | Captures, coming out, getting home. Sharp counts how many enemy tokens could reach a square in one throw |
 | The Landlord's Game | Lot tickets, buy or rent, luxuries, the jail fine, railroad rides. Sharp buys every lot it can afford, since land pays |
 | Yut Nori, Pachisi | Progress, captures, safety, and castles in Pachisi |
+| Hounds and Jackals | Progress, reaching the goal, the "good" holes, and keeping off the holes that slide back. The two tracks never meet, so luck decides most games |
+| Latrunculi | Placing: counters next to friends and away from the corners. Moving: counters taken, threats and room to move |
+| Patolli | Bringing markers home, captures in the centre, entering, the red tips, and avoiding the dark houses. Sharp also weighs the odds of being hit on a centre house |
 | Tâb | Captures, starting pieces, raids on the home row, and the chance an enemy can land on a square with one throw. Sharp weighs every piece on the board that way after each move |
 | Seega | Placing: solid blocks that cannot be trapped. Moving: material, threats, room to move and pieces that cannot be trapped, searched with whole capture chains as one turn |
 | Bagh-chal | Goats taken, goats open to a jump, and how much room the tigers have; the same score read from either side |

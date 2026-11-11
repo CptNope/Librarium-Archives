@@ -4718,7 +4718,7 @@
   const cjHit = k => 1 - Math.pow((6 - k) / 6, 2); // chance two dice show at least one of k faces
 
   const CHATURAJI = {
-    id: 'chaturaji', name: 'Chaturaji', dice: true, pipDice: true, first: 0, ROUNDS: CJ_ROUNDS, SEATS: CJ_SEAT, NAME: CJ_NAME, VAL: CJ_VAL,
+    id: 'chaturaji', name: 'Chaturaji', dice: true, pipDice: true, first: 0, extraNote: '', ROUNDS: CJ_ROUNDS, SEATS: CJ_SEAT, NAME: CJ_NAME, VAL: CJ_VAL,
     stopLabel: 'Skip',
     rules: [
       'Four armies, each for itself. You play yellow, nearest you; Black, Red and Green are three Scribes, and play passes clockwise, to your left.',
@@ -5153,7 +5153,7 @@
   const TB_DIR = [1, -1, 1, -1];
   const TB_P = { 1: 4 / 16, 2: 6 / 16, 3: 4 / 16, 4: 1 / 16, 6: 1 / 16 }; // chances of each throw
   const TAB = {
-    id: 'tab', name: 'Tâb', dice: true, first: 0, W: 9,
+    id: 'tab', name: 'Tâb', dice: true, first: 0, W: 9, extraNote: 'A tâb, a 4 or a 6: throw again.',
     rules: [
       'You have a row of nine dark stones nearest you; the Scribe has nine pieces of red tile at the far side. Pieces travel through the rows as the arrows show: along your own row, back along the next, out along the third, and then round the two middle rows.',
       'Throw four palm sticks and count the white sides: one white is a tâb (1), two count 2, three count 3, four count 4, and none counts 6. A tâb, a 4 or a 6 earns another throw. Each throw moves one piece.',
@@ -5624,7 +5624,305 @@
     },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS };
+  /* ------------------------------------------------------ Hounds and Jackals
+     Howard Carter's reconstruction (1912) on the 58-hole board: each side
+     races five pins up its own track of 29 holes to the goal. Positions are
+     0 (not yet on the board) to 29 (the goal). */
+  const HJ_GOAL = 29, HJ_BACK = { 20: 6, 10: 8 }, HJ_AGAIN = [15, 25];
+  const HOUNDS = {
+    id: 'hounds', name: 'Hounds and Jackals', dice: true, first: 0, N: 5, sides: ['hounds', 'jackals'], extraNote: '',
+    rules: [
+      'This is a modern reconstruction. No ancient rules survive; the table follows the route Howard Carter proposed in 1912, when he found the set.',
+      'You have five hounds on the left track, the Scribe five jackals on the right. Each side races up its own 29 holes to the goal at the top.',
+      'Throw four sticks and count the white sides; no white side counts 5. Move one pin that many holes, entering at the bottom. Only one pin fits a hole, except the goal, and you must reach the goal exactly.',
+      'Lines join hole 6 with 20 and 8 with 10. Land on 20 and you slide back to 6; land on 10 and you slide back to 8.',
+      'Holes 15 and 25 are marked "good": landing there earns another throw.',
+      'Bring all five pins to the goal first to win.'
+    ],
+    source: 'A modern reconstruction after Howard Carter (Carnarvon and Carter, Five Years\' Explorations at Thebes, 1912), as described in "Hounds and Jackals in Modern Times" (ISAW Papers 22.4). The stick dice are our choice; Carter thought of dice or knucklebones.',
+    init() { this.pos = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]; this.over = null; },
+    roll() { const f = [0, 0, 0, 0].map(() => (Math.random() < 0.5 ? 1 : 0)); const n = f.reduce((a, b) => a + b, 0); return { faces: f, value: n || 5 }; },
+    home(pl) { return this.pos[pl].filter(p => p === HJ_GOAL).length; },
+    land(pl, to) { const b = HJ_BACK[to]; return b !== undefined && !this.pos[pl].includes(b) ? b : to; },
+    legal(pl, value) {
+      if (this.over) return [];
+      const out = [], seen = new Set();
+      this.pos[pl].forEach((p, k) => {
+        if (p === HJ_GOAL || seen.has(p)) return; // pins waiting off the board are all alike
+        const to = p + value;
+        if (to > HJ_GOAL || (to < HJ_GOAL && this.pos[pl].includes(to))) return;
+        seen.add(p);
+        out.push({ pl, k, from: p, to, end: to === HJ_GOAL ? to : this.land(pl, to) });
+      });
+      return out;
+    },
+    steps(m) { const s = []; for (let h = m.from + 1; h <= m.to; h++) s.push(h); if (m.end !== m.to) s.push(m.end); return s; },
+    apply(m) {
+      const me = m.pl === 0, res = { note: '' };
+      this.pos[m.pl][m.k] = m.end;
+      if (m.end !== m.to) res.note = `${me ? 'Your' : 'The Scribe\'s'} pin lands on ${m.to} and slides back down the line to ${m.end}.`;
+      else if (HJ_AGAIN.includes(m.end)) res.note = `${me ? 'You land' : 'The Scribe lands'} on a "good" hole and ${me ? 'throw' : 'throws'} again.`;
+      else if (m.end === HJ_GOAL) res.note = `${me ? 'Your pin reaches' : 'A jackal reaches'} the goal (${this.home(m.pl)} of 5 home).`;
+      if (this.home(m.pl) === this.N) this.over = { winner: m.pl, text: me ? 'All five of your hounds are home.' : 'All five jackals reached the goal first.' };
+      return res;
+    },
+    extra(m) { return !!m && !this.over && m.end === m.to && HJ_AGAIN.includes(m.end); },
+    done() { return !!this.over; },
+    final() { return this.over; },
+    result() { return this.over; },
+    aiPlan(pl, moves) {
+      if (!moves.length) return [];
+      if (LEVEL.name === 'gentle' && Math.random() < 0.5) return [moves[(Math.random() * moves.length) | 0]];
+      let best = moves[0], bv = -Infinity;
+      for (const m of moves) {
+        let v = m.end - m.from;
+        if (m.end === HJ_GOAL) v += 6;
+        if (HJ_AGAIN.includes(m.end) && m.end === m.to) v += 5;
+        if (LEVEL.name === 'sharp') { // look one throw ahead: how much the best move after this one is worth, on average
+          const save = this.pos[pl][m.k]; this.pos[pl][m.k] = m.end;
+          let ev = 0;
+          for (const [t, p] of [[1, 4 / 16], [2, 6 / 16], [3, 4 / 16], [4, 1 / 16], [5, 1 / 16]]) {
+            let b2 = 0;
+            for (const n of this.legal(pl, t)) b2 = Math.max(b2, n.end - n.from + (n.end === HJ_GOAL ? 6 : 0) + (HJ_AGAIN.includes(n.end) && n.end === n.to ? 5 : 0));
+            ev += p * b2;
+          }
+          this.pos[pl][m.k] = save;
+          v += 0.8 * ev;
+        }
+        v += Math.random() * pick(2, 0.3, 0.05);
+        if (v > bv) { bv = v; best = m; }
+      }
+      return [best];
+    },
+  };
+
+  /* -------------------------------------------------------- Ludus latrunculorum
+     Locus Ludi's "Piso" reconstruction: an 8 x 8 board, twenty counters each,
+     placed one at a time, then moved one step. Cells are y * 8 + x. */
+  const LT_N = 8, LT_PIECES = 20, LT_QUIET = 60;
+  const LT_D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const LT_CORNER = { 0: [1, 8], 7: [6, 15], 56: [48, 57], 63: [55, 62] };
+  const LATRUNCULI = {
+    id: 'latrunculi', name: 'Ludus Latrunculorum', dice: false, first: 0,
+    rules: [
+      'This is a modern reconstruction. Roman writers describe the board and the trapping of counters, but not the full rules; the table follows the "Piso" rules of the Locus Ludi project at the University of Fribourg.',
+      'You have twenty blue glass counters and the Scribe twenty white. Take turns placing them one at a time on any empty square, you first. Nothing is captured while placing.',
+      'Then move one counter one square up, down or sideways onto an empty square. A counter may not step straight back to the square it just left.',
+      'Trap an enemy counter between the counter you move and another of yours, along a row or column, and it is taken. A counter in a corner is trapped by counters on the two squares beside it. One move can take several. You may move between two enemy counters safely.',
+      'The game ends when a player is down to one counter or cannot move. Whoever has taken more counters wins. If 30 moves each go by with no capture, the game ends there.'
+    ],
+    source: 'A modern reconstruction: the "Piso" rules of Locus Ludi (University of Fribourg), drawn from Varro, Ovid, Martial and the Laus Pisonis, and from boards found across the Roman world. The 30-move limit is ours.',
+    init() { this.b = new Int8Array(64); this.placed = [0, 0]; this.last = [null, null]; this.quiet = 0; this.taken = [0, 0]; this.over = null; },
+    placing() { return this.placed[0] + this.placed[1] < 2 * LT_PIECES; },
+    count(pl) { let n = 0; for (const v of this.b) if (v === pl + 1) n++; return n; },
+    caps(pl, from, to) {
+      const me = pl + 1, foe = 2 - pl, x = to & 7, y = to >> 3, out = [];
+      const mine = j => j !== from && (j === to || this.b[j] === me);
+      for (const [dx, dy] of LT_D4) {
+        const ax = x + dx, ay = y + dy; if (ax < 0 || ax > 7 || ay < 0 || ay > 7) continue;
+        const a = ay * 8 + ax; if (this.b[a] !== foe) continue;
+        const corner = LT_CORNER[a];
+        if (corner) { if (corner.every(mine)) out.push(a); continue; }
+        const bx = x + 2 * dx, by = y + 2 * dy; if (bx < 0 || bx > 7 || by < 0 || by > 7) continue;
+        if (mine(by * 8 + bx)) out.push(a);
+      }
+      return out;
+    },
+    steps(pl) {
+      const out = [], me = pl + 1, back = this.last[pl];
+      for (let i = 0; i < 64; i++) {
+        if (this.b[i] !== me) continue;
+        const x = i & 7, y = i >> 3;
+        for (const [dx, dy] of LT_D4) {
+          const nx = x + dx, ny = y + dy; if (nx < 0 || nx > 7 || ny < 0 || ny > 7) continue;
+          const j = ny * 8 + nx; if (this.b[j]) continue;
+          if (back && back[0] === j && back[1] === i) continue; // no stepping straight back
+          out.push({ pl, from: i, to: j, cap: this.caps(pl, i, j).length });
+        }
+      }
+      return out;
+    },
+    legal(pl) {
+      if (this.over) return [];
+      if (this.placing()) { const out = []; for (let i = 0; i < 64; i++) if (!this.b[i]) out.push({ pl, place: i }); return out; }
+      return this.steps(pl);
+    },
+    apply(m) {
+      const pl = m.pl, me = pl === 0, res = { note: '', taken: [] };
+      if (m.place !== undefined) {
+        this.b[m.place] = pl + 1; this.placed[pl]++;
+        if (!this.placing()) res.note = 'Every counter is placed. Now the counters move.';
+        return res;
+      }
+      const t = this.caps(pl, m.from, m.to);
+      this.b[m.to] = this.b[m.from]; this.b[m.from] = 0; this.last[pl] = [m.from, m.to];
+      for (const j of t) this.b[j] = 0;
+      this.taken[pl] += t.length; this.quiet = t.length ? 0 : this.quiet + 1;
+      res.taken = t; res.caps = t;
+      if (t.length) res.note = `${me ? 'You trap' : 'The Scribe traps'} ${t.length === 1 ? 'a counter' : t.length + ' counters'}.`;
+      this.endCheck(1 - pl);
+      return res;
+    },
+    endCheck(next) {
+      const a = this.count(0), c = this.count(1), why = a <= 1 || c <= 1 ? 'down' : this.quiet >= LT_QUIET ? 'quiet' : !this.steps(next).length ? 'stuck' : '';
+      if (!why) return;
+      const t0 = this.taken[0], t1 = this.taken[1];
+      const lead = why === 'down' ? (a <= 1 ? 'You are down to one counter.' : 'The Scribe is down to one counter.') : why === 'quiet' ? 'Thirty moves each without a capture.' : next === 0 ? 'You have no move left.' : 'The Scribe has no move left.';
+      this.over = { winner: t0 > t1 ? 0 : t1 > t0 ? 1 : -1, text: `${lead} You took ${t0} counters, the Scribe ${t1}.` };
+    },
+    result() { return this.over; },
+    snapshot() { return [this.b.slice(), this.placed.slice(), this.last.map(x => x && x.slice()), this.quiet, this.taken.slice(), this.over]; },
+    restore(s) { this.b = s[0].slice(); this.placed = s[1].slice(); this.last = s[2].map(x => x && x.slice()); this.quiet = s[3]; this.taken = s[4].slice(); this.over = s[5]; },
+    turns(pl) { return this.legal(pl).sort((a, b) => (b.cap || 0) - (a.cap || 0)).map(m => [m]); },
+    terminal(pl, depth) { const r = this.over; if (!r) return null; return r.winner === -1 ? 0 : r.winner === pl ? 1000 + depth : -1000 - depth; },
+    evaluate(pl) {
+      const opp = 1 - pl, sp = this.steps(pl), so = this.steps(opp);
+      let e = (this.taken[pl] - this.taken[opp]) * 10;
+      e += (sp.filter(m => m.cap).length - so.filter(m => m.cap).length) * 2 + (sp.length - so.length) * 0.15;
+      return e;
+    },
+    // Placing: keep counters in touch with friends, but in contact with the enemy and near the middle, where the fighting is.
+    placeScore(pl, i) {
+      const x = i & 7, y = i >> 3; let s = -0.12 * (Math.abs(x - 3.5) + Math.abs(y - 3.5));
+      for (const [dx, dy] of LT_D4) {
+        const nx = x + dx, ny = y + dy; if (nx < 0 || nx > 7 || ny < 0 || ny > 7) continue;
+        const v = this.b[ny * 8 + nx];
+        if (v === pl + 1) s += 0.6;
+        else if (v) { s += 0.5; const bx = x + 2 * dx, by = y + 2 * dy; if (bx >= 0 && bx < 8 && by >= 0 && by < 8 && !this.b[by * 8 + bx]) s += 0.4; } // an enemy that could be trapped from beyond
+      }
+      if (LT_CORNER[i]) s -= 1.5;
+      return s;
+    },
+    aiPlan(pl, depth) {
+      if (this.placing()) {
+        let best = null, bv = -Infinity; const noise = pick(4, 0.8, 0.2);
+        for (const m of this.legal(pl)) { const v = this.placeScore(pl, m.place) + Math.random() * noise; if (v > bv) { bv = v; best = m; } }
+        return [best];
+      }
+      return bestPlan(this, pl, depth, 4);
+    },
+  };
+
+  /* ---------------------------------------------------------------- Patolli
+     A common modern reconstruction from Diego Durán's account: 52 houses in
+     an X, six markers a side, five beans, and treasures staked. Houses are
+     numbered round the circuit from the visitor's start; the Scribe starts
+     opposite, at 26. Every 13th house (0, 13, 26, 39) is one of the four
+     centre houses; within each arm, houses 6 and 7 are the tips and 4 and 9
+     the dark houses. */
+  const PT_N = 52, PT_MARKERS = 6, PT_TREASURE = 6, PT_LIMIT = 300;
+  const PT_KIND = h => { const a = h % 13; return a === 0 ? 'centre' : a === 6 || a === 7 ? 'tip' : a === 4 || a === 9 ? 'dark' : ''; };
+  const PATOLLI = {
+    id: 'patolli', name: 'Patolli', dice: true, first: 0, START: [0, 26], KIND: PT_KIND, extraNote: '',
+    rules: [
+      'This is a modern reconstruction. Spanish writers such as Diego Durán describe the mat, the beans, the six markers and the stakes, but not every rule; the table follows the reconstruction most often given today.',
+      'You have six red markers and six treasures; the Scribe has six blue markers and six treasures. Throw five beans and count the marked sides: 1 to 4 move that many houses, all five move 10, and none means you pay a treasure as an offering to the god Macuilxochitl.',
+      'A throw of 1 may put a new marker on your starting house, in the centre. Markers run clockwise round all 52 houses and leave the mat on reaching the last house by an exact throw.',
+      'A marker may not land on an occupied house, except in the four centre houses: land on an enemy marker there and it goes back to its owner, who pays you a treasure.',
+      'Landing on one of the dark houses costs you a treasure, paid to the other player. Landing on a red tip at the end of an arm earns another throw. Each marker that completes the circuit earns a treasure from the other player.',
+      'When one player has brought all six markers round, that player also takes the offerings and a last treasure, and whoever holds more treasures wins. A player who cannot pay loses at once.'
+    ],
+    source: 'A modern reconstruction, following the rules most often given today from Diego Durán\'s 16th-century account and the Aztec codices. Treasure paid for a completed circuit, the 150-throw limit and deciding the game on treasure after one round are our choices.',
+    init() { this.pos = [Array(PT_MARKERS).fill(-1), Array(PT_MARKERS).fill(-1)]; this.treasure = [PT_TREASURE, PT_TREASURE]; this.pot = 0; this.throws = 0; this.over = null; },
+    roll() { const f = [0, 0, 0, 0, 0].map(() => (Math.random() < 0.5 ? 1 : 0)); const n = f.reduce((a, b) => a + b, 0); return { faces: f, value: n === 5 ? 10 : n }; },
+    rollName(r) { const n = r.faces.reduce((a, b) => a + b, 0); return n === 0 ? 'no marked beans' : n === 5 ? 'all five marked: 10' : `${n}`; },
+    house(pl, rel) { return (this.START[pl] + rel) % PT_N; },
+    at(h) { for (const pl of [0, 1]) for (let k = 0; k < PT_MARKERS; k++) { const r = this.pos[pl][k]; if (r >= 0 && r < PT_N - 1 && this.house(pl, r) === h) return [pl, k]; } return null; },
+    home(pl) { return this.pos[pl].filter(r => r >= PT_N - 1).length; },
+    legal(pl, value) {
+      if (this.over) return [];
+      if (value === 0) return [{ pl, offering: true, label: 'Pay the offering' }];
+      const out = []; let entered = false;
+      this.pos[pl].forEach((r, k) => {
+        let to;
+        if (r < 0) { if (value !== 1 || entered) return; to = 0; }
+        else if (r >= PT_N - 1) return;
+        else { to = r + value; if (to > PT_N - 1) return; }
+        const h = this.house(pl, to), o = to === PT_N - 1 ? null : this.at(h);
+        if (o && (o[0] === pl || PT_KIND(h) !== 'centre')) return;
+        if (r < 0) entered = true;
+        out.push({ pl, k, from: r, to, house: h, cap: o ? 1 : 0, enter: r < 0, off: to === PT_N - 1 });
+      });
+      return out;
+    },
+    steps(m) { const s = []; for (let r = Math.max(0, m.from + 1); r <= m.to; r++) s.push(this.house(m.pl, r)); if (m.enter) s.splice(0, s.length, this.house(m.pl, 0)); return s; },
+    pay(from, to, words) {
+      if (this.treasure[from] <= 0) { this.over = { winner: 1 - from, text: from === 0 ? 'You have no treasure left to pay with, and lose the game.' : 'The Scribe has no treasure left to pay with: you win.' }; return false; }
+      this.treasure[from]--; if (to === 'pot') this.pot++; else this.treasure[to]++;
+      return true;
+    },
+    apply(m) {
+      const pl = m.pl, me = pl === 0, opp = 1 - pl, notes = [], res = { note: '' };
+      this.throws++;
+      this.again = false;
+      if (m.offering) {
+        this.pay(pl, 'pot');
+        res.note = me ? 'No marked beans: you pay a treasure as an offering.' : 'The Scribe threw no marked beans and pays an offering.';
+        return this.finishCheck(res);
+      }
+      if (m.cap) {
+        const o = this.at(m.house); this.pos[o[0]][o[1]] = -1;
+        notes.push(me ? 'You land on the Scribe\'s marker in the centre and send it back.' : 'The Scribe sends your marker back from the centre.');
+        if (!this.pay(opp, pl)) return this.finishCheck(Object.assign(res, { note: notes.join(' '), sent: o }));
+        res.sent = o;
+      }
+      this.pos[pl][m.k] = m.to;
+      const kind = m.off ? '' : PT_KIND(m.house);
+      if (m.off) { notes.push(me ? 'Your marker completes the circuit and leaves the mat; the Scribe pays you a treasure.' : 'A Scribe marker completes the circuit; you pay a treasure.'); this.pay(opp, pl); }
+      else if (kind === 'dark') { notes.push(me ? 'A dark house: you pay the Scribe a treasure.' : 'The Scribe lands on a dark house and pays you a treasure.'); this.pay(pl, opp); }
+      else if (kind === 'tip') notes.push(me ? 'The tip of an arm: throw again.' : 'The Scribe reaches the tip of an arm and throws again.');
+      else if (m.enter) notes.push(me ? 'A marker enters the mat.' : '');
+      res.note = notes.filter(Boolean).join(' ');
+      this.again = kind === 'tip';
+      return this.finishCheck(res);
+    },
+    finishCheck(res) {
+      if (!this.over) {
+        const done = [0, 1].find(p => this.home(p) === PT_MARKERS);
+        if (done !== undefined || this.throws >= PT_LIMIT) {
+          if (done !== undefined) { this.treasure[done] += this.pot; this.pot = 0; if (this.treasure[1 - done] > 0) { this.treasure[1 - done]--; this.treasure[done]++; } }
+          const [a, c] = this.treasure, line = `You hold ${a} treasures, the Scribe ${c}.`;
+          const lead = done === 0 ? 'All six of your markers are home, and the offerings are yours.' : done === 1 ? 'The Scribe has brought all six markers home and takes the offerings.' : 'After 150 throws each the game stops.';
+          const w = a > c ? 0 : c > a ? 1 : done !== undefined ? done : -1;
+          this.over = { winner: w, text: `${lead} ${line}` };
+        }
+      }
+      return res;
+    },
+    extra(m) { return !!m && !m.offering && !this.over && !!this.again; },
+    done() { return !!this.over; },
+    final() { return this.over; },
+    result() { return this.over; },
+    // Chance the other side can land on a centre house h with its next throw (only there can markers be hit).
+    danger(pl, h) {
+      const opp = 1 - pl, P = { 1: 5 / 32, 2: 10 / 32, 3: 10 / 32, 4: 5 / 32, 10: 1 / 32 };
+      let p = 0;
+      for (const v of [1, 2, 3, 4, 10]) if (this.pos[opp].some((r, k) => (r < 0 ? v === 1 && this.house(opp, 0) === h : r < PT_N - 1 && r + v < PT_N - 1 && this.house(opp, r + v) === h))) p += P[v];
+      return p;
+    },
+    aiPlan(pl, moves) {
+      if (!moves.length) return [];
+      if (moves[0].offering) return [moves[0]];
+      if (LEVEL.name === 'gentle' && Math.random() < 0.45) return [moves[(Math.random() * moves.length) | 0]];
+      let best = moves[0], bv = -Infinity;
+      for (const m of moves) {
+        const kind = m.off ? '' : PT_KIND(m.house);
+        let v = (m.to - Math.max(0, m.from)) * 0.15;
+        if (m.off) v += 8; if (m.cap) v += 7; if (m.enter) v += 4;
+        if (kind === 'tip') v += 3; if (kind === 'dark') v -= 4;
+        if (LEVEL.name === 'sharp') {
+          if (kind === 'centre' && !m.off) v -= this.danger(pl, m.house) * 9;
+          const was = m.from >= 0 ? this.house(pl, m.from) : -1;
+          if (was >= 0 && PT_KIND(was) === 'centre') v += this.danger(pl, was) * 6;
+        }
+        v += Math.random() * pick(2, 0.3, 0.05);
+        if (v > bv) { bv = v; best = m; }
+      }
+      return [best];
+    },
+  };
+
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);
