@@ -6131,7 +6131,435 @@
     },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME };
+  /* ------------------------------------------------------------- Chaturanga
+   * A modern reconstruction: shatranj's rules under the Sanskrit names, as
+   * H. J. R. Murray reconstructed the game. */
+  const CR_NAMES = ['', 'raja', 'mantri', 'gaja', 'ashva', 'ratha', 'padati'];
+  const CHATURANGA = Object.assign({}, SHATRANJ, {
+    id: 'chaturanga', name: 'Chaturanga',
+    rules: [
+      'This is a modern reconstruction. No rules survive from chaturanga\'s own time, so we play it as H. J. R. Murray did: with the rules of its Persian successor, shatranj.',
+      'The raja (king) moves one square in any direction. The ratha (chariot) moves like a rook and the ashva (horse) like a knight.',
+      'The mantri (counsellor) steps one square diagonally. The gaja (elephant) jumps exactly two squares diagonally, over anything in between. Its true move is unknown; this is the shatranj alfil\'s.',
+      'The padati (foot soldier) steps one square forward and takes one square diagonally forward, never two at once. On the far rank it becomes a mantri.',
+      'You win by checkmate, by stalemating the Scribe, or by capturing everything but its raja, unless it can strip yours bare on the very next move. There is no castling, and a long stretch with no capture or padati move is a draw.'
+    ],
+    source: 'A modern reconstruction after H. J. R. Murray, A History of Chess (1913), which takes chaturanga\'s moves from shatranj. Other reconstructions move the gaja differently.',
+    pieceName(v) { return CR_NAMES[this.type(v)]; },
+    apply(m) {
+      const res = SHATRANJ.apply.call(this, m);
+      res.note = res.note.replace('The baidaq becomes a firzan.', 'The padati becomes a mantri.').replace('Shah! ', 'Check! ').replace(/king/g, 'raja');
+      return res;
+    },
+    result(pl) {
+      const res = SHATRANJ.result.call(this, pl);
+      if (res) res.text = res.text.replace('Shah mat. ', 'Checkmate. ').replace('in shatranj', 'by these rules').replace(/kings/g, 'rajas').replace(/king/g, 'raja');
+      return res;
+    },
+  });
+
+  /* ----------------------------------------------------------------- Whist
+   * Four seats round the table, clockwise: 0 you (South), 1 West, 2 North, your
+   * partner, 3 East. Cards use the cribbage numbering, suit * 13 + rank with
+   * rank 0 the ace; wsPow ranks them for play, ace high. Seats 0 and 2 are
+   * side 0, seats 1 and 3 side 1. */
+  const WS_SEAT = ['You', 'West', 'North', 'East'];
+  const WS_SIDE = ['You and North', 'West and East'];
+  const WS_SUIT = ['spades', 'hearts', 'diamonds', 'clubs'];
+  const WS_RANK = ['ace', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'jack', 'queen', 'king'];
+  const wsSuit = c => (c / 13) | 0, wsPow = c => (c % 13 + 12) % 13;
+  const wsName = c => `${WS_RANK[c % 13]} of ${WS_SUIT[wsSuit(c)]}`;
+  const wsCard = (suit, pow) => suit * 13 + (pow + 1) % 13;
+  const WHIST = {
+    id: 'whist', name: 'Whist', dice: false, first: 0, target: 5,
+    SEATS: WS_SEAT, SIDES: WS_SIDE, SUITS: WS_SUIT, suit: wsSuit, pow: wsPow, cardName: wsName,
+    rules: [
+      'You sit South. North, opposite you, is your partner, played by the Scribe; West and East, also the Scribe, play against you both. Play goes clockwise.',
+      'Each of you holds thirteen cards. The dealer\'s last card is turned face up, and its suit is trumps for the deal. The player on the dealer\'s left leads to the first trick.',
+      'Follow suit if you can; if you cannot, play any card, a trump or not. The highest trump wins the trick, or with no trump in it, the highest card of the suit led, aces high. The winner leads to the next trick.',
+      'After thirteen tricks, the side that took more scores a point for every trick over six. Then honours: a side that held the ace, king, queen and jack of trumps between them scores 4, and a side that held three of the four scores 2. A side that began the deal on 4 cannot score honours.',
+      'Tricks score before honours. The first side to 5 points wins the game.'
+    ],
+    source: 'Short whist, the 5-point game that replaced long whist in Britain, as described by John McLeod at pagat.com. We play a single game rather than a rubber of three.',
+    init(deck) { this.score = [0, 0]; this.over = null; this.dealer = 3; this.hand = 0; this.seat = 0; this.notes = []; this.deal(deck); },
+    deal(deck) {
+      if (!deck) { deck = Array.from({ length: 52 }, (_, i) => i); for (let i = 51; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [deck[i], deck[j]] = [deck[j], deck[i]]; } }
+      // Dealt one at a time from the dealer's left, so the 52nd card, the dealer's last, is turned for trumps.
+      this.hands = [[], [], [], []];
+      deck.forEach((c, k) => this.hands[(this.dealer + 1 + k) % 4].push(c));
+      this.hands.forEach(h => h.sort((a, b) => wsSuit(a) - wsSuit(b) || wsPow(a) - wsPow(b)));
+      this.turnUp = deck[51]; this.trump = wsSuit(this.turnUp); this.upShown = true;
+      this.trick = []; this.tricks = [0, 0]; this.played = []; this.lastTrick = null;
+      this.void = [0, 1, 2, 3].map(() => [false, false, false, false]);
+      this.need = 'play'; this.toMove = (this.dealer + 1) % 4; this.seat = this.toMove;
+      this.start = this.score.slice(); this.hand++;
+      this.honours = [0, 0];
+      this.hands.forEach((h, s) => h.forEach(c => { if (wsSuit(c) === this.trump && wsPow(c) >= 9) this.honours[s & 1]++; }));
+    },
+    who(s) { return s === 0 ? 'You' : WS_SEAT[s]; },
+    ledSuit() { return this.trick.length ? wsSuit(this.trick[0].card) : -1; },
+    legalCards(hand) {
+      const led = this.ledSuit(); if (led < 0) return hand.slice();
+      const follow = hand.filter(c => wsSuit(c) === led);
+      return follow.length ? follow : hand.slice();
+    },
+    beats(a, b) { const sa = wsSuit(a), sb = wsSuit(b); return sa === sb ? wsPow(a) > wsPow(b) : sa === this.trump; },
+    best() { let b = this.trick[0]; for (const t of this.trick) if (this.beats(t.card, b.card)) b = t; return b; },
+    legal(pl) {
+      if (this.over) return [];
+      if (this.need === 'next') return pl === 0 ? [{ pl, kind: 'next', label: 'Next deal' }] : [];
+      const s = this.toMove; if ((s === 0) !== (pl === 0)) return [];
+      return this.legalCards(this.hands[s]).map(card => ({ pl, seat: s, kind: 'play', card }));
+    },
+    apply(m) {
+      if (m.kind === 'next') {
+        this.dealer = (this.dealer + 1) % 4; this.deal();
+        const d = this.dealer;
+        return { note: `${this.who(d)} ${d ? 'deals' : 'deal'}, and the ${wsName(this.turnUp)} is turned: ${WS_SUIT[this.trump]} are trumps.`, events: [{ type: 'deal' }] };
+      }
+      const s = m.seat, hand = this.hands[s], led = this.ledSuit(), events = [{ type: 'play', seat: s, card: m.card }];
+      hand.splice(hand.indexOf(m.card), 1);
+      if (led >= 0 && wsSuit(m.card) !== led) this.void[s][led] = true;
+      if (s === this.dealer) this.upShown = false; // the turned card joins the dealer's hand once the dealer plays
+      this.trick.push({ seat: s, card: m.card }); this.played.push(m.card);
+      if (this.trick.length < 4) { this.toMove = (s + 1) % 4; return { note: '', events }; }
+      const w = this.best().seat;
+      this.tricks[w & 1]++; this.lastTrick = { cards: this.trick.map(t => t.card), winner: w };
+      this.trick = []; this.toMove = w;
+      events.push({ type: 'trick', winner: w });
+      const notes = [`${this.who(w)} ${w ? 'takes' : 'take'} the trick.`];
+      if (this.hands.every(h => !h.length)) this.endHand(notes);
+      return { note: notes.join(' '), events };
+    },
+    endHand(notes) {
+      const side = this.tricks[0] > 6 ? 0 : 1, odd = this.tricks[side] - 6;
+      notes.push(`${WS_SIDE[side]} took ${this.tricks[side]} tricks: ${odd} point${odd > 1 ? 's' : ''}.`);
+      this.score[side] += odd;
+      if (this.score[side] >= this.target) this.win(side);
+      else for (const t of [0, 1]) {
+        const h = this.honours[t], pts = h === 4 ? 4 : h === 3 ? 2 : 0;
+        if (!pts) continue;
+        if (this.start[t] >= 4) { notes.push(`${WS_SIDE[t]} held ${h === 4 ? 'all four' : 'three'} honours, but a side at four cannot score them.`); continue; }
+        this.score[t] += pts; notes.push(`${WS_SIDE[t]} held ${h === 4 ? 'all four' : 'three'} honours: ${pts} points.`);
+        if (this.score[t] >= this.target) { this.win(t); break; }
+      }
+      this.notes = notes.slice();
+      if (!this.over) { this.need = 'next'; this.toMove = 0; }
+    },
+    win(t) {
+      const deals = `${this.hand} deal${this.hand > 1 ? 's' : ''}`;
+      this.over = { winner: t, title: t ? 'West and East win' : 'You and North win', text: `The game ends ${this.score[0]} to ${this.score[1]}, after ${deals}.` };
+    },
+    passTurn() { if (this.over) return 0; this.seat = this.toMove; return this.seat === 0 ? 0 : 1; },
+    get scribeName() { return this.seat === 2 ? 'North, your partner' : WS_SEAT[this.seat]; },
+    ended() { return !!this.over; },
+    final() { return this.over; },
+    result() { return this.over || null; },
+    snapshot() { return JSON.stringify([this.hands, this.trick, this.toMove, this.tricks, this.played, this.void, this.need, this.score, this.over, this.upShown, this.lastTrick, this.seat, this.notes]); },
+    restore(x) { [this.hands, this.trick, this.toMove, this.tricks, this.played, this.void, this.need, this.score, this.over, this.upShown, this.lastTrick, this.seat, this.notes] = JSON.parse(x); },
+    // A sound card for seat s: cash winners, draw trumps when long in them, let partner ruff,
+    // second hand low, third hand high, and win as cheaply as possible when an opponent leads the trick.
+    heuristic(s) {
+      const hand = this.hands[s], ms = this.legalCards(hand), T = this.trump, partner = (s + 2) % 4;
+      if (ms.length === 1) return ms[0];
+      const gone = new Set(this.played.concat(hand));
+      const master = c => { for (let p = wsPow(c) + 1; p < 13; p++) if (!gone.has(wsCard(wsSuit(c), p))) return false; return true; };
+      const low = a => a.reduce((x, y) => (wsPow(y) < wsPow(x) ? y : x));
+      const high = a => a.reduce((x, y) => (wsPow(y) > wsPow(x) ? y : x));
+      const of = k => hand.filter(c => wsSuit(c) === k);
+      let trumpsAbroad = 0; for (let p = 0; p < 13; p++) if (!gone.has(wsCard(T, p))) trumpsAbroad++;
+      const oppVoid = k => this.void[(s + 1) % 4][k] || this.void[(s + 3) % 4][k];
+      if (!this.trick.length) {
+        const cash = ms.filter(c => wsSuit(c) !== T && master(c) && !(oppVoid(wsSuit(c)) && trumpsAbroad));
+        if (cash.length) return cash[0];
+        const tr = of(T);
+        if (tr.length >= 5 && trumpsAbroad) return master(high(tr)) ? high(tr) : low(tr);
+        for (let k = 0; k < 4; k++) if (k !== T && of(k).length && this.void[partner][k] && !this.void[partner][T] && trumpsAbroad && !oppVoid(k)) return low(of(k));
+        let best = -1; for (let k = 0; k < 4; k++) if (k !== T && of(k).length && (best < 0 || of(k).length > of(best).length)) best = k;
+        if (best < 0) return master(high(tr)) ? high(tr) : low(tr);
+        return low(of(best));
+      }
+      const led = this.ledSuit(), win = this.best(), following = wsSuit(ms[0]) === led && hand.some(c => wsSuit(c) === led);
+      const winners = ms.filter(c => this.beats(c, win.card)), pos = this.trick.length; // pos: 1 second hand, 2 third, 3 fourth
+      const discard = () => {
+        const plain = ms.filter(c => wsSuit(c) !== T), pool = plain.length ? plain : ms, spare = pool.filter(c => !master(c));
+        return low(spare.length ? spare : pool);
+      };
+      const duck = () => (following ? low(ms) : discard());
+      if (win.seat === partner) {
+        if (pos === 3 || master(win.card) || wsSuit(win.card) === T) return duck();
+        const top = winners.filter(master); // third hand: overtake partner only with a sure winner
+        return following && top.length ? low(top) : duck();
+      }
+      if (!winners.length) return duck();
+      if (pos === 1) {
+        if (!following) return low(winners); // ruff in second seat
+        const top = winners.filter(master);
+        return top.length ? low(top) : duck();
+      }
+      if (pos === 2 && following) { const top = winners.filter(master); return top.length ? low(top) : high(winners); }
+      return low(winners);
+    },
+    aiPlan() {
+      const s = this.toMove, ms = this.legalCards(this.hands[s]);
+      const card = Math.random() < pick(0.45, 0.15, 0) ? ms[(Math.random() * ms.length) | 0] : this.heuristic(s); // the gentler Scribes play some cards carelessly
+      return [{ pl: 1, seat: s, kind: 'play', card }];
+    },
+  };
+
+  /* ---------------------------------------------------------- Rithmomachia
+   * An 8 x 16 board: square i = r * 8 + c, with row 0 the visitor's back row.
+   * A piece is { pl, shape, v }: shape 'c' round, 't' triangle, 's' square, 'p' pyramid.
+   * The opening array is Boissière's (1556), as set out by Richards and Joyner. */
+  const RM_STEP = { c: [1], t: [2], s: [3], p: [1, 2, 3] };
+  const RM_WIN = 5;
+  const RM_HOME = [ // [row, col, shape, value] for the Evens; the Odds' rows are listed from their own back row
+    [0, 0, 's', 289], [0, 1, 's', 169], [0, 6, 's', 81], [0, 7, 's', 25],
+    [1, 0, 's', 153], [1, 1, 'p', 91], [1, 2, 't', 49], [1, 3, 't', 42], [1, 4, 't', 20], [1, 5, 't', 25], [1, 6, 's', 45], [1, 7, 's', 15],
+    [2, 0, 't', 81], [2, 1, 't', 72], [2, 2, 'c', 64], [2, 3, 'c', 36], [2, 4, 'c', 16], [2, 5, 'c', 4], [2, 6, 't', 6], [2, 7, 't', 9],
+    [3, 2, 'c', 8], [3, 3, 'c', 6], [3, 4, 'c', 4], [3, 5, 'c', 2]
+  ];
+  const RM_ODDS = [
+    [15, 0, 's', 361], [15, 1, 's', 225], [15, 6, 's', 121], [15, 7, 's', 49],
+    [14, 0, 'p', 190], [14, 1, 's', 120], [14, 2, 't', 64], [14, 3, 't', 56], [14, 4, 't', 30], [14, 5, 't', 36], [14, 6, 's', 66], [14, 7, 's', 28],
+    [13, 0, 't', 100], [13, 1, 't', 90], [13, 2, 'c', 81], [13, 3, 'c', 49], [13, 4, 'c', 25], [13, 5, 'c', 9], [13, 6, 't', 12], [13, 7, 't', 16],
+    [12, 2, 'c', 9], [12, 3, 'c', 7], [12, 4, 'c', 5], [12, 5, 'c', 3]
+  ];
+  const RM_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const RM_SHAPE = { c: 'round', t: 'triangle', s: 'square', p: 'pyramid' };
+  const RITHMO = {
+    id: 'rithmo', name: 'Rithmomachia', dice: false, first: 0, WIN: RM_WIN, SHAPE: RM_SHAPE,
+    rules: [
+      'This is a modern reconstruction: the medieval rules were never fixed. You play the Evens, the white pieces, and move first. Every piece carries a number.',
+      'Pieces move straight along a row or a column, never diagonally and never over another piece. Rounds move exactly one square, triangles exactly two and squares exactly three. The pyramid may move one, two or three.',
+      'Meeting: move onto an enemy piece of exactly your piece\'s value to take it.',
+      'After your move, any enemy piece caught in these ways is taken as well. Assault: one of your pieces, times the number of empty squares between it and the enemy along a row or column, makes the enemy\'s value. Ambuscade: two of your pieces on either side of it, in a row or column, add up to its value. Siege: your pieces or the board\'s edge close it in on all four sides.',
+      `The pyramid counts as one piece of its full value: 91 for the Evens, 190 for the Odds. Take the Scribe\'s pyramid, or any ${RM_WIN} of its pieces, to win: victory by bodies, de corpore. A side with no move loses, and after 150 moves each, whoever has taken more wins.`
+    ],
+    source: 'A modern reconstruction. The array and the moves follow Claude de Boissière\'s book of 1556, as set out by J. F. C. Richards and Jeff Joyner; the four captures are the classic meeting, assault, ambuscade and siege. Pyramids are taken only whole.',
+    init() {
+      const b = Array(128).fill(null);
+      for (const [r, c, shape, v] of RM_HOME) b[r * 8 + c] = { pl: 0, shape, v };
+      for (const [r, c, shape, v] of RM_ODDS) b[r * 8 + c] = { pl: 1, shape, v };
+      this.b = b; this.taken = [0, 0]; this.ply = 0; this.over = null;
+    },
+    on: (r, c) => r >= 0 && r < 16 && c >= 0 && c < 8,
+    count(pl) { let n = 0; for (const p of this.b) if (p && p.pl === pl) n++; return n; },
+    hasPyramid(pl) { return this.b.some(p => p && p.pl === pl && p.shape === 'p'); },
+    legal(pl) {
+      if (this.over) return [];
+      const b = this.b, out = [];
+      for (let i = 0; i < 128; i++) {
+        const p = b[i]; if (!p || p.pl !== pl) continue;
+        const r = i >> 3, c = i & 7;
+        for (const [dr, dc] of RM_DIRS) {
+          for (let d = 1; d <= 3; d++) {
+            const rr = r + dr * d, cc = c + dc * d; if (!this.on(rr, cc)) break;
+            const j = rr * 8 + cc, q = b[j];
+            if (RM_STEP[p.shape].includes(d)) {
+              if (!q) out.push({ pl, from: i, to: j });
+              else if (q.pl !== pl && q.v === p.v) out.push({ pl, from: i, to: j, meet: true });
+            }
+            if (q) break; // nothing leaps
+          }
+        }
+      }
+      return out;
+    },
+    // Enemy pieces that pl now catches by assault, ambuscade or siege.
+    caught(pl) {
+      const b = this.b, out = [];
+      for (let i = 0; i < 128; i++) {
+        const e = b[i]; if (!e || e.pl === pl) continue;
+        const r = i >> 3, c = i & 7, nb = [];
+        let hit = false, closed = true;
+        for (const [dr, dc] of RM_DIRS) {
+          let k = 0, rr = r + dr, cc = c + dc;
+          const first = this.on(rr, cc) ? b[rr * 8 + cc] : undefined;
+          nb.push(first);
+          if (first === undefined) continue; // the edge closes this side
+          if (!first || first.pl !== pl) closed = false;
+          while (this.on(rr, cc) && !b[rr * 8 + cc]) { k++; rr += dr; cc += dc; }
+          if (k && this.on(rr, cc)) { const q = b[rr * 8 + cc]; if (q.pl === pl && q.v * k === e.v) hit = 'assault'; }
+        }
+        if (!hit) for (const [a, z] of [[0, 1], [2, 3]]) { const x = nb[a], y = nb[z]; if (x && y && x.pl === pl && y.pl === pl && x.v + y.v === e.v) hit = 'ambuscade'; }
+        if (!hit && closed) hit = 'siege';
+        if (hit) out.push([i, hit]);
+      }
+      return out;
+    },
+    apply(m) {
+      const b = this.b, p = b[m.from], notes = [], caps = [];
+      const name = (q, mine) => `${mine ? 'your' : 'the Scribe\'s'} ${q.shape === 'p' ? 'pyramid' : RM_SHAPE[q.shape] + ' ' + q.v}`;
+      if (m.meet) { const q = b[m.to]; caps.push(m.to); this.taken[m.pl]++; notes.push(`${m.pl ? 'The Scribe meets and takes' : 'You meet and take'} ${name(q, m.pl === 1)}.`); if (q.shape === 'p') this.pyr = true; }
+      b[m.to] = p; b[m.from] = null; this.ply++;
+      const lost = [];
+      for (const [i, how] of this.caught(m.pl)) { lost.push(name(b[i], m.pl === 1) + ` (${how})`); if (b[i].shape === 'p') this.pyr = true; b[i] = null; caps.push(i); this.taken[m.pl]++; }
+      if (lost.length) notes.push(`${m.pl ? 'The Scribe takes' : 'You take'} ${lost.join(', ')}.`);
+      const you = m.pl === 0;
+      if (this.pyr) { this.pyr = false; this.over = { winner: m.pl, text: you ? 'You have taken the Scribe\'s pyramid.' : 'The Scribe has taken your pyramid.' }; }
+      else if (this.taken[m.pl] >= RM_WIN) this.over = { winner: m.pl, text: you ? `You have taken ${RM_WIN} of the Scribe's pieces: victory by bodies, de corpore.` : `The Scribe has taken ${RM_WIN} of your pieces.` };
+      return { note: notes.join(' '), caps };
+    },
+    result(pl) {
+      if (this.over) return this.over;
+      if (!this.legal(pl).length) return { winner: 1 - pl, text: pl === 0 ? 'You have no move left, and lose.' : 'The Scribe has no move left.' };
+      if (this.ply >= 300) {
+        const [a, z] = this.taken;
+        return { winner: a > z ? 0 : z > a ? 1 : -1, text: `A hundred and fifty moves each, and the more pieces taken wins. You took ${a}, the Scribe ${z}.` };
+      }
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.taken.slice(), this.ply, this.over]; },
+    restore(s) { this.b = s[0].slice(); this.taken = s[1].slice(); this.ply = s[2]; this.over = s[3]; this.pyr = false; },
+    turns(pl) { // meetings first, then moves forward
+      const fwd = m => (pl === 0 ? 1 : -1) * ((m.to >> 3) - (m.from >> 3));
+      return this.legal(pl).sort((a, b) => (b.meet ? 10 : 0) + fwd(b) - (a.meet ? 10 : 0) - fwd(a)).map(m => [m]);
+    },
+    terminal(pl, depth) {
+      if (this.over) return this.over.winner === pl ? 1000 + depth : -1000 - depth;
+      return null;
+    },
+    evaluate(pl) {
+      let s = (this.taken[pl] - this.taken[1 - pl]) * 3;
+      for (let i = 0; i < 128; i++) { // a little credit for coming forward into contact
+        const p = this.b[i]; if (!p || p.shape === 'p') continue;
+        const adv = p.pl === 0 ? (i >> 3) : 15 - (i >> 3);
+        s += (p.pl === pl ? 1 : -1) * Math.min(adv, 8) * 0.12;
+      }
+      return s;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 3); },
+  };
+
+  /* ---------------------------------------------------------------- Jungle
+   * Dou shou qi on a 7 x 9 board. Square i = r * 7 + c, with row 0 the visitor's
+   * home row. A piece is pl * 10 + rank (1 rat ... 8 elephant). The rivers fill
+   * rows 3-5 of columns 1-2 and 4-5; each den sits mid-row with three traps. */
+  const JU_NAME = ['', 'rat', 'cat', 'dog', 'wolf', 'leopard', 'tiger', 'lion', 'elephant'];
+  const JU_VAL = [0, 4.5, 2, 3, 4, 5, 8, 9, 10];
+  const JU_DEN = [3, 59];
+  const JU_TRAP = (() => { const t = Array(63).fill(-1); for (const i of [2, 4, 10]) t[i] = 0; for (const i of [58, 60, 52]) t[i] = 1; return t; })();
+  const JU_WATER = (() => { const w = Array(63).fill(false); for (let r = 3; r <= 5; r++) for (const c of [1, 2, 4, 5]) w[r * 7 + c] = true; return w; })();
+  const JU_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const JUNGLE = {
+    id: 'jungle', name: 'Jungle', dice: false, first: 0,
+    NAME: JU_NAME, DEN: JU_DEN, TRAP: JU_TRAP, WATER: JU_WATER,
+    rules: [
+      'You play blue and move first. Each side has eight animals, strongest first: elephant, lion, tiger, leopard, wolf, dog, cat and rat.',
+      'An animal moves one square forward, back or sideways, and takes an enemy of the same rank or lower by moving onto it. The one exception runs both ways: the rat can take the elephant, and the elephant cannot take the rat.',
+      'Only the rat may swim. A rat in a river can be taken only by the other rat, also in the water, and a rat cannot take anything as it enters or leaves the water.',
+      'The lion and the tiger leap straight across a river, along a row or a column, and may take what they land on. A rat in the water on the way blocks the leap.',
+      'Three traps guard each den. An animal standing in its enemy\'s trap loses all its rank, and any enemy animal may take it.',
+      'Walk any animal into the Scribe\'s den, or take all its animals, to win. You may never enter your own den. A position repeated three times, a side left with no move, or 50 moves each without a capture, is a draw.'
+    ],
+    source: 'Dou shou qi as played in China today. Some sets let only the lion leap sideways across the rivers; here the tiger may too.',
+    init() {
+      const b = Array(63).fill(0);
+      const home = [[0, 0, 6], [0, 6, 7], [1, 1, 2], [1, 5, 3], [2, 0, 8], [2, 2, 4], [2, 4, 5], [2, 6, 1]]; // [row, col, rank], blue's side
+      for (const [r, c, k] of home) { b[r * 7 + c] = k; b[(8 - r) * 7 + (6 - c)] = 10 + k; } // red is the same, turned half round
+      this.b = b; this.ply = 0; this.quiet = 0; this.over = null;
+      this.seen = new Map(); this.trail = [];
+      this.mark(0);
+    },
+    owner: v => (v > 10 ? 1 : 0),
+    rank: v => v % 10,
+    key(pl) { return this.b.join('') + pl; },
+    mark(pl) { const k = this.key(pl); this.seen.set(k, (this.seen.get(k) || 0) + 1); this.trail.push(k); },
+    takes(pl, from, to) { // may the piece on from take what stands on to?
+      const a = this.rank(this.b[from]), t = this.rank(this.b[to]);
+      if (JU_WATER[from] !== JU_WATER[to]) return false; // no capture while entering or leaving the water
+      if (a === 1 && t === 8) return true;
+      if (JU_TRAP[to] === pl) return true; // an animal in its enemy's trap has no rank
+      if (a === 8 && t === 1) return false;
+      return a >= t;
+    },
+    targets(i) {
+      const b = this.b, v = b[i], pl = this.owner(v), k = this.rank(v), r = (i / 7) | 0, c = i % 7, out = [];
+      for (const [dr, dc] of JU_DIRS) {
+        let rr = r + dr, cc = c + dc;
+        if (rr < 0 || rr > 8 || cc < 0 || cc > 6) continue;
+        let j = rr * 7 + cc, leap = false;
+        if (j === JU_DEN[pl]) continue;
+        if (JU_WATER[j] && k !== 1) {
+          if (k !== 6 && k !== 7) continue;
+          let blocked = false;
+          while (JU_WATER[j]) { if (b[j]) blocked = true; rr += dr; cc += dc; j = rr * 7 + cc; }
+          if (blocked) continue;
+          leap = true;
+        }
+        const w = b[j];
+        if (w && this.owner(w) === pl) continue;
+        if (w && !this.takes(pl, i, j)) continue;
+        out.push({ pl, from: i, to: j, cap: !!w, leap });
+      }
+      return out;
+    },
+    legal(pl) {
+      if (this.over) return [];
+      const out = [];
+      for (let i = 0; i < 63; i++) { const v = this.b[i]; if (v && this.owner(v) === pl) out.push(...this.targets(i)); }
+      return out;
+    },
+    count(pl) { let n = 0; for (const v of this.b) if (v && this.owner(v) === pl) n++; return n; },
+    apply(m) {
+      const b = this.b, v = b[m.from], victim = b[m.to];
+      b[m.from] = 0; b[m.to] = v; this.ply++;
+      this.quiet = victim ? 0 : this.quiet + 1;
+      const you = m.pl === 0, who = you ? 'Your' : 'The Scribe\'s';
+      let note = '';
+      if (victim) note = you ? `Your ${JU_NAME[this.rank(v)]} takes the Scribe's ${JU_NAME[this.rank(victim)]}.` : `The Scribe's ${JU_NAME[this.rank(v)]} takes your ${JU_NAME[this.rank(victim)]}.`;
+      else if (m.leap) note = `${who} ${JU_NAME[this.rank(v)]} leaps the river.`;
+      if (m.to === JU_DEN[1 - m.pl]) this.over = { winner: m.pl, text: you ? `Your ${JU_NAME[this.rank(v)]} walks into the Scribe's den. You win.` : `The Scribe's ${JU_NAME[this.rank(v)]} walks into your den. The Scribe wins.` };
+      else if (victim && !this.count(1 - m.pl)) this.over = { winner: m.pl, text: you ? 'You have taken every one of the Scribe\'s animals. You win.' : 'The Scribe has taken all your animals.' };
+      this.mark(1 - m.pl);
+      return { note, caps: victim ? [m.to] : [] };
+    },
+    result(pl) {
+      if (this.over) return this.over;
+      if (!this.legal(pl).length) return { winner: -1, text: pl === 0 ? 'You have no move left: a draw.' : 'The Scribe has no move left: a draw.' };
+      if ((this.seen.get(this.key(pl)) || 0) >= 3) return { winner: -1, text: 'The same position has come round three times: a draw.' };
+      if (this.quiet >= 100) return { winner: -1, text: 'Fifty moves each without a capture: a draw.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.ply, this.quiet, this.over, this.trail.length]; },
+    restore(s) {
+      this.b = s[0].slice(); this.ply = s[1]; this.quiet = s[2]; this.over = s[3];
+      while (this.trail.length > s[4]) { const k = this.trail.pop(), n = this.seen.get(k) - 1; if (n) this.seen.set(k, n); else this.seen.delete(k); }
+    },
+    turns(pl) {
+      const den = JU_DEN[1 - pl], dr = (den / 7) | 0;
+      const val = m => {
+        if (m.to === den) return 1000;
+        let s = m.cap ? 10 * JU_VAL[this.rank(this.b[m.to])] - JU_VAL[this.rank(this.b[m.from])] : 0;
+        const d = i => Math.abs(((i / 7) | 0) - dr) + Math.abs(i % 7 - 3);
+        return s + (d(m.from) - d(m.to)) * 0.5;
+      };
+      return this.legal(pl).map(m => [m, val(m)]).sort((a, b) => b[1] - a[1]).map(x => [x[0]]);
+    },
+    terminal(pl, depth) {
+      if (this.over) return this.over.winner === pl ? 1000 + depth : this.over.winner < 0 ? 0 : -1000 - depth;
+      if ((this.seen.get(this.key(pl)) || 0) >= 2) return 0; // a repetition inside the search is as good as a draw
+      if (!this.legal(pl).length) return 0;
+      return null;
+    },
+    evaluate(pl) {
+      let s = 0;
+      for (let i = 0; i < 63; i++) {
+        const v = this.b[i]; if (!v) continue;
+        const p = this.owner(v), k = this.rank(v), den = JU_DEN[1 - p];
+        const d = Math.abs(((i / 7) | 0) - ((den / 7) | 0)) + Math.abs(i % 7 - 3);
+        let x = JU_VAL[k] + (12 - d) * 0.07;
+        if (d <= 2) x += 0.6 / d; // pressing on the enemy den
+        if (JU_TRAP[i] === 1 - p) x += 0.3; // standing in an enemy trap, next to the den
+        s += p === pl ? x : -x;
+      }
+      return s;
+    },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 6); },
+  };
+
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, rithmo: RITHMO };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);

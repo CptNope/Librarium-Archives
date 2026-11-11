@@ -17,13 +17,14 @@ timeline
     0.20 : Seega · Tâb · Bagh-chal · Four Seasons chess
     0.21 : Hounds and Jackals · Latrunculi · Patolli, as modern reconstructions
     0.22 : The Mansion of Happiness and the Checkered Game of Life, from board scans
+    0.23 : Jungle · Whist · Chaturanga and Rithmomachia, as modern reconstructions
 ```
 
 ```mermaid
 pie showData
     title Exhibits
-    "Playable" : 49
-    "On display" : 8
+    "Playable" : 53
+    "On display" : 7
 ```
 
 ## Open
@@ -31,7 +32,7 @@ pie showData
 - [ ] Swap the type-set wordmark for Librarium's logo files
 - [ ] Hare and Hounds (the French military game), once the lines of its eleven-point board can be checked against a primary source
 - [ ] A stronger Brandubh attacker
-- [ ] A stronger Sharp level for Janggi and Latrunculi
+- [ ] A stronger Sharp level for Janggi, Latrunculi and Rithmomachia
 
 ## Done
 
@@ -48,6 +49,8 @@ pie showData
 - [x] The Landlord's Game, from the patent drawing and text
 - [x] New exhibits: Dominoes, Chinese checkers, Hex and Gomoku
 - [x] New exhibits: Cribbage, Tablut, Kalah and Makruk
+- [x] Jungle (dou shou qi) and Whist, with a Scribe as your partner
+- [x] Chaturanga (after Murray) and Rithmomachia (Boissière's array) playable as clearly labelled modern reconstructions
 - [x] The Checkered Game of Life playable, from a scan of the board of about 1911 and Bradley's patent of 1866
 - [x] The Mansion of Happiness playable, every square read from a scan of the 1843 Ives board
 - [x] Hounds and Jackals, Ludus latrunculorum and Patolli playable as clearly labelled modern reconstructions

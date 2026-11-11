@@ -91,6 +91,7 @@ The Scribe never looks at the visitor's hand or the deck. Each game's Scribe wor
 | Tarocchi | Sharp deals the unseen cards at random many times over, consistent with what you have shown (a suit you could not follow), plays each deal out, and picks the card that scores best on average. Fair plays by rule of thumb |
 | Dominoes | Sheds heavy tiles and doubles. Sharp also keeps tiles that match the ends it leaves, and leaves ends you have shown you cannot match (you drew or passed on them) |
 | Cribbage | Sharp averages every possible four-card keep over all 46 possible starters, weighs what it gives the crib, and in the play avoids leaving counts of 5 or 21 |
+| Whist | Each Scribe plays by the book from what its seat can see: cash sure winners, draw trumps when long in them, lead a suit its partner can ruff, second hand low, third hand high, win as cheaply as possible, and discard its least useful card. Gentle and Fair play some cards at random. (A sampling search over the unseen cards was tried and played no better.) |
 | Mahjong | Each of the three Scribes counts how far its hand is from ready (shanten) and keeps the discards that leave the most useful draws open. It claims only when a claim brings its hand closer |
 
 ## Measured strength
@@ -119,6 +120,10 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Patolli | 91% | 73% | 400 and 600 |
 | Checkered Game of Life | 71% | 50% | 1,000 each; the spin decides most games |
 | Latrunculi | 4–1, 1 draw | 3–4, 1 draw | 6 and 8 |
+| Jungle | 12–0 | 7–3, 2 draws | 12 each |
+| Chaturanga | 6–0 | as Shatranj | 6; the same engine as Shatranj |
+| Rithmomachia | 5–0, 1 draw | 2–2, 2 draws | 6 each; most games run to the 150-move limit |
+| Whist (both seats of a side at one level) | +0.9 tricks a deal | +0.3 tricks a deal | 150 deals each, every deal played twice with the sides swapped |
 | Dominoes | 61% | 62% | 400 and 600 hands |
 | Cribbage | 60% | 57% | 300 each |
 | The Landlord's Game | 67% | 52% | 600 and 1,500 |
@@ -126,7 +131,7 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Yut Nori | about 55% | | hundreds |
 | Mū tōrere | | | Sharp looks 16 moves ahead and never loses |
 
-Known weak spots: in Brandubh the visitor's side still wins most games against Sharp, and the Sharp level of Janggi and Latrunculi is barely stronger than Fair in short matches. Both are on the [roadmap](roadmap.md).
+Known weak spots: in Brandubh the visitor's side still wins most games against Sharp, and the Sharp level of Janggi, Latrunculi and Rithmomachia is barely stronger than Fair in short matches. Both are on the [roadmap](roadmap.md).
 
 ## Game by game
 
@@ -152,6 +157,8 @@ Known weak spots: in Brandubh the visitor's side still wins most games against S
 | Latrunculi | Placing: counters next to friends and away from the corners. Moving: counters taken, threats and room to move |
 | Patolli | Bringing markers home, captures in the centre, entering, the red tips, and avoiding the dark houses. Sharp also weighs the odds of being hit on a centre house |
 | Tâb | Captures, starting pieces, raids on the home row, and the chance an enemy can land on a square with one throw. Sharp weighs every piece on the board that way after each move |
+| Jungle | Material (the rat valued above the wolf for its threat to the elephant), every animal's distance from the enemy den, and pressure next to it; repeated positions count as draws in the search |
+| Rithmomachia | Pieces taken by each side and pieces brought forward into contact; moves that capture are tried first |
 | Seega | Placing: solid blocks that cannot be trapped. Moving: material, threats, room to move and pieces that cannot be trapped, searched with whole capture chains as one turn |
 | Bagh-chal | Goats taken, goats open to a jump, and how much room the tigers have; the same score read from either side |
 | Four Seasons chess | Its own strength against the others', pieces left hanging (with what defends them) and the squares round its king. Sharp also lets the next player answer each of its best eight moves |
