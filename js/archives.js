@@ -1095,14 +1095,14 @@ function buildBaghchal(group) {
 
 /* --- Wing III: Four Seasons chess, after Alfonso X's book of games */
 const FS_S = 0.085;
-const FS_COL = [0x8c1d12, 0x1a1714, 0xe6dcc6, 0x1d4a1c]; // red (you), black, white, green
+const FS_COL = [0x5e0c06, 0x161210, 0xd8cdb4, 0x163d16]; // red (you), black, white, green
 const FS_KIND = [null, 'raja', 'ratha', 'ashva', 'gaja', 'padati', 'mantri'];
 function fsCell(i) { const x = i & 7, y = i >> 3; return { x: (x - 3.5) * FS_S, z: (3.5 - y) * FS_S }; }
 function fsPiece(v) {
   const s = v >> 5, mat = new THREE.MeshStandardMaterial({ color: FS_COL[s], roughness: s === 2 ? 0.5 : 0.4 });
   const o = CR_MAKE[FS_KIND[v & 7]](mat); o.userData.mats = [mat]; o.userData.seat = s;
   o.rotation.y = [Math.PI / 4, 3 * Math.PI / 4, -3 * Math.PI / 4, -Math.PI / 4][s]; // facing the centre from each corner
-  o.scale.setScalar(1.15);
+  o.scale.setScalar(0.92);
   return o;
 }
 function buildFourSeasons(group) {
