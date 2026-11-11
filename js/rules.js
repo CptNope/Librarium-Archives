@@ -6412,12 +6412,9 @@
     },
     snapshot() { return [this.b.slice(), this.taken.slice(), this.ply, this.over]; },
     restore(s) { this.b = s[0].slice(); this.taken = s[1].slice(); this.ply = s[2]; this.over = s[3]; this.pyr = false; },
-    turns(pl) {
-      const ms = this.legal(pl);
-      // Captures first: try each move and see what it takes.
-      const scored = ms.map(m => { const s = this.snapshot(); const n = this.taken[pl]; this.apply(m); const g = this.taken[pl] - n + (this.over ? 50 : 0); this.restore(s); return [m, g]; });
-      scored.sort((a, b) => b[1] - a[1]);
-      return scored.map(x => [x[0]]);
+    turns(pl) { // meetings first, then moves forward
+      const fwd = m => (pl === 0 ? 1 : -1) * ((m.to >> 3) - (m.from >> 3));
+      return this.legal(pl).sort((a, b) => (b.meet ? 10 : 0) + fwd(b) - (a.meet ? 10 : 0) - fwd(a)).map(m => [m]);
     },
     terminal(pl, depth) {
       if (this.over) return this.over.winner === pl ? 1000 + depth : -1000 - depth;
