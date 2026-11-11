@@ -38,6 +38,7 @@ classDiagram
         +skipTurn(pl) string
         +preThrow(pl) Move[]
         +final() Outcome
+        +passTurn() 0|1, ended(), scribeName
         +variants / setVariant(id)
         +canPass / stopLabel
         +autoMove / pipDice / oneDie
@@ -107,6 +108,7 @@ With these, `aiPlan(pl, depth)` is usually one line: `return bestPlan(this, pl, 
 | `done(pl)` / `home(pl)` | Has `pl` finished, and how many pieces are home. Dice games end on `done`, not `result` |
 | `final()` | Optional: decide the winner on points when the game ends (the Landlord's Game) |
 | `preThrow(pl)` | Optional: choices before throwing (lot tickets, paying a jail fine) |
+| `passTurn()`, `ended()`, `scribeName` | Optional, for several Scribes (Chaturaji): `passTurn` moves play to the next seat and returns `0` for the visitor or `1` for a Scribe; `ended` is checked at the start of every turn; `scribeName` names the Scribe at play in the message bar |
 | `aiPlan(pl, moves)` | The Scribe's pick from this throw's moves |
 
 ### How the loop routes a move
@@ -133,7 +135,7 @@ flowchart TD
 
 ### Turn order that is not simple alternation
 
-Most games alternate. Three use a small state machine of their own, and always hand the visitor's choices back through `legal(0)` and `followUp`:
+Most games alternate. Chaturaji's three Scribes each take a turn through `passTurn`. Three more use a small state machine of their own, and always hand the visitor's choices back through `legal(0)` and `followUp`:
 
 ```mermaid
 stateDiagram-v2
@@ -197,6 +199,7 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Alquerque | `alquerque` | Captures | Search | |
 | Brandubh | `brandubh` | Tafl | Search | |
 | Tables | `tables` | Race, dice | Full-turn scoring | `followUp` for the second die |
+| Chaturaji | `chaturaji` | Chess family, dice, four seats | Every use of the throw, with danger odds | `followUp` for the second die, `stopLabel`, `passTurn`, `scribeName` |
 | Shatranj | `shatranj` | Chess family | Search | |
 | Xiangqi | `xiangqi` | Chess family | Search | |
 | Tarocchi | `tarocchi` | Trick-taking | Sampling over hidden cards | `followUp` to lead |

@@ -13,12 +13,13 @@ timeline
     0.16 : Dominoes · Chinese checkers · Hex · Gomoku
     0.17 : Cribbage · Tablut · Kalah · Makruk
     0.18 : Ludo · Janggi · Morabaraba
+    0.19 : Chaturaji, chess for four with dice
 ```
 
 ```mermaid
 pie showData
     title Exhibits
-    "Playable" : 39
+    "Playable" : 40
     "On display" : 13
 ```
 
@@ -45,6 +46,7 @@ pie showData
 - [x] The Landlord's Game, from the patent drawing and text
 - [x] New exhibits: Dominoes, Chinese checkers, Hex and Gomoku
 - [x] New exhibits: Cribbage, Tablut, Kalah and Makruk
+- [x] Chaturaji, four-handed chess with dice, against three Scribes
 - [x] New exhibits: Ludo, Janggi and Morabaraba
 - [x] Larger Dots and Boxes grids (5 × 5, chosen at the table)
 - [x] A playable early card game: tarocchi for two

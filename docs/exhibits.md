@@ -2,14 +2,14 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**52 exhibits, 39 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**53 exhibits, 40 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
     title Exhibits by wing (playable tables)
     "Wing I · 2 of 6" : 6
     "Wing II · 5 of 9" : 9
-    "Wing III · 4 of 7" : 7
+    "Wing III · 5 of 8" : 8
     "Wing IV · 11 of 11" : 11
     "Wing V · 7 of 9" : 9
     "Wing VI · 10 of 10" : 10
@@ -95,6 +95,7 @@ timeline
     c. 480 CE onward : Tables (backgammon)
     by c. 600 CE : Chaturanga : Shatranj
     c. 800 CE : Xiangqi
+    c. 1030 CE : Chaturaji (described by al-Biruni)
     c. 900–1400 CE : Playing cards
     c. 1150–1200 CE : The Lewis Chessmen
     c. 1440 CE : Tarot (tarocchi)
@@ -106,12 +107,14 @@ timeline
 | Chaturanga | by c. 600 CE | Partly lost (the elephant's move) | On display, on an ashtapada board |
 | Shatranj | c. 600–1200 CE | Survive in writing (al-Adli, as-Suli) | Playable |
 | Xiangqi (Chinese chess) | c. 800 CE | Modern rules, settled by the Song dynasty | Playable |
+| Chaturaji (chess for four) | described c. 1030 CE | Partly reconstructed (al-Biruni, read by Murray) | Playable, you and three Scribes |
 | The Lewis Chessmen | c. 1150–1200 CE | Medieval European chess | On display (simplified figures, not copies) |
 | Playing cards | c. 900–1400 CE | Earliest games lost | On display (new designs in old styles) |
 | Tarot (tarocchi) | c. 1440 CE | Still played as a card game | Playable as a simplified tarocchi for two; trumps on display (new paintings in the Milan style) |
 
 Rule choices:
 
+- **Chaturaji:** al-Biruni's game as H. J. R. Murray read it, each of the four armies for itself. Two ordinary dice: 1 or 5 moves the king or a pawn, 2 the boat, 3 the horse, 4 or 6 the elephant; each die is one optional move, in either order. The elephant moves like a rook and the boat jumps two squares diagonally; there is no check, and kings are captured. A pawn on the far edge becomes the piece whose line it reached, but only if that piece has been lost. A boat that completes a square of four boats takes the other three. Captures score king 5, elephant 4, horse 3, boat 2, pawn 1. A player without a king is out, and that army stays on the board. You win by being the last king standing (taking all three yourself is chaturaji) and lose with your king; after 30 rounds the highest score among the kings left wins. Left out: partnerships, the throne rule (sinhasana) and ransoming kings, on which accounts differ.
 - **Tarocchi:** the rules of the first tarot games of the 1440s were never written down, so the table plays a simplified two-player game built on what every tarot game still shares: follow suit, trump if you cannot, and the Fool as an excuse. Thirteen cards each; kings 5, queens 4, knights 3, jacks 2, trumps I and XXI and the Fool 5, and 1 for each trick.
 
 ## Wing IV: Printed Boards and Parlour Tables (c. 1300–1900 CE)
@@ -249,7 +252,7 @@ Rule choices:
 | --- | --- |
 | Mehen, Hounds and Jackals, Başur Höyük pieces | No rules survive. |
 | Petteia, Liubo, Ludus latrunculorum, Patolli | Only partial or competing reconstructions. |
-| Chaturanga | The elephant's move is uncertain. |
+| Chaturanga | The elephant's move is uncertain. Its four-handed relative, chaturaji, is playable next to Xiangqi. |
 | The Lewis Chessmen, Playing cards | Shown as objects; their games are covered at Shatranj and Tarocchi. |
 | The Mansion of Happiness, The Checkered Game of Life | The rules sit square by square on the original boards; we need a checkable scan or transcription. |
 | Hare and Hounds (not yet an exhibit) | Sources disagree on the lines of its eleven-point board. |

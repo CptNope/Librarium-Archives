@@ -24,6 +24,9 @@ mindmap
       scored moves for dice games
       Senet · Ur · Tables · Goose
       Yut Nori · Pachisi · Ludo · Landlord's Game
+    Every way to use the throw
+      both dice tried in both orders, scored by danger and threats
+      Chaturaji, three Scribes at once
     Exact and threat search
       Dots and Boxes endgame solver
       Gomoku continuous fours
@@ -103,6 +106,7 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Chinese checkers | 6–0 | 4–2 | 6 each |
 | Tarocchi | | 16–14 (by +3.4 points a game) | 30 |
 | Ludo | 81% | 65% | 600 and 1,000 |
+| Chaturaji (one seat against three) | 41% against Gentle | 46% against Fair | 300 each; an even seat wins about 1 in 4 |
 | Dominoes | 61% | 62% | 400 and 600 hands |
 | Cribbage | 60% | 57% | 300 each |
 | The Landlord's Game | 67% | 52% | 600 and 1,500 |
@@ -132,3 +136,4 @@ Known weak spots: in Brandubh the visitor's side still wins most games against S
 | Ludo | Captures, coming out, getting home. Sharp counts how many enemy tokens could reach a square in one throw |
 | The Landlord's Game | Lot tickets, buy or rent, luxuries, the jail fine, railroad rides. Sharp buys every lot it can afford, since land pays |
 | Yut Nori, Pachisi | Progress, captures, safety, and castles in Pachisi |
+| Chaturaji | Every way to use both dice, in either order or not at all, scored by points taken, rivals knocked out, and the odds that each piece is taken before its next turn. Sharp also checks its best dozen plans for two-move attacks on its king. Each of the three Scribes plays for itself |

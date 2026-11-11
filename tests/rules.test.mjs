@@ -1627,3 +1627,143 @@ test('Janggi: bikjang left unblocked goes to points', () => {
   JGI.apply({ pl: 1, pass: true });
   assert.ok(JGI.over); assert.equal(JGI.over.winner, 0);
 });
+
+/* ---------------------------------------------------------- Chaturaji */
+
+const CJ = rules.chaturaji;
+const cjAt = (x, y) => y * 8 + x;
+const cjClear = () => { CJ.init(); CJ.b.fill(0); };
+const cjPut = (seat, type, x, y) => { CJ.b[cjAt(x, y)] = (seat << 3) | type; };
+
+test('Chaturaji: four armies of eight, set out in a pinwheel', () => {
+  CJ.init();
+  for (let s = 0; s < 4; s++) {
+    let n = 0; for (let i = 0; i < 64; i++) if (CJ.b[i] && (CJ.b[i] >> 3) === s) n++;
+    assert.equal(n, 8);
+    assert.equal(CJ.count(s, 1), 1); assert.equal(CJ.count(s, 5), 4);
+  }
+  // Turning the board a quarter turn carries each army onto the next one's squares.
+  for (let i = 0; i < 64; i++) {
+    const v = CJ.b[i]; if (!v) continue;
+    const x = i & 7, y = i >> 3, j = cjAt(y, 7 - x);
+    assert.equal(CJ.b[j], (((v >> 3) + 1) % 4) << 3 | (v & 7));
+  }
+  assert.equal(CJ.b[cjAt(3, 0)], 1); // your king on d1
+});
+
+test('Chaturaji: each face moves its own kind of piece, and the boat jumps two diagonally', () => {
+  CJ.init();
+  const types = f => new Set(CJ.legal(0, 0, { faces: [f, f] }).filter(m => !m.pass).map(m => CJ.b[m.from] & 7));
+  assert.deepEqual([...types(3)], [3]);
+  assert.deepEqual([...types(1)].sort(), [1, 5]);
+  assert.deepEqual([...types(5)].sort(), [1, 5]);
+  assert.equal(types(4).size, 0); // the elephant is boxed in at the start
+  cjClear(); cjPut(0, 4, 3, 3); cjPut(1, 5, 4, 4); cjPut(0, 1, 0, 0);
+  const boat = CJ.legal(0, 0, { faces: [2, 2] }).filter(m => !m.pass).map(m => m.to).sort((a, b) => a - b);
+  assert.deepEqual(boat, [cjAt(1, 1), cjAt(5, 1), cjAt(1, 5), cjAt(5, 5)]); // it jumps the pawn on e5
+  cjClear(); cjPut(0, 2, 0, 0); cjPut(2, 5, 0, 5); cjPut(0, 1, 7, 7);
+  const el = CJ.legal(0, 0, { faces: [4, 6] }).filter(m => !m.pass);
+  assert.equal(el.filter(m => (m.to & 7) === 0).length, 5); // up the a-file to a6, taking the pawn
+  assert.ok(el.some(m => m.to === cjAt(0, 5) && m.cap));
+  assert.equal(new Set(el.map(m => m.from * 64 + m.to)).size, el.length); // 4 and 6 do not offer the same move twice
+});
+
+test('Chaturaji: pawns step away from their own side, and take diagonally forward', () => {
+  const step = (seat, x, y) => { cjClear(); cjPut(seat, 5, x, y); return CJ.movesFor(seat, [1], 1).map(m => m.to); };
+  assert.deepEqual(step(0, 3, 3), [cjAt(3, 4)]);
+  assert.deepEqual(step(1, 3, 3), [cjAt(4, 3)]);
+  assert.deepEqual(step(2, 3, 3), [cjAt(3, 2)]);
+  assert.deepEqual(step(3, 3, 3), [cjAt(2, 3)]);
+  cjClear(); cjPut(1, 5, 3, 3); cjPut(0, 3, 4, 4); cjPut(0, 3, 4, 2); cjPut(0, 3, 2, 4); cjPut(0, 3, 4, 3);
+  assert.deepEqual(CJ.movesFor(1, [5], 1).map(m => m.to).sort((a, b) => a - b), [cjAt(4, 2), cjAt(4, 4)]); // blocked ahead; takes both forward diagonals
+});
+
+test('Chaturaji: a pawn on the far edge becomes a piece only if that piece has been lost', () => {
+  cjClear(); cjPut(0, 1, 0, 0); cjPut(0, 3, 7, 0); cjPut(0, 5, 6, 6); CJ.left = [5];
+  CJ.apply({ seat: 0, pl: 0, from: cjAt(6, 6), to: cjAt(6, 7), face: 5 });
+  assert.equal(CJ.b[cjAt(6, 7)] & 7, 5); // g8 is a horse's square, and the horse is still in play
+  cjClear(); cjPut(0, 1, 0, 0); cjPut(0, 5, 5, 6); CJ.left = [1];
+  const r = CJ.apply({ seat: 0, pl: 0, from: cjAt(5, 6), to: cjAt(5, 7), face: 1 });
+  assert.equal(CJ.b[cjAt(5, 7)] & 7, 2); // f8: an elephant, since ours is gone
+  assert.equal(r.promo, 2);
+  cjClear(); cjPut(0, 1, 0, 0); cjPut(0, 5, 3, 6); CJ.left = [1];
+  CJ.apply({ seat: 0, pl: 0, from: cjAt(3, 6), to: cjAt(3, 7), face: 1 });
+  assert.equal(CJ.b[cjAt(3, 7)] & 7, 5); // a king's square never promotes
+});
+
+test('Chaturaji: a boat that completes a square of four boats takes the other three', () => {
+  cjClear(); cjPut(0, 1, 0, 0); cjPut(1, 4, 3, 3); cjPut(2, 4, 4, 3); cjPut(3, 4, 3, 4); cjPut(0, 4, 2, 6); CJ.left = [2];
+  const r = CJ.apply({ seat: 0, pl: 0, from: cjAt(2, 6), to: cjAt(4, 4), face: 2 });
+  assert.ok(r.triumph);
+  assert.equal(r.captured.length, 3);
+  assert.equal(CJ.score[0], 6);
+  assert.equal(CJ.count(1, 4) + CJ.count(2, 4) + CJ.count(3, 4), 0);
+});
+
+test('Chaturaji: a player without a king is out, its army stays, and play skips it', () => {
+  cjClear(); cjPut(0, 1, 0, 0); cjPut(1, 1, 7, 7); cjPut(1, 2, 7, 6); cjPut(2, 1, 4, 4); cjPut(3, 1, 6, 0); cjPut(0, 3, 6, 5);
+  CJ.left = [3];
+  const t = CJ.apply({ seat: 0, pl: 0, from: cjAt(6, 5), to: cjAt(7, 7), face: 3 });
+  assert.match(t.note, /Black is out/);
+  assert.equal(CJ.alive[1], false);
+  assert.equal(CJ.b[cjAt(7, 6)], (1 << 3) | 2); // Black's elephant stays, to be taken
+  CJ.seat = 0;
+  assert.equal(CJ.passTurn(), 1); assert.equal(CJ.seat, 2); // Black is skipped
+  assert.equal(CJ.over, null);
+});
+
+test('Chaturaji: losing your king ends the game; taking all three is chaturaji', () => {
+  cjClear(); cjPut(0, 1, 3, 3); cjPut(2, 3, 5, 4); cjPut(1, 1, 0, 7); cjPut(3, 1, 7, 0); cjPut(2, 1, 7, 7);
+  CJ.left = [3];
+  CJ.apply({ seat: 2, pl: 1, from: cjAt(5, 4), to: cjAt(3, 3), face: 3 });
+  assert.equal(CJ.over.winner, 1);
+  assert.match(CJ.over.text, /Red took your king/);
+  cjClear(); cjPut(0, 1, 3, 3); cjPut(0, 2, 0, 0); cjPut(1, 1, 0, 7); cjPut(2, 1, 7, 7); cjPut(3, 1, 7, 0);
+  CJ.alive = [true, false, false, true]; CJ.kings[0] = [1, 2]; CJ.b[cjAt(0, 7)] = 0; CJ.b[cjAt(7, 7)] = 0; CJ.outNoted = [false, true, true, false];
+  CJ.left = [4];
+  CJ.apply({ seat: 0, pl: 0, from: cjAt(0, 0), to: cjAt(7, 0), face: 4 });
+  assert.equal(CJ.over.winner, 0);
+  assert.equal(CJ.over.title, 'Chaturaji');
+});
+
+test('Chaturaji: the visitor may skip, and is offered the other die after the first move', () => {
+  CJ.init();
+  const ms = CJ.legal(0, 8, { faces: [3, 5], value: 8 });
+  assert.ok(ms.some(m => m.pass));
+  const horse = ms.find(m => m.face === 3);
+  const r = CJ.apply(horse);
+  assert.ok(r.followUp.length > 1);
+  assert.ok(r.followUp.every(m => m.pass || m.face === 5));
+  assert.match(CJ.followPrompt, /other die, 5/);
+});
+
+test('Chaturaji: after thirty rounds the highest score among the kings left wins', () => {
+  CJ.init(); CJ.score = [7, 3, 9, 2]; CJ.alive = [true, true, false, true]; CJ.round = 30; CJ.seat = 3;
+  assert.equal(CJ.passTurn(), 0);
+  assert.equal(CJ.over.winner, 0); // Red scored more but is out
+  CJ.init(); CJ.score = [4, 4, 1, 0]; CJ.round = 30; CJ.seat = 3; CJ.passTurn();
+  assert.equal(CJ.over.winner, -1);
+});
+
+test('Chaturaji: simulated games end, and every point scored is a piece off the board', () => {
+  for (const level of ['gentle', 'fair', 'sharp']) {
+    rules.setLevel(level);
+    for (let g = 0; g < 4; g++) {
+      CJ.init(); let pl = 0, guard = 0, raised = 0;
+      while (!CJ.over && guard++ < 600) {
+        const r = CJ.roll(), seat = pl === 0 ? 0 : CJ.seat;
+        const ms = CJ.legal(pl, r.value, r);
+        if (ms.length) {
+          const t = Date.now(), plan = CJ.aiPlan(1, ms);
+          assert.ok(Date.now() - t < 1500);
+          for (const m of plan) { assert.ok(m.pass || CJ.movesFor(seat, CJ.left, 1).some(x => x.from === m.from && x.to === m.to)); const r = CJ.apply(Object.assign({}, m, { pl, seat })); if (r.promo) raised += CJ.VAL[r.promo] - 1; }
+        }
+        if (!CJ.over) pl = CJ.passTurn();
+        let left = 0; for (let i = 0; i < 64; i++) if (CJ.b[i]) left += CJ.VAL[CJ.b[i] & 7];
+        assert.equal(left + CJ.score.reduce((a, b) => a + b, 0), 4 * 18 + raised);
+      }
+      assert.ok(CJ.over, 'the game ends');
+    }
+  }
+  rules.setLevel('fair');
+});
