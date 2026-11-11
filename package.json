@@ -1,8 +1,8 @@
 {
   "name": "librarium-archives",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "private": true,
-  "description": "Librarium Archives: a walkable 3D hall of 53 historical board and card games, 40 of them playable against an AI opponent.",
+  "description": "Librarium Archives: a walkable 3D hall of 57 historical board and card games, 44 of them playable against an AI opponent.",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "build:artifact": "node tools/build-artifact.mjs",

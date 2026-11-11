@@ -83,9 +83,9 @@ Every exhibit can be a `start` value. ▶ marks a playable table.
 | --- | --- |
 | I | *(blank: the entrance)* · `senet` ▶ · `mehen` · `basur` · `ur` ▶ · `dice` · `hounds` |
 | II | `wing2` · `petteia` · `liubo` · `go` ▶ · `latrunculi` · `patolli` · `morris` ▶ · `oware` ▶ · `alquerque` ▶ · `brandubh` ▶ |
-| III | `wing3` · `tables` ▶ · `chaturanga` · `shatranj` ▶ · `xiangqi` ▶ · `chaturaji` ▶ · `lewis` · `cards` · `tarot` ▶ |
+| III | `wing3` · `tables` ▶ · `chaturanga` · `shatranj` ▶ · `xiangqi` ▶ · `chaturaji` ▶ · `lewis` · `fourseasons` ▶ · `cards` · `tarot` ▶ |
 | IV | `wing4` · `foxgeese` ▶ · `newqueen` ▶ (chess) · `draughts` ▶ · `pachisi` ▶ · `goose` ▶ · `cribbage` ▶ · `dominoes` ▶ · `tablut` ▶ · `snakes` ▶ · `ludo` ▶ · `mahjong` ▶ |
 | V | `wing5` · `mansion` · `lifegame` · `reversi` ▶ · `halma` ▶ · `dotsboxes` ▶ · `chinese` ▶ · `landlord` ▶ · `kalah` ▶ · `hex` ▶ |
-| VI | `wing6` · `mutorere` ▶ · `shogi` ▶ · `gomoku` ▶ · `makruk` ▶ · `konane` ▶ · `yut` ▶ · `janggi` ▶ · `fanorona` ▶ · `bao` ▶ · `morabaraba` ▶ · `next` (the Librarium lectern) |
+| VI | `wing6` · `mutorere` ▶ · `shogi` ▶ · `gomoku` ▶ · `makruk` ▶ · `baghchal` ▶ · `konane` ▶ · `yut` ▶ · `janggi` ▶ · `fanorona` ▶ · `bao` ▶ · `morabaraba` ▶ · `seega` ▶ · `tab` ▶ · `next` (the Librarium lectern) |
 
 The Tarot exhibit's table is the game `tarocchi`, and the New Queen's is `chess`.

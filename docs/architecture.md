@@ -31,8 +31,8 @@ flowchart TB
 | --- | ---: | --- |
 | `index.html` | ~100 | Markup for the HUD, placard, rail, index dialog and table controls; script order |
 | `css/archives.css` | ~210 | All styles, scoped under `#lm-app`; ids are prefixed `lm-`; phone layout by container query |
-| `js/rules.js` | ~5,000 | 40 rule engines, the shared negamax search, Monte Carlo searches (Go, Hex), card and tile AIs. UMD: `module.exports` in Node, `window.LibrariumRules` in the browser |
-| `js/archives.js` | ~5,900 | The three.js hall, 53 exhibit builders, the `STOPS` list, 40 table presenters, the turn loop, navigation, sound, storage |
+| `js/rules.js` | ~5,600 | 44 rule engines, the shared negamax search, Monte Carlo searches (Go, Hex), card and tile AIs. UMD: `module.exports` in Node, `window.LibrariumRules` in the browser |
+| `js/archives.js` | ~6,250 | The three.js hall, 57 exhibit builders, the `STOPS` list, 44 table presenters, the turn loop, navigation, sound, storage |
 | `tests/rules.test.mjs` | ~1,600 | Rule tests, simulated games, AI timing checks |
 | `tests/plugin-render.test.php` | | Renders the shortcode with stubbed WordPress functions |
 | `wordpress/` | | Plugin PHP, Elementor widget, `readme.txt` |
@@ -144,7 +144,7 @@ stateDiagram-v2
 
 | Convention | Rule |
 | --- | --- |
-| Players | `0` is the visitor, `1` the Scribe (Mahjong and Chaturaji seat four, with seat 0 the visitor and `1` standing for whichever Scribe is at play) |
+| Players | `0` is the visitor, `1` the Scribe (Mahjong, Chaturaji and Four Seasons chess seat four, with seat 0 the visitor and `1` standing for whichever Scribe is at play) |
 | Board rows | Row 0 is nearest the visitor; world `+z` points toward the visitor |
 | Moves | Plain objects. `label` makes a move a button instead of a piece-and-ring choice |
 | Notes | `apply()` returns `note` text in the visitor's voice ("You capture…", "The Scribe…") |

@@ -4975,7 +4975,656 @@
     },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI };
+  /* ------------------------------------------------------------------ Seega
+     Lane's "khamsawee seega": a 5 x 5 board, twelve pieces each, placed two at
+     a time; cells are y * 5 + x, x from the visitor's left, y away from them. */
+  const SG_N = 5, SG_C = 12, SG_PIECES = 12, SG_QUIET = 40;
+  const SG_D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const SEEGA = {
+    id: 'seega', name: 'Seega', dice: false, first: 0,
+    rules: [
+      'You have twelve dark stones and the Scribe twelve pieces of red clay. Take turns placing two at a time on any empty square except the centre, you first.',
+      'When all are placed, you move first, and your first move must go into the empty centre. After that, move one piece one square up, down or sideways onto an empty square.',
+      'Trap an enemy piece between the piece you move and another of yours, along a row or column, and it is taken. One move can take up to three. You may move between two enemy pieces safely.',
+      'After a capture, keep moving as long as you can capture again.',
+      'If your move leaves the Scribe with no move, you must lift one of your own pieces to open a way, and the same holds for the Scribe.',
+      'Take every enemy piece to win. If 20 moves each go by with no capture, whoever has more pieces wins.'
+    ],
+    source: 'Edward William Lane, Manners and Customs of the Modern Egyptians (1836), on the five-square seega. Lane gives no ending for a game that stalls; the 20-move rule is ours.',
+    init() {
+      this.b = new Int8Array(25); this.placed = [0, 0]; this.pairLeft = 0; this.started = false;
+      this.chain = false; this.quiet = 0; this.over = null; this.moves = 0;
+    },
+    placing() { return this.placed[0] + this.placed[1] < 2 * SG_PIECES; },
+    count(pl) { let n = 0; for (const v of this.b) if (v === pl + 1) n++; return n; },
+    caps(pl, from, to) { // the enemy pieces a move from -> to would trap
+      const me = pl + 1, foe = 2 - pl, x = to % 5, y = (to / 5) | 0, out = [];
+      for (const [dx, dy] of SG_D4) {
+        const ax = x + dx, ay = y + dy, bx = x + 2 * dx, by = y + 2 * dy;
+        if (bx < 0 || bx >= 5 || by < 0 || by >= 5) continue;
+        const a = ay * 5 + ax, c = by * 5 + bx;
+        if (this.b[a] === foe && (this.b[c] === me && c !== from)) out.push(a);
+      }
+      return out;
+    },
+    steps(pl) {
+      const out = [], me = pl + 1;
+      for (let i = 0; i < 25; i++) {
+        if (this.b[i] !== me) continue;
+        const x = i % 5, y = (i / 5) | 0;
+        for (const [dx, dy] of SG_D4) {
+          const nx = x + dx, ny = y + dy; if (nx < 0 || nx >= 5 || ny < 0 || ny >= 5) continue;
+          const j = ny * 5 + nx; if (this.b[j]) continue;
+          out.push({ pl, from: i, to: j, cap: this.caps(pl, i, j).length });
+        }
+      }
+      return out;
+    },
+    // Own pieces whose lifting would give the blocked side a move.
+    openings(pl) {
+      const out = [];
+      for (let i = 0; i < 25; i++) {
+        if (this.b[i] !== pl + 1) continue;
+        this.b[i] = 0; const ok = this.steps(1 - pl).length > 0; this.b[i] = pl + 1;
+        if (ok) out.push({ pl, lift: i });
+      }
+      return out;
+    },
+    legal(pl) {
+      if (this.over) return [];
+      if (this.placing()) { const out = []; for (let i = 0; i < 25; i++) if (!this.b[i] && i !== SG_C) out.push({ pl, place: i }); return out; }
+      let s = this.steps(pl);
+      if (!this.started) s = s.filter(m => m.to === SG_C);
+      if (this.chain) s = s.filter(m => m.cap);
+      return s;
+    },
+    get followPrompt() {
+      if (this.placing()) return 'Place your second stone.';
+      if (this.lifting) return 'The Scribe is boxed in: pick one of your pieces to lift and open a way.';
+      return 'Capture again: move a glowing piece.';
+    },
+    apply(m) {
+      const pl = m.pl, me = pl === 0, who = me ? 'You' : 'The Scribe';
+      if (m.place !== undefined) {
+        this.b[m.place] = pl + 1; this.placed[pl]++;
+        if (this.pairLeft === 0) this.pairLeft = 1; else this.pairLeft = 0;
+        if (this.pairLeft === 1 && this.placed[pl] < SG_PIECES) { this.lifting = false; return { note: '', followUp: this.legal(pl) }; }
+        this.pairLeft = 0;
+        return { note: this.placing() ? '' : 'Every piece is placed. The centre square is the only empty one.' };
+      }
+      if (m.lift !== undefined) {
+        this.b[m.lift] = 0; this.lifting = false;
+        return { note: me ? 'You lift a piece to open a way for the Scribe.' : 'The Scribe lifts one of its pieces to open a way for you.', lifted: m.lift };
+      }
+      this.started = true; this.moves++;
+      const taken = this.caps(pl, m.from, m.to);
+      this.b[m.to] = this.b[m.from]; this.b[m.from] = 0;
+      for (const j of taken) this.b[j] = 0;
+      this.quiet = taken.length ? 0 : this.quiet + 1;
+      const res = { note: '', taken, caps: taken };
+      if (taken.length) res.note = `${who} ${me ? 'take' : 'takes'} ${taken.length === 1 ? 'a piece' : taken.length + ' pieces'}.`;
+      if (!this.count(1 - pl)) { this.over = { winner: pl, text: me ? 'You have taken every one of the Scribe\'s pieces.' : 'The Scribe has taken every one of your pieces.' }; this.chain = false; return res; }
+      if (taken.length) {
+        this.chain = true;
+        const more = this.steps(pl).filter(x => x.cap);
+        if (more.length) { res.followUp = more; return res; }
+      }
+      this.chain = false;
+      if (!this.steps(1 - pl).length) { // the other side is boxed in: open a way
+        const o = this.openings(pl);
+        if (o.length) { this.lifting = true; res.followUp = o; res.note = (res.note + (me ? ' The Scribe cannot move.' : ' You cannot move.')).trim(); return res; }
+      }
+      if (this.quiet >= SG_QUIET) {
+        const a = this.count(0), c = this.count(1);
+        this.over = { winner: a > c ? 0 : c > a ? 1 : -1, text: `Twenty moves each without a capture. You have ${a} pieces, the Scribe ${c}.` };
+      }
+      return res;
+    },
+    result(pl) {
+      if (this.over) return this.over;
+      if (!this.placing() && !this.legal(pl).length) { // boxed in by one's own pieces: the turn passes, and if neither can move it is over
+        if (!this.steps(1 - pl).length) { const a = this.count(0), c = this.count(1); return { winner: a > c ? 0 : c > a ? 1 : -1, text: `Neither side can move. You have ${a} pieces, the Scribe ${c}.` }; }
+      }
+      return null;
+    },
+    skipTurn(pl) { return !this.over && !this.placing() && !this.legal(pl).length && this.steps(1 - pl).length ? (pl === 0 ? 'You cannot move, so the turn passes.' : 'The Scribe cannot move, so the turn passes.') : ''; },
+    snapshot() { return [this.b.slice(), this.placed.slice(), this.pairLeft, this.started, this.chain, this.quiet, this.over, this.lifting, this.moves]; },
+    restore(s) { this.b = s[0].slice(); this.placed = s[1].slice(); [, , this.pairLeft, this.started, this.chain, this.quiet, this.over, this.lifting, this.moves] = s; },
+    turns(pl) {
+      const out = [], walk = (seq) => {
+        const ms = seq.length ? null : this.legal(pl);
+        for (const m of ms || []) {
+          const s = this.snapshot(); const r = this.apply(m);
+          if (r.followUp && !this.over) this.extend([m], r.followUp, out); else out.push([m]);
+          this.restore(s);
+        }
+      };
+      walk([]);
+      return out.sort((a, b) => b.reduce((n, m) => n + (m.cap || 0), 0) - a.reduce((n, m) => n + (m.cap || 0), 0));
+    },
+    extend(seq, follow, out) {
+      for (const f of follow) {
+        const s = this.snapshot(); const r = this.apply(f);
+        if (r.followUp && !this.over && seq.length < 8) this.extend(seq.concat(f), r.followUp, out); else out.push(seq.concat(f));
+        this.restore(s);
+      }
+    },
+    terminal(pl, depth) { const r = this.over; if (!r) return null; return r.winner === -1 ? 0 : r.winner === pl ? 1000 + depth : -1000 - depth; },
+    // Material first; then threats, room to move, and pieces that cannot be trapped (a friend or the edge on one side of each line).
+    evaluate(pl) {
+      const opp = 1 - pl, sp = this.steps(pl), so = this.steps(opp);
+      let e = (this.count(pl) - this.count(opp)) * 10;
+      e += (sp.filter(m => m.cap).length - so.filter(m => m.cap).length) * 2 + (sp.length - so.length) * 0.25;
+      for (let i = 0; i < 25; i++) {
+        const v = this.b[i]; if (!v) continue;
+        const x = i % 5, y = (i / 5) | 0, side = v === pl + 1 ? 1 : -1;
+        const firm = (ax, ay, bx, by) => { const a = ax < 0 || ax > 4 || ay < 0 || ay > 4 ? v : this.b[ay * 5 + ax], c = bx < 0 || bx > 4 || by < 0 || by > 4 ? v : this.b[by * 5 + bx]; return a === v || c === v; };
+        if (firm(x - 1, y, x + 1, y) && firm(x, y - 1, x, y + 1)) e += 0.8 * side;
+      }
+      return e;
+    },
+    // Placing: build solid blocks, which cannot be trapped, and keep away from the centre's neighbours.
+    placeScore(pl, i) {
+      const x = i % 5, y = (i / 5) | 0; let s = 0;
+      for (const [dx, dy] of SG_D4) { const nx = x + dx, ny = y + dy; if (nx < 0 || nx >= 5 || ny < 0 || ny >= 5) { s += 0.6; continue; } const v = this.b[ny * 5 + nx]; if (v === pl + 1) s += 1; else if (v) s -= 0.4; }
+      if (Math.abs(x - 2) + Math.abs(y - 2) === 1) s -= 0.8;
+      return s;
+    },
+    aiPlan(pl, depth) {
+      if (this.placing()) {
+        const noise = pick(4, 0.8, 0.2), plan = [], s = this.snapshot();
+        for (let k = 0; k < 2 && this.placing(); k++) {
+          let best = null, bv = -Infinity;
+          for (const m of this.legal(pl)) { const v = this.placeScore(pl, m.place) + Math.random() * noise; if (v > bv) { bv = v; best = m; } }
+          plan.push(best); const r = this.apply(best); if (!r.followUp) break;
+        }
+        this.restore(s);
+        return plan;
+      }
+      return bestPlan(this, pl, depth, 6);
+    },
+  };
+
+  /* -------------------------------------------------------------------- Tâb
+     Lane's Egyptian race-and-capture game: four rows of W squares, a row of
+     pieces each, four palm-stick dice. Cells are r * W + c, row 0 the
+     visitor's home, row 3 the Scribe's, c from the visitor's left. Each row
+     runs one way for both players: rows 0 and 2 to the right, 1 and 3 left. */
+  const TB_DIR = [1, -1, 1, -1];
+  const TB_P = { 1: 4 / 16, 2: 6 / 16, 3: 4 / 16, 4: 1 / 16, 6: 1 / 16 }; // chances of each throw
+  const TAB = {
+    id: 'tab', name: 'Tâb', dice: true, first: 0, W: 9,
+    rules: [
+      'You have a row of nine dark stones nearest you; the Scribe has nine pieces of red tile at the far side. Pieces travel through the rows as the arrows show: along your own row, back along the next, out along the third, and then round the two middle rows.',
+      'Throw four palm sticks and count the white sides: one white is a tâb (1), two count 2, three count 3, four count 4, and none counts 6. A tâb, a 4 or a 6 earns another throw. Each throw moves one piece.',
+      'A piece that has never moved needs a tâb to start, and then moves one square.',
+      'Land on an enemy piece to take it. You may not land on your own.',
+      'Once in its life a piece may go on into the enemy\'s home row instead of round the middle; it then comes back to the middle rows. A piece in the enemy\'s row cannot move while you still have pieces in your own home row.',
+      'Take all the Scribe\'s pieces to win.'
+    ],
+    source: 'After Edward William Lane, Manners and Customs of the Modern Egyptians (1836). Lane\'s stacking of pieces (\'eggeh) is left out, each throw is moved as it is made, and after 150 throws each the side with more pieces wins: those are our choices.',
+    init() {
+      const W = this.W; this.pc = [];
+      for (let c = 0; c < W; c++) this.pc.push({ pl: 0, cell: c, conv: false, entered: false, back: false, alive: true });
+      for (let c = 0; c < W; c++) this.pc.push({ pl: 1, cell: 3 * W + c, conv: false, entered: false, back: false, alive: true });
+      this.at = new Int16Array(4 * W).fill(-1); this.pc.forEach((p, k) => { this.at[p.cell] = k; });
+      this.throws = 0; this.over = null;
+    },
+    home(pl) { return pl === 0 ? 0 : 3; },
+    count(pl) { return this.pc.filter(p => p.alive && p.pl === pl).length; },
+    atHome(pl) { const h = this.home(pl), W = this.W; return this.pc.some(p => p.alive && p.pl === pl && ((p.cell / W) | 0) === h); },
+    roll() { const f = [0, 0, 0, 0].map(() => (Math.random() < 0.5 ? 1 : 0)); const n = f.reduce((a, b) => a + b, 0); return { faces: f, value: n || 6 }; },
+    rollName(r) { return r.value === 1 ? 'a tâb (1)' : String(r.value); },
+    // Every square a piece could reach in exactly v steps, with the path, and whether it ends having entered the enemy row.
+    walk(p, v) {
+      const W = this.W, pl = p.pl, h = this.home(pl), a = pl ? 2 : 1, b = pl ? 1 : 2, e = pl ? 0 : 3, out = [];
+      const go = (cell, left, entered, path) => {
+        if (!left) { out.push({ cell, entered, path }); return; }
+        const r = (cell / W) | 0, c = cell % W, nc = c + TB_DIR[r];
+        if (nc >= 0 && nc < W) return go(r * W + nc, left - 1, entered, path.concat(r * W + nc));
+        const next = r === h ? [a] : r === a ? [b] : r === e ? [b] : entered ? [a] : [e, a];
+        for (const nr of next) go(nr * W + c, left - 1, entered || nr === e, path.concat(nr * W + c));
+      };
+      go(p.cell, v, p.entered, []);
+      return out;
+    },
+    legal(pl, value) {
+      if (this.over) return [];
+      const W = this.W, out = [], homeLeft = this.atHome(pl);
+      this.pc.forEach((p, k) => {
+        if (!p.alive || p.pl !== pl) return;
+        if (!p.conv && value !== 1) return;
+        const r = (p.cell / W) | 0;
+        if (r === (pl ? 0 : 3) && homeLeft) return; // stuck in the enemy row while pieces remain at home
+        for (const d of this.walk(p, value)) {
+          const o = this.at[d.cell];
+          if (o >= 0 && this.pc[o].pl === pl) continue;
+          out.push({ pl, piece: k, from: p.cell, to: d.cell, path: d.path, entered: d.entered, cap: o >= 0 ? 1 : 0, start: !p.conv });
+        }
+      });
+      return out;
+    },
+    steps(m) { return m.path; },
+    apply(m) {
+      const p = this.pc[m.piece], W = this.W, me = m.pl === 0, res = { note: '' };
+      this.throws++;
+      const o = this.at[m.to];
+      if (o >= 0) { this.pc[o].alive = false; res.taken = o; res.caps = [m.to]; res.note = me ? 'You take a Scribe\'s piece.' : 'The Scribe takes one of your pieces.'; }
+      this.at[m.from] = -1; this.at[m.to] = m.piece; p.cell = m.to; p.entered = m.entered;
+      if (!p.conv) { p.conv = true; if (!res.note) res.note = me ? 'A tâb: your piece sets out.' : ''; }
+      const r = (m.to / W) | 0;
+      if (r === (m.pl ? 0 : 3) && !res.note) res.note = me ? 'You enter the Scribe\'s home row.' : 'The Scribe enters your home row.';
+      if (!this.count(1 - m.pl)) this.over = { winner: m.pl, text: me ? 'You have taken every one of the Scribe\'s pieces.' : 'The Scribe has taken every one of your pieces.' };
+      else if (this.throws >= 300) { const a = this.count(0), c = this.count(1); this.over = { winner: a > c ? 0 : c > a ? 1 : -1, text: `After 150 throws each you have ${a} pieces and the Scribe ${c}.` }; }
+      return res;
+    },
+    extra(m, value) { return !this.over && (value === 1 || value === 4 || value === 6); },
+    done() { return !!this.over; },
+    final() { return this.over; },
+    result() { return this.over; },
+    // The chance an enemy piece can land on a square with its next throw.
+    danger(pl, cell) {
+      let p = 0; const opp = 1 - pl, homeLeft = this.atHome(opp), W = this.W;
+      for (const v of [1, 2, 3, 4, 6]) {
+        let hit = false;
+        for (const q of this.pc) {
+          if (!q.alive || q.pl !== opp || (!q.conv && v !== 1)) continue;
+          if (((q.cell / W) | 0) === (opp ? 0 : 3) && homeLeft) continue;
+          if (this.walk(q, v).some(d => d.cell === cell)) { hit = true; break; }
+        }
+        if (hit) p += TB_P[v];
+      }
+      return p;
+    },
+    // Sharp looks at the whole board after a move: what each side can hit with its next throw.
+    exposure(pl) {
+      let lose = 0, gain = 0;
+      for (const q of this.pc) {
+        if (!q.alive) continue;
+        const d = this.danger(q.pl, q.cell), w = 1 + (q.conv ? 0 : 0.3); // a piece that has not set out cannot run
+        if (q.pl === pl) lose += d * w; else gain += d * w;
+      }
+      return gain * 4 - lose * 9;
+    },
+    aiPlan(pl, moves) {
+      if (!moves.length) return [];
+      const lvl = LEVEL.name, W = this.W;
+      if (lvl === 'gentle' && Math.random() < 0.4) return [moves[(Math.random() * moves.length) | 0]];
+      let best = moves[0], bv = -Infinity;
+      for (const m of moves) {
+        const p = this.pc[m.piece];
+        let v = m.cap ? 10 + (this.pc[this.at[m.to]].conv ? 0 : 2) : 0;
+        if (m.start) v += 3;
+        if (m.entered && !p.entered) v += 2.5; // a raid on the enemy's home row
+        const r = (m.to / W) | 0; if (r === (pl ? 0 : 3)) v += 1;
+        if (lvl !== 'gentle') {
+          const save = this.at[m.to]; this.at[m.from] = -1; this.at[m.to] = m.piece; const was = p.cell, conv = p.conv, ent = p.entered;
+          if (save >= 0) this.pc[save].alive = false;
+          p.cell = m.to; p.conv = true; p.entered = m.entered;
+          if (lvl === 'sharp') v += this.exposure(pl);
+          else { v -= this.danger(pl, m.to) * 6; p.cell = was; v += this.danger(pl, was) * 3; } // moving out of danger
+          if (save >= 0) this.pc[save].alive = true;
+          p.cell = was; p.conv = conv; p.entered = ent; this.at[m.to] = save; this.at[m.from] = m.piece;
+        }
+        v += Math.random() * pick(3, 0.5, 0.1);
+        if (v > bv) { bv = v; best = m; }
+      }
+      return [best];
+    },
+    snapshot() { return [this.pc.map(p => Object.assign({}, p)), this.at.slice(), this.throws, this.over]; },
+    restore(s) { this.pc = s[0].map(p => Object.assign({}, p)); this.at = s[1].slice(); this.throws = s[2]; this.over = s[3]; },
+  };
+
+  /* -------------------------------------------------------------- Bagh-chal
+     Nepal's tiger game on the 5 x 5 alquerque board (cells r * 5 + c): four
+     tigers against twenty goats. The visitor picks a side. */
+  const BC_GOAT = 1, BC_TIGER = 2, BC_GOATS = 20, BC_WIN = 5, BC_CAP = 200;
+  const BAGHCHAL = {
+    id: 'baghchal', name: 'Bagh-chal', dice: false, ADJ: AQ_ADJ,
+    variants: [{ id: 'goats', label: 'You lead the goats' }, { id: 'tigers', label: 'You lead the tigers' }], variant: 'goats', variantLabel: 'Side',
+    setVariant(id) { this.variant = id; this.goatPl = id === 'goats' ? 0 : 1; },
+    goatPl: 0,
+    get first() { return this.goatPl; },
+    get rules() {
+      return [
+        `${this.goatPl === 0 ? 'You lead the twenty goats and the Scribe the four tigers' : 'You lead the four tigers and the Scribe the twenty goats'}. You can swap sides above. The tigers start on the four corners; the goats start off the board, and move first.`,
+        'Pieces move along a line to the next empty point. Diagonal lines run only through some points.',
+        'While goats remain off the board, each goat turn places one on any empty point; goats may not move until all twenty are down. Tigers move from the start.',
+        'A tiger captures by jumping along a line over a goat next to it, to the empty point beyond. Capturing is never compulsory, and only one goat is taken a turn. Goats never capture.',
+        'The tigers win by taking five goats. The goats win by leaving no tiger a move.',
+        'Once all goats are placed, no move may bring back a position seen before. A side with no move loses; after 100 moves each with no result, the game is drawn.'
+      ];
+    },
+    source: 'Traditional rules of Nepal, as commonly played today. The 100-move draw is our house rule.',
+    init() {
+      this.b = new Int8Array(25); for (const i of [0, 4, 20, 24]) this.b[i] = BC_TIGER;
+      this.inHand = BC_GOATS; this.taken = 0; this.plies = 0; this.hist = []; this.seen = new Set(); this.over = null;
+    },
+    side(pl) { return pl === this.goatPl ? BC_GOAT : BC_TIGER; },
+    key() { return this.b.join(''); },
+    jumps(i) { // a tiger's captures from i
+      const out = [], r = (i / 5) | 0, c = i % 5;
+      for (const [dr, dc] of AQ_ADJ[i]) {
+        const m = (r + dr) * 5 + c + dc;
+        if (this.b[m] !== BC_GOAT || !AQ_ADJ[m].some(([a, b]) => a === dr && b === dc)) continue;
+        const t = (r + 2 * dr) * 5 + c + 2 * dc;
+        if (!this.b[t]) out.push({ over: m, to: t });
+      }
+      return out;
+    },
+    pseudo(pl) {
+      const s = this.side(pl), out = [];
+      if (s === BC_GOAT && this.inHand) { for (let i = 0; i < 25; i++) if (!this.b[i]) out.push({ pl, place: i }); return out; }
+      for (let i = 0; i < 25; i++) {
+        if (this.b[i] !== s) continue;
+        const r = (i / 5) | 0, c = i % 5;
+        for (const [dr, dc] of AQ_ADJ[i]) { const j = (r + dr) * 5 + c + dc; if (!this.b[j]) out.push({ pl, from: i, to: j }); }
+        if (s === BC_TIGER) for (const j of this.jumps(i)) out.push({ pl, from: i, to: j.to, over: j.over, cap: 1 });
+      }
+      return out;
+    },
+    legal(pl) {
+      if (this.over) return [];
+      const ms = this.pseudo(pl);
+      if (this.inHand) return ms;
+      return ms.filter(m => { // no position may come back once all goats are down
+        const v = this.b[m.from]; this.b[m.from] = 0; this.b[m.to] = v; if (m.over !== undefined) this.b[m.over] = 0;
+        const ok = !this.seen.has(this.key());
+        this.b[m.to] = 0; this.b[m.from] = v; if (m.over !== undefined) this.b[m.over] = BC_GOAT;
+        return ok;
+      });
+    },
+    apply(m) {
+      const me = m.pl === 0, tigers = this.side(m.pl) === BC_TIGER, res = { note: '' };
+      this.plies++;
+      if (m.place !== undefined) { this.b[m.place] = BC_GOAT; this.inHand--; }
+      else {
+        this.b[m.to] = this.b[m.from]; this.b[m.from] = 0;
+        if (m.over !== undefined) {
+          this.b[m.over] = 0; this.taken++; res.caps = [m.over];
+          res.note = me ? `Your tiger takes a goat (${this.taken} of ${BC_WIN}).` : `A tiger takes one of your goats (${this.taken} of ${BC_WIN}).`;
+        }
+      }
+      if (!this.inHand) { const k = this.key(); this.hist.push(k); this.seen.add(k); }
+      if (m.place !== undefined && !this.inHand) res.note = 'All twenty goats are on the board. From now on goats move too.';
+      if (this.taken >= BC_WIN) this.over = { winner: tigers ? m.pl : 1 - m.pl, text: tigers ? (me ? 'Your tigers have taken five goats.' : 'The tigers have taken five of your goats.') : '' };
+      return res;
+    },
+    result(pl) {
+      if (this.over) return this.over;
+      if (!this.legal(pl).length) {
+        const tig = this.side(pl) === BC_TIGER;
+        return { winner: 1 - pl, text: tig ? (pl === 0 ? 'The goats have hemmed in all your tigers.' : 'Your goats have hemmed in every tiger.') : (pl === 0 ? 'Your goats have no move left.' : 'The goats have no move left.') };
+      }
+      if (this.plies >= BC_CAP + BC_GOATS) return { winner: -1, text: 'A hundred moves each with no result. The game is drawn.' };
+      return null;
+    },
+    snapshot() { return [this.b.slice(), this.inHand, this.taken, this.plies, this.hist.length, this.over]; },
+    restore(s) {
+      this.b = s[0].slice(); [, this.inHand, this.taken, this.plies] = s; this.over = s[5];
+      while (this.hist.length > s[4]) this.seen.delete(this.hist.pop());
+    },
+    turns(pl) { return this.legal(pl).sort((a, b) => (b.cap || 0) - (a.cap || 0)).map(m => [m]); },
+    terminal(pl, depth) {
+      if (this.over) return this.over.winner === pl ? 1000 + depth : -1000 - depth;
+      if (this.plies >= BC_CAP + BC_GOATS) return 0;
+      return null;
+    },
+    // Scored for the tigers: goats taken, goats open to capture, and room to move.
+    tigerScore() {
+      let open = 0, mob = 0, stuck = 0;
+      for (let i = 0; i < 25; i++) {
+        if (this.b[i] !== BC_TIGER) continue;
+        const r = (i / 5) | 0, c = i % 5; let n = 0;
+        for (const [dr, dc] of AQ_ADJ[i]) if (!this.b[(r + dr) * 5 + c + dc]) n++;
+        const j = this.jumps(i).length; open += j; n += j;
+        mob += n; if (!n) stuck++;
+      }
+      const all = stuck === 4 ? -500 : 0;
+      return this.taken * 40 + open * 9 + mob * 1.2 - stuck * 14 + all;
+    },
+    evaluate(pl) { const t = this.tigerScore(); return this.side(pl) === BC_TIGER ? t : -t; },
+    aiPlan(pl, depth) { return bestPlan(this, pl, depth, 6); },
+  };
+
+  /* ------------------------------------------------------ Four Seasons chess
+     Alfonso X's acedrex de los quatro tiempos (1283): four armies in the four
+     corners of an 8 x 8 board. Cells are y * 8 + x, x the file from the
+     visitor's left (a), y the rank away from the visitor (1). A cell holds 0 or
+     owner << 5 | pawn direction << 3 | type. The visitor is Red, in a1. */
+  const FS_K = 1, FS_R = 2, FS_N = 3, FS_B = 4, FS_P = 5, FS_G = 6;
+  const FS_VAL = [0, 0, 5, 3, 1.5, 1, 2];
+  const FS_NAME = ['', 'king', 'rook', 'knight', 'alfil', 'pawn', 'general'];
+  const FS_SEAT = ['Red', 'Black', 'White', 'Green'];
+  const FS_SEASON = ['summer', 'autumn', 'winter', 'spring'];
+  const FS_DIR = [[0, 1], [1, 0], [0, -1], [-1, 0]]; // up, right, down, left
+  // [x, y, type, pawn direction] for each army: Red a1, Black h1, White h8, Green a8
+  const FS_SETUP = [
+    [[0, 0, FS_K], [1, 0, FS_R], [0, 1, FS_N], [1, 1, FS_B], [0, 2, FS_P, 0], [1, 2, FS_P, 0], [2, 0, FS_P, 1], [2, 1, FS_P, 1]],
+    [[7, 0, FS_K], [6, 0, FS_R], [7, 1, FS_N], [6, 1, FS_B], [6, 2, FS_P, 0], [7, 2, FS_P, 0], [5, 0, FS_P, 3], [5, 1, FS_P, 3]],
+    [[7, 7, FS_K], [6, 7, FS_R], [7, 6, FS_N], [6, 6, FS_B], [7, 5, FS_P, 2], [6, 5, FS_P, 2], [5, 7, FS_P, 3], [5, 6, FS_P, 3]],
+    [[0, 7, FS_K], [1, 7, FS_R], [0, 6, FS_N], [1, 6, FS_B], [0, 5, FS_P, 2], [1, 5, FS_P, 2], [2, 7, FS_P, 1], [2, 6, FS_P, 1]],
+  ];
+  const FS_ROUNDS = 60;
+  const fsIn = (x, y) => x >= 0 && x < 8 && y >= 0 && y < 8;
+  const FS_KN = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]];
+  const FS_K8 = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+  const FS_DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const FS_ORTH = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+  const FOURSEASONS = {
+    id: 'fourseasons', name: 'Four Seasons Chess', dice: false, SEATS: FS_SEAT, ROUNDS: FS_ROUNDS, NAME: FS_NAME,
+    get first() { return this.seat === 0 ? 0 : 1; },
+    rules: [
+      'Four armies, one in each corner, each for itself. You are Red, summer, in the corner nearest your left hand. Green (spring) moves first, then play goes round: you, Black (autumn), White (winter).',
+      'The king, rook and knight move as in chess. The alfil jumps exactly two squares diagonally, over anything between. Pawns step one square straight ahead, never two, and take one square diagonally ahead; two of your pawns march up the board and two across it.',
+      'A pawn that reaches the edge of the board becomes a general, which moves one square diagonally.',
+      'You may not leave your king in check from any army.',
+      'A player who is checkmated is out: the king is removed and the whole army passes to the player who gave the mate. A player left with no move but not in check is stalemated: the whole army is removed. Taking a king counts as a mate.',
+      'The last player left wins. If you are mated or stalemated you lose. After 60 rounds, the strongest army still in play wins (rook 5, knight 3, general 2, alfil 1½, pawn 1).'
+    ],
+    source: 'After the Libro de los juegos of Alfonso X (1283), as described by H. J. R. Murray and Hans Bodlaender. The game is played without dice, the diagonals in the centre of the board are decoration, and the 60-round limit is ours.',
+    init() {
+      this.b = new Int16Array(64);
+      FS_SETUP.forEach((army, s) => army.forEach(([x, y, t, d]) => { this.b[y * 8 + x] = (s << 5) | ((d || 0) << 3) | t; }));
+      this.alive = [true, true, true, true]; this.seat = 3; this.round = 1; this.over = null; this.news = '';
+    },
+    own(v) { return v >> 5; }, type(v) { return v & 7; }, dir(v) { return (v >> 3) & 3; },
+    kingOf(s) { for (let i = 0; i < 64; i++) { const v = this.b[i]; if (v && (v >> 5) === s && (v & 7) === FS_K) return i; } return -1; },
+    // Squares a piece attacks or moves to. Pawns: 'cap' squares only when capture is true.
+    pmoves(i, out, attacksOnly) {
+      const v = this.b[i], s = v >> 5, t = v & 7, x = i & 7, y = i >> 3;
+      const add = (nx, ny, mode) => { // mode: 0 move or take, 1 move only, 2 take only
+        if (!fsIn(nx, ny)) return; const j = ny * 8 + nx, w = this.b[j];
+        if (attacksOnly) { if (mode !== 1) out.push(j); return; }
+        if (w && (w >> 5) === s) return;
+        if (mode === 1 && w) return; if (mode === 2 && !w) return;
+        out.push(j);
+      };
+      if (t === FS_K) for (const [dx, dy] of FS_K8) add(x + dx, y + dy, 0);
+      else if (t === FS_N) for (const [dx, dy] of FS_KN) add(x + dx, y + dy, 0);
+      else if (t === FS_B) for (const [dx, dy] of FS_DIAG) add(x + 2 * dx, y + 2 * dy, 0);
+      else if (t === FS_G) for (const [dx, dy] of FS_DIAG) add(x + dx, y + dy, 0);
+      else if (t === FS_R) for (const [dx, dy] of FS_ORTH) {
+        let nx = x + dx, ny = y + dy;
+        while (fsIn(nx, ny)) { const w = this.b[ny * 8 + nx]; add(nx, ny, 0); if (w) break; nx += dx; ny += dy; }
+      } else if (t === FS_P) {
+        const [dx, dy] = FS_DIR[(v >> 3) & 3];
+        add(x + dx, y + dy, 1);
+        if (dx) { add(x + dx, y + 1, 2); add(x + dx, y - 1, 2); } else { add(x + 1, y + dy, 2); add(x - 1, y + dy, 2); }
+      }
+    },
+    attackedBy(i, s) { // seats (other than s, still in play) attacking square i
+      const who = new Set(), sq = [];
+      for (let j = 0; j < 64; j++) {
+        const v = this.b[j]; if (!v) continue; const o = v >> 5;
+        if (o === s || !this.alive[o] || who.has(o)) continue;
+        sq.length = 0; this.pmoves(j, sq, true);
+        if (sq.includes(i)) who.add(o);
+      }
+      return who;
+    },
+    inCheck(s) { const k = this.kingOf(s); return k >= 0 && this.attackedBy(k, s).size > 0; },
+    raw(s) {
+      const out = [];
+      for (let i = 0; i < 64; i++) {
+        const v = this.b[i]; if (!v || (v >> 5) !== s) continue;
+        const t = []; this.pmoves(i, t, false);
+        for (const j of t) out.push({ seat: s, from: i, to: j, cap: this.b[j] || 0 });
+      }
+      return out;
+    },
+    movesOf(s) {
+      return this.raw(s).filter(m => {
+        const v = this.b[m.from], w = this.b[m.to];
+        this.b[m.to] = v; this.b[m.from] = 0;
+        const ok = !this.inCheck(s);
+        this.b[m.from] = v; this.b[m.to] = w;
+        return ok;
+      });
+    },
+    legal(pl) { if (this.over) return []; const s = pl === 0 ? 0 : this.seat; return this.movesOf(s).map(m => Object.assign(m, { pl })); },
+    who(s) { return s === 0 ? 'You' : FS_SEAT[s]; },
+    whose(s) { return s === 0 ? 'your' : FS_SEAT[s] + '\'s'; },
+    // Hand an army to the player who beat it (its king gone), or clear it from the board.
+    fall(s, to, words) {
+      this.alive[s] = false;
+      for (let i = 0; i < 64; i++) {
+        const v = this.b[i]; if (!v || (v >> 5) !== s) continue;
+        if (to < 0 || (v & 7) === FS_K) this.b[i] = 0; else this.b[i] = (to << 5) | (v & 31);
+      }
+      return words;
+    },
+    settle(mover, notes, events) {
+      for (let pass = 0; pass < 4; pass++) {
+        let changed = false;
+        for (const s of [1, 2, 3, 0].map(k => (mover + k) % 4)) {
+          if (!this.alive[s] || s === mover) continue;
+          if (this.kingOf(s) < 0) continue;
+          if (this.movesOf(s).length) continue;
+          const att = this.attackedBy(this.kingOf(s), s);
+          if (att.size) {
+            const by = att.has(mover) ? mover : [...att][0];
+            this.fall(s, by); events.push({ seat: s, to: by });
+            notes.push(s === 0 ? `${FS_SEAT[by]} checkmates you.` : `${by === 0 ? 'You checkmate' : FS_SEAT[by] + ' checkmates'} ${FS_SEAT[s]}, and ${by === 0 ? 'take' : 'takes'} over ${FS_SEAT[s] === 'White' ? 'the white' : 'the ' + FS_SEAT[s].toLowerCase()} army.`);
+          } else {
+            this.fall(s, -1); events.push({ seat: s, to: -1 });
+            notes.push(s === 0 ? 'You are stalemated, and your army leaves the board.' : `${FS_SEAT[s]} is stalemated, and that army leaves the board.`);
+          }
+          changed = true;
+        }
+        if (!changed) break;
+      }
+    },
+    apply(m) {
+      const s = m.seat, me = s === 0, notes = [], events = [];
+      if (this.news) { notes.push(this.news); this.news = ''; }
+      const v = this.b[m.from], w = this.b[m.to];
+      this.b[m.to] = v; this.b[m.from] = 0;
+      let promo = false;
+      if ((v & 7) === FS_P) {
+        const [dx, dy] = FS_DIR[(v >> 3) & 3], x = m.to & 7, y = m.to >> 3;
+        if (!fsIn(x + dx, y + dy)) { this.b[m.to] = (v & ~7) | FS_G; promo = true; }
+      }
+      if (w) {
+        const o = w >> 5, t = w & 7;
+        if (t === FS_K && this.alive[o]) {
+          this.fall(o, s); events.push({ seat: o, to: s });
+          notes.push(o === 0 ? `${FS_SEAT[s]} takes your king.` : `${this.who(s)} ${me ? 'take' : 'takes'} ${FS_SEAT[o]}'s king and the ${FS_SEAT[o].toLowerCase()} army with it.`);
+        } else notes.push(`${this.who(s)} ${me ? 'take' : 'takes'} ${o === 0 ? 'your' : FS_SEAT[o] + '\'s'} ${FS_NAME[t]}.`);
+      }
+      if (promo) notes.push(`${me ? 'Your' : FS_SEAT[s] + '\'s'} pawn becomes a general.`);
+      this.settle(s, notes, events);
+      const checks = [0, 1, 2, 3].filter(o => o !== s && this.alive[o] && this.kingOf(o) >= 0 && this.attackedBy(this.kingOf(o), o).has(s));
+      if (checks.length) notes.push(checks.includes(0) ? `${FS_SEAT[s]} gives you check.` : `Check to ${checks.map(o => FS_SEAT[o]).join(' and ')}.`);
+      this.check();
+      return { note: notes.join(' '), caps: w ? [m.to] : [], captured: w ? m.to : -1, promo, events };
+    },
+    check() {
+      if (this.over) return;
+      const live = [0, 1, 2, 3].filter(s => this.alive[s]);
+      if (!this.alive[0]) this.over = { winner: 1, title: 'Your army is lost', text: 'You are out of the game.' };
+      else if (live.length === 1) this.over = { winner: 0, title: 'You win', text: 'Yours is the last army standing: all four seasons are yours.' };
+    },
+    material(s) { let n = 0; for (let i = 0; i < 64; i++) { const v = this.b[i]; if (v && (v >> 5) === s) n += FS_VAL[v & 7]; } return n; },
+    passTurn() {
+      if (this.over) return 0;
+      let s = this.seat;
+      do { s = (s + 1) % 4; if (s === 3) this.round++; } while (!this.alive[s]);
+      this.seat = s;
+      if (this.round > FS_ROUNDS) this.limit();
+      return s === 0 ? 0 : 1;
+    },
+    limit() {
+      const live = [0, 1, 2, 3].filter(s => this.alive[s]), m = live.map(s => this.material(s)), top = Math.max(...m);
+      const best = live.filter((s, k) => m[k] === top), line = `After ${FS_ROUNDS} rounds: ${live.map((s, k) => `${s ? FS_SEAT[s] : 'you'} ${m[k]}`).join(', ')}.`;
+      if (best.length === 1 && best[0] === 0) this.over = { winner: 0, title: 'You win on strength', text: line };
+      else if (best.includes(0)) this.over = { winner: -1, title: 'A tie on strength', text: line };
+      else this.over = { winner: 1, title: `${best.map(s => FS_SEAT[s]).join(' and ')} ${best.length > 1 ? 'win' : 'wins'} on strength`, text: line };
+    },
+    ended() { return !!this.over; },
+    final() { return this.over; },
+    result(pl) {
+      if (this.over) return this.over;
+      if (pl === 0 && !this.movesOf(0).length) { this.fall(0, -1); this.check(); return this.over; }
+      return null;
+    },
+    get scribeName() { return FS_SEAT[this.seat]; },
+    snapshot() { return [this.b.slice(), this.alive.slice(), this.over, this.news]; },
+    restore(s) { this.b = s[0].slice(); this.alive = s[1].slice(); this.over = s[2]; this.news = s[3]; },
+    // How a seat stands: its own strength, rivals' strength, pieces left hanging, and the safety of its king.
+    evaluate(s) {
+      if (!this.alive[s]) return -1000;
+      let e = this.material(s) * 1.0 + [0, 1, 2, 3].filter(o => o !== s && !this.alive[o]).length * 6;
+      for (let o = 0; o < 4; o++) if (o !== s && this.alive[o]) e -= this.material(o) * 0.2;
+      const sharp = LEVEL.name === 'sharp';
+      // Which squares each seat attacks
+      const att = [new Set(), new Set(), new Set(), new Set()], low = new Map();
+      for (let j = 0; j < 64; j++) {
+        const v = this.b[j]; if (!v) continue; const o = v >> 5; if (!this.alive[o]) continue;
+        const sq = []; this.pmoves(j, sq, true);
+        for (const q of sq) { att[o].add(q); if (o !== s) { const cur = low.get(q); if (cur === undefined || FS_VAL[v & 7] < cur) low.set(q, FS_VAL[v & 7]); } }
+      }
+      for (let i = 0; i < 64; i++) {
+        const v = this.b[i]; if (!v || (v >> 5) !== s) continue; const t = v & 7;
+        let hit = false; for (let o = 0; o < 4; o++) if (o !== s && this.alive[o] && att[o].has(i)) hit = true;
+        if (t === FS_K) { if (hit) e -= 1.5; const x = i & 7, y = i >> 3; for (const [dx, dy] of FS_K8) if (fsIn(x + dx, y + dy)) { for (let o = 0; o < 4; o++) if (o !== s && att[o].has((y + dy) * 8 + x + dx)) e -= 0.15; } continue; }
+        if (hit) {
+          const defended = att[s].has(i);
+          const loss = defended ? Math.max(0, FS_VAL[t] - (low.get(i) || 0)) : FS_VAL[t];
+          e -= loss * (sharp ? 0.9 : 0.7);
+        }
+        if (t === FS_P) { const x = i & 7, y = i >> 3, d = (v >> 3) & 3; e += 0.05 * [y, x, 7 - y, 7 - x][d]; }
+      }
+      return e;
+    },
+    aiPlan() {
+      const s = this.seat, root = this.snapshot(), lvl = LEVEL.name, noise = pick(2.5, 0.35, 0.05);
+      const moves = this.movesOf(s).map(m => Object.assign(m, { pl: 1 }));
+      if (!moves.length) return [];
+      if (lvl === 'gentle' && Math.random() < 0.3) return [moves[(Math.random() * moves.length) | 0]];
+      const scored = moves.map(m => { this.apply(m); const v = this.over && this.over.winner === 1 && !this.alive[0] ? 500 : this.evaluate(s); this.restore(root); return { m, v: v + Math.random() * noise }; });
+      scored.sort((a, b) => b.v - a.v);
+      if (lvl !== 'sharp') return [scored[0].m];
+      // Sharp: for its best few, let the next player answer with its own best move, and judge again.
+      let best = scored[0].m, bv = -Infinity;
+      for (const c of scored.slice(0, 8)) {
+        this.apply(c.m); const mid = this.snapshot();
+        let nxt = s; do { nxt = (nxt + 1) % 4; } while (!this.alive[nxt] && nxt !== s);
+        let worst = this.evaluate(s);
+        if (!this.over && nxt !== s) {
+          let rv = -Infinity, reply = null;
+          for (const r of this.movesOf(nxt)) { this.apply(r); const v = this.evaluate(nxt); this.restore(mid); if (v > rv) { rv = v; reply = r; } }
+          if (reply) { this.apply(reply); worst = this.evaluate(s); this.restore(mid); }
+        }
+        this.restore(root);
+        if (worst + c.v * 0.15 > bv) { bv = worst + c.v * 0.15; best = c.m; }
+      }
+      return [best];
+    },
+  };
+
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);

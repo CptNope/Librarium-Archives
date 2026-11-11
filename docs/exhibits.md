@@ -2,17 +2,17 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**53 exhibits, 40 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**57 exhibits, 44 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
     title Exhibits by wing (playable tables)
     "Wing I · 2 of 6" : 6
     "Wing II · 5 of 9" : 9
-    "Wing III · 5 of 8" : 8
+    "Wing III · 6 of 9" : 9
     "Wing IV · 11 of 11" : 11
     "Wing V · 7 of 9" : 9
-    "Wing VI · 10 of 10" : 10
+    "Wing VI · 13 of 13" : 13
 ```
 
 ```mermaid
@@ -98,6 +98,7 @@ timeline
     c. 1030 CE : Chaturaji (described by al-Biruni)
     c. 900–1400 CE : Playing cards
     c. 1150–1200 CE : The Lewis Chessmen
+    1283 CE : Four Seasons chess (Alfonso X)
     c. 1440 CE : Tarot (tarocchi)
 ```
 
@@ -109,12 +110,14 @@ timeline
 | Xiangqi (Chinese chess) | c. 800 CE | Modern rules, settled by the Song dynasty | Playable |
 | Chaturaji (chess for four) | described c. 1030 CE | Partly reconstructed (al-Biruni, read by Murray) | Playable, you and three Scribes |
 | The Lewis Chessmen | c. 1150–1200 CE | Medieval European chess | On display (simplified figures, not copies) |
+| Four Seasons chess | 1283 CE | Partly reconstructed (Alfonso X's Book of Games) | Playable, you and three Scribes |
 | Playing cards | c. 900–1400 CE | Earliest games lost | On display (new designs in old styles) |
 | Tarot (tarocchi) | c. 1440 CE | Still played as a card game | Playable as a simplified tarocchi for two; trumps on display (new paintings in the Milan style) |
 
 Rule choices:
 
 - **Chaturaji:** al-Biruni's game as H. J. R. Murray read it, each of the four armies for itself. Two ordinary dice: 1 or 5 moves the king or a pawn, 2 the boat, 3 the horse, 4 or 6 the elephant; each die is one optional move, in either order. The elephant moves like a rook and the boat jumps two squares diagonally; there is no check, and kings are captured. A pawn on the far edge becomes the piece whose line it reached, but only if that piece has been lost. A boat that completes a square of four boats takes the other three. Captures score king 5, elephant 4, horse 3, boat 2, pawn 1. A player without a king is out, and that army stays on the board. You win by being the last king standing (taking all three yourself is chaturaji) and lose with your king; after 30 rounds the highest score among the kings left wins. Left out: partnerships, the throne rule (sinhasana) and ransoming kings, on which accounts differ.
+- **Four Seasons chess:** Alfonso X's acedrex de los quatro tiempos as Murray and Bodlaender read it, each army for itself and without dice. Armies of king, rook, knight, alfil and four pawns start in the corners (you are Red, in a1); Green moves first and play goes Green, Red, Black, White. The alfil leaps exactly two squares diagonally; pawns step one square without a double step, two of each army's pawns going along the files and two along the ranks, and become generals (one square diagonally) at the edge. You may not leave your king in check. A player checkmated is out and the whole army passes to the mater; taking a king counts the same; a player stalemated is out and the army leaves the board. Mates and stalemates are judged as soon as a move is made. The last army left wins; after 60 rounds the strongest army still in play wins (rook 5, knight 3, general 2, alfil 1½, pawn 1). The centre diagonals are decoration.
 - **Tarocchi:** the rules of the first tarot games of the 1440s were never written down, so the table plays a simplified two-player game built on what every tarot game still shares: follow suit, trump if you cannot, and the Fool as an excuse. Thirteen cards each; kings 5, queens 4, knights 3, jacks 2, trumps I and XXI and the Fool 5, and 1 for each trick.
 
 ## Wing IV: Printed Boards and Parlour Tables (c. 1300–1900 CE)
@@ -209,8 +212,9 @@ mindmap
       Gomoku
       Yut Nori
       Janggi
-    Southeast Asia
+    South and Southeast Asia
       Makruk
+      Bagh-chal
     Pacific
       Mū tōrere
       Kōnane
@@ -218,6 +222,9 @@ mindmap
       Fanorona
       Bao
       Morabaraba
+    North Africa
+      Seega
+      Tâb
 ```
 
 | Exhibit | Date | Rules | In the Archives |
@@ -226,12 +233,15 @@ mindmap
 | Shogi | oldest pieces c. 1058 CE (Kōfuku-ji) | Unbroken tradition | Playable, with drops |
 | Gomoku | named renju in 1899 | Still played | Playable, freestyle on 15 × 15 |
 | Makruk | traditional | Still played | Playable, with the counting rules kept for you |
+| Bagh-chal | traditional | Still played | Playable as either side |
 | Kōnane | by 1778–79 (Cook's expedition) | Still played | Playable on an 8 × 8 papamū |
 | Yut Nori | traditional | Still played | Playable, with shortcuts, stacking and extra throws |
 | Janggi | traditional | Still played | Playable, with passing and bikjang decided on points |
 | Fanorona | traditional | Still played | Playable (fanoron-tsivy, 5 × 9) |
 | Bao | in verse by the 1820s | Still played | Playable (Bao la Kujifunza, the learners' game) |
 | Morabaraba | traditional | Still played | Playable: twelve cows each, on the board with diagonals |
+| Seega | recorded in the 1820s (Lane, 1836) | Survive in writing | Playable on the five-cup board |
+| Tâb | recorded in the 1820s (Lane, 1836) | Survive in writing | Playable on four rows of nine, without stacking |
 
 Rule choices:
 
@@ -244,6 +254,9 @@ Rule choices:
 - **Janggi:** the inner-elephant setup for both sides (horse, elephant, elephant, horse). Pieces move as in Korea, cannons included; you may pass unless in check. If the generals face each other on an open file (bikjang) and the next player does not block it, or both sides pass in a row, or after two hundred moves each, the game is decided on points: chariot 13, cannon 7, horse 5, elephant 3, guard 3, soldier 2, and 1.5 to Han. Repetition is not policed.
 - **Fanorona:** captures by approach or withdrawal take the whole unbroken line. You choose a capture by clicking the first enemy stone it would take, which also settles approach against withdrawal. A capture chain may not revisit a point or repeat a direction, and the **Stop** button ends it early. House rule: twenty moves each without a capture is a draw.
 - **Bao la Kujifunza:** every pit starts with two seeds and the house is an ordinary pit. A move sows a pit of two or more seeds either way round your own sixteen pits. If you can capture you must: a last seed landing in an occupied pit of your inner row takes the Scribe's seeds opposite, which are sown from an end of your row (the nearer end for a capture in the two pits at either end, otherwise the end that keeps your direction). Landing in any other occupied pit picks it up and sows on; a turn ends in an empty pit. A turn that cannot capture must start from the inner row if it can, and never captures. An empty inner row, or no move, loses. House rule: after a hundred moves each, the side with more seeds wins.
+- **Bagh-chal:** four tigers on the corners against twenty goats placed one a turn, goats first; goats move only once all are down. A tiger takes one goat a turn by jumping it along a line; capture is never compulsory. Tigers win with five goats, goats by leaving the tigers no move. Once all goats are placed no position may repeat. A side with no move loses; a hundred moves each without a result is a draw (house rule). You choose your side.
+- **Seega:** Lane's five-cup board: twelve pieces each, placed two at a time, never on the centre; the first move must enter the centre. A piece trapped between the mover and another enemy piece along a row or column is taken (several at once if so), moving between two enemies is safe, and a player who has captured keeps moving while another capture is open. A player whose move leaves the other side no move must lift one of their own pieces to open a way, as Lane describes for the opening. Taking every enemy piece wins; twenty moves each without a capture end the game in favour of the larger side (house rule).
+- **Tâb:** four rows of nine. Four palm sticks: 1 (a tâb), 2, 3, 4, or 6 for no white face; a tâb, 4 or 6 throws again. A piece needs a tâb to start. Pieces run along their own row, back along the next, out along the third, then round the two middle rows; once in its life a piece may go through the enemy's home row instead, and it cannot move there while its owner has pieces at home. Landing on an enemy piece takes it; you may not land on your own. Each throw is moved at once, and Lane's stacking is left out. Taking every enemy piece wins; after 150 throws each the side with more pieces wins (house rule).
 - **Morabaraba:** Mind Sports South Africa's rules on the board with diagonals: twelve cows each, mills along any line including the diagonals, flying at three, and a draw when both sides have three and no cow is shot in ten moves each. The rule that a broken mill cannot be remade at once is left out, and a mill always shoots.
 
 ## Not yet playable

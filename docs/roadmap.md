@@ -14,12 +14,13 @@ timeline
     0.17 : Cribbage · Tablut · Kalah · Makruk
     0.18 : Ludo · Janggi · Morabaraba
     0.19 : Chaturaji, chess for four with dice
+    0.20 : Seega · Tâb · Bagh-chal · Four Seasons chess
 ```
 
 ```mermaid
 pie showData
     title Exhibits
-    "Playable" : 40
+    "Playable" : 44
     "On display" : 13
 ```
 
@@ -46,6 +47,7 @@ pie showData
 - [x] The Landlord's Game, from the patent drawing and text
 - [x] New exhibits: Dominoes, Chinese checkers, Hex and Gomoku
 - [x] New exhibits: Cribbage, Tablut, Kalah and Makruk
+- [x] Seega and Tâb from Lane's Egypt, Bagh-chal from Nepal, and Alfonso X's Four Seasons chess
 - [x] Chaturaji, four-handed chess with dice, against three Scribes
 - [x] New exhibits: Ludo, Janggi and Morabaraba
 - [x] Larger Dots and Boxes grids (5 × 5, chosen at the table)

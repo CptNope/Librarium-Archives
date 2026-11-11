@@ -983,6 +983,149 @@ function buildChaturaji(group) {
   return y;
 }
 
+/* --- Wing VI: Seega, on a slab of Egyptian limestone with twenty-five cups */
+const SG_S = 0.1;
+function sgCell(i) { const x = i % 5, y = (i / 5) | 0; return { x: (x - 2) * SG_S, z: (2 - y) * SG_S }; }
+const sgStoneGeo = new THREE.SphereGeometry(0.032, 20, 12);
+function sgStone(pl) {
+  const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x9c3e1c : 0x121010, roughness: pl ? 0.75 : 0.4 });
+  const m = new THREE.Mesh(sgStoneGeo, mat); m.scale.set(1, 0.5, 0.88); m.userData.mats = [mat]; return m;
+}
+function buildSeega(group) {
+  const W = 5 * SG_S + 0.08;
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, W), new THREE.MeshStandardMaterial({ color: 0xcdb894, roughness: 0.95 }));
+  slab.position.y = TOP + 0.02; group.add(slab);
+  const px = 1024, sc = px / W, d = SG_S * sc, c0 = px / 2 - 2.5 * d;
+  topPlane(group, W, W, TOP + 0.0405, tex(px, px, (g) => {
+    g.fillStyle = '#d6c39e'; g.fillRect(0, 0, px, px);
+    speckle(g, px, px, 9000, ['#c4ae86', '#e2d2b0', '#b9a37c', '#cdb894'], 2.2);
+    for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) {
+      const cx = c0 + (x + 0.5) * d, cy = c0 + (y + 0.5) * d, r = d * 0.36;
+      const grd = g.createRadialGradient(cx, cy - r * 0.2, r * 0.2, cx, cy, r);
+      grd.addColorStop(0, '#8a7656'); grd.addColorStop(0.75, '#a48e68'); grd.addColorStop(1, '#c2ab84');
+      g.fillStyle = grd; g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.fill();
+    }
+    const cx = c0 + 2.5 * d, cy = cx, k = d * 0.42; // the centre cup is marked
+    g.strokeStyle = '#6e5a3e'; g.lineWidth = 5; g.beginPath(); g.moveTo(cx - k, cy - k); g.lineTo(cx + k, cy + k); g.moveTo(cx + k, cy - k); g.lineTo(cx - k, cy + k); g.stroke();
+  }), { roughness: 0.95 });
+  const y = TOP + 0.041, shown = [];
+  [[0, 1], [3, 1], [6, 0], [8, 0], [16, 1], [18, 0], [21, 1], [23, 1], [11, 0], [13, 1]].forEach(([i, pl]) => { const s = sgStone(pl), c = sgCell(i); s.position.set(c.x, y + 0.012, c.z); group.add(s); shown.push(s); });
+  group.userData.display = shown;
+  return y;
+}
+
+/* --- Wing VI: Tâb, four rows of squares scratched in a plank, stone and tile pieces */
+const TAB_S = 0.088;
+function tabCell(i) { const W = 9, r = (i / W) | 0, c = i % W; return { x: (c - 4) * TAB_S, z: (1.5 - r) * TAB_S }; }
+const tabPieceGeo = new THREE.CylinderGeometry(0.03, 0.032, 0.016, 20);
+function tabPiece(pl) {
+  const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x9c3e1c : 0x121010, roughness: pl ? 0.8 : 0.4 });
+  const m = new THREE.Mesh(tabPieceGeo, mat); m.userData.mats = [mat];
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.003, 6, 20), new THREE.MeshStandardMaterial({ color: 0xf1e3bf, roughness: 0.5 }));
+  band.rotation.x = -Math.PI / 2; band.position.y = 0.0075; band.visible = false; m.add(band); m.userData.band = band;
+  return m;
+}
+function buildTab(group) {
+  const W = 9 * TAB_S + 0.08, D = 4 * TAB_S + 0.08;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, D), new THREE.MeshStandardMaterial({ color: 0x7a5530, roughness: 0.7 }));
+  board.position.y = TOP + 0.015; group.add(board);
+  const px = 1536, py = Math.round(px * D / W), sc = px / W, d = TAB_S * sc, x0 = px / 2 - 4.5 * d, y0 = py / 2 - 2 * d;
+  topPlane(group, W, D, TOP + 0.0305, tex(px, py, (g) => {
+    woodGrain(g, px, py, '#a87c4c', '#6e4a28');
+    g.strokeStyle = '#3a2412'; g.lineWidth = 5;
+    for (let r = 0; r <= 4; r++) { g.beginPath(); g.moveTo(x0, y0 + r * d); g.lineTo(x0 + 9 * d, y0 + r * d); g.stroke(); }
+    for (let c = 0; c <= 9; c++) { g.beginPath(); g.moveTo(x0 + c * d, y0); g.lineTo(x0 + c * d, y0 + 4 * d); g.stroke(); }
+    // Arrows: each row runs one way for both players (row 0 is nearest the visitor, drawn at the bottom)
+    g.fillStyle = 'rgba(58,36,18,.55)';
+    for (let r = 0; r < 4; r++) {
+      const dir = [1, -1, 1, -1][r], cy = y0 + (3 - r + 0.5) * d;
+      for (let c = 0; c < 9; c += 2) {
+        const cx = x0 + (c + 0.5) * d + dir * d * 0.36;
+        g.beginPath(); g.moveTo(cx + dir * 9, cy); g.lineTo(cx - dir * 7, cy - 8); g.lineTo(cx - dir * 7, cy + 8); g.closePath(); g.fill();
+      }
+    }
+  }), { roughness: 0.75 });
+  const y = TOP + 0.031, shown = [];
+  for (let c = 0; c < 9; c++) for (const pl of [0, 1]) { const p = tabPiece(pl), at = tabCell(pl ? 27 + c : c); p.position.set(at.x, y + 0.007, at.z); group.add(p); shown.push(p); }
+  group.userData.display = shown;
+  return y;
+}
+
+/* --- Wing VI: Bagh-chal, the tiger game of Nepal, on a lined board */
+const BC_S = 0.11;
+function bcCell(i) { const r = (i / 5) | 0, c = i % 5; return { x: (c - 2) * BC_S, z: (2 - r) * BC_S }; }
+const bcStripe = tex(128, 64, (g, w, h) => { g.fillStyle = '#d9822b'; g.fillRect(0, 0, w, h); g.fillStyle = '#1e1208'; for (let k = 0; k < 8; k++) { g.beginPath(); g.moveTo(k * 16, 0); g.lineTo(k * 16 + 7, 0); g.lineTo(k * 16 + 3, h); g.lineTo(k * 16 - 3, h); g.fill(); } });
+function bcTiger() {
+  const g = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ map: bcStripe, roughness: 0.55 }), plain = new THREE.MeshStandardMaterial({ color: 0xd9822b, roughness: 0.55 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.03, 0.05, 20), mat); body.position.y = 0.025; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.02, 16, 12), plain); head.position.y = 0.064; g.add(head);
+  for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.ConeGeometry(0.007, 0.014, 8), plain); e.position.set(s * 0.013, 0.081, 0); g.add(e); }
+  g.userData.mats = [mat, plain]; return g;
+}
+function bcGoat() {
+  const g = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ color: 0xf0e9da, roughness: 0.7 }), horn = new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 0.6 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.021, 0.03, 16), mat); body.position.y = 0.015; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.013, 14, 10), mat); head.position.y = 0.04; g.add(head);
+  for (const s of [-1, 1]) { const h = new THREE.Mesh(new THREE.ConeGeometry(0.0035, 0.016, 6), horn); h.position.set(s * 0.007, 0.054, 0); h.rotation.z = -s * 0.35; g.add(h); }
+  g.userData.mats = [mat]; return g;
+}
+function buildBaghchal(group) {
+  const W = 4 * BC_S + 0.14;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W, 0.035, W), new THREE.MeshStandardMaterial({ color: 0x5a3a20, roughness: 0.6 }));
+  board.position.y = TOP + 0.0175; group.add(board);
+  const px = 1024, sc = px / W, o = px / 2 - 2 * BC_S * sc, st = BC_S * sc;
+  topPlane(group, W, W, TOP + 0.0355, tex(px, px, (g) => {
+    g.fillStyle = '#9c6b3c'; g.fillRect(0, 0, px, px);
+    woodGrain(g, px, px, '#a8743f', '#7a4f2a');
+    g.strokeStyle = '#8a1e14'; g.lineWidth = 16; g.strokeRect(10, 10, px - 20, px - 20); // a red painted border, as on Nepali brass boards
+    g.strokeStyle = '#2a170b'; g.lineWidth = 7; g.lineCap = 'round';
+    const P = (r, c) => [o + c * st, o + (4 - r) * st];
+    const line = (a, b) => { g.beginPath(); g.moveTo(...P(...a)); g.lineTo(...P(...b)); g.stroke(); };
+    for (let k = 0; k < 5; k++) { line([k, 0], [k, 4]); line([0, k], [4, k]); }
+    line([0, 0], [4, 4]); line([0, 4], [4, 0]); line([2, 0], [0, 2]); line([0, 2], [2, 4]); line([2, 4], [4, 2]); line([4, 2], [2, 0]);
+    g.fillStyle = '#2a170b';
+    for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) { const [x, y] = P(r, c); g.beginPath(); g.arc(x, y, 11, 0, TAU); g.fill(); }
+  }), { roughness: 0.6 });
+  const y = TOP + 0.036, shown = [];
+  for (const i of [0, 4, 20, 24]) { const t = bcTiger(), c = bcCell(i); t.position.set(c.x, y, c.z); group.add(t); shown.push(t); }
+  for (const i of [7, 11, 12, 13, 17]) { const t = bcGoat(), c = bcCell(i); t.position.set(c.x, y, c.z); group.add(t); shown.push(t); }
+  group.userData.display = shown;
+  return y;
+}
+
+/* --- Wing III: Four Seasons chess, after Alfonso X's book of games */
+const FS_S = 0.085;
+const FS_COL = [0x5e0c06, 0x161210, 0xd8cdb4, 0x163d16]; // red (you), black, white, green
+const FS_KIND = [null, 'raja', 'ratha', 'ashva', 'gaja', 'padati', 'mantri'];
+function fsCell(i) { const x = i & 7, y = i >> 3; return { x: (x - 3.5) * FS_S, z: (3.5 - y) * FS_S }; }
+function fsPiece(v) {
+  const s = v >> 5, mat = new THREE.MeshStandardMaterial({ color: FS_COL[s], roughness: s === 2 ? 0.5 : 0.4 });
+  const o = CR_MAKE[FS_KIND[v & 7]](mat); o.userData.mats = [mat]; o.userData.seat = s;
+  o.rotation.y = [Math.PI / 4, 3 * Math.PI / 4, -3 * Math.PI / 4, -Math.PI / 4][s]; // facing the centre from each corner
+  o.scale.setScalar(0.92);
+  return o;
+}
+function buildFourSeasons(group) {
+  const W = 8 * FS_S + 0.08;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, W), new THREE.MeshStandardMaterial({ color: 0x4a2e1a, roughness: 0.6 }));
+  board.position.y = TOP + 0.015; group.add(board);
+  const px = 1024, sc = px / W, d = FS_S * sc, c0 = px / 2 - 4 * d;
+  topPlane(group, W, W, TOP + 0.0305, tex(px, px, (g) => {
+    g.fillStyle = '#4a2e1a'; g.fillRect(0, 0, px, px);
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { g.fillStyle = (r + c) % 2 ? '#c9a46a' : '#7a5232'; g.fillRect(c0 + c * d, c0 + r * d, d, d); }
+    // The four seasons' corners: summer (red), autumn (black), winter (white), spring (green). Canvas y runs down, so rank 1 is at the bottom.
+    const tint = [['rgba(170,40,25,.28)', 0, 6], ['rgba(10,10,10,.30)', 6, 6], ['rgba(250,245,230,.30)', 6, 0], ['rgba(40,110,40,.30)', 0, 0]];
+    for (const [col, cx, cy] of tint) { g.fillStyle = col; g.fillRect(c0 + cx * d, c0 + cy * d, 2 * d, 2 * d); }
+    g.strokeStyle = 'rgba(40,22,10,.75)'; g.lineWidth = 4; // the two diagonals across the centre
+    g.beginPath(); g.moveTo(c0 + 2 * d, c0 + 6 * d); g.lineTo(c0 + 6 * d, c0 + 2 * d); g.moveTo(c0 + 2 * d, c0 + 2 * d); g.lineTo(c0 + 6 * d, c0 + 6 * d); g.stroke();
+    g.strokeStyle = '#2a170b'; g.lineWidth = 5; g.strokeRect(c0, c0, 8 * d, 8 * d);
+  }), { roughness: 0.55 });
+  const y = TOP + 0.031, shown = [], G = window.LibrariumRules.fourseasons;
+  G.init(); G.b.forEach((v, i) => { if (!v) return; const o = fsPiece(v), c = fsCell(i); o.position.set(c.x, y, c.z); group.add(o); shown.push(o); });
+  group.userData.display = shown;
+  return y;
+}
+
 /* --- Wing III: Shatranj board and pieces */
 const SJ_S = 0.09;
 function sjCell(i) { const r = i >> 3, c = i & 7; return { x: (c - 3.5) * SJ_S, z: (3.5 - r) * SJ_S }; }
@@ -2853,9 +2996,9 @@ const STOPS = [
     eyebrow: 'Wing III · Librarium Archives', status: null, begin: 'tables',
     body: [
       'Board games became courtly pastimes. In this wing chess travels from India through Persia to the far North, the dice games of Rome and Persia settle into tables, and paper cards arrive from the East and change how Europe plays.',
-      'Five tables are open: Tables, the family of games that became backgammon; Shatranj, the chess of the caliphs\' courts; Xiangqi, the chess of China; Chaturaji, chess for four with dice; and a game of tarocchi, the card game that tarot was made for.'
+      'Six tables are open: Tables, the family of games that became backgammon; Shatranj, the chess of the caliphs\' courts; Xiangqi, the chess of China; Chaturaji, chess for four with dice; Four Seasons chess, from Alfonso X\'s Book of Games; and a game of tarocchi, the card game that tarot was made for.'
     ],
-    facts: [['Tables', 'Tables, Shatranj, Xiangqi, Chaturaji, Tarocchi'], ['Display', 'Chaturanga, Lewis chessmen, cards, tarot']],
+    facts: [['Tables', 'Tables, Shatranj, Xiangqi, Chaturaji, Four Seasons chess, Tarocchi'], ['Display', 'Chaturanga, Lewis chessmen, cards, tarot']],
   },
   { id: 'tables', wing: 3, title: 'Tables', short: 'Tables (Backgammon)', date: 'c. 480 CE onward', rail: 'Tables',
     eyebrow: 'Rome, Persia and medieval Europe', status: ['known', 'Rules survive in modern backgammon'], game: 'tables',
@@ -2909,6 +3052,15 @@ const STOPS = [
     ],
     facts: [['Found', 'Isle of Lewis, about 1831'], ['Material', 'Walrus ivory, whale tooth'], ['Pieces', '79 chessmen, 14 tables discs'], ['Held', 'British Museum, National Museums Scotland']],
     build: buildLewis },
+  { id: 'fourseasons', wing: 3, title: 'Four Seasons Chess', short: 'Four Seasons Chess', date: '1283 CE', rail: 'Four Seasons',
+    eyebrow: 'Castile · Alfonso X\'s Book of Games', status: ['recon', 'Partly reconstructed'], game: 'fourseasons',
+    body: [
+      'In 1283 King Alfonso X of Castile finished his Libro de los juegos, the Book of Games: an illustrated manuscript of chess problems, dice games and table games. Among them is a chess for four players, the acedrex de los quatro tiempos, the chess of the four seasons.',
+      'Each army is a season, a colour, an element and one of the four humours of the body: green for spring, air and blood; red for summer, fire and choler; black for autumn, earth and melancholy; white for winter, water and phlegm. The armies start in the four corners, and play goes round the board as the seasons turn, beginning with spring.',
+      'Alfonso\'s text leaves gaps, so the table follows the reading of H. J. R. Murray and Hans Bodlaender: an alfil that leaps two squares, and a mated army that passes to the player who mated it. The book allows dice; we play without, and the diagonals drawn across the centre are only decoration.'
+    ],
+    facts: [['Board', '8 × 8, an army in each corner'], ['Armies', 'King, rook, knight, alfil, four pawns'], ['Seasons', 'Spring, summer, autumn, winter'], ['Goal', 'Be the last army left']],
+    build: buildFourSeasons },
   { id: 'cards', wing: 3, title: 'Playing Cards', date: 'c. 900–1400 CE', rail: 'Playing Cards',
     eyebrow: 'China, Mamluk Egypt and Europe', status: ['lost', 'Earliest games lost'],
     note: 'On display. These cards are new designs in the old styles.',
@@ -3116,10 +3268,10 @@ const STOPS = [
   { id: 'wing6', wing: 6, title: 'Games of the World', short: 'Wing VI', date: 'Across the oceans', rail: 'Wing VI',
     eyebrow: 'Wing VI · Librarium Archives', status: null, begin: 'mutorere',
     body: [
-      'The other wings follow one long road, from Egypt and Mesopotamia through Europe to the shop shelf. But play has many homelands. This wing gathers games from the Pacific, Africa and East Asia: some ancient, some first written down by visitors, all still played today.',
-      'All ten tables are open: Mū tōrere from Aotearoa New Zealand, Shogi and Gomoku from Japan, Makruk from Thailand, Kōnane from Hawaiʻi, Yut Nori and Janggi from Korea, Fanorona from Madagascar, Bao from the Swahili coast and Morabaraba from southern Africa.'
+      'The other wings follow one long road, from Egypt and Mesopotamia through Europe to the shop shelf. But play has many homelands. This wing gathers games from the Pacific, Africa and Asia: some ancient, some first written down by visitors, all still played today.',
+      'All thirteen tables are open: Mū tōrere from Aotearoa New Zealand, Shogi and Gomoku from Japan, Makruk from Thailand, Bagh-chal from Nepal, Kōnane from Hawaiʻi, Yut Nori and Janggi from Korea, Fanorona from Madagascar, Bao from the Swahili coast, Morabaraba from southern Africa, and Seega and Tâb from Egypt.'
     ],
-    facts: [['Tables', 'Mū tōrere, Shogi, Gomoku, Makruk, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba']],
+    facts: [['Tables', 'Mū tōrere, Shogi, Gomoku, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega, Tâb']],
   },
   { id: 'mutorere', wing: 6, title: 'Mū tōrere', date: 'first described in 1917', rail: 'Mū tōrere',
     eyebrow: 'Aotearoa New Zealand · Māori', status: ['known', 'Still played'], game: 'mutorere',
@@ -3153,6 +3305,15 @@ const STOPS = [
     ],
     facts: [['Ancestor', 'Chaturanga'], ['Pawns', 'Cowrie shells, promoted on the sixth rank'], ['Cousin', 'Ouk chaktrang, Cambodia']],
     build: buildMakruk },
+  { id: 'baghchal', wing: 6, title: 'Bagh-chal', short: 'Bagh-chal (Tigers and Goats)', date: 'traditional', rail: 'Bagh-chal',
+    eyebrow: 'Nepal', status: ['known', 'Still played'], game: 'baghchal',
+    body: [
+      'Bagh-chal, "the tigers\' move", is the hunt game of Nepal. Four tigers face twenty goats on a board of lines like alquerque\'s: the tigers try to eat five goats, and the goats try to hem every tiger in so that none can move.',
+      'Hunt games that pit a few strong pieces against many weak ones are played all over South Asia, from the lambs and tigers of southern India to the tiger games of Bengal. In Nepal, Bagh-chal is played on boards scratched on the ground as well as on cast brass sets with tiger and goat pieces.',
+      'You may lead either side. The goats are the harder, more patient role. Once all twenty are down, no position may repeat, so the goats cannot simply wait.'
+    ],
+    facts: [['Board', '5 × 5 points with diagonals'], ['Sides', '4 tigers, 20 goats'], ['Tigers win', 'By taking five goats'], ['Goats win', 'By leaving no tiger a move']],
+    build: buildBaghchal },
   { id: 'konane', wing: 6, title: 'Kōnane', date: 'by 1778–79', rail: 'Kōnane',
     eyebrow: 'Hawaiʻi', status: ['known', 'Still played'], game: 'konane',
     body: [
@@ -3202,6 +3363,24 @@ const STOPS = [
     ],
     facts: [['Pieces', '12 cows each'], ['Board', '24 points, with diagonals'], ['Championships', 'Since 1997']],
     build: buildMorabaraba },
+  { id: 'seega', wing: 6, title: 'Seega', date: 'recorded in the 1820s', rail: 'Seega',
+    eyebrow: 'Egypt · recorded by Edward Lane', status: ['known', 'Rules survive in writing'], game: 'seega',
+    body: [
+      'Seega is a game of the Nile valley, played on rows of cups scooped in the ground or cut in stone. Edward William Lane, an English scholar who lived in Cairo in the 1820s and 1830s, described it in his Manners and Customs of the Modern Egyptians (1836): boards of five, seven or nine rows, with twelve pieces each on the five-row board, the khamsáwee seega.',
+      'The pieces, called kelbs or "dogs", go down two at a time until only the centre is empty. Then the game becomes a fight of pincers: a piece trapped between two enemies along a line is lifted off, and a player keeps capturing for as long as they can.',
+      'Versions of it are still played in North Africa and the Middle East. Lane gives no rule for a game that stalls behind walls of pieces, so the table settles that by count after twenty quiet moves each.'
+    ],
+    facts: [['Board', '5 × 5 cups'], ['Pieces', '12 each, placed two at a time'], ['Capture', 'Trap a piece between two of yours'], ['Source', 'Edward Lane, 1836']],
+    build: buildSeega },
+  { id: 'tab', wing: 6, title: 'Tâb', date: 'recorded in the 1820s', rail: 'Tâb',
+    eyebrow: 'Egypt · recorded by Edward Lane', status: ['known', 'Rules survive in writing'], game: 'tab',
+    body: [
+      'Tâb is a race and a battle at once. In Egypt it was played on four rows of squares drawn in the dust or cut in a plank, with pieces of stone on one side and red brick or tile on the other. Edward Lane recorded it in 1836, beside seega.',
+      'The dice are four slips of palm stick, white on one face. One white face is a tâb, and a piece cannot leave home until its owner throws one. After that, pieces chase each other round the middle rows, knock out any enemy they land on, and may make one raid through the enemy\'s home row.',
+      'Lane also describes pieces joining into stacks that split again on a tâb. The table leaves stacking out and moves each throw as it is made, to keep the game easy to follow.'
+    ],
+    facts: [['Board', '4 rows of 9 squares'], ['Dice', 'Four palm sticks: 1, 2, 3, 4 or 6'], ['Goal', 'Take every enemy piece'], ['Source', 'Edward Lane, 1836']],
+    build: buildTab },
   { id: 'next', wing: 6, title: 'From These Tables to Yours', short: 'Librarium', date: 'Today', rail: 'Today',
     eyebrow: 'Librarium Games', status: null,
     body: [
@@ -3263,7 +3442,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -4512,6 +4691,160 @@ const CHATURAJI_P = {
   },
   score() { const L = this.scores(); return [L[0], L[1], L.slice(2).map(x => Array.isArray(x) ? x.join(' ') : x).join(' · ')]; },
 };
+const SEEGA_P = {
+  camW: 0.95,
+  intro() { return 'You have the dark stones, the Scribe the red clay. Place two stones at a time on empty cups, never the centre.'; },
+  prompt() { const G = GAMES.seega; return G.placing() ? 'Place two stones on empty cups.' : !G.started ? 'Your first move must go into the centre.' : 'Pick a stone, then a ring. Trap a piece between two of yours to take it.'; },
+  setup(ex) {
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 12 }, () => { const s = sgStone(pl); ex.group.add(s); return s; }));
+    this.cell = Array(25).fill(null); this.used = [0, 0]; this.lost = [0, 0];
+    ex.pieces.forEach((list, pl) => list.forEach((s, k) => { s.visible = true; s.position.copy(this.handSpot(pl, k)); }));
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(s => { s.visible = false; }); },
+  pos(i) { const c = sgCell(i); return V3(c.x, GAMES.seega.surface + 0.012, c.z); },
+  // Stones wait in two rows on their owner's side of the slab; lost stones go to the side.
+  handSpot(pl, k) { return V3((pl ? 1 : -1) * (0.2 - ((k / 2) | 0) * 0.075), TOP + 0.012, (pl ? -1 : 1) * (0.34 + (k % 2) * 0.065)); },
+  lostSpot(owner, k) { return V3((owner ? -1 : 1) * (0.36 + ((k / 6) | 0) * 0.065), TOP + 0.012, (owner ? -1 : 1) * (0.2 - (k % 6) * 0.07)); },
+  meshesFor(m) { return m.place !== undefined ? [] : [this.cell[m.lift !== undefined ? m.lift : m.from]]; },
+  ringFor(m) { return m.place !== undefined ? this.pos(m.place) : m.lift !== undefined ? null : this.pos(m.to); },
+  ringTone: m => (m.cap ? 'ember' : 'gold'),
+  fromFor(m) { return m.from !== undefined ? this.pos(m.from) : null; },
+  async play(m) {
+    const G = GAMES.seega, tok = play.token, ex = play.ex;
+    if (m.place !== undefined) {
+      const s = ex.pieces[m.pl][this.used[m.pl]++]; this.cell[m.place] = s;
+      const res = G.apply(m); await hop(s, this.pos(m.place), 0.35, 0.08); return res;
+    }
+    if (m.lift !== undefined) {
+      const s = this.cell[m.lift]; this.cell[m.lift] = null; const res = G.apply(m);
+      await hop(s, this.lostSpot(m.pl, this.lost[m.pl]++), 0.4, 0.1); return res;
+    }
+    const s = this.cell[m.from]; this.cell[m.from] = null; this.cell[m.to] = s;
+    const res = G.apply(m);
+    await hop(s, this.pos(m.to), 0.26, 0.03);
+    if (tok !== play.token) return res;
+    for (const j of res.taken) { const v = this.cell[j]; this.cell[j] = null; if (v) hop(v, this.lostSpot(1 - m.pl, this.lost[1 - m.pl]++), 0.4, 0.12); }
+    return res;
+  },
+  score: () => { const G = GAMES.seega; return [['You', G.count(0) + 12 - G.placed[0]], ['Scribe', G.count(1) + 12 - G.placed[1]], 'stones']; },
+};
+
+const TAB_P = {
+  camW: 0.95,
+  intro() { return 'You have the dark stones nearest you. Throw the sticks: you need a tâb (one white side) to start a piece.'; },
+  prompt() { return 'Throw the sticks.'; },
+  choosePrompt: moves => (moves.length > 1 ? 'Pick a glowing piece, then its ring.' : 'Pick the glowing piece to move it.'),
+  setup(ex) {
+    const G = GAMES.tab;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) ex.pieces = G.pc.map(p => { const m = tabPiece(p.pl); ex.group.add(m); return m; });
+    this.lost = [0, 0];
+    ex.pieces.forEach((m, k) => { m.visible = true; m.userData.band.visible = false; m.position.copy(this.pos(G.pc[k].cell)); });
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => { m.visible = false; }); },
+  pos(i) { const c = tabCell(i); return V3(c.x, GAMES.tab.surface + 0.007, c.z); },
+  lostSpot(owner, k) { return V3(-0.32 + (k % 9) * 0.08, TOP + 0.008, owner ? -0.28 : 0.28); },
+  meshesFor(m) { return [play.ex.pieces[m.piece]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  ringTone: m => (m.cap ? 'ember' : 'gold'),
+  async play(m) {
+    const G = GAMES.tab, tok = play.token, mesh = play.ex.pieces[m.piece];
+    const victim = G.at[m.to] >= 0 ? play.ex.pieces[G.at[m.to]] : null;
+    const res = G.apply(m);
+    for (const sq of m.path) { if (tok !== play.token) return res; await hop(mesh, this.pos(sq), 0.16, 0.03); }
+    mesh.userData.band.visible = true; // a piece that has set out wears a pale ring
+    if (victim) { const owner = 1 - m.pl; hop(victim, this.lostSpot(owner, this.lost[owner]++), 0.4, 0.12); }
+    return res;
+  },
+  score: () => { const G = GAMES.tab; return [['You', G.count(0)], ['Scribe', G.count(1)], 'pieces']; },
+};
+
+const BAGHCHAL_P = {
+  camW: 1.0,
+  intro() { const G = GAMES.baghchal; return G.goatPl === 0 ? 'You lead the goats and move first: place a goat on any empty point. Trap all four tigers to win.' : 'You lead the tigers; the Scribe\'s goats move first. Take five goats to win.'; },
+  prompt() { const G = GAMES.baghchal; return G.goatPl === 0 ? (G.inHand ? `Place a goat (${G.inHand} left to place).` : 'Pick a goat, then a ring.') : 'Pick a tiger, then a ring. Jump a goat to take it.'; },
+  setup(ex) {
+    const G = GAMES.baghchal;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) { ex.pieces = { tigers: [0, 1, 2, 3].map(() => { const t = bcTiger(); ex.group.add(t); return t; }), goats: Array.from({ length: 20 }, () => { const t = bcGoat(); ex.group.add(t); return t; }) }; }
+    this.cell = Array(25).fill(null); this.used = 0; this.lost = 0;
+    ex.pieces.tigers.forEach((t, k) => { t.visible = true; const i = [0, 4, 20, 24][k]; t.position.copy(this.pos(i)); this.cell[i] = t; });
+    ex.pieces.goats.forEach((t, k) => { t.visible = true; t.position.copy(this.handSpot(k)); });
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); if (ex.pieces) [...ex.pieces.tigers, ...ex.pieces.goats].forEach(m => { m.visible = false; }); },
+  pos(i) { const c = bcCell(i); return V3(c.x, GAMES.baghchal.surface, c.z); },
+  // Goats wait beside the board on the goat player's side; taken goats go to the other side.
+  handSpot(k) { const near = GAMES.baghchal.goatPl === 0; return V3(-0.33 + (k % 10) * 0.073, TOP, (near ? 1 : -1) * (0.36 + ((k / 10) | 0) * 0.06)); },
+  lostSpot(k) { const near = GAMES.baghchal.goatPl === 0; return V3(0.4, TOP, (near ? -1 : 1) * (0.25 - k * 0.07)); },
+  meshesFor(m) { return m.place !== undefined ? [] : [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.place !== undefined ? m.place : m.to); },
+  fromFor(m) { return m.from !== undefined ? this.pos(m.from) : null; },
+  ringTone: m => (m.cap ? 'ember' : 'gold'),
+  async play(m) {
+    const G = GAMES.baghchal, tok = play.token;
+    if (m.place !== undefined) {
+      const goat = play.ex.pieces.goats[this.used++]; this.cell[m.place] = goat;
+      const res = G.apply(m); await hop(goat, this.pos(m.place), 0.35, 0.08); return res;
+    }
+    const mesh = this.cell[m.from]; this.cell[m.from] = null; this.cell[m.to] = mesh;
+    const victim = m.over !== undefined ? this.cell[m.over] : null; if (victim) this.cell[m.over] = null;
+    const res = G.apply(m);
+    await hop(mesh, this.pos(m.to), victim ? 0.34 : 0.26, victim ? 0.09 : 0.03);
+    if (tok !== play.token) return res;
+    if (victim) hop(victim, this.lostSpot(this.lost++), 0.4, 0.12);
+    return res;
+  },
+  score: () => { const G = GAMES.baghchal; return [['Goats taken', `${G.taken} of 5`], ['Goats to place', G.inHand], '']; },
+};
+
+const FOURSEASONS_P = {
+  camW: 1.15, ringScale: 0.78,
+  intro() { return 'You are Red, summer, in the corner by your left hand. Green moves first; then you, Black and White, each for itself.'; },
+  prompt() { return 'Pick a piece, then a ring.'; },
+  setup(ex) {
+    const G = GAMES.fourseasons;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = [];
+    this.ex = ex; this.cell = Array(64).fill(null); this.won = [0, 0, 0, 0];
+    G.b.forEach((v, i) => { if (v) this.cell[i] = this.make(v, i); });
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = []; },
+  make(v, i) { const o = fsPiece(v); o.userData.v = v; o.position.copy(this.pos(i)); this.ex.group.add(o); this.ex.pieces.push(o); return o; },
+  pos(i) { const c = fsCell(i); return V3(c.x, GAMES.fourseasons.surface, c.z); },
+  // Pieces taken line up in front of the taker's corner.
+  wonSpot(seat, k) { const x = (seat === 0 || seat === 3 ? -0.2 : 0.2) + ((k % 6) - 2.5) * 0.06, z = (seat < 2 ? 1 : -1) * (0.42 + ((k / 6) | 0) * 0.06); return V3(x, TOP, z); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  ringTone: m => (m.cap ? 'ember' : 'gold'),
+  // Bring every mesh into line with the board: armies that change hands take their new owner's colour.
+  sync() {
+    const G = GAMES.fourseasons;
+    for (let i = 0; i < 64; i++) {
+      const v = G.b[i], o = this.cell[i];
+      if (!v && o) { o.visible = false; this.cell[i] = null; continue; }
+      if (v && (!o || o.userData.v !== v)) { if (o) o.visible = false; this.cell[i] = this.make(v, i); }
+    }
+  },
+  async play(m) {
+    const G = GAMES.fourseasons, tok = play.token;
+    const mesh = this.cell[m.from], victim = this.cell[m.to];
+    const res = G.apply(m);
+    this.cell[m.from] = null; this.cell[m.to] = mesh;
+    await hop(mesh, this.pos(m.to), 0.3, (G.b[m.to] & 7) === 3 || (G.b[m.to] & 7) === 4 ? 0.07 : 0.03);
+    if (tok !== play.token) return res;
+    if (victim) hop(victim, this.wonSpot(m.seat, this.won[m.seat]++), 0.4, 0.12);
+    this.sync();
+    return res;
+  },
+  scores() {
+    const G = GAMES.fourseasons;
+    return [['You', G.alive[0] ? G.material(0) : 'out'], ...[1, 2, 3].map(s => [G.SEATS[s], G.alive[s] ? G.material(s) : 'out']), `round ${Math.min(G.round, G.ROUNDS)}/${G.ROUNDS}`];
+  },
+  score() { const L = this.scores(); return [L[0], L[1], L.slice(2).map(x => Array.isArray(x) ? x.join(' ') : x).join(' · ')]; },
+};
 const KALAH_P = {
   camW: 1.2, ringScale: 1.2,
   intro() { return 'Your six pits are the row nearest you, and your store is on your right. ' + this.prompt(); },
@@ -4864,7 +5197,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -5266,7 +5599,7 @@ async function startGame(ex) {
   clearLastMove();
   if (g.dice) renderDice(g, null);
   updateScore();
-  setMsg(g.first === 0 ? 'Your turn' : 'The Scribe', g.first === 0 ? '' : 'The Scribe moves first.');
+  setMsg(g.first === 0 ? 'Your turn' : scribeName(g), g.first === 0 ? '' : `${scribeName(g)} moves first.`);
   await flyToPlay(ex);
   beginTurn(g.first, true);
 }
@@ -5500,10 +5833,10 @@ async function aiTurn() {
     if (tok !== play.token) return;
     sfx.move(g, m, res);
     updateScore();
-    if (res.note) { setMsg('The Scribe', res.note); said = true; }
+    if (res.note) { setMsg(who, res.note); said = true; }
   }
   if (said) { await wait(1000); if (tok !== play.token) return; }
-  beginTurn(0);
+  beginTurn(nextPl(g, 0));
 }
 function finish(res) {
   play.phase = 'over'; clearHighlights();
