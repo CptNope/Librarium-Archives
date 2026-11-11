@@ -1818,28 +1818,46 @@ function mhPawn(pl) { const mat = new THREE.MeshStandardMaterial({ color: pl ? 0
 function mhStart(pl) { return V3(-MH_W / 2 - 0.06, TOP, -0.18 + pl * 0.06); }
 
 /* --- Wing V: The Checkered Game of Life (display) */
+// The board of about 1911: an 8 x 8 checkerboard whose pale squares carry the course of a life,
+// newly drawn with names and numbers in place of the engravings. Row 0 is the far side.
+const CL_S = 0.095;
+function clCell(i) { const r = i >> 3, c = i & 7; return { x: (c - 3.5) * CL_S, z: (r - 3.5) * CL_S }; }
 function buildCheckeredLife(group) {
-  const W = 0.78;
-  const board = new THREE.Mesh(new THREE.BoxGeometry(W + 0.04, 0.02, W + 0.04), new THREE.MeshStandardMaterial({ color: 0x2a1a10, roughness: 0.6 }));
+  const W = 8 * CL_S + 0.06, G = window.LibrariumRules.lifegame;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W, 0.02, W), new THREE.MeshStandardMaterial({ color: 0x2a3a34, roughness: 0.6 }));
   board.position.y = TOP + 0.01; group.add(board);
-  const px = 1024, cs = px / 8;
+  const px = 2048, d = (8 * CL_S) / W * px / 8, o = (px - 8 * d) / 2;
   topPlane(group, W, W, TOP + 0.0205, tex(px, px, (g) => {
-    agedPaper(g, px, px);
-    const R = seeded(1860);
+    g.fillStyle = '#e8dfc8'; g.fillRect(0, 0, px, px);
+    // A border of small checks, as printed round the board.
+    for (let k = 0; k < px / 24; k++) { g.fillStyle = k % 2 ? '#2a3a34' : '#e8dfc8'; g.fillRect(k * 24, 0, 24, o * 0.45); g.fillRect(k * 24, px - o * 0.45, 24, o * 0.45); g.fillRect(0, k * 24, o * 0.45, 24); g.fillRect(px - o * 0.45, k * 24, o * 0.45, 24); }
     for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
-      const x = c * cs, y = r * cs;
-      if ((r + c) % 2) { g.fillStyle = '#7a2a1c'; g.fillRect(x, y, cs, cs); continue; }
-      g.fillStyle = '#efe0b8'; g.fillRect(x, y, cs, cs);
-      // Small coloured vignettes stand for the virtues and vices on the squares.
-      if (R() < 0.6) {
-        g.fillStyle = ['#6a8a3a', '#d4a23a', '#2a4a7a', '#8a3a22'][(R() * 4) | 0];
-        g.beginPath(); g.arc(x + cs / 2, y + cs / 2 - 8, cs * 0.18, 0, TAU); g.fill();
-        g.fillStyle = '#3a2412'; g.fillRect(x + cs * 0.25, y + cs * 0.72, cs * 0.5, 4); g.fillRect(x + cs * 0.32, y + cs * 0.8, cs * 0.36, 3);
+      const x = o + c * d, y = o + r * d, i = r * 8 + c, sq = G.SQ[i];
+      if ((r + c) % 2 === 0) { // the red squares are only ornament: an eight-pointed star of our own
+        g.fillStyle = '#c4382a'; g.fillRect(x, y, d, d);
+        g.strokeStyle = '#f3e3c0'; g.lineWidth = 6; g.strokeRect(x + 12, y + 12, d - 24, d - 24);
+        g.fillStyle = '#f3e3c0'; g.beginPath();
+        for (let k = 0; k < 16; k++) { const a = k * Math.PI / 8, rr = k % 2 ? d * 0.13 : d * 0.3; g.lineTo(x + d / 2 + Math.cos(a) * rr, y + d / 2 + Math.sin(a) * rr); }
+        g.closePath(); g.fill();
+        continue;
       }
+      g.fillStyle = '#9fc7bd'; g.fillRect(x, y, d, d); g.strokeStyle = '#2a3a34'; g.lineWidth = 3; g.strokeRect(x, y, d, d);
+      g.fillStyle = '#16302a'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      const name = sq[0].toUpperCase();
+      g.font = `bold ${name.length > 11 ? 26 : 32}px Georgia, serif`; g.fillText(name, x + d / 2, y + d * 0.2, d - 16);
+      if (sq[1]) { g.font = 'bold 84px Georgia, serif'; g.fillText(String(sq[1]), x + d / 2, y + d * 0.58); }
+      else if (sq[2] !== undefined) { // a pointing hand: drawn here as an arrow, with where it leads
+        g.font = '58px Georgia, serif'; g.fillText('➜', x + d / 2, y + d * 0.52);
+        g.font = 'italic 24px Georgia, serif'; g.fillText('to ' + G.SQ[sq[2]][0], x + d / 2, y + d * 0.8, d - 16);
+      } else if (i === 62) { g.font = 'italic 22px Georgia, serif'; g.fillText('where you must', x + d / 2, y + d * 0.52); g.fillText('lose one move', x + d / 2, y + d * 0.68); }
+      else if (i === 30) { g.font = 'italic 24px Georgia, serif'; g.fillText('3 or 6: Wealth', x + d / 2, y + d * 0.52); g.fillText('else: Ruin', x + d / 2, y + d * 0.68); }
     }
-    g.strokeStyle = '#3a2412'; g.lineWidth = 6; g.strokeRect(3, 3, px - 6, px - 6);
-  }), { roughness: 0.85 });
-  const tt = teetotum(0xcdb98a); tt.position.set(W / 2 + 0.12, TOP, -0.05); group.add(tt);
+  }), { roughness: 0.75 });
+  const tt = teetotum(); tt.position.set(W / 2 + 0.1, TOP, 0.18); group.add(tt);
+  const shown = [];
+  [0, 1].forEach(pl => { const p = mhPawn(pl); const c = clCell(56); p.position.set(c.x + (pl ? 0.016 : -0.016), TOP + 0.021, c.z); group.add(p); shown.push(p); });
+  group.userData.display = shown;
+  return TOP + 0.021;
 }
 
 /* --- Wing V: Reversi */
@@ -3251,9 +3269,9 @@ const STOPS = [
     eyebrow: 'Wing V · Librarium Archives', status: null, begin: 'mansion',
     body: [
       'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
-      'Eight tables are open: the Mansion of Happiness, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
+      'All nine tables are open: the Mansion of Happiness, the Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
     ],
-    facts: [['Tables', 'Mansion of Happiness, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex'], ['Display', 'Game of Life']],
+    facts: [['Tables', 'Mansion of Happiness, Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex']],
   },
   { id: 'mansion', wing: 5, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
     eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'], game: 'mansion',
@@ -3266,13 +3284,14 @@ const STOPS = [
     facts: [['Publisher', 'W. & S. B. Ives, Salem'], ['Board', '67 squares on a spiral'], ['Moves', 'A spinning teetotum'], ['Goal', 'Reach the mansion at the centre']],
     build: buildMansion },
   { id: 'lifegame', wing: 5, title: 'The Checkered Game of Life', short: 'Checkered Game of Life', date: '1860 CE', rail: 'Game of Life',
-    eyebrow: 'Springfield, Massachusetts', status: ['known', 'Rules survive in print'],
-    note: 'On display.',
+    eyebrow: 'Springfield, Massachusetts', status: ['known', 'Rules survive in print'], game: 'lifegame',
+    note: 'The table follows Bradley\'s rules; what each spin allows comes from a modern reproduction.',
     body: [
       'Milton Bradley had just set up a colour lithography shop in Springfield, Massachusetts, when he printed The Checkered Game of Life in the winter of 1860. He sold the first few hundred copies himself on a two-day trip to New York, and by 1861 buyers had taken more than 45,000.',
-      'Like the Mansion of Happiness it was a moral journey, played with a teetotum. Its squares held the virtues and dangers of a life, from Influence and Fat Office to Poverty, Prison and Ruin. The company Bradley founded later grew it into The Game of Life.'
+      'Like the Mansion of Happiness it was a moral journey, played with a teetotum. Its squares held the virtues and dangers of a life, from Influence and Fat Office to Poverty, Prison and Ruin. The company Bradley founded later grew it into The Game of Life.',
+      'Unlike the Mansion, it let players choose their road: each spin offered moves up, down, across or diagonally, and the first to 100 points won. The board here is laid out as on the company\'s edition of about 1911, newly drawn, with names and numbers in place of the engravings. Bradley\'s patent of 1866 gives the rules; what each number of the teetotum allows follows a modern reproduction. Its darkest square, a stark mark of the moralising of its day, puts a player out of the game.'
     ],
-    facts: [['Maker', 'Milton Bradley'], ['Moves', 'A teetotum'], ['Sold', 'Over 45,000 by 1861']],
+    facts: [['Maker', 'Milton Bradley'], ['Board', '8 × 8, 32 squares in play'], ['Moves', 'A teetotum: up, across or diagonally'], ['Goal', 'First to 100 points'], ['Sold', 'Over 45,000 by 1861']],
     build: buildCheckeredLife },
   { id: 'reversi', wing: 5, title: 'Reversi', date: '1883 CE', rail: 'Reversi',
     eyebrow: 'Victorian England', status: ['known', 'Rules survive in print'], game: 'reversi',
@@ -3509,7 +3528,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -5036,6 +5055,32 @@ const MANSION_P = {
   sync() { const G = GAMES.mansion, ex = play.ex; if (!ex || !ex.pieces || play.game !== G) return; ex.pieces.forEach((p, pl) => { const to = this.pos(pl, G.pos[pl]); if (p.position.distanceTo(to) > 0.03 && play.phase !== 'anim' && play.phase !== 'ai') p.position.copy(to); }); },
   score() { this.sync(); const G = GAMES.mansion; return [['You', G.pos[0]], ['Scribe', G.pos[1]], 'of 67']; },
 };
+const LIFEGAME_P = {
+  camW: 1.0,
+  intro() { return 'You have the red counter, the Scribe the blue; both start at Infancy. Spin the teetotum: its number says how you may move.'; },
+  prompt() { return 'Spin the teetotum.'; },
+  choosePrompt: moves => (moves.length > 1 ? 'Pick your counter, then one of the rings.' : 'Pick your counter to move it.'),
+  setup(ex) {
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) ex.pieces = [0, 1].map(pl => { const p = mhPawn(pl); ex.group.add(p); return p; });
+    ex.pieces.forEach((p, pl) => { p.visible = true; p.position.copy(this.pos(pl, 56)); });
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(p => { p.visible = false; }); },
+  pos(pl, i) { const c = clCell(i), G = GAMES.lifegame, both = G.pos[0] === G.pos[1]; return V3(c.x + (both ? (pl ? 0.016 : -0.016) : 0), G.surface, c.z); },
+  meshesFor(m) { return [play.ex.pieces[m.pl]]; },
+  ringFor(m) { const c = clCell(m.via !== undefined ? m.via : m.to); return V3(c.x, GAMES.lifegame.surface, c.z); },
+  fromFor(m) { const c = clCell(m.from); return V3(c.x, GAMES.lifegame.surface, c.z); },
+  ringTone: m => (m.hand ? 'ember' : 'gold'),
+  async play(m) {
+    const G = GAMES.lifegame, tok = play.token, pawn = play.ex.pieces[m.pl];
+    const res = G.apply(m);
+    for (const i of G.steps(m)) { if (tok !== play.token) return res; await hop(pawn, this.pos(m.pl, i), 0.32, 0.05); }
+    if (res.bumped !== null) await hop(play.ex.pieces[res.bumped], this.pos(res.bumped, G.pos[res.bumped]), 0.45, 0.1);
+    play.ex.pieces.forEach((p, pl) => p.position.copy(this.pos(pl, G.pos[pl]))); // side by side when sharing Infancy
+    return res;
+  },
+  score: () => { const G = GAMES.lifegame; return [['You', G.score[0]], ['Scribe', G.score[1]], 'points of 100']; },
+};
 const KALAH_P = {
   camW: 1.2, ringScale: 1.2,
   intro() { return 'Your six pits are the row nearest you, and your store is on your right. ' + this.prompt(); },
@@ -5388,7 +5433,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -5849,7 +5894,7 @@ function renderDice(g, r, shaking = false) {
   faces.forEach(f => {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', '0 0 30 30');
-    if (g.pipDice && g.id !== 'mansion') {
+    if (g.pipDice && g.id !== 'mansion' && g.id !== 'lifegame') {
       const p = document.createElementNS(ns, 'rect'); p.setAttribute('x', '3'); p.setAttribute('y', '3'); p.setAttribute('width', '24'); p.setAttribute('height', '24'); p.setAttribute('rx', '5');
       p.setAttribute('fill', '#ecdfc3'); p.setAttribute('stroke', '#a8977a'); p.setAttribute('stroke-width', '1.2'); svg.appendChild(p);
       const pips = { 1: [[15, 15]], 2: [[9, 9], [21, 21]], 3: [[9, 9], [15, 15], [21, 21]], 4: [[9, 9], [21, 9], [9, 21], [21, 21]], 5: [[9, 9], [21, 9], [15, 15], [9, 21], [21, 21]], 6: [[9, 8], [21, 8], [9, 15], [21, 15], [9, 22], [21, 22]] }[r ? f : 1];
@@ -5858,7 +5903,7 @@ function renderDice(g, r, shaking = false) {
       const e = document.createElementNS(ns, 'ellipse'); e.setAttribute('cx', '15'); e.setAttribute('cy', '15'); e.setAttribute('rx', '9'); e.setAttribute('ry', '13');
       e.setAttribute('fill', r && f ? '#f2ead8' : '#c9b79a'); e.setAttribute('stroke', '#a8977a'); e.setAttribute('stroke-width', '1.2'); svg.appendChild(e);
       if (r && f) { const l = document.createElementNS(ns, 'path'); l.setAttribute('d', 'M15 5 Q12 15 15 25'); l.setAttribute('stroke', '#5a4a3a'); l.setAttribute('stroke-width', '2'); l.setAttribute('fill', 'none'); svg.appendChild(l); }
-    } else if (g.id === 'mansion') { // a teetotum seen from above: a hexagon with the number it fell on
+    } else if (g.id === 'mansion' || g.id === 'lifegame') { // a teetotum seen from above: a hexagon with the number it fell on
       const p = document.createElementNS(ns, 'path'); p.setAttribute('d', 'M15 2 L27 9 L27 21 L15 28 L3 21 L3 9 Z');
       p.setAttribute('fill', '#ecdfc3'); p.setAttribute('stroke', '#a8977a'); p.setAttribute('stroke-width', '1.2'); svg.appendChild(p);
       const t = document.createElementNS(ns, 'text'); t.setAttribute('x', '15'); t.setAttribute('y', '20'); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '13'); t.setAttribute('font-family', 'Georgia, serif');

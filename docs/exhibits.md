@@ -2,7 +2,7 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**57 exhibits, 48 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**57 exhibits, 49 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
@@ -11,7 +11,7 @@ pie showData
     "Wing II · 7 of 9" : 9
     "Wing III · 6 of 9" : 9
     "Wing IV · 11 of 11" : 11
-    "Wing V · 8 of 9" : 9
+    "Wing V · 9 of 9" : 9
     "Wing VI · 13 of 13" : 13
 ```
 
@@ -188,7 +188,7 @@ timeline
 | Exhibit | Date | Rules | In the Archives |
 | --- | --- | --- | --- |
 | The Mansion of Happiness | 1843 CE | Survive in print | Playable: all 67 squares of the 1843 Ives board, with a teetotum |
-| The Checkered Game of Life | 1860 CE | Survive in print | On display |
+| The Checkered Game of Life | 1860 CE | Survive in print (Bradley's patent, 1866) | Playable on the board of about 1911 |
 | Reversi | 1883 CE | Survive in print; played today as Othello | Playable, from the Othello opening |
 | Halma | 1883–84 CE | Still played, as Chinese checkers | Playable, two players with 19 men each |
 | Dots and Boxes | late 19th century CE | Survive in print (Lucas's *pipopipette*) | Playable, on a 4 × 4 or 5 × 5 grid of boxes |
@@ -198,6 +198,7 @@ timeline
 | Hex | 1942 CE | Still played | Playable on 7 × 7, 9 × 9 or 11 × 11, with the swap rule |
 
 - **The Mansion of Happiness:** every square read from a scan of the 1843 W. & S. B. Ives board, played by the seventeen rules printed with the game (as reprinted for the 1894 edition). A teetotum of 1 to 6. Poverty, the Whipping Post, the Pillory, the Stocks, Prison and Ruin are not counted when moving. The thirteen virtues advance six squares; Audacity, Cruelty, Immodesty and Ingratitude send you back to where you were; the Water (6) carries you to 10 and the Inn (9) to 12. Passion goes to the Water, Idleness to Poverty, the Road to Folly back to Prudence, a Sabbath Breaker to the Whipping Post, a Perjurer to the Pillory, a Drunkard to the Stocks and the Summit of Dissipation to Ruin; a Cheat spends one turn in the House of Correction and a Robber two in Prison, then begin again, unless freed by another player guilty of the same crime. Landing on another counter sends it back to where you came from. Exact count to 67; an overshoot goes to the Seat of Expectation (60), a second one to the start. Left out: two clauses of the rule for crimes on an occupied square. The squares reached by a virtue's six do not act again. You play the red counter against one Scribe.
+- **The Checkered Game of Life:** the board of the Milton Bradley Co. edition of about 1911, read from a scan, with Bradley's rules from his patent of 1866 (U.S. 53,561). Only the 32 pale squares are played on. Both counters start at Infancy. A square with a pointing hand cannot be stopped on and carries you to its target (School to College, Industry to Wealth, Gambling to Ruin, Crime to Prison and the rest). Numbered squares score each time you land: Happy Old Age 50, Wealth 10, and 5 each for Happiness, Success, Congress, Honor, College and Fat Office. Landing on the other counter sends it to Jail; Prison costs a move; the square marked Suicide puts a player out. First to 100 wins. The patent does not list what each number of the teetotum allows, so the table follows a modern reproduction (Baldwin Games, 2024): 1 one square up or down, 2 left or right, 3 diagonally, 4 to 6 the same by one or two squares, counting only squares in play; and from Speculation a 3 or 6 goes to Wealth, anything else to Ruin. You play red against one Scribe.
 
 Rule choices:
 
@@ -276,7 +277,6 @@ Rule choices:
 | Petteia, Liubo | Only partial or competing reconstructions. |
 | Chaturanga | The elephant's move is uncertain. Its four-handed relative, chaturaji, is playable next to Xiangqi. |
 | The Lewis Chessmen, Playing cards | Shown as objects; their games are covered at Shatranj and Tarocchi. |
-| The Checkered Game of Life | The rules sit square by square on the original board; we need a checkable scan or transcription. |
 | Hare and Hounds (not yet an exhibit) | Sources disagree on the lines of its eleven-point board. |
 
 See the [roadmap](roadmap.md).

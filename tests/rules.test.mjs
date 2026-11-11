@@ -2118,3 +2118,34 @@ test('Mansion of Happiness: landing on a counter sends it back; 67 needs an exac
   MH.init();
   MH.apply(mhMove(0, 64, 3)); assert.equal(MH.won.winner, 0);
 });
+
+/* ---------------------------------------------------------- The Checkered Game of Life */
+
+const CL = rules.lifegame;
+test('Checkered Game of Life: the 32 squares of the board, and hands that carry you on', () => {
+  const sq = Object.keys(CL.SQ).map(Number);
+  assert.equal(sq.length, 32);
+  assert.ok(sq.every(s => ((s >> 3) + (s & 7)) % 2 === 1)); // only the pale squares are played on
+  assert.equal(CL.SQ[56][0], 'Infancy'); assert.equal(CL.SQ[7][0], 'Happy Old Age'); assert.equal(CL.SQ[46][0], 'Suicide');
+  CL.init(); CL.pos[0] = 56;
+  const m = CL.legal(0, 2); // right from Infancy: Disgrace
+  assert.deepEqual(m.map(x => x.to), [58]);
+  CL.pos[0] = 58;
+  const s = CL.legal(0, 3).find(x => x.via === 49); // diagonally onto School, which leads to College
+  assert.ok(s.hand); assert.equal(s.to, 44);
+});
+
+test('Checkered Game of Life: points, Jail, Prison, Speculation and the hundred', () => {
+  CL.init(); CL.pos[0] = 58;
+  CL.apply(CL.legal(0, 3).find(x => x.via === 49));
+  assert.equal(CL.score[0], 5); // College
+  CL.pos[1] = 26; CL.pos[0] = 44; // the Scribe stands on Honor; College is two squares diagonally away
+  CL.apply(CL.legal(0, 6).find(x => x.to === 26));
+  assert.equal(CL.pos[1], 60); // sent back to Jail
+  CL.pos[0] = 53; CL.apply(CL.legal(0, 3).find(x => x.to === 62));
+  assert.match(CL.skipTurn(0), /Prison/); assert.equal(CL.skipTurn(0), '');
+  CL.pos[0] = 30; assert.equal(CL.legal(0, 6)[0].to, 1); assert.equal(CL.legal(0, 2)[0].to, 39);
+  CL.init(); CL.score[0] = 95; CL.pos[0] = 15;
+  CL.apply({ pl: 0, from: 15, via: 7, to: 7, hand: false });
+  assert.equal(CL.over.winner, 0);
+});

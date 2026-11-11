@@ -24,6 +24,7 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - Kasparov–Wilson (kwabc.org): Scachs d'amor; ISTC: Lucena, *Repetición de amores y arte de ajedrez*
 - Live History India: Ludo's Indian roots
 - Library of Congress: The Mansion of Happiness (1843); a scan of the 1843 W. & S. B. Ives board, supplied for the Archives, from which every square was read
+- Milton Bradley, Social Game, U.S. Patent 53,561 (1866) (Google Patents): the rules of the Checkered Game of Life; a scan of the Milton Bradley Co. board of about 1911 and its box, supplied for the Archives; Baldwin Games, The Checkered Game of Life rules (2024), for the moves of the teetotum and Speculation
 - The rules of The Mansion of Happiness as printed with the game, reprinted in Brian Love, *Great Board Games 1895–1955* (quoted by giochidelloca.it)
 - Wikipedia: The Mansion of Happiness, The Checkered Game of Life, Reversi, Halma, Chinese checkers, Dots and boxes, The Landlord's Game
 - U.S. Patent 748,626, Lizzie J. Magie, Game-board (1904): drawing and text (Google Patents; transcription at landlordsgame.info)
