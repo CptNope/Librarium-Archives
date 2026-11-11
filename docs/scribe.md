@@ -92,6 +92,8 @@ The Scribe never looks at the visitor's hand or the deck. Each game's Scribe wor
 | Dominoes | Sheds heavy tiles and doubles. Sharp also keeps tiles that match the ends it leaves, and leaves ends you have shown you cannot match (you drew or passed on them) |
 | Cribbage | Sharp averages every possible four-card keep over all 46 possible starters, weighs what it gives the crib, and in the play avoids leaving counts of 5 or 21 |
 | Whist | Each Scribe plays by the book from what its seat can see: cash sure winners, draw trumps when long in them, lead a suit its partner can ruff, second hand low, third hand high, win as cheaply as possible, and discard its least useful card. Gentle and Fair play some cards at random. (A sampling search over the unseen cards was tried and played no better.) |
+| Piquet | Exchange: keeps aces, long suits, sets and runs in the making; Sharp tries every discard among its weakest cards against many random draws and keeps the best on average. Play: cashes sure winners, leads low from its longest suit, wins cheaply, and throws cards that cannot win |
+| Hazard | Always calls a main of 7, the caster's best. Fair stakes 2; Sharp stakes 1, since the caster has the worse of every bet, unless it is behind near the end |
 | Mahjong | Each of the three Scribes counts how far its hand is from ready (shanten) and keeps the discards that leave the most useful draws open. It claims only when a claim brings its hand closer |
 
 ## Measured strength
@@ -121,6 +123,10 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Checkered Game of Life | 71% | 50% | 1,000 each; the spin decides most games |
 | Latrunculi | 4–1, 1 draw | 3–4, 1 draw | 6 and 8 |
 | Jungle | 12–0 | 7–3, 2 draws | 12 each |
+| Medieval chess (Lewis chessmen) | 6–0 | 1–0, 5 draws | 6 each; with only checkmate winning, many games are drawn |
+| Courier chess | 5–0, 1 draw | 5–0, 1 draw | 6 each |
+| Piquet | 74% | 55% | 400 parties of six deals each |
+| Hazard | about 50% | 56% | 4,000 each; the dice decide almost everything |
 | Chaturanga | 6–0 | as Shatranj | 6; the same engine as Shatranj |
 | Rithmomachia | 5–0, 1 draw | 2–2, 2 draws | 6 each; most games run to the 150-move limit |
 | Whist (both seats of a side at one level) | +0.9 tricks a deal | +0.3 tricks a deal | 150 deals each, every deal played twice with the sides swapped |
@@ -158,6 +164,7 @@ Known weak spots: in Brandubh the visitor's side still wins most games against S
 | Patolli | Bringing markers home, captures in the centre, entering, the red tips, and avoiding the dark houses. Sharp also weighs the odds of being hit on a centre house |
 | Tâb | Captures, starting pieces, raids on the home row, and the chance an enemy can land on a square with one throw. Sharp weighs every piece on the board that way after each move |
 | Jungle | Material (the rat valued above the wolf for its threat to the elephant), every animal's distance from the enemy den, and pressure next to it; repeated positions count as draws in the search |
+| Courier chess | Material (the courier and rook strongest), centralised pieces and advanced pawns, with captures tried first |
 | Rithmomachia | Pieces taken by each side and pieces brought forward into contact; moves that capture are tried first |
 | Seega | Placing: solid blocks that cannot be trapped. Moving: material, threats, room to move and pieces that cannot be trapped, searched with whole capture chains as one turn |
 | Bagh-chal | Goats taken, goats open to a jump, and how much room the tigers have; the same score read from either side |
