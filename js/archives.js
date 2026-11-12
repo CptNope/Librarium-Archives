@@ -1019,6 +1019,51 @@ function buildRithmo(group) {
   return y;
 }
 
+/* --- Wing III: Courier chess, on a board of twelve files, after Selenus (1616) */
+const CO_S = 0.068;
+function coCell(i) { const r = (i / 12) | 0, c = i % 12; return { x: (c - 5.5) * CO_S, z: (3.5 - r) * CO_S }; }
+// Shatranj's turned pieces serve for the king, queen, bishop, knight, rook and pawn; the courier, sage and schleich are new.
+const CO_SJ = [0, 1, 2, 3, 0, 0, 0, 4, 5, 6];
+function coPiece(t, mat) {
+  if (CO_SJ[t]) { const g = sjPiece(CO_SJ[t], mat); g.scale.setScalar(0.85); return g; }
+  const g = new THREE.Group();
+  const lathe = pts => { const m = new THREE.Mesh(new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), 20), mat); g.add(m); return m; };
+  const base = [[0, 0], [0.026, 0], [0.027, 0.006], [0.02, 0.012]];
+  if (t === 4) { // courier: a tall runner with his horn
+    lathe([...base, [0.014, 0.05], [0.018, 0.056], [0.01, 0.064], [0, 0.066]]);
+    const horn = new THREE.Mesh(new THREE.ConeGeometry(0.007, 0.03, 10), mat); horn.position.set(0.008, 0.07, 0); horn.rotation.z = -0.9; g.add(horn);
+  } else if (t === 5) { // schleich, the fool: a cap with two drooping points and bells
+    lathe([...base, [0.016, 0.034], [0.018, 0.04], [0.012, 0.046], [0, 0.048]]);
+    for (const sd of [-1, 1]) {
+      const p = new THREE.Mesh(new THREE.ConeGeometry(0.006, 0.026, 8), mat); p.position.set(sd * 0.012, 0.052, 0); p.rotation.z = sd * 1.1; g.add(p);
+      const bell = new THREE.Mesh(new THREE.SphereGeometry(0.004, 8, 6), mat); bell.position.set(sd * 0.024, 0.046, 0); g.add(bell);
+    }
+  } else { // sage: a hooded counsellor
+    lathe([...base, [0.017, 0.042], [0.02, 0.046], [0.014, 0.05], [0, 0.052]]);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.012, 14, 10), mat); head.position.y = 0.06; g.add(head);
+    const hood = new THREE.Mesh(new THREE.ConeGeometry(0.013, 0.02, 14), mat); hood.position.y = 0.074; g.add(hood);
+  }
+  g.userData.mats = [mat];
+  return g;
+}
+const CO_MATS = [0xe2cfa2, 0x2a1c12];
+function buildCourier(group) {
+  const W = 12 * CO_S + 0.07, D = 8 * CO_S + 0.07;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, D), new THREE.MeshStandardMaterial({ color: 0x5a3418, roughness: 0.55 }));
+  board.position.y = TOP + 0.015; group.add(board);
+  const pw = 1024, ph = Math.round(pw * D / W), sx = CO_S * pw / W, ox = pw / 2 - 6 * sx, oy = ph / 2 - 4 * sx;
+  topPlane(group, W, D, TOP + 0.0305, tex(pw, ph, (g) => {
+    g.fillStyle = '#5a3418'; g.fillRect(0, 0, pw, ph);
+    woodGrain(g, pw, ph, '#6a3e1e', '#4a2a12');
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 12; c++) { g.fillStyle = (r + c) % 2 ? '#e8d6a8' : '#8e2a1e'; g.fillRect(ox + c * sx, oy + r * sx, sx, sx); } // red and white, as in Lucas van Leyden's painting
+    g.strokeStyle = '#2a170b'; g.lineWidth = 6; g.strokeRect(ox, oy, 12 * sx, 8 * sx);
+  }), { roughness: 0.55 });
+  const y = TOP + 0.031, shown = [], R = window.LibrariumRules.courier;
+  R.init(); R.b.forEach((v, i) => { if (!v) return; const pl = v >> 4, o = coPiece(v & 15, new THREE.MeshStandardMaterial({ color: CO_MATS[pl], roughness: pl ? 0.35 : 0.5 })), c = coCell(i); o.position.set(c.x, y, c.z); o.rotation.y = pl ? -Math.PI / 2 : Math.PI / 2; group.add(o); shown.push(o); });
+  group.userData.display = shown;
+  return y;
+}
+
 /* --- Wing III: Chaturaji, four-handed chaturanga with dice */
 const CJ_S = 0.09;
 const CJ_COL = [0xa06c06, 0x1a1714, 0x6e140a, 0x1d4a1c]; // yellow (you), black, red, green
@@ -1333,54 +1378,71 @@ function sjPiece(type, mat) {
 }
 
 /* --- Wing III: the Lewis chessmen (simplified figures, not copies) */
+// Simplified Lewis-style figures (our own carving, not copies), each built round its base at y = 0.
+const LW_S = 0.088;
+const lwSeated = (m, opts) => {
+  const g = new THREE.Group();
+  const throne = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.08, 0.06), m); throne.position.y = 0.04; g.add(throne);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.08, 0.012), m); back.position.set(0, 0.11, -0.026); g.add(back);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.028, 0.07, 14), m); body.position.set(0, 0.115, 0.004); g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.019, 14, 12), m); head.scale.y = 1.15; head.position.set(0, 0.168, 0.006); g.add(head);
+  if (opts.crown) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.017, 0.012, 14, 1, true), m); c.position.set(0, 0.188, 0.006); g.add(c); }
+  if (opts.mitre) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.03, 4), m); c.position.set(0, 0.198, 0.006); c.rotation.y = Math.PI / 4; g.add(c); }
+  if (opts.sword) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.004, 0.07), m); s.position.set(0, 0.09, 0.04); s.rotation.y = 0.9; g.add(s); }
+  if (opts.cheek) { const a = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.05, 8), m); a.position.set(0.016, 0.145, 0.022); a.rotation.x = -0.6; g.add(a); }
+  if (opts.crozier) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.17, 6), m); c.position.set(0.03, 0.1, 0.03); g.add(c); const t = new THREE.Mesh(new THREE.TorusGeometry(0.01, 0.003, 6, 12, Math.PI * 1.5), m); t.position.set(0.03, 0.19, 0.03); g.add(t); }
+  return g;
+};
+const lwWarder = (m, biting) => {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.026, 0.12, 14), m); body.position.y = 0.06; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.018, 14, 12), m); head.position.y = biting ? 0.128 : 0.135; g.add(head);
+  const helm = new THREE.Mesh(new THREE.ConeGeometry(0.019, 0.024, 14), m); helm.position.y = 0.155; g.add(helm);
+  const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.022, 0.008, 3), m); shield.rotation.x = Math.PI / 2; shield.rotation.z = Math.PI; shield.position.set(0, biting ? 0.1 : 0.075, 0.026); g.add(shield);
+  return g;
+};
+const lwKnight = m => {
+  const g = new THREE.Group();
+  const horse = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.035, 0.03), m); horse.position.y = 0.05; g.add(horse);
+  for (const [x, z] of [[-0.026, -0.01], [-0.026, 0.01], [0.026, -0.01], [0.026, 0.01]]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.034, 6), m); l.position.set(x, 0.017, z); g.add(l); }
+  const neck = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.04, 0.018), m); neck.position.set(0.04, 0.075, 0); neck.rotation.z = -0.3; g.add(neck);
+  const rider = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.06, 12), m); rider.position.set(-0.004, 0.098, 0); g.add(rider);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.013, 12, 10), m); head.position.set(-0.004, 0.137, 0); g.add(head);
+  const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.016, 0.006, 3), m); shield.rotation.x = Math.PI / 2; shield.position.set(-0.004, 0.09, -0.024); g.add(shield);
+  const spear = new THREE.Mesh(new THREE.CylinderGeometry(0.002, 0.002, 0.13, 6), m); spear.position.set(0.012, 0.13, 0.018); g.add(spear);
+  return g;
+};
+const lwPawn = m => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.024, 0.06, 8), m); p.position.y = 0.03; const g = new THREE.Group(); g.add(p); return g; };
 function buildLewis(group) {
   const velvet = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.04, 0.78), new THREE.MeshLambertMaterial({ color: 0x1d2a3a }));
   velvet.position.y = TOP + 0.02; group.add(velvet);
   const ivory = new THREE.MeshStandardMaterial({ color: 0xe6d9bd, roughness: 0.5 });
   const red = new THREE.MeshStandardMaterial({ color: 0x9a4b3a, roughness: 0.55 });
   const y0 = TOP + 0.04;
-  const seated = (m, opts) => {
-    const g = new THREE.Group();
-    const throne = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.08, 0.06), m); throne.position.y = 0.04; g.add(throne);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.08, 0.012), m); back.position.set(0, 0.11, -0.026); g.add(back);
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.028, 0.07, 14), m); body.position.set(0, 0.115, 0.004); g.add(body);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.019, 14, 12), m); head.scale.y = 1.15; head.position.set(0, 0.168, 0.006); g.add(head);
-    if (opts.crown) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.017, 0.012, 14, 1, true), m); c.position.set(0, 0.188, 0.006); g.add(c); }
-    if (opts.mitre) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.03, 4), m); c.position.set(0, 0.198, 0.006); c.rotation.y = Math.PI / 4; g.add(c); }
-    if (opts.sword) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.004, 0.07), m); s.position.set(0, 0.09, 0.04); s.rotation.y = 0.9; g.add(s); }
-    if (opts.cheek) { const a = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.05, 8), m); a.position.set(0.016, 0.145, 0.022); a.rotation.x = -0.6; g.add(a); }
-    if (opts.crozier) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.17, 6), m); c.position.set(0.03, 0.1, 0.03); g.add(c); const t = new THREE.Mesh(new THREE.TorusGeometry(0.01, 0.003, 6, 12, Math.PI * 1.5), m); t.position.set(0.03, 0.19, 0.03); g.add(t); }
-    return g;
-  };
-  const warder = (m, biting) => {
-    const g = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.026, 0.12, 14), m); body.position.y = 0.06; g.add(body);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.018, 14, 12), m); head.position.y = biting ? 0.128 : 0.135; g.add(head);
-    const helm = new THREE.Mesh(new THREE.ConeGeometry(0.019, 0.024, 14), m); helm.position.y = 0.155; g.add(helm);
-    const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.022, 0.008, 3), m); shield.rotation.x = Math.PI / 2; shield.rotation.z = Math.PI; shield.position.set(0, biting ? 0.1 : 0.075, 0.026); g.add(shield);
-    return g;
-  };
-  const knight = m => {
-    const g = new THREE.Group();
-    const horse = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.035, 0.03), m); horse.position.y = 0.05; g.add(horse);
-    for (const [x, z] of [[-0.026, -0.01], [-0.026, 0.01], [0.026, -0.01], [0.026, 0.01]]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.034, 6), m); l.position.set(x, 0.017, z); g.add(l); }
-    const neck = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.04, 0.018), m); neck.position.set(0.04, 0.075, 0); neck.rotation.z = -0.3; g.add(neck);
-    const rider = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.06, 12), m); rider.position.set(-0.004, 0.098, 0); g.add(rider);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.013, 12, 10), m); head.position.set(-0.004, 0.137, 0); g.add(head);
-    const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.016, 0.006, 3), m); shield.rotation.x = Math.PI / 2; shield.position.set(-0.004, 0.09, -0.024); g.add(shield);
-    const spear = new THREE.Mesh(new THREE.CylinderGeometry(0.002, 0.002, 0.13, 6), m); spear.position.set(0.012, 0.13, 0.018); g.add(spear);
-    return g;
-  };
-  const pawn = m => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.024, 0.06, 8), m); p.position.y = 0.03; const g = new THREE.Group(); g.add(p); return g; };
   const set = [
-    [seated(ivory, { crown: true, sword: true }), -0.45, -0.14], [seated(red, { crown: true, cheek: true }), -0.3, -0.16],
-    [seated(ivory, { mitre: true, crozier: true }), -0.14, -0.15], [knight(ivory), 0.03, -0.16],
-    [warder(ivory, true), 0.2, -0.15], [warder(red, false), 0.33, -0.15], [seated(red, { crown: true, sword: true }), 0.48, -0.15],
-    [pawn(ivory), -0.36, 0.17], [pawn(red), -0.24, 0.18], [pawn(ivory), -0.12, 0.17],
+    [lwSeated(ivory, { crown: true, sword: true }), -0.45, -0.14], [lwSeated(red, { crown: true, cheek: true }), -0.3, -0.16],
+    [lwSeated(ivory, { mitre: true, crozier: true }), -0.14, -0.15], [lwKnight(ivory), 0.03, -0.16],
+    [lwWarder(ivory, true), 0.2, -0.15], [lwWarder(red, false), 0.33, -0.15], [lwSeated(red, { crown: true, sword: true }), 0.48, -0.15],
+    [lwPawn(ivory), -0.36, 0.17], [lwPawn(red), -0.24, 0.18], [lwPawn(ivory), -0.12, 0.17],
   ];
   for (const [o, x, z] of set) { o.position.set(x, y0, z); o.rotation.y = rand(-0.2, 0.2); group.add(o); }
   for (let k = 0; k < 6; k++) { const d = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.012, 20), ivory); d.position.set(0.12 + (k % 3) * 0.055, y0 + 0.006 + Math.floor(k / 3) * 0.012, 0.18); group.add(d); }
   glassCase(group, 1.3, 0.48, 0.85);
+  // Everything but the velvet is the display; a checkered board waits, hidden, for a game.
+  group.userData.display = group.children.slice(group.children.indexOf(velvet) + 1);
+  const S = LW_S, W = 8 * S + 0.05;
+  const board = new THREE.Group();
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(W, 0.02, W), new THREE.MeshStandardMaterial({ color: 0x4a3020, roughness: 0.6 }));
+  slab.position.y = y0 + 0.01; board.add(slab);
+  topPlane(board, W, W, y0 + 0.0205, tex(512, 512, (g, w) => {
+    const d = w * S / W, o = (w - 8 * d) / 2;
+    g.fillStyle = '#4a3020'; g.fillRect(0, 0, w, w);
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { g.fillStyle = (r + c) % 2 ? '#e3d3b0' : '#6e4a2c'; g.fillRect(o + c * d, o + r * d, d, d); }
+    speckle(g, w, w, 2500, ['#3a2414', '#f2e6cc'], 1.1);
+  }), { roughness: 0.6 });
+  board.visible = false; group.add(board);
+  group.userData.board = board;
+  return y0 + 0.021;
 }
 function glassCase(group, w, h, d) {
   const glass = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: 0x9fc4c8, transparent: true, opacity: 0.1, roughness: 0.05, metalness: 0.2, depthWrite: false }));
@@ -1442,6 +1504,8 @@ function buildCards(group) {
     card(map, 0.11, 0.17, 0.2 + k * 0.075, 0.12, -0.25 + k * 0.12, backMat);
   });
   glassCase(group, 1.3, 0.3, 0.85);
+  group.userData.display = group.children.slice(group.children.indexOf(velvet) + 1); // a game of piquet clears the velvet
+  return y0;
 }
 function buildTarot(group) {
   const stand = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.04, 0.6), new THREE.MeshLambertMaterial({ color: 0x1d2a1a }));
@@ -2613,6 +2677,7 @@ function cubeDie(size, base, dot) {
   return new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mats);
 }
 function buildDice(group) {
+  const n0 = group.children.length;
   topPlane(group, 0.86, 0.6, TOP + 0.002, tex(512, 360, (g, w, h) => {
     g.fillStyle = '#5a3a24'; g.fillRect(0, 0, w, h);
     for (let i = 0; i < 1400; i++) { g.fillStyle = `rgba(${rand(20, 60) | 0},${rand(10, 30) | 0},5,.25)`; g.fillRect(rand(0, w), rand(0, h), rand(1, 4), rand(1, 3)); }
@@ -2628,6 +2693,8 @@ function buildDice(group) {
   const counter = new THREE.ConeGeometry(0.018, 0.04, 14);
   const cm = new THREE.MeshStandardMaterial({ color: 0x2a201a, roughness: 0.5 });
   for (let i = 0; i < 6; i++) { const c = new THREE.Mesh(counter, cm); c.position.set(0.12 + (i % 3) * 0.05, TOP + 0.022, 0.18 + ((i / 3) | 0) * 0.05); group.add(c); }
+  group.userData.display = group.children.slice(n0 + 1); // the dice and counters, not the cloth
+  return TOP + 0.002;
 }
 function buildPetteia(group) {
   // The board's size is unknown: this is a guess, a stone slab cut into an 8 x 8 grid.
@@ -3083,7 +3150,7 @@ const STOPS = [
     eyebrow: 'Wing I · Librarium Archives', status: null, begin: 'senet',
     body: [
       'Long before anyone wrote rules down, people were already sitting across a board from each other, moving pieces and trusting their luck. This wing gathers the oldest board games we know of, from the Nile valley to the city of Ur.',
-      'Two of them are ready to play. Walk up to a plinth, read its story, and take a seat at the table. The rules of the others are lost, so we show them as they were found. Beyond the arch, Wing II turns from luck to strategy.'
+      'Four tables are ready to play: Senet, the Royal Game of Ur, Hounds and Jackals, and Hazard at the first dice. Walk up to a plinth, read its story, and take a seat at the table. Where the old rules are lost, the placard says what we play instead, or shows the game as it was found. Beyond the arch, Wing II turns from luck to strategy.'
     ],
     facts: [['Look', 'Drag the view'], ['Walk', 'WASD or arrow keys'], ['Visit', 'Click an exhibit or use the timeline']],
   },
@@ -3123,11 +3190,12 @@ const STOPS = [
     facts: [['Board', '20 squares, 5 rosettes'], ['Pieces', '7 each'], ['Moves', '4 four-sided dice, 0 to 4'], ['Goal', 'Race every piece home']],
     build: buildUrBoard },
   { id: 'dice', wing: 1, title: 'The First Dice', short: 'The First Dice', date: 'c. 2800–1900 BCE', rail: 'The First Dice',
-    eyebrow: 'Iran and the Indus Valley', status: ['known', 'Still rolled today'],
-    note: 'On display. The dice are new, made in the old manner.',
+    eyebrow: 'Iran and the Indus Valley', status: ['known', 'Still rolled today'], game: 'hazard',
+    note: 'The dice are new, made in the old manner. No rules survive for the Bronze Age games, so this table plays Hazard, the medieval dice game Chaucer knew, as it was written down in the 1700s.',
     body: [
       'Cubic dice are nearly as old as board games. Possibly the oldest yet found come from the Burnt City, Shahr-e Sukhteh in eastern Iran, buried with a set for a race game that has been dated to between 2800 and 2500 BCE.',
-      'Graves at Mohenjo-daro in the Indus Valley held terracotta dice from 2500 to 1900 BCE. On one of them the opposite faces add up to seven, as they do on dice today. Players elsewhere threw other things: Senet\'s sticks and Ur\'s four-sided pyramids are on the tables in this wing.'
+      'Graves at Mohenjo-daro in the Indus Valley held terracotta dice from 2500 to 1900 BCE. On one of them the opposite faces add up to seven, as they do on dice today. Players elsewhere threw other things: Senet\'s sticks and Ur\'s four-sided pyramids are on the tables in this wing.',
+      'The table here plays Hazard, a two-dice game named in Chaucer\'s Canterbury Tales in the 14th century. Its rules were set down in Hoyle\'s Games by 1790, and a simplified form of it became American craps.'
     ],
     facts: [['Oldest', 'Burnt City, Iran, c. 2800–2500 BCE'], ['Indus', 'Mohenjo-daro, 2500–1900 BCE'], ['Faces', 'Opposites adding to seven, on one Indus die']],
     build: buildDice },
@@ -3235,9 +3303,9 @@ const STOPS = [
     eyebrow: 'Wing III · Librarium Archives', status: null, begin: 'tables',
     body: [
       'Board games became courtly pastimes. In this wing chess travels from India through Persia to the far North, the dice games of Rome and Persia settle into tables, and paper cards arrive from the East and change how Europe plays.',
-      'Eight tables are open: Tables, the family of games that became backgammon; Chaturanga, in a modern reconstruction; Shatranj, the chess of the caliphs\' courts; Xiangqi, the chess of China; Chaturaji, chess for four with dice; Rithmomachia, the scholars\' battle of numbers, also reconstructed; Four Seasons chess, from Alfonso X\'s Book of Games; and a game of tarocchi, the card game that tarot was made for.'
+      'All eleven tables are open: Tables, the family of games that became backgammon; Chaturanga, in a modern reconstruction; Shatranj, the chess of the caliphs\' courts; Xiangqi, the chess of China; Chaturaji, chess for four with dice; Rithmomachia, the scholars\' battle of numbers, also reconstructed; medieval chess on the Lewis chessmen; Courier chess, on twelve files; Four Seasons chess, from Alfonso X\'s Book of Games; Piquet, at the playing cards; and a game of tarocchi, the card game that tarot was made for.'
     ],
-    facts: [['Tables', 'Tables, Chaturanga, Shatranj, Xiangqi, Chaturaji, Rithmomachia, Four Seasons chess, Tarocchi'], ['Display', 'Lewis chessmen, cards, tarot']],
+    facts: [['Tables', 'Tables, Chaturanga, Shatranj, Xiangqi, Chaturaji, Rithmomachia, medieval chess, Courier chess, Four Seasons chess, Piquet, Tarocchi']],
   },
   { id: 'tables', wing: 3, title: 'Tables', short: 'Tables (Backgammon)', date: 'c. 480 CE onward', rail: 'Tables',
     eyebrow: 'Rome, Persia and medieval Europe', status: ['known', 'Rules survive in modern backgammon'], game: 'tables',
@@ -3293,14 +3361,23 @@ const STOPS = [
     facts: [['Board', '8 × 16'], ['Pieces', '24 a side, each with a number'], ['First record', 'c. 1030, Asilo of Würzburg'], ['Rules', 'Never standardised']],
     build: buildRithmo },
   { id: 'lewis', wing: 3, title: 'The Lewis Chessmen', short: 'Lewis Chessmen', date: 'c. 1150–1200 CE', rail: 'Lewis Chessmen',
-    eyebrow: 'Norway and the Hebrides · 12th century', status: ['known', 'Chess as Europe played it'],
-    note: 'On display. The figures here are our own simplified carvings, not copies.',
+    eyebrow: 'Norway and the Hebrides · 12th century', status: ['recon', 'Modern reconstruction'], game: 'lewischess',
+    note: 'The figures are our own simplified carvings, not copies. The table plays a modern reconstruction of chess as Europe played it around 1200, after H. J. R. Murray: shatranj\'s moves under European names.',
     body: [
       'Around 1831 a hoard of more than ninety game pieces came to light on the Isle of Lewis in the Outer Hebrides. Most are carved from walrus ivory and a few from whale teeth, probably in Trondheim, Norway, in the later 12th century. The British Museum holds 82 of them and National Museums Scotland 11.',
       'They show chess as medieval Europe played it: kings and queens on thrones, bishops in mitres, knights on ponies, and warders standing in for rooks. Four warders bite the tops of their shields like the berserkers of the Norse sagas. The hoard also held fourteen plain discs for playing tables, and a buckle, perhaps from the bag that carried them.'
     ],
     facts: [['Found', 'Isle of Lewis, about 1831'], ['Material', 'Walrus ivory, whale tooth'], ['Pieces', '79 chessmen, 14 tables discs'], ['Held', 'British Museum, National Museums Scotland']],
     build: buildLewis },
+  { id: 'courier', wing: 3, title: 'Courier Chess', short: 'Courier Chess', date: 'by 1202 CE', rail: 'Courier Chess',
+    eyebrow: 'Germany · from Wigalois to Ströbeck', status: ['known', 'Rules in print, 1616'], game: 'courier',
+    body: [
+      'Courier chess is a German chess on a board of twelve files. The poet Wirnt von Gravenberg mentioned it in his romance Wigalois, written around 1202–1205, and expected his readers to know it. Its namesake, the courier, ran any distance diagonally, centuries before the bishop could; after about 1475 that power passed to the bishop of ordinary chess.',
+      'Beside the king stand a sage who moves like a king without being one, and a schleich, a fool or jester, who steps one square straight. The old queen and bishop keep their short medieval moves. In the early 1500s Lucas van Leyden painted a woman who seems to be beating a man at courier chess.',
+      'In 1616 Gustavus Selenus described the game in detail as one of three forms of chess played in the village of Ströbeck, where it lasted into the 1800s.'
+    ],
+    facts: [['Board', '12 × 8'], ['New pieces', 'Courier, sage, schleich'], ['First mention', 'Wigalois, c. 1202–1205'], ['Rules', 'Selenus, 1616']],
+    build: buildCourier },
   { id: 'fourseasons', wing: 3, title: 'Four Seasons Chess', short: 'Four Seasons Chess', date: '1283 CE', rail: 'Four Seasons',
     eyebrow: 'Castile · Alfonso X\'s Book of Games', status: ['recon', 'Partly reconstructed'], game: 'fourseasons',
     body: [
@@ -3311,11 +3388,12 @@ const STOPS = [
     facts: [['Board', '8 × 8, an army in each corner'], ['Armies', 'King, rook, knight, alfil, four pawns'], ['Seasons', 'Spring, summer, autumn, winter'], ['Goal', 'Be the last army left']],
     build: buildFourSeasons },
   { id: 'cards', wing: 3, title: 'Playing Cards', date: 'c. 900–1400 CE', rail: 'Playing Cards',
-    eyebrow: 'China, Mamluk Egypt and Europe', status: ['lost', 'Earliest games lost'],
-    note: 'On display. These cards are new designs in the old styles.',
+    eyebrow: 'China, Mamluk Egypt and Europe', status: ['lost', 'Earliest games lost'], game: 'piquet',
+    note: 'These cards are new designs in the old styles. The first card games are lost, so this table plays Piquet, recorded by 1535 and one of the oldest card games still played.',
     body: [
       'Cards began in China, and a later writer dated them to the Tang dynasty. The earliest certain record is from 969, when an emperor of the Liao dynasty played cards on New Year\'s Eve. They travelled west through Persia to Mamluk Egypt, where packs of four suits showed no human figures: rank was marked with ornament and inscriptions. A Mamluk pack identified in Istanbul\'s Topkapı Palace in the 1930s has suits of coins, cups, swords and sticks.',
-      'Cards reached Europe around the 1370s. A Catalan rhyming dictionary names them in 1371, Florence banned a new game called naibbe in 1376, and in 1377 a Dominican friar in Basel described a pack of 52 with kings and marshals. Coins, cups, swords and batons survive today in Italian and Spanish packs.'
+      'Cards reached Europe around the 1370s. A Catalan rhyming dictionary names them in 1371, Florence banned a new game called naibbe in 1376, and in 1377 a Dominican friar in Basel described a pack of 52 with kings and marshals. Coins, cups, swords and batons survive today in Italian and Spanish packs.',
+      'Piquet, the game at this table, is a two-handed game for a 32-card pack. Rabelais named it in 1535; by the 1650s it was played much as it is now, and Cavendish set its rules down in 1882. Its terms (pique, repique, capot, carte blanche) are French.'
     ],
     facts: [['China', 'Recorded by 969 CE'], ['Egypt', 'Mamluk packs, 15th century'], ['Europe', 'From the 1370s'], ['Suits', 'Coins, cups, swords, batons']],
     build: buildCards },
@@ -3711,7 +3789,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -5429,6 +5507,218 @@ const RITHMO_P = {
   },
   score: () => { const G = GAMES.rithmo; return [['You took', G.taken[0]], ['Scribe took', G.taken[1]], `of ${G.WIN}`]; },
 };
+const LEWIS_P = {
+  camW: 1.15,
+  intro() { return 'Chess as Europe played it around 1200, a modern reconstruction. You play the walrus-ivory side and move first. ' + this.prompt(); },
+  prompt: () => 'Pick one of your pieces, then where it should go. Only checkmate wins.',
+  setup(ex) {
+    const G = GAMES.lewischess;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    ex.group.userData.board.visible = true;
+    (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = [];
+    this.ex = ex; this.cell = Array(64).fill(null); this.lost = [0, 0];
+    G.b.forEach((v, i) => { if (v) this.cell[i] = this.spawn(G.type(v), G.owner(v), i); });
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); ex.group.userData.board.visible = false; (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = []; },
+  spawn(type, pl, i) {
+    const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x9a4b3a : 0xe6d9bd, roughness: pl ? 0.55 : 0.5 }); // the hoard has pale pieces and pieces once stained red
+    const o = [null, () => lwSeated(mat, { crown: true, sword: true }), () => lwSeated(mat, { crown: true, cheek: true }), () => lwSeated(mat, { mitre: true, crozier: true }), () => lwKnight(mat), () => lwWarder(mat, i % 3 === 0), () => lwPawn(mat)][type]();
+    o.scale.setScalar(0.68); o.userData.mats = [mat];
+    o.position.copy(this.pos(i)); o.rotation.y = pl ? -Math.PI / 2 : Math.PI / 2;
+    this.ex.group.add(o); this.ex.pieces.push(o);
+    return o;
+  },
+  pos(i) { const r = i >> 3, c = i & 7; return V3((c - 3.5) * LW_S, GAMES.lewischess.surface, (3.5 - r) * LW_S); },
+  lostSpot(owner, k) { return V3((owner ? -1 : 1) * (0.43 + (k % 2) * 0.07), GAMES.lewischess.surface - 0.021, (owner ? -1 : 1) * (0.3 - ((k / 2) | 0) * 0.08)); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.lewischess, tok = play.token, mesh = this.cell[m.from], victim = this.cell[m.to];
+    const type = G.type(G.b[m.from]);
+    this.cell[m.from] = null; this.cell[m.to] = mesh;
+    const res = G.apply(m);
+    await hop(mesh, this.pos(m.to), 0.32, type === G.SH.N || type === G.SH.E ? 0.08 : 0.025);
+    if (tok !== play.token) return res;
+    if (victim) { const owner = 1 - m.pl; hop(victim, this.lostSpot(owner, this.lost[owner]++), 0.4, 0.12); }
+    if (m.promo) { mesh.visible = false; this.cell[m.to] = this.spawn(G.SH.F, m.pl, m.to); }
+    return res;
+  },
+  score: () => { const G = GAMES.lewischess; return [['You', G.material(0) + 1], ['Scribe', G.material(1) + 1], 'pieces']; },
+};
+const COURIER_P = {
+  camW: 1.25,
+  intro() { return 'You play white and move first. The opening leaps are already made. ' + this.prompt(); },
+  prompt: () => 'Pick one of your pieces, then where it should go.',
+  setup(ex) {
+    const G = GAMES.courier;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = [];
+    this.ex = ex; this.cell = Array(96).fill(null); this.lost = [0, 0];
+    G.b.forEach((v, i) => { if (v) this.cell[i] = this.spawn(v & 15, v >> 4, i); });
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = []; },
+  spawn(t, pl, i) {
+    const o = coPiece(t, new THREE.MeshStandardMaterial({ color: CO_MATS[pl], roughness: pl ? 0.35 : 0.5 }));
+    o.position.copy(this.pos(i)); o.rotation.y = pl ? -Math.PI / 2 : Math.PI / 2;
+    this.ex.group.add(o); this.ex.pieces.push(o);
+    return o;
+  },
+  pos(i) { const c = coCell(i); return V3(c.x, GAMES.courier.surface, c.z); },
+  lostSpot(owner, k) { return V3((owner ? -1 : 1) * (0.25 - (k % 8) * 0.06), TOP, (owner ? -1 : 1) * (0.36 + ((k / 8) | 0) * 0.06)); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  ringScale: 0.8,
+  async play(m) {
+    const G = GAMES.courier, tok = play.token, mesh = this.cell[m.from], victim = this.cell[m.to];
+    const t = G.b[m.from] & 15;
+    this.cell[m.from] = null; this.cell[m.to] = mesh;
+    const res = G.apply(m);
+    await hop(mesh, this.pos(m.to), 0.3, t === G.CO.N || t === G.CO.E ? 0.07 : 0.02);
+    if (tok !== play.token) return res;
+    if (victim) { const owner = 1 - m.pl; hop(victim, this.lostSpot(owner, this.lost[owner]++), 0.4, 0.12); }
+    if (m.promo) { mesh.visible = false; this.cell[m.to] = this.spawn(G.CO.F, m.pl, m.to); }
+    return res;
+  },
+  score: () => { const G = GAMES.courier; return [['You', G.material(0) + 1], ['Scribe', G.material(1) + 1], 'pieces']; },
+};
+// Hazard is played at the first dice: two new bone dice and a pile of shillings.
+const HZ_UP = { 1: [0, 0, Math.PI / 2], 6: [0, 0, -Math.PI / 2], 2: [0, 0, 0], 5: [Math.PI, 0, 0], 3: [-Math.PI / 2, 0, 0], 4: [Math.PI / 2, 0, 0] }; // turns that bring each face to the top
+const hzCoinGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.006, 24);
+const HAZARD_P = {
+  camW: 1.0,
+  intro() { return 'You cast first. ' + this.prompt(); },
+  prompt() {
+    const G = GAMES.hazard;
+    if (G.stage === 'stake') return `Choose your stake. You have ${G.purse[0]} shillings, the Scribe ${G.purse[1]}.`;
+    if (G.stage === 'main') return 'Call your main, 5 to 9. Seven gives the caster the best odds.';
+    return G.pending ? `Throw: you need ${G.chance} before ${G.main}.` : `Throw the dice. Your main is ${G.main}.`;
+  },
+  choosePrompt: () => '',
+  setup(ex) {
+    const G = GAMES.hazard;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) {
+      ex.pieces = { dice: [cubeDie(0.045, '#efe6d2', '#2a1a10'), cubeDie(0.045, '#efe6d2', '#2a1a10')], coins: [] };
+      ex.pieces.dice.forEach(d => ex.group.add(d));
+      const mat = new THREE.MeshStandardMaterial({ color: 0xc9cdd2, roughness: 0.3, metalness: 0.75 });
+      for (let k = 0; k < 2 * 10; k++) { const c = new THREE.Mesh(hzCoinGeo, mat); ex.group.add(c); ex.pieces.coins.push(c); }
+    }
+    this.ex = ex;
+    ex.pieces.dice.forEach((d, k) => { d.visible = true; d.position.set(-0.05 + k * 0.1, G.surface + 0.0225, 0); d.rotation.set(0, 0.3 * k, 0); });
+    ex.pieces.coins.forEach(c => { c.visible = true; });
+    this.layCoins(true);
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); if (ex.pieces) { ex.pieces.dice.forEach(d => { d.visible = false; }); ex.pieces.coins.forEach(c => { c.visible = false; }); } },
+  // Each purse is a few stacks of shillings in front of its owner; a stake sits in the middle.
+  coinSpot(pl, k) { return V3(-0.33 + ((k / 5) | 0) * 0.055, GAMES.hazard.surface + 0.003 + (k % 5) * 0.0062, pl ? -0.2 : 0.2); },
+  potSpot(k) { return V3(0.26 + ((k / 5) | 0) * 0.05, GAMES.hazard.surface + 0.003 + (k % 5) * 0.0062, 0); },
+  layCoins(instant) {
+    const G = GAMES.hazard, coins = this.ex.pieces.coins, jobs = [];
+    const staked = G.stage === 'main' || G.stage === 'throw' ? G.stake : 0, c = G.caster;
+    let k = 0; const spots = [];
+    for (let i = 0; i < G.purse[0] - (c === 0 ? staked : 0); i++) spots.push(this.coinSpot(0, i));
+    for (let i = 0; i < G.purse[1] - (c === 1 ? staked : 0); i++) spots.push(this.coinSpot(1, i));
+    for (let i = 0; i < staked; i++) spots.push(this.potSpot(i));
+    coins.forEach((m, i) => { const to = spots[i]; if (!to) { m.visible = false; return; } m.visible = true; if (instant || m.position.distanceTo(to) < 0.001) m.position.copy(to); else jobs.push(hop(m, to, 0.35, 0.04)); k++; });
+    return Promise.all(jobs);
+  },
+  meshesFor: () => [],
+  ringFor: () => null,
+  fromFor: () => null,
+  async throwDice(faces) {
+    const G = GAMES.hazard, dice = this.ex.pieces.dice;
+    await Promise.all(dice.map((d, k) => {
+      const to = V3(-0.08 + k * 0.12 + (Math.random() - 0.5) * 0.04, G.surface + 0.0225, (Math.random() - 0.5) * 0.08);
+      const [rx, , rz] = HZ_UP[faces[k]], spin = Math.random() * TAU, from = d.position.clone(), r0 = d.rotation.clone();
+      return tween(0.55, t => {
+        d.position.lerpVectors(from, to, t); d.position.y += Math.sin(t * Math.PI) * 0.06;
+        d.rotation.set(r0.x + (rx - r0.x) * t + (1 - t) * 6 * t, spin * t, r0.z + (rz - r0.z) * t);
+      });
+    }));
+    dice.forEach((d, k) => { const [rx, , rz] = HZ_UP[faces[k]]; d.rotation.set(rx, d.rotation.y, rz); });
+  },
+  async play(m) {
+    const G = GAMES.hazard, tok = play.token;
+    if (m.kind === 'throw' && m.faces) await this.throwDice(m.faces);
+    if (tok !== play.token) return { note: '' };
+    const res = G.apply(m);
+    await this.layCoins(false);
+    return res;
+  },
+  score: () => { const G = GAMES.hazard; return [['You', G.purse[0]], ['Scribe', G.purse[1]], `shillings · main ${Math.min(G.rounds + 1, G.ROUNDS)} of ${G.ROUNDS}`]; },
+};
+// Piquet is played at the playing-cards exhibit, with a 32-card French pack.
+const PIQUET_P = {
+  camW: 1.2,
+  intro() { return 'The Scribe deals first. ' + this.prompt(); },
+  prompt() {
+    const G = GAMES.piquet, first = G.stage === 'play' && G.tricks[0] + G.tricks[1] === 0 && G.declNote;
+    return (first ? G.declNote + ' ' : '') + G.prompt0();
+  },
+  setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.piquet.surface + 0.001,
+  card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
+  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.042 : 0.06), this.y() + i * 0.0004, pl ? -0.28 : 0.28); },
+  talonSpot: k => V3(-0.5, GAMES.piquet.surface + 0.001 + k * 0.0018, 0),
+  discardSpot(pl, k) { return V3(-0.36, this.y() + k * 0.0018, pl ? -0.1 : 0.1); },
+  pileSpot(pl, k) { return V3(0.44 + (k % 6) * 0.012, this.y() + k * 0.0018, pl ? -0.1 : 0.1); },
+  redeal() {
+    const G = GAMES.piquet;
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map(); this.piles = [0, 0]; this.dis = [0, 0];
+    G.talon.forEach((c, k) => { const m = this.card(c); m.rotation.set(0, Math.PI / 2, Math.PI); m.position.copy(this.talonSpot(k)); });
+    this.layHand(0, true); this.layHand(1, true);
+  },
+  layHand(pl, instant) {
+    const G = GAMES.piquet, h = G.hands[pl], jobs = [];
+    h.forEach((c, i) => {
+      const m = this.card(c), to = this.handSpot(pl, i, h.length);
+      if (pl === 0 && G.marked.includes(c)) { to.z -= 0.035; to.y += 0.006; } // a marked card is lifted toward the discard
+      m.rotation.set(0, pl ? Math.PI : 0, pl ? Math.PI : 0);
+      if (instant) m.position.copy(to); else jobs.push(hop(m, to, 0.18, 0.006));
+    });
+    return Promise.all(jobs);
+  },
+  meshesFor(m) { return (m.kind === 'mark' || m.kind === 'play') && m.pl === 0 ? [this.mesh.get(m.c)] : []; },
+  ringFor: () => null,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.piquet, tok = play.token, before = G.trick.length;
+    const res = G.apply(m);
+    for (const e of res.events || []) {
+      if (tok !== play.token) return res;
+      if (e.type === 'deal') { this.redeal(); continue; }
+      if (e.type === 'mark') { await this.layHand(0); continue; }
+      if (e.type === 'exchange') {
+        sfx.card();
+        await Promise.all(e.out.map(c => { const mc = this.card(c); mc.rotation.set(0, Math.PI / 2, Math.PI); return hop(mc, this.discardSpot(e.pl, this.dis[e.pl]++), 0.3, 0.03); }));
+        await this.layHand(e.pl);
+        continue;
+      }
+      if (e.type === 'play') {
+        const mc = this.card(e.c); sfx.card();
+        if (e.pl === 1) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        await hop(mc, V3(before ? 0.04 : -0.04, this.y() + 0.003 + before * 0.0006, e.pl ? -0.07 : 0.07), 0.3, 0.05);
+        mc.rotation.set(0, (Math.random() - 0.5) * 0.2, 0);
+        await this.layHand(e.pl);
+      }
+      if (e.type === 'trick') {
+        await wait(650); if (tok !== play.token) return res;
+        const k = this.piles[e.winner]++, to = this.pileSpot(e.winner, k);
+        await Promise.all(G.lastTrick.cards.map((c, j) => { const mc = this.card(c); tween(0.3, t => { mc.rotation.z = Math.PI * t; }); return hop(mc, V3(to.x, to.y + j * 0.0005, to.z), 0.32, 0.03); }));
+        G.lastTrick.cards.forEach(c => this.card(c).rotation.set(0, Math.PI / 2, Math.PI));
+      }
+    }
+    return res;
+  },
+  score() {
+    const G = GAMES.piquet;
+    return [['You', G.total[0] + (G.stage === 'next' || G.over ? 0 : G.score[0])], ['Scribe', G.total[1] + (G.stage === 'next' || G.over ? 0 : G.score[1])], `deal ${G.deals} of ${G.limit} · tricks ${G.tricks[0]}–${G.tricks[1]}`];
+  },
+};
 const KALAH_P = {
   camW: 1.2, ringScale: 1.2,
   intro() { return 'Your six pits are the row nearest you, and your store is on your right. ' + this.prompt(); },
@@ -5781,7 +6071,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };

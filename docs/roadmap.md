@@ -18,13 +18,14 @@ timeline
     0.21 : Hounds and Jackals · Latrunculi · Patolli, as modern reconstructions
     0.22 : The Mansion of Happiness and the Checkered Game of Life, from board scans
     0.23 : Jungle · Whist · Chaturanga and Rithmomachia, as modern reconstructions
+    0.24 : Medieval chess at the Lewis chessmen · Courier chess · Hazard · Piquet
 ```
 
 ```mermaid
 pie showData
     title Exhibits
-    "Playable" : 53
-    "On display" : 7
+    "Playable" : 57
+    "On display" : 4
 ```
 
 ## Open
@@ -49,6 +50,8 @@ pie showData
 - [x] The Landlord's Game, from the patent drawing and text
 - [x] New exhibits: Dominoes, Chinese checkers, Hex and Gomoku
 - [x] New exhibits: Cribbage, Tablut, Kalah and Makruk
+- [x] The last display tables of Wings I and III made playable: Hazard at the first dice, Piquet at the playing cards, and medieval chess (a labelled reconstruction) on the Lewis chessmen
+- [x] Courier chess, on twelve files
 - [x] Jungle (dou shou qi) and Whist, with a Scribe as your partner
 - [x] Chaturanga (after Murray) and Rithmomachia (Boissière's array) playable as clearly labelled modern reconstructions
 - [x] The Checkered Game of Life playable, from a scan of the board of about 1911 and Bradley's patent of 1866

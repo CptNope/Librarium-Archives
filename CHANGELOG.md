@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.24.0: Medieval chess, Courier chess, Hazard and Piquet
+
+- **The Lewis Chessmen** (Wing III) are playable: chess as Europe played it around 1200, as a modern reconstruction after H. J. R. Murray (shatranj's moves under European names, only checkmate wins). A checkered board appears on the velvet, and the game uses Lewis-style figures, our own carvings.
+- **Courier chess** (Wing III), a new exhibit: the German chess on twelve files known by 1202, as Selenus described it in 1616. It adds the courier, the sage and the schleich, and the old opening leaps are already made.
+- **Hazard** at the first dice (Wing I): the medieval two-dice game, with stakes, a main from 5 to 9, nicks, outs and the chance. The caster keeps the dice until losing three times running.
+- **Piquet** at the playing cards (Wing III): the 32-card game recorded by 1535. It has the exchange, point, sequence and sets, pique, repique and capot, and a partie of six deals (or two).
+- Every exhibit in Wings III to VI is now playable.
+- 7 new rule tests (257 in all).
+
 ## 0.23.0: Jungle, Chaturanga, Rithmomachia and Whist
 
 - **Jungle** (dou shou qi, Wing VI): eight ranked animals a side on a 7 × 9 board with two rivers. The rat swims and kills the elephant, the lion and tiger leap the water unless a rat blocks them, traps strip an animal of its rank, and you win by walking into the Scribe's den.

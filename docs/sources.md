@@ -19,6 +19,10 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - Wikipedia: Chaturanga, Shatranj, Tabula (game), Backgammon, Game pieces of the Lewis chessmen hoard
 - H. J. R. Murray, *A History of Chess* (1913): the reconstruction of chaturanga's moves from shatranj
 - Claude de Boissière's rithmomachia of 1556 (in English by William Fulke, 1563), as set out by J. F. C. Richards (1946) and in Jeff Joyner's rules summary (2025); Wikipedia: Rithmomachia
+- Wikipedia: Courier chess (Wirnt von Gravenberg's *Wigalois*, c. 1202–1205; Gustavus Selenus, 1616; Lucas van Leyden's *The Chess Players*)
+- Wikipedia: Hazard (game), after *Hoyle's Games Improved* (1790)
+- John McLeod, pagat.com: Piquet, after Cavendish (1882); Wikipedia: Piquet
+- Mark Weeks (mark-weeks.com): notes on the fers and alfin of medieval European chess
 - Edmond Hoyle, *A Short Treatise on the Game of Whist* (1742); John McLeod, pagat.com: Whist; Wikipedia: Whist
 - Wikipedia: Jungle (board game); chessvariants.org: Dou Shou Qi; igGameCenter: Jungle rules; ancientchess.com: Dou Shou Qi; Leiden University (J. van Rijn): About Dou Shou Qi
 - The World of Playing Cards (wopc.co.uk): early references; Mamluk cards and the making of the European deck
