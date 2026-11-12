@@ -6504,7 +6504,51 @@ function renderIndex() {
   }
   $('#lm-indexNone').hidden = shown > 0;
 }
+/* ------------------------------------------------------------- passport */
+const passport = $('#lm-passport'), passBtn = $('#lm-passBtnRail');
+const SEAL = ['Gentle', 'Fair', 'Sharp'];
+function renderPassport() {
+  const cols = $('#lm-passCols'); cols.innerHTML = '';
+  const tables = STOPS.filter(s => s.game), seen = STOPS.filter(s => store.visited[s.id]).length;
+  const played = tables.filter(s => (store.record[s.game] || [0, 0, 0]).some(Boolean)).length;
+  const won = tables.filter(s => (store.record[s.game] || [0])[0] > 0).length;
+  const golds = tables.filter(s => (store.best || {})[s.game] === 2).length;
+  $('#lm-passCount').textContent = `${seen} of ${STOPS.length} exhibits visited · ${played} of ${tables.length} tables played · ${won} won${golds ? ` (${golds} at Sharp)` : ''}`;
+  for (const w of WINGS) {
+    const col = document.createElement('section'); col.className = 'indexwing';
+    const items = STOPS.map((s, i) => [s, i]).filter(([s]) => s.wing === w.n && s.id !== 'hall' && s.id !== 'wing' + w.n && s.id !== 'next');
+    if (!items.length) continue;
+    const h = document.createElement('h3'); h.innerHTML = '<span class="r"></span><span class="n"></span><span class="dd"></span>';
+    h.querySelector('.r').textContent = w.roman; h.querySelector('.n').textContent = w.title;
+    h.querySelector('.dd').textContent = `${items.filter(([s]) => store.visited[s.id]).length} of ${items.length} stamped`;
+    col.appendChild(h);
+    const ul = document.createElement('ul'); ul.className = 'stamps';
+    for (const [s, i] of items) {
+      const li = document.createElement('li'), b = document.createElement('button'), visited = !!store.visited[s.id];
+      const best = s.game && store.best ? store.best[s.game] : undefined, rec = s.game ? store.record[s.game] : null;
+      b.className = 'stamp' + (visited ? ' seen' : '');
+      b.innerHTML = '<span class="ring"></span><span class="l"></span>';
+      b.querySelector('.ring').textContent = (s.rail || s.title).replace(/^The /, '').split(/[\s-]+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+      if (best !== undefined) { const seal = document.createElement('span'); seal.className = 'seal s' + best; seal.textContent = 'WON'; b.querySelector('.ring').appendChild(seal); }
+      b.querySelector('.l').textContent = s.rail || s.title;
+      b.setAttribute('aria-label', `${s.title}: ${visited ? 'visited' : 'not visited yet'}${best !== undefined ? `, beaten at ${SEAL[best]}` : ''}${rec && rec.some(Boolean) ? `, record ${rec[0]} won, ${rec[1]} lost, ${rec[2]} drawn` : ''}`);
+      b.addEventListener('click', () => { openPassport(false); goStop(i); });
+      li.appendChild(b); ul.appendChild(li);
+    }
+    col.appendChild(ul); cols.appendChild(col);
+  }
+}
+function openPassport(on) {
+  if (on && mode !== 'gallery') return;
+  if (on) openIndex(false);
+  passport.hidden = !on; passBtn.setAttribute('aria-expanded', String(on));
+  if (on) { renderPassport(); $('#lm-passClose').focus({ preventScroll: true }); } else if (document.activeElement && passport.contains(document.activeElement)) passBtn.focus({ preventScroll: true });
+}
+passBtn.addEventListener('click', () => openPassport(passport.hidden));
+$('#lm-passClose').addEventListener('click', () => openPassport(false));
+passport.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); openPassport(false); } });
 function openIndex(on) {
+  if (on) openPassport(false);
   if (on && mode !== 'gallery') return;
   index.hidden = !on; indexBtn.setAttribute('aria-expanded', String(on));
   rail.classList.toggle('indexing', on);
@@ -6525,7 +6569,14 @@ $('#lm-indexChips').addEventListener('click', e => {
   renderIndex();
 });
 function renderPlacard(s) {
+  if (!tour.on) narrator.stop();
   const body = $('#lm-placardBody'); body.innerHTML = '';
+  if (narrator.ok) {
+    const rb = document.createElement('button'); rb.className = 'readBtn'; rb.setAttribute('aria-pressed', 'false');
+    rb.innerHTML = '<svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="M3 8h3l4-3v10l-4-3H3zM13 7a4 4 0 010 6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Read aloud</span>';
+    rb.addEventListener('click', () => { if (narrator.speaking) { narrator.stop(); return; } rb.setAttribute('aria-pressed', 'true'); rb.lastChild.textContent = 'Stop'; narrator.say(placardSpeech(s)).then(() => { rb.setAttribute('aria-pressed', 'false'); rb.lastChild.textContent = 'Read aloud'; }); });
+    body.appendChild(rb);
+  }
   const el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; body.appendChild(e); return e; };
   el('div', 'eyebrow', s.eyebrow);
   el('h2', '', s.title);
@@ -6563,7 +6614,66 @@ function renderPlacard(s) {
   }
 }
 let placardOpen = false;
-function showPlacard(on) { placardOpen = on; $('#lm-placard').classList.toggle('away', !on); updateJoy(); }
+function showPlacard(on) { placardOpen = on; $('#lm-placard').classList.toggle('away', !on); updateJoy(); if (!on && !tour.on) narrator.stop(); }
+
+/* ------------------------------------------------- read aloud and the tour
+ * The browser's own speech synthesis reads placards: no audio files and no
+ * outside service. Where it is missing, the button does not appear and the
+ * tour simply pauses long enough to read each placard. */
+const narrator = (() => {
+  const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+  let job = 0, speaking = false;
+  const voice = () => { const vs = synth.getVoices(); return vs.find(v => /en-GB/i.test(v.lang) && /female|serena|kate|libby|sonia/i.test(v.name)) || vs.find(v => /^en-GB/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null; };
+  return {
+    ok: !!synth,
+    get speaking() { return speaking; },
+    // Long texts are spoken a sentence or two at a time: some browsers cut one long utterance short.
+    say(text) {
+      if (!synth) return Promise.resolve(false);
+      synth.cancel(); const my = ++job; speaking = true;
+      const parts = text.match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || [text];
+      return new Promise(done => {
+        let k = 0;
+        const next = () => {
+          if (my !== job) { done(false); return; }
+          if (k >= parts.length) { speaking = false; done(true); return; }
+          const u = new SpeechSynthesisUtterance(parts[k++].trim()); const v = voice(); if (v) u.voice = v;
+          u.rate = 0.96; u.onend = next; u.onerror = () => { if (my === job) { speaking = false; done(false); } };
+          synth.speak(u);
+        };
+        next();
+      });
+    },
+    stop() { job++; speaking = false; if (synth) synth.cancel(); document.querySelectorAll('#lm-app .readBtn').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.lastChild) b.lastChild.textContent = 'Read aloud'; }); },
+  };
+})();
+function placardSpeech(s) {
+  const head = s.id === 'hall' ? s.title : `${s.title}. ${s.eyebrow}, ${s.date}.`;
+  return [head, ...s.body, s.game && s.note ? s.note : ''].filter(Boolean).join(' ');
+}
+// The tour walks the hall from wherever you stand, reading each placard, until you stop it or reach the end.
+const tour = { on: false, driving: false, token: 0 };
+const tourBtn = $('#lm-tourBtn');
+function setTourButton() { tourBtn.setAttribute('aria-pressed', String(tour.on)); tourBtn.lastChild.textContent = tour.on ? 'Stop tour' : 'Tour'; }
+async function runTour() {
+  const my = ++tour.token;
+  tour.on = true; setTourButton();
+  let i = current;
+  while (tour.on && my === tour.token && i < STOPS.length) {
+    tour.driving = true; goStop(i); tour.driving = false;
+    await wait(reduceMotion ? 300 : 1800); // let the camera arrive
+    if (!tour.on || my !== tour.token) return;
+    const text = placardSpeech(STOPS[i]);
+    const spoke = narrator.ok && store.sound !== false ? await narrator.say(text) : false;
+    if (!tour.on || my !== tour.token) return;
+    if (!spoke) await wait(Math.min(26000, Math.max(6000, text.split(/\s+/).length * 240))); // time to read it yourself
+    else await wait(900);
+    i++;
+  }
+  if (my === tour.token) stopTour();
+}
+function stopTour() { if (!tour.on) return; tour.on = false; tour.token++; narrator.stop(); setTourButton(); }
+tourBtn.addEventListener('click', () => { if (tour.on) stopTour(); else if (mode === 'gallery') { openIndex(false); openPassport(false); runTour(); } });
 // On phones the placard is a bottom sheet, so the picture slides up to stay visible above it.
 let viewShift = 0;
 function updateViewShift(dt) {
@@ -6584,6 +6694,7 @@ function setActive(i) {
 }
 function goStop(i, fly = true) {
   if (mode !== 'gallery') return;
+  if (tour.on && !tour.driving) stopTour();
   setActive(i);
   if (!store.visited[STOPS[i].id]) { store.visited[STOPS[i].id] = true; save(); railButtons[i].classList.add('seen'); }
   renderPlacard(STOPS[i]); showPlacard(true);
@@ -6762,6 +6873,7 @@ function glowMats(obj) {
   obj.userData.mats = a; return a;
 }
 async function startGame(ex) {
+  stopTour(); narrator.stop();
   if (mode !== 'gallery') return;
   mode = 'play';
   const g = GAMES[ex.game], P = PRES[ex.game];
@@ -7149,7 +7261,11 @@ function finish(res) {
   $('#lm-winText').textContent = asFriend(res.text || (res.winner === 0
     ? `All ${g.N} of your pieces are home. The Scribe bows and resets the board.`
     : `The Scribe brought all ${g.N} pieces home first. You bore off ${g.home(0)}.`));
-  if (!play.hotseat) { const rec = store.record[g.id] || (store.record[g.id] = [0, 0, 0]); rec[res.winner === 0 ? 0 : res.winner === 1 ? 1 : 2]++; save(); }
+  if (!play.hotseat) {
+    const rec = store.record[g.id] || (store.record[g.id] = [0, 0, 0]); rec[res.winner === 0 ? 0 : res.winner === 1 ? 1 : 2]++;
+    if (res.winner === 0) { store.best = store.best || {}; const lv = R.LEVELS.indexOf(R.level()); store.best[g.id] = Math.max(store.best[g.id] ?? -1, lv); } // the passport's seal
+    save();
+  }
   $('#lm-winRecord').textContent = play.hotseat ? 'A game between two visitors: it does not count toward your record against the Scribe.' : recordText(g.id).replace('Your record against the Scribe here', 'Your record at this table') + ` The Scribe was playing ${R.level()}.`;
   setTimeout(() => { if (play.phase === 'over') { $('#lm-win').hidden = false; $('#lm-againBtn').focus({ preventScroll: true }); } }, res.sweep ? 900 : 300);
 }
@@ -7434,6 +7550,7 @@ window.addEventListener('keydown', e => {
   if (!keyboardOwned()) return;
   if (!index.hidden && e.code === 'Escape') { openIndex(false); return; }
   if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  if (mode === 'gallery' && e.code === 'Escape' && tour.on) { stopTour(); e.preventDefault(); return; }
   if (mode === 'gallery' && (e.code === 'BracketLeft' || e.code === 'BracketRight')) { stepStop(e.code === 'BracketLeft' ? -1 : 1); e.preventDefault(); return; }
   if (mode === 'play') {
     if (e.code === 'Space' && play.phase === 'throw' && document.activeElement !== $('#lm-throwBtn')) { e.preventDefault(); humanThrow(); }
