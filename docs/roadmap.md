@@ -21,12 +21,13 @@ timeline
     0.24 : Medieval chess at the Lewis chessmen · Courier chess · Hazard · Piquet
     0.25 : Pass-and-play · Saved games · Keyboard play
     0.26 : Hint and Undo · Nard · Duodecim scripta · Hanafuda
+    0.27 : Guided tour and passport · International draughts · Hnefatafl
 ```
 
 ```mermaid
 pie showData
     title Exhibits
-    "Playable" : 60
+    "Playable" : 62
     "On display" : 4
 ```
 
@@ -56,6 +57,8 @@ pie showData
 - [x] New exhibits: Cribbage, Tablut, Kalah and Makruk
 - [x] Hint and Undo buttons at the tables
 - [x] Nard, Duodecim scripta (a labelled reconstruction) and Hanafuda koi-koi
+- [x] A guided tour with read-aloud placards, and the visitor's passport
+- [x] International draughts, and Hnefatafl on the Copenhagen rules (a labelled reconstruction)
 - [x] Pass-and-play against a friend, saved games for long games, and keyboard play with screen-reader announcements
 - [x] The last display tables of Wings I and III made playable: Hazard at the first dice, Piquet at the playing cards, and medieval chess (a labelled reconstruction) on the Lewis chessmen
 - [x] Courier chess, on twelve files

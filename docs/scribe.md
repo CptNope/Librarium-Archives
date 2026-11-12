@@ -9,9 +9,9 @@ mindmap
       negamax with alpha-beta
       iterative deepening
       time budget per level
-      Morris · Oware · Alquerque · Brandubh
+      Morris · Oware · Alquerque · Brandubh · Hnefatafl
       Shatranj · Xiangqi · Chess · Shogi · Makruk · Janggi
-      Fox and Geese · Draughts · Reversi · Halma
+      Fox and Geese · Draughts · International draughts · Reversi · Halma
       Chinese checkers · Kalah · Bao · Tablut
       Mū tōrere · Kōnane · Fanorona · Morabaraba
       Seega · Bagh-chal · Latrunculi
@@ -113,6 +113,8 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Hex | 9–1 (7 × 7) | 6–0 (9 × 9) | 10 and 6 |
 | Kalah | 20–0 | 24–16 | 20 and 40, varied openings |
 | Tablut | 6–0 | 4–2 | 6 each |
+| Hnefatafl | 6–0 | 2–0, 2 draws | 6 and 4; long games reach the 150-move limit |
+| International draughts | 6–0 | 3–0, 1 draw | 6 and 4 |
 | Makruk | 6–0 | 2 wins, 4 draws | 6 each |
 | Morabaraba | 6–0 | 4–2 | 6 each |
 | Janggi | 4–0 | 2–2 | 4 each |
@@ -162,6 +164,8 @@ Known weak spots: in Brandubh the visitor's side still wins most games against S
 | Chess, Shogi | Captures tried first; chess up to five moves deep, shogi up to four, with drops near the kings when the list is long |
 | Makruk, Janggi | Material (Janggi's tournament points), soldiers and cowries pushed forward |
 | Tablut | The king's open lines to the edge, Muscovites around him, material |
+| Hnefatafl | The king's open lines to the corners now and after one more move, his room to move, attackers beside him and on the squares that seal each corner, material. Only the 36 moves nearest the king are searched |
+| International draughts | Men and flying kings (a king is worth over three men), advance, the centre and the back row; the longest-capture rule keeps the search narrow |
 | Bao | Seeds, the inner row, and the best capture on offer; cheap to search, so Sharp looks twelve plies ahead |
 | Kalah | Stores and seeds on each side; chains of extra moves searched as one turn |
 | Gomoku | Every point near the stones ranked by the lines it makes for each side. Sharp hunts for a win by continuous fours, blocks yours, and searches a few moves scored by five-point windows |

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.27.0: A guided tour, the passport, International draughts and Hnefatafl
+
+- **Guided tour:** a **Tour** button on the bar walks you through the hall from wherever you stand, stopping at each exhibit. With sound on, the Archives read each placard aloud; with sound off, each stop waits long enough to read it. Walk off on your own, pick another exhibit, press Esc or sit down to play, and the tour stops.
+- **Read aloud:** every placard has a **Read aloud** button, using your device's own speech voices.
+- **Passport:** a **Passport** button opens a page of stamps, one for every exhibit, wing by wing: a ring once you have visited it, and a seal once you have beaten the Scribe there, in bronze, silver or gold for Gentle, Fair or Sharp.
+- **International draughts** (Wing IV): twenty men a side on the ten-square board, with flying kings and the rule that you must take the most pieces you can. The squares carry their numbers, 1 to 50.
+- **Hnefatafl** (Wing II), the Viking king's table, on an 11 × 11 board as a labelled modern reconstruction: the Copenhagen rules of 2012, without the shieldwall and the exit fort. Escape to a corner; the attackers win by taking the king or ringing in his whole army.
+- Both new games offer pass-and-play, saved games, Hint and Undo.
+- 8 new rule tests (271 in all).
+
 ## 0.26.0: Hints, undo, Nard, Duodecim scripta and Hanafuda
 
 - **Hint:** at every table without dice or hidden cards, plus Whist, a **Hint** button asks the Sharp Scribe what it would play in your seat and lights that move. You can play it or ignore it.

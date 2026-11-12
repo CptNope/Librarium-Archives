@@ -2441,6 +2441,68 @@ function buildTablut(group) {
   return y;
 }
 
+/* --- Wing IV: International draughts, a 10 x 10 board numbered 1 to 50 */
+const ID_S = 0.076;
+function idCell(i) { const r = (i / 10) | 0, c = i % 10; return { x: (c - 4.5) * ID_S, z: (4.5 - r) * ID_S }; }
+// The FMJD numbers the 50 dark squares from Black's side, left to right as White sees them: 1 is far left, 46 near left.
+function idNumber(i) { const r = (i / 10) | 0, c = i % 10; return (9 - r) * 5 + ((c / 2) | 0) + 1; }
+function idPiece(pl) {
+  const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x24160e : 0xeee4cc, roughness: 0.38 });
+  const m = new THREE.Mesh(drManGeo, mat); m.scale.set(0.86, 1, 0.86); m.userData.mats = [mat];
+  const crown = new THREE.Mesh(drManGeo, mat); crown.position.y = 0.016; crown.visible = false; m.add(crown); m.userData.crown = crown;
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.003, 6, 24), MAT.brass); band.rotation.x = Math.PI / 2; band.position.y = 0.024; band.visible = false; m.add(band); m.userData.band = band;
+  return m;
+}
+function buildIDraughts(group) {
+  const W = 10 * ID_S + 0.08;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, W), new THREE.MeshStandardMaterial({ color: 0x2b1a0e, roughness: 0.5 }));
+  frame.position.y = TOP + 0.02; group.add(frame);
+  const px = 1024, sc = px / W, c0 = px / 2 - 5 * ID_S * sc, s = ID_S * sc;
+  topPlane(group, W, W, TOP + 0.0405, tex(px, px, (g) => {
+    g.fillStyle = '#2b1a0e'; g.fillRect(0, 0, px, px);
+    g.font = `600 ${Math.round(s * 0.2)}px Georgia, serif`; g.textAlign = 'right'; g.textBaseline = 'top';
+    for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++) {
+      const dark = (r + c) % 2 === 0, x = c0 + c * s, y = c0 + (9 - r) * s; // the visitor's near-left corner is dark, as the rules ask
+      g.fillStyle = dark ? '#6b4426' : '#ead7ae'; g.fillRect(x, y, s, s);
+      if (dark) { g.fillStyle = 'rgba(240,220,180,.55)'; g.fillText(String(idNumber(r * 10 + c)), x + s - 5, y + 4); }
+    }
+    g.strokeStyle = '#c9a24e'; g.lineWidth = 5; g.strokeRect(c0 - 4, c0 - 4, 10 * s + 8, 10 * s + 8);
+  }), { roughness: 0.5 });
+  const y = TOP + 0.041, shown = [], G = window.LibrariumRules.idraughts;
+  G.init(); G.b.forEach((v, i) => { if (!v) return; const m = idPiece(G.owner(v)), c = idCell(i); m.position.set(c.x, y, c.z); group.add(m); shown.push(m); });
+  group.userData.display = shown;
+  return y;
+}
+
+/* --- Wing II: Hnefatafl, 11 x 11, after the Copenhagen rules */
+const HN_S = 0.072;
+function hnCell(i) { const r = (i / 11) | 0, c = i % 11; return { x: (c - 5) * HN_S, z: (5 - r) * HN_S }; }
+function hnPiece(v) { const m = tbPiece(v); m.scale.multiplyScalar(0.84); return m; }
+function buildHnefatafl(group) {
+  const W = 11 * HN_S + 0.07;
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(W, 0.036, W), new THREE.MeshStandardMaterial({ color: 0x4a3018, roughness: 0.7 }));
+  slab.position.y = TOP + 0.018; group.add(slab);
+  const N = 1024, sc = N / W, o = N / 2 - 5.5 * HN_S * sc, s = HN_S * sc;
+  topPlane(group, W, W, TOP + 0.0365, tex(N, N, (g) => {
+    // Oak, with the grid cut into it like the 11 x 11 board fragment from Trondheim.
+    woodGrain(g, N, N, '#9c7446', '#6a4a26');
+    g.strokeStyle = 'rgba(40,22,8,.85)'; g.lineWidth = 4;
+    for (let k = 0; k <= 11; k++) { g.beginPath(); g.moveTo(o, o + k * s); g.lineTo(o + 11 * s, o + k * s); g.stroke(); g.beginPath(); g.moveTo(o + k * s, o); g.lineTo(o + k * s, o + 11 * s); g.stroke(); }
+    const knot = (r, c) => { // the throne and the four corners are cut with a cross in a ring
+      const x = o + (c + 0.5) * s, y = o + (r + 0.5) * s;
+      g.fillStyle = 'rgba(40,22,8,.35)'; g.fillRect(x - s / 2 + 3, y - s / 2 + 3, s - 6, s - 6);
+      g.strokeStyle = 'rgba(30,16,6,.9)'; g.lineWidth = 4;
+      g.beginPath(); g.arc(x, y, s * 0.3, 0, TAU); g.stroke();
+      g.beginPath(); g.moveTo(x - s * 0.36, y); g.lineTo(x + s * 0.36, y); g.moveTo(x, y - s * 0.36); g.lineTo(x, y + s * 0.36); g.stroke();
+    };
+    [[0, 0], [0, 10], [10, 0], [10, 10], [5, 5]].forEach(([r, c]) => knot(r, c));
+  }), { roughness: 0.75 });
+  const y = TOP + 0.037, shown = [], G = window.LibrariumRules.hnefatafl;
+  G.init(); G.b.forEach((v, i) => { if (!v) return; const m = hnPiece(v), c = hnCell(i); m.position.set(c.x, y, c.z); group.add(m); shown.push(m); });
+  group.userData.display = shown;
+  return y;
+}
+
 const MK_S = 0.088;
 function mkCell(i) { return { x: ((i & 7) - 3.5) * MK_S, z: (3.5 - (i >> 3)) * MK_S }; }
 const mkLathe = (pts, m) => new THREE.Mesh(new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), 22), m);
@@ -3214,9 +3276,9 @@ const STOPS = [
     eyebrow: 'Wing II · Librarium Archives', status: null, begin: 'go',
     body: [
       'The games in the first wing were races, and the dice or sticks had the final word. Here the luck drains away. These are games of position, where you win by surrounding, trapping or outthinking the person across from you.',
-      'Eight tables are open: Go on a small board; the Roman games Ludus latrunculorum and Duodecim scripta, both modern reconstructions; Patolli from Mesoamerica, also reconstructed; Nine Men\'s Morris; the mancala game Oware; Alquerque; and the Irish game Brandubh. Petteia and Liubo are on display. The Scribe is waiting at each table.'
+      'Nine tables are open: Go on a small board; the Roman games Ludus latrunculorum and Duodecim scripta, both modern reconstructions; Patolli from Mesoamerica, also reconstructed; Nine Men\'s Morris; the mancala game Oware; Alquerque; and two games of the tafl family, the Irish Brandubh and the Norse Hnefatafl. Petteia and Liubo are on display. The Scribe is waiting at each table.'
     ],
-    facts: [['Tables', 'Go, Latrunculi, Duodecim scripta, Patolli, Morris, Oware, Alquerque, Brandubh'], ['Display', 'Petteia, Liubo']],
+    facts: [['Tables', 'Go, Latrunculi, Duodecim scripta, Patolli, Morris, Oware, Alquerque, Brandubh, Hnefatafl'], ['Display', 'Petteia, Liubo']],
   },
   { id: 'petteia', wing: 2, title: 'Petteia', date: 'by 443 BCE', rail: 'Petteia',
     eyebrow: 'Classical Greece', status: ['recon', 'Rules mostly lost'],
@@ -3309,6 +3371,14 @@ const STOPS = [
     ],
     facts: [['Board', '7 × 7, a throne and four corners'], ['Pieces', 'King and 4 defenders vs 8'], ['You play', 'The king\'s side'], ['Win', 'Bring the king to a corner']],
     build: buildBrandubhBoard },
+  { id: 'hnefatafl', wing: 2, title: 'Hnefatafl', date: 'c. 400 – 1200 CE', rail: 'Hnefatafl',
+    eyebrow: 'Scandinavia · the Viking Age', status: ['recon', 'Rules reconstructed'], game: 'hnefatafl',
+    body: [
+      'Tafl means "table", and for a long time that was all the game needed to be called. When chess and other board games reached the north, it became hnefatafl, the king\'s table, to tell it apart from skáktafl, chess. Its pieces turn up across the Viking world: 24 walrus-ivory men and a whalebone king in a 10th-century grave at Baldursheimur in Iceland, bone pieces at Birka in Sweden, and part of an 11 × 11 board from the early 12th century at Trondheim in Norway.',
+      'The sagas mention the game often, but they were written down long after the Viking Age, and nobody recorded its rules before chess pushed it aside. What you play here is a modern reconstruction: the Copenhagen rules, worked out in 2012 by Aage Nielsen, Adam Bartley and Tim Millar from the Fetlar rules of 2007. We leave out two of their finer points, the shieldwall capture and the exit fort, and call a very long game a draw.'
+    ],
+    facts: [['Board', '11 × 11, a throne and four corners'], ['Pieces', 'King and 12 defenders vs 24'], ['You play', 'The king\'s side'], ['Rules', 'Copenhagen (2012), simplified']],
+    build: buildHnefatafl },
   { id: 'wing3', wing: 3, title: 'Kings, Cards and Courts', short: 'Wing III', date: 'c. 480 – 1450 CE', rail: 'Wing III',
     eyebrow: 'Wing III · Librarium Archives', status: null, begin: 'tables',
     body: [
@@ -3420,9 +3490,9 @@ const STOPS = [
     eyebrow: 'Wing IV · Librarium Archives', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
-      'Twelve tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Pachisi; the Game of the Goose; Cribbage; Dominoes; Tablut; Whist, with a Scribe as your partner; Snakes and Ladders; Ludo; and Mahjong, with three Scribes.'
+      'Thirteen tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts, and International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Cribbage; Dominoes; Tablut; Whist, with a Scribe as your partner; Snakes and Ladders; Ludo; and Mahjong, with three Scribes.'
     ],
-    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Pachisi, the Goose, Cribbage, Dominoes, Tablut, Whist, Snakes and Ladders, Ludo, Mahjong']],
+    facts: [['Tables', 'Fox and Geese, Chess, Draughts, International draughts, Pachisi, the Goose, Cribbage, Dominoes, Tablut, Whist, Snakes and Ladders, Ludo, Mahjong']],
   },
   { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
@@ -3451,6 +3521,14 @@ const STOPS = [
     ],
     facts: [['Board', '8 × 8, dark squares only'], ['Pieces', '12 each'], ['Capture', 'Compulsory, by jumping'], ['Win', 'Take or block every enemy piece']],
     build: buildDraughtsBoard },
+  { id: 'idraughts', wing: 4, title: 'International Draughts', date: 'c. 1550 – 1700 CE', rail: 'International Draughts',
+    eyebrow: 'The Netherlands · the ten-square board', status: ['known', 'Rules survive in writing'], game: 'idraughts',
+    body: [
+      'The bigger board grew up in the Netherlands. The Dutch historian Arie van der Stoep found that a board of ten squares by ten was probably in use there from about 1550, and that the armies grew to twenty a side between 1650 and 1700. Kings that fly the length of a diagonal, and the rule that you must take as many pieces as you can, make it a deeper game than its cousin on the chessboard.',
+      'The Dutch call it Pools, "Polish", probably after an old Dutch habit of calling any odd new idea Polish. The first world championship was played in 1894 and won by the Frenchman Isidore Weiss, and the World Draughts Federation, the FMJD, has run the title since 1948. The squares are numbered 1 to 50, so that games can be written down.'
+    ],
+    facts: [['Board', '10 × 10, squares numbered 1–50'], ['Pieces', '20 each'], ['Kings', 'Fly any distance'], ['Capture', 'Compulsory: take the most you can']],
+    build: buildIDraughts },
   { id: 'pachisi', wing: 4, title: 'Pachisi (Chaupar)', date: '16th century CE', rail: 'Pachisi',
     eyebrow: 'India · Mughal court', status: ['known', 'Still played, and the ancestor of Ludo'], game: 'pachisi',
     note: 'Pachisi is played by four in two partnerships, so here you play two colours against the Scribe\'s two. The short game takes about a hundred throws; the full game, more than twice as many.',
@@ -3816,7 +3894,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet, nard: R.nard, xii: R.xii, koikoi: R.koikoi };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet, nard: R.nard, xii: R.xii, koikoi: R.koikoi, idraughts: R.idraughts, hnefatafl: R.hnefatafl };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -5229,6 +5307,81 @@ const TABLUT_P = {
   },
   score: () => [['Your side', GAMES.tablut.count(0)], ['Muscovites', GAMES.tablut.count(1)], 'pieces'],
 };
+const IDRAUGHTS_P = {
+  camW: 1.12,
+  intro() { return 'You play white and move first. ' + this.prompt(); },
+  prompt: () => 'Pick a piece, then a ring. You must capture when you can, and take as many pieces as possible.',
+  setup(ex) {
+    const G = GAMES.idraughts;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = [];
+    this.ex = ex; this.cell = Array(100).fill(null); this.lost = [0, 0];
+    const left = [20, 20];
+    G.b.forEach((v, i) => {
+      if (!v) return; const pl = G.owner(v), m = idPiece(pl);
+      m.position.copy(this.pos(i)); this.crown(m, G.king(v)); ex.group.add(m); ex.pieces.push(m); this.cell[i] = m; left[pl]--;
+    });
+    // A resumed or taken-back game: the pieces already taken wait beside the board.
+    for (const pl of [0, 1]) for (let j = 0; j < left[pl]; j++) { const m = idPiece(pl); m.position.copy(this.lostSpot(1 - pl, this.lost[1 - pl]++)); ex.group.add(m); ex.pieces.push(m); }
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = []; },
+  crown(m, on) { m.userData.crown.visible = on; m.userData.band.visible = on; },
+  pos(i) { const c = idCell(i); return V3(c.x, GAMES.idraughts.surface, c.z); },
+  lostSpot(owner, k) { return V3(owner === 1 ? 0.53 : -0.53, TOP + (k % 7) * 0.0165, -0.33 + ((k / 7) | 0) * 0.085); },
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.idraughts, tok = play.token;
+    const mesh = this.cell[m.from]; this.cell[m.from] = null;
+    const victims = m.caps.map(c => this.cell[c]);
+    m.caps.forEach(c => { this.cell[c] = null; });
+    this.cell[m.to] = mesh;
+    const res = G.apply(m);
+    const jump = m.caps.length > 0;
+    for (const sq of m.path) {
+      if (tok !== play.token) return res;
+      const d = mesh.position.distanceTo(this.pos(sq));
+      await hop(mesh, this.pos(sq), 0.2 + d * 0.6, jump ? 0.07 : 0.025);
+    }
+    // Taken pieces are lifted only when the whole move is over.
+    for (const v of victims) { if (tok !== play.token) return res; const owner = 1 - m.pl; await hop(v, this.lostSpot(owner, this.lost[owner]++), 0.26, 0.12); }
+    if (m.crown) { this.crown(mesh, true); await tween(0.3, q => { mesh.userData.crown.scale.setScalar(Math.max(0.01, q)); }); }
+    return res;
+  },
+  score: () => { const G = GAMES.idraughts; return [['You', G.count(0)], ['Scribe', G.count(1)], 'pieces']; },
+};
+const HNEFATAFL_P = {
+  camW: 1.15, ringScale: 0.62,
+  intro() { return 'The Scribe\'s attackers move first. ' + this.prompt(); },
+  prompt: () => 'Pick one of your pieces, then where it should go. Bring the king to a corner.',
+  setup(ex) {
+    const G = GAMES.hnefatafl;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = [];
+    this.ex = ex; this.cell = Array(121).fill(null); this.lost = [0, 0];
+    G.b.forEach((v, i) => { if (!v) return; const m = hnPiece(v); m.position.copy(this.pos(i)); ex.group.add(m); ex.pieces.push(m); this.cell[i] = m; m.userData.v = v; });
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = []; },
+  pos(i) { const c = hnCell(i); return V3(c.x, GAMES.hnefatafl.surface, c.z); },
+  lostSpot: (owner, k) => V3(owner === 1 ? 0.52 : -0.52, TOP, -0.38 + (k % 12) * 0.068),
+  meshesFor(m) { return [this.cell[m.from]]; },
+  ringFor(m) { return this.pos(m.to); },
+  fromFor(m) { return this.pos(m.from); },
+  async play(m) {
+    const G = GAMES.hnefatafl, mesh = this.cell[m.from]; this.cell[m.from] = null; this.cell[m.to] = mesh;
+    const res = G.apply(m), from = mesh.position.clone(), to = this.pos(m.to);
+    await tween(0.2 + from.distanceTo(to) * 0.5, k => { mesh.position.lerpVectors(from, to, k); mesh.position.y += Math.sin(k * Math.PI) * 0.025; });
+    for (const c of res.caps) {
+      const cm = this.cell[c]; this.cell[c] = null;
+      if (cm.userData.v === 3) { await tween(0.6, k => { cm.rotation.z = k * 1.45; }); continue; }
+      const owner = cm.userData.v === 1 ? 1 : 0;
+      await hop(cm, this.lostSpot(owner, this.lost[owner]++), 0.42, 0.14);
+    }
+    return res;
+  },
+  score: () => [['Your side', GAMES.hnefatafl.count(0)], ['Attackers', GAMES.hnefatafl.count(1)], 'pieces'],
+};
 const MAKRUK_P = {
   camW: 1.0,
   intro() { return 'You play white and move first. ' + this.prompt(); },
@@ -6357,7 +6510,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P, nard: NARD_P, xii: XII_P, koikoi: KOIKOI_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P, nard: NARD_P, xii: XII_P, koikoi: KOIKOI_P, idraughts: IDRAUGHTS_P, hnefatafl: HNEFATAFL_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -6504,7 +6657,52 @@ function renderIndex() {
   }
   $('#lm-indexNone').hidden = shown > 0;
 }
+/* ------------------------------------------------------------- passport */
+const passport = $('#lm-passport'), passBtn = $('#lm-passBtnRail');
+const SEAL = ['Gentle', 'Fair', 'Sharp'];
+function renderPassport() {
+  const cols = $('#lm-passCols'); cols.innerHTML = '';
+  const exhibits = STOPS.filter(s => s.id !== 'hall' && s.id !== 'next' && !/^wing\d$/.test(s.id)); // wing entrances and the lectern carry no stamp
+  const tables = STOPS.filter(s => s.game), seen = exhibits.filter(s => store.visited[s.id]).length;
+  const played = tables.filter(s => (store.record[s.game] || [0, 0, 0]).some(Boolean)).length;
+  const won = tables.filter(s => (store.record[s.game] || [0])[0] > 0).length;
+  const golds = tables.filter(s => (store.best || {})[s.game] === 2).length;
+  $('#lm-passCount').textContent = `${seen} of ${exhibits.length} exhibits visited · ${played} of ${tables.length} tables played · ${won} won${golds ? ` (${golds} at Sharp)` : ''}`;
+  for (const w of WINGS) {
+    const col = document.createElement('section'); col.className = 'indexwing';
+    const items = STOPS.map((s, i) => [s, i]).filter(([s]) => s.wing === w.n && s.id !== 'hall' && s.id !== 'wing' + w.n && s.id !== 'next');
+    if (!items.length) continue;
+    const h = document.createElement('h3'); h.innerHTML = '<span class="r"></span><span class="n"></span><span class="dd"></span>';
+    h.querySelector('.r').textContent = w.roman; h.querySelector('.n').textContent = w.title;
+    h.querySelector('.dd').textContent = `${items.filter(([s]) => store.visited[s.id]).length} of ${items.length} stamped`;
+    col.appendChild(h);
+    const ul = document.createElement('ul'); ul.className = 'stamps';
+    for (const [s, i] of items) {
+      const li = document.createElement('li'), b = document.createElement('button'), visited = !!store.visited[s.id];
+      const best = s.game && store.best ? store.best[s.game] : undefined, rec = s.game ? store.record[s.game] : null;
+      b.className = 'stamp' + (visited ? ' seen' : '');
+      b.innerHTML = '<span class="ring"></span><span class="l"></span>';
+      b.querySelector('.ring').textContent = (s.rail || s.title).replace(/^The /, '').replace(/\(.*?\)/g, '').split(/[\s-]+/).map(x => x.replace(/[^\p{L}]/gu, '')).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+      if (best !== undefined) { const seal = document.createElement('span'); seal.className = 'seal s' + best; seal.textContent = 'WON'; b.querySelector('.ring').appendChild(seal); }
+      b.querySelector('.l').textContent = s.rail || s.title;
+      b.setAttribute('aria-label', `${s.title}: ${visited ? 'visited' : 'not visited yet'}${best !== undefined ? `, beaten at ${SEAL[best]}` : ''}${rec && rec.some(Boolean) ? `, record ${rec[0]} won, ${rec[1]} lost, ${rec[2]} drawn` : ''}`);
+      b.addEventListener('click', () => { openPassport(false); goStop(i); });
+      li.appendChild(b); ul.appendChild(li);
+    }
+    col.appendChild(ul); cols.appendChild(col);
+  }
+}
+function openPassport(on) {
+  if (on && mode !== 'gallery') return;
+  if (on) openIndex(false);
+  passport.hidden = !on; passBtn.setAttribute('aria-expanded', String(on));
+  if (on) { renderPassport(); $('#lm-passClose').focus({ preventScroll: true }); } else if (document.activeElement && passport.contains(document.activeElement)) passBtn.focus({ preventScroll: true });
+}
+passBtn.addEventListener('click', () => openPassport(passport.hidden));
+$('#lm-passClose').addEventListener('click', () => openPassport(false));
+passport.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); openPassport(false); } });
 function openIndex(on) {
+  if (on) openPassport(false);
   if (on && mode !== 'gallery') return;
   index.hidden = !on; indexBtn.setAttribute('aria-expanded', String(on));
   rail.classList.toggle('indexing', on);
@@ -6525,7 +6723,14 @@ $('#lm-indexChips').addEventListener('click', e => {
   renderIndex();
 });
 function renderPlacard(s) {
+  if (!tour.on) narrator.stop();
   const body = $('#lm-placardBody'); body.innerHTML = '';
+  if (narrator.ok) {
+    const rb = document.createElement('button'); rb.className = 'readBtn'; rb.setAttribute('aria-pressed', 'false');
+    rb.innerHTML = '<svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="M3 8h3l4-3v10l-4-3H3zM13 7a4 4 0 010 6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Read aloud</span>';
+    rb.addEventListener('click', () => { if (narrator.speaking) { narrator.stop(); return; } rb.setAttribute('aria-pressed', 'true'); rb.lastChild.textContent = 'Stop'; narrator.say(placardSpeech(s)).then(() => { rb.setAttribute('aria-pressed', 'false'); rb.lastChild.textContent = 'Read aloud'; }); });
+    body.appendChild(rb);
+  }
   const el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; body.appendChild(e); return e; };
   el('div', 'eyebrow', s.eyebrow);
   el('h2', '', s.title);
@@ -6563,7 +6768,66 @@ function renderPlacard(s) {
   }
 }
 let placardOpen = false;
-function showPlacard(on) { placardOpen = on; $('#lm-placard').classList.toggle('away', !on); updateJoy(); }
+function showPlacard(on) { placardOpen = on; $('#lm-placard').classList.toggle('away', !on); updateJoy(); if (!on && !tour.on) narrator.stop(); }
+
+/* ------------------------------------------------- read aloud and the tour
+ * The browser's own speech synthesis reads placards: no audio files and no
+ * outside service. Where it is missing, the button does not appear and the
+ * tour simply pauses long enough to read each placard. */
+const narrator = (() => {
+  const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+  let job = 0, speaking = false;
+  const voice = () => { const vs = synth.getVoices(); return vs.find(v => /en-GB/i.test(v.lang) && /female|serena|kate|libby|sonia/i.test(v.name)) || vs.find(v => /^en-GB/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null; };
+  return {
+    ok: !!synth,
+    get speaking() { return speaking; },
+    // Long texts are spoken a sentence or two at a time: some browsers cut one long utterance short.
+    say(text) {
+      if (!synth) return Promise.resolve(false);
+      synth.cancel(); const my = ++job; speaking = true;
+      const parts = text.match(/[^.!?]+[.!?]+["”’)]*|[^.!?]+$/g) || [text];
+      return new Promise(done => {
+        let k = 0;
+        const next = () => {
+          if (my !== job) { done(false); return; }
+          if (k >= parts.length) { speaking = false; done(true); return; }
+          const u = new SpeechSynthesisUtterance(parts[k++].trim()); const v = voice(); if (v) u.voice = v;
+          u.rate = 0.96; u.onend = next; u.onerror = () => { if (my === job) { speaking = false; done(false); } };
+          synth.speak(u);
+        };
+        next();
+      });
+    },
+    stop() { job++; speaking = false; if (synth) synth.cancel(); document.querySelectorAll('#lm-app .readBtn').forEach(b => { b.setAttribute('aria-pressed', 'false'); if (b.lastChild) b.lastChild.textContent = 'Read aloud'; }); },
+  };
+})();
+function placardSpeech(s) {
+  const head = s.id === 'hall' ? s.title : `${s.title}. ${s.eyebrow}, ${s.date}.`;
+  return [head, ...s.body, s.game && s.note ? s.note : ''].filter(Boolean).join(' ');
+}
+// The tour walks the hall from wherever you stand, reading each placard, until you stop it or reach the end.
+const tour = { on: false, driving: false, token: 0 };
+const tourBtn = $('#lm-tourBtn');
+function setTourButton() { tourBtn.setAttribute('aria-pressed', String(tour.on)); tourBtn.lastChild.textContent = tour.on ? 'Stop tour' : 'Tour'; }
+async function runTour() {
+  const my = ++tour.token;
+  tour.on = true; setTourButton();
+  let i = current;
+  while (tour.on && my === tour.token && i < STOPS.length) {
+    tour.driving = true; goStop(i); tour.driving = false;
+    await wait(reduceMotion ? 300 : 1800); // let the camera arrive
+    if (!tour.on || my !== tour.token) return;
+    const text = placardSpeech(STOPS[i]);
+    const spoke = narrator.ok && store.sound !== false ? await narrator.say(text) : false;
+    if (!tour.on || my !== tour.token) return;
+    if (!spoke) await wait(Math.min(26000, Math.max(6000, text.split(/\s+/).length * 240))); // time to read it yourself
+    else await wait(900);
+    i++;
+  }
+  if (my === tour.token) stopTour();
+}
+function stopTour() { if (!tour.on) return; tour.on = false; tour.token++; narrator.stop(); setTourButton(); }
+tourBtn.addEventListener('click', () => { if (tour.on) stopTour(); else if (mode === 'gallery') { openIndex(false); openPassport(false); runTour(); } });
 // On phones the placard is a bottom sheet, so the picture slides up to stay visible above it.
 let viewShift = 0;
 function updateViewShift(dt) {
@@ -6584,6 +6848,7 @@ function setActive(i) {
 }
 function goStop(i, fly = true) {
   if (mode !== 'gallery') return;
+  if (tour.on && !tour.driving) stopTour();
   setActive(i);
   if (!store.visited[STOPS[i].id]) { store.visited[STOPS[i].id] = true; save(); railButtons[i].classList.add('seen'); }
   renderPlacard(STOPS[i]); showPlacard(true);
@@ -6711,7 +6976,7 @@ setScribeLevel(store.level || 'fair');
 // Some tables offer variants (a bigger grid, say). Choosing one restarts the game.
 function toggleOn(g, t) { const v = ((store.toggles || {})[g.id] || {})[t.id]; return v === undefined ? !!t.default : !!v; }
 // Pass-and-play: two visitors share the screen at a two-player table with nothing hidden.
-const HOTSEAT = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier']);
+const HOTSEAT = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier', 'idraughts', 'hnefatafl']);
 const friendOn = g => HOTSEAT.has(g.id) && ((store.opponent || {})[g.id] === 'friend');
 function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex); }
 function renderVariants(g) {
@@ -6762,6 +7027,7 @@ function glowMats(obj) {
   obj.userData.mats = a; return a;
 }
 async function startGame(ex) {
+  stopTour(); narrator.stop();
   if (mode !== 'gallery') return;
   mode = 'play';
   const g = GAMES[ex.game], P = PRES[ex.game];
@@ -6803,7 +7069,7 @@ async function startGame(ex) {
  * move. Undo takes the table back to the start of your previous turn. Both copy
  * the engine's data fields first, so nothing the Scribe tries can leak out. */
 // Only tables whose pieces are rebuilt entirely from the engine's state can be taken back.
-const UNDO_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'draughts', 'tablut', 'halma', 'reversi', 'jungle', 'mutorere', 'oware', 'kalah']);
+const UNDO_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'draughts', 'tablut', 'halma', 'reversi', 'jungle', 'mutorere', 'oware', 'kalah', 'idraughts', 'hnefatafl']);
 const canHint = g => !!g.aiPlan && !g.dice && !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'fourseasons', 'chaturaji'].includes(g.id);
 function copyState(g) {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
@@ -6858,7 +7124,7 @@ $('#lm-hintBtn').addEventListener('click', async () => {
  * A long game against the Scribe is kept in this browser at the start of each of
  * your turns (between tricks, at card tables), and comes back when you sit down
  * again. Only the engine's own state is kept; the table is rebuilt from it. */
-const SAVE_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi']);
+const SAVE_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl']);
 const SAVE_VERSION = 1;
 function engineState(g) { // plain data fields only: no methods, no getters
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
@@ -7149,7 +7415,11 @@ function finish(res) {
   $('#lm-winText').textContent = asFriend(res.text || (res.winner === 0
     ? `All ${g.N} of your pieces are home. The Scribe bows and resets the board.`
     : `The Scribe brought all ${g.N} pieces home first. You bore off ${g.home(0)}.`));
-  if (!play.hotseat) { const rec = store.record[g.id] || (store.record[g.id] = [0, 0, 0]); rec[res.winner === 0 ? 0 : res.winner === 1 ? 1 : 2]++; save(); }
+  if (!play.hotseat) {
+    const rec = store.record[g.id] || (store.record[g.id] = [0, 0, 0]); rec[res.winner === 0 ? 0 : res.winner === 1 ? 1 : 2]++;
+    if (res.winner === 0) { store.best = store.best || {}; const lv = R.LEVELS.indexOf(R.level()); store.best[g.id] = Math.max(store.best[g.id] ?? -1, lv); } // the passport's seal
+    save();
+  }
   $('#lm-winRecord').textContent = play.hotseat ? 'A game between two visitors: it does not count toward your record against the Scribe.' : recordText(g.id).replace('Your record against the Scribe here', 'Your record at this table') + ` The Scribe was playing ${R.level()}.`;
   setTimeout(() => { if (play.phase === 'over') { $('#lm-win').hidden = false; $('#lm-againBtn').focus({ preventScroll: true }); } }, res.sweep ? 900 : 300);
 }
@@ -7370,6 +7640,7 @@ canvas.addEventListener('wheel', e => {
 
 // Tap the floor to walk there, keeping the way you face.
 function walkTo(p) {
+  stopTour(); // walking off on your own ends the tour
   const x = clampN(p.x, -1.3, 1.3), z = clampN(p.z, HALL.zFar + 3.2, HALL.zNear - 0.8);
   if (Math.hypot(x - cam.pos.x, z - cam.pos.z) < 0.3) return;
   const mark = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.9, depthWrite: false }));
@@ -7399,7 +7670,7 @@ if (joyEl) {
     e.preventDefault();
     joy.id = e.pointerId;
     try { joyEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-    joyEl.classList.add('active'); camTween = null; joyMove(e);
+    joyEl.classList.add('active'); camTween = null; stopTour(); joyMove(e);
     $('#lm-hint').style.opacity = 0;
   });
   joyEl.addEventListener('pointermove', e => { if (e.pointerId === joy.id) joyMove(e); });
@@ -7434,6 +7705,7 @@ window.addEventListener('keydown', e => {
   if (!keyboardOwned()) return;
   if (!index.hidden && e.code === 'Escape') { openIndex(false); return; }
   if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  if (mode === 'gallery' && e.code === 'Escape' && tour.on) { stopTour(); e.preventDefault(); return; }
   if (mode === 'gallery' && (e.code === 'BracketLeft' || e.code === 'BracketRight')) { stepStop(e.code === 'BracketLeft' ? -1 : 1); e.preventDefault(); return; }
   if (mode === 'play') {
     if (e.code === 'Space' && play.phase === 'throw' && document.activeElement !== $('#lm-throwBtn')) { e.preventDefault(); humanThrow(); }
@@ -7443,7 +7715,7 @@ window.addEventListener('keydown', e => {
     if (e.code === 'Escape') { if (play.selected) { select(play.selected); play.kb = -1; play.hover = null; } else leaveGame(); }
     return;
   }
-  if (KEYMAP[e.code]) { keys.add(KEYMAP[e.code]); camTween = null; e.preventDefault(); }
+  if (KEYMAP[e.code]) { keys.add(KEYMAP[e.code]); camTween = null; stopTour(); e.preventDefault(); }
 });
 window.addEventListener('keyup', e => {
   if (KEYMAP[e.code]) { keys.delete(KEYMAP[e.code]); if (!keys.size && mode === 'gallery') settleNearest(); }

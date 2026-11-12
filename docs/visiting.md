@@ -7,6 +7,8 @@ flowchart LR
     hall(["The hall"]) -->|"walk, tap the floor,<br/>or ‹ › on the bar"| ex["An exhibit<br/>placard: history, dates,<br/>how sure we are"]
     hall -->|"I–VI tabs"| wing["A wing's entrance"]
     hall -->|"All exhibits<br/>search and filters"| ex
+    hall -->|"Tour"| tour["The guided tour<br/>exhibit by exhibit,<br/>placards read aloud"]
+    tour --> ex
     wing --> ex
     ex -->|"Play"| table["The table<br/>rules panel opens<br/>the first time"]
     table -->|"Leave the table, or Esc"| ex
@@ -30,6 +32,12 @@ flowchart LR
 - The joystick appears on touch screens (and as soon as anyone touches the screen on a touch laptop). On a phone it hides while an exhibit card is open, so close the card to walk; walking up to an exhibit lights it on the timeline rather than covering the view, and a tap opens it.
 - Zoom eases back to normal when you travel to another exhibit or leave a table.
 
+## The guided tour and the passport
+
+- **Tour** (on the bar, beside All exhibits) walks you through the hall from where you stand, one exhibit after another to the lectern at the end. With sound on, each placard is read aloud in your device's own speech voice; with sound off, the tour waits at each stop long enough to read it. Walking off on your own, picking another exhibit, pressing Esc, sitting down to play or pressing Tour again ends it.
+- **Read aloud** on any placard reads just that placard; press it again to stop. It appears wherever the browser can speak.
+- **Passport** (on the bar) opens a page of stamps, one for every exhibit, wing by wing. A stamp gets a ring once you have visited the exhibit, and a seal once you have beaten the Scribe at its table: bronze at Gentle, silver at Fair, gold at Sharp, keeping your best. Games against a friend do not count. The top line counts the exhibits you have visited, the tables you have played and won, and your wins at Sharp.
+
 
 ## At a table
 
@@ -51,7 +59,7 @@ flowchart LR
 - **Board games:** click a glowing piece, then one of its rings. Where pieces are placed (Go, Hex, Gomoku, Morris placement) or pits are sown (Oware, Kalah, Bao), click the ring or pit directly.
 - **Card and tile games:** click a card or tile in your hand; claims and other choices appear as buttons above the message bar.
 - **Keyboard:** the arrow keys step through the pieces (or cards) you can move, in reading order on screen; Enter picks one, the arrow keys then step through the rings it can go to, and Enter plays the move. A screen reader announces where you are ("Piece 3 of 12", or the card's name).
-- **Hint** (at tables without dice or hidden cards, and at Whist) asks the Sharp Scribe for the move it would make in your seat and lights it. **Undo** (at the chess family, draughts, Tablut, Halma, Reversi, Rithmomachia, Jungle, Mū tōrere, Oware and Kalah) takes the board back to the start of your previous turn.
+- **Hint** (at tables without dice or hidden cards, and at Whist) asks the Sharp Scribe for the move it would make in your seat and lights it. **Undo** (at the chess family, both draughts, Tablut, Hnefatafl, Halma, Reversi, Rithmomachia, Jungle, Mū tōrere, Oware and Kalah) takes the board back to the start of your previous turn.
 - **Esc** clears a selection, or leaves the table.
 - **Rules** reopens the *How to play* panel, which ends with a note on where the rules come from.
 
@@ -73,7 +81,7 @@ Choosing a variant or an opponent restarts the game, and every choice is remembe
 
 ## Saved games
 
-Long games against the Scribe are kept as you play: the chess family (chess, shatranj, chaturanga, medieval chess, Courier chess, xiangqi, janggi, makruk), draughts, Tablut, Halma, Reversi, Rithmomachia, Whist and Piquet. The game is saved at the start of each of your turns (at the card tables, between tricks). Leave the table, or close the page, and the game is back on the table as you left it when you sit down again; a **New game** button above the board starts afresh. A finished game clears its save. Pieces already taken are not laid out again beside the board, but the score keeps them.
+Long games against the Scribe are kept as you play: the chess family (chess, shatranj, chaturanga, medieval chess, Courier chess, xiangqi, janggi, makruk), both draughts, Tablut, Hnefatafl, Halma, Reversi, Rithmomachia, Whist and Piquet. The game is saved at the start of each of your turns (at the card tables, between tricks). Leave the table, or close the page, and the game is back on the table as you left it when you sit down again; a **New game** button above the board starts afresh. A finished game clears its save. Pieces already taken are not laid out again beside the board, but the score keeps them.
 
 ## Sound
 
@@ -81,4 +89,4 @@ Every sound is made on the spot in the browser: sticks, dice, pieces, Go stones,
 
 ## Your progress
 
-Kept in your browser only: the exhibits you have visited (a green dot on the bar), the Scribe's level, your variant and opponent choices, which rules panels you have seen, any saved games, and your win, loss and draw record at each table, shown on the placard and after each game. Nothing is sent anywhere. If your browser blocks storage, everything still works for that visit.
+Kept in your browser only: the exhibits you have visited (a green dot on the bar), your passport seals, the Scribe's level, your variant and opponent choices, which rules panels you have seen, any saved games, and your win, loss and draw record at each table, shown on the placard and after each game. Nothing is sent anywhere. If your browser blocks storage, everything still works for that visit.
