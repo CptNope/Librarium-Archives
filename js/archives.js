@@ -6682,7 +6682,7 @@ function renderPassport() {
       const best = s.game && store.best ? store.best[s.game] : undefined, rec = s.game ? store.record[s.game] : null;
       b.className = 'stamp' + (visited ? ' seen' : '');
       b.innerHTML = '<span class="ring"></span><span class="l"></span>';
-      b.querySelector('.ring').textContent = (s.rail || s.title).replace(/^The /, '').split(/[\s-]+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+      b.querySelector('.ring').textContent = (s.rail || s.title).replace(/^The /, '').replace(/\(.*?\)/g, '').split(/[\s-]+/).map(x => x.replace(/[^\p{L}]/gu, '')).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
       if (best !== undefined) { const seal = document.createElement('span'); seal.className = 'seal s' + best; seal.textContent = 'WON'; b.querySelector('.ring').appendChild(seal); }
       b.querySelector('.l').textContent = s.rail || s.title;
       b.setAttribute('aria-label', `${s.title}: ${visited ? 'visited' : 'not visited yet'}${best !== undefined ? `, beaten at ${SEAL[best]}` : ''}${rec && rec.some(Boolean) ? `, record ${rec[0]} won, ${rec[1]} lost, ${rec[2]} drawn` : ''}`);
