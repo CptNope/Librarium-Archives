@@ -6662,11 +6662,12 @@ const passport = $('#lm-passport'), passBtn = $('#lm-passBtnRail');
 const SEAL = ['Gentle', 'Fair', 'Sharp'];
 function renderPassport() {
   const cols = $('#lm-passCols'); cols.innerHTML = '';
-  const tables = STOPS.filter(s => s.game), seen = STOPS.filter(s => store.visited[s.id]).length;
+  const exhibits = STOPS.filter(s => s.id !== 'hall' && s.id !== 'next' && !/^wing\d$/.test(s.id)); // wing entrances and the lectern carry no stamp
+  const tables = STOPS.filter(s => s.game), seen = exhibits.filter(s => store.visited[s.id]).length;
   const played = tables.filter(s => (store.record[s.game] || [0, 0, 0]).some(Boolean)).length;
   const won = tables.filter(s => (store.record[s.game] || [0])[0] > 0).length;
   const golds = tables.filter(s => (store.best || {})[s.game] === 2).length;
-  $('#lm-passCount').textContent = `${seen} of ${STOPS.length} exhibits visited · ${played} of ${tables.length} tables played · ${won} won${golds ? ` (${golds} at Sharp)` : ''}`;
+  $('#lm-passCount').textContent = `${seen} of ${exhibits.length} exhibits visited · ${played} of ${tables.length} tables played · ${won} won${golds ? ` (${golds} at Sharp)` : ''}`;
   for (const w of WINGS) {
     const col = document.createElement('section'); col.className = 'indexwing';
     const items = STOPS.map((s, i) => [s, i]).filter(([s]) => s.wing === w.n && s.id !== 'hall' && s.id !== 'wing' + w.n && s.id !== 'next');
