@@ -2,17 +2,17 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**61 exhibits, 57 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**64 exhibits, 60 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
     title Exhibits by wing (playable tables)
     "Wing I · 4 of 6" : 6
-    "Wing II · 7 of 9" : 9
+    "Wing II · 8 of 10" : 10
     "Wing III · 11 of 11" : 11
     "Wing IV · 12 of 12" : 12
     "Wing V · 9 of 9" : 9
-    "Wing VI · 14 of 14" : 14
+    "Wing VI · 16 of 16" : 16
 ```
 
 ```mermaid
@@ -70,7 +70,7 @@ timeline
     title Wing II · Strategy Takes the Table
     by 443 BCE : Petteia
     by 4th century BCE : Liubo : Weiqi (Go)
-    by 1st century BCE : Ludus latrunculorum
+    by 1st century BCE : Ludus latrunculorum : Duodecim scripta
     by c. 300 CE : Patolli
     Roman era onward : Nine Men's Morris
     6th–7th century CE : Mancala (Oware)
@@ -84,6 +84,7 @@ timeline
 | Liubo | by the 4th century BCE | Lost; reconstructions only | On display (after the Mawangdui set) |
 | Weiqi (Go) | by the 4th century BCE | Unbroken tradition | Playable on a 9 × 9 board; the 17 × 17 Han-style board is on display |
 | Ludus latrunculorum | by the 1st century BCE | Lost | Playable as a modern reconstruction (Locus Ludi, "Piso" rules) |
+| Duodecim scripta (Twelve Lines) | 1st century BCE onward | Lost | Playable as a modern reconstruction (Austin and Murray, in the Getty Museum's version) |
 | Patolli | by c. 300 CE | Partly recorded (Durán) | Playable as a modern reconstruction (reed mat, beans and stones) |
 | Nine Men's Morris | Roman era onward | Survive in tradition | Playable |
 | Mancala (Oware) | c. 6th–7th century CE (Aksum) | Survive in tradition (abapa) | Playable |
@@ -93,6 +94,7 @@ timeline
 Rule choices, each a modern reconstruction stated as such on the placard:
 
 - **Ludus latrunculorum:** the "Piso" rules of Locus Ludi (University of Fribourg). An 8 × 8 board; twenty counters each, placed one at a time with no captures. Then a counter steps one square orthogonally, and may not step straight back to the square it just left. A counter trapped between the mover and another enemy counter along a line is taken, several at once if so; a counter in a corner is trapped by the two squares beside it; moving between two enemies is safe. The game ends when a player is down to one counter or cannot move, and whoever has taken more wins. House rule: 30 moves each without a capture also ends it.
+- **Duodecim scripta:** fifteen pieces and three dice a side, every die used if it can be. Pieces enter on your half of the middle row by the number thrown, then run along the far row right to left and back along the near row; the Scribe enters on the other half and shares the course. No piece leaves the home row until all fifteen are on; a single piece can be hit and must re-enter before anything else moves; two together block. Bearing off from the last six spaces needs exact throws. The route follows the Getty's numbered board; the rules are reconstructions, and the placard says so.
 - **Patolli:** the reconstruction most often given today, from Diego Durán's account. 52 houses; six markers and six treasures each; five beans (1 to 4 marks move that many, all five move 10, none costs an offering to Macuilxochitl). A 1 enters a marker on its centre house; markers run the whole circuit clockwise and leave by exact count. No landing on an occupied house except in the centre, where an enemy is sent back and its owner pays a treasure. Dark houses cost a treasure; red tips give another throw. Our choices: a treasure is paid for each completed circuit, the game is one round, and when one side has all six markers home (or after 150 throws each) the side with more treasures wins. A player who cannot pay loses.
 
 ## Wing III: Kings, Cards and Courts (c. 480–1450 CE)
@@ -232,6 +234,7 @@ mindmap
     East Asia
       Shogi
       Gomoku
+      Hanafuda
       Jungle
       Yut Nori
       Janggi
@@ -248,6 +251,8 @@ mindmap
     North Africa
       Seega
       Tâb
+    Iran and the Caucasus
+      Nard
 ```
 
 | Exhibit | Date | Rules | In the Archives |
@@ -255,6 +260,7 @@ mindmap
 | Mū tōrere | first described in 1917 (Elsdon Best) | Accounts differ | Playable |
 | Shogi | oldest pieces c. 1058 CE (Kōfuku-ji) | Unbroken tradition | Playable, with drops |
 | Gomoku | named renju in 1899 | Still played | Playable, freestyle on 15 × 15 |
+| Hanafuda (koi-koi) | Edo period onward | Still played | Playable: koi-koi, with flower cards drawn in our own style |
 | Jungle (dou shou qi) | 20th century | Still played | Playable on the 7 × 9 board with two rivers |
 | Makruk | traditional | Still played | Playable, with the counting rules kept for you |
 | Bagh-chal | traditional | Still played | Playable as either side |
@@ -266,6 +272,7 @@ mindmap
 | Morabaraba | traditional | Still played | Playable: twelve cows each, on the board with diagonals |
 | Seega | recorded in the 1820s (Lane, 1836) | Survive in writing | Playable on the five-cup board |
 | Tâb | recorded in the 1820s (Lane, 1836) | Survive in writing | Playable on four rows of nine, without stacking |
+| Nard (long nardy) | traditional | Still played | Playable on a tables board |
 
 Rule choices:
 
@@ -281,6 +288,8 @@ Rule choices:
 - **Bao la Kujifunza:** every pit starts with two seeds and the house is an ordinary pit. A move sows a pit of two or more seeds either way round your own sixteen pits. If you can capture you must: a last seed landing in an occupied pit of your inner row takes the Scribe's seeds opposite, which are sown from an end of your row (the nearer end for a capture in the two pits at either end, otherwise the end that keeps your direction). Landing in any other occupied pit picks it up and sows on; a turn ends in an empty pit. A turn that cannot capture must start from the inner row if it can, and never captures. An empty inner row, or no move, loses. House rule: after a hundred moves each, the side with more seeds wins.
 - **Bagh-chal:** four tigers on the corners against twenty goats placed one a turn, goats first; goats move only once all are down. A tiger takes one goat a turn by jumping it along a line; capture is never compulsory. Tigers win with five goats, goats by leaving the tigers no move. Once all goats are placed no position may repeat. A side with no move loses; a hundred moves each without a result is a draw (house rule). You choose your side.
 - **Seega:** Lane's five-cup board: twelve pieces each, placed two at a time, never on the centre; the first move must enter the centre. A piece trapped between the mover and another enemy piece along a row or column is taken (several at once if so), moving between two enemies is safe, and a player who has captured keeps moving while another capture is open. A player whose move leaves the other side no move must lift one of their own pieces to open a way, as Lane describes for the opening. Taking every enemy piece wins; twenty moves each without a capture end the game in favour of the larger side (house rule).
+- **Hanafuda (koi-koi):** eight cards each and eight face up; match by month, then turn up the pile's top card and match again (two matches, you choose; three, you take all four). Yaku: five brights 10, four 8 (with the rain man 7), three without him 5; moon and sake, cherry and sake 5 each; boar, deer and butterflies 5; red poem ribbons 5, blue ribbons 5; five animals, five ribbons or ten chaff 1 plus 1 for each beyond. After a new yaku, stop or call koi-koi; if the other side then stops first it scores double. 7 or more doubles. No yaku with the hands empty: the dealer scores 1. Four of a month or four pairs dealt to a hand scores 6; on the table, a redeal. The sake cup counts only as an animal.
+- **Nard:** long nard after bkgm.com and Wikipedia: all fifteen on the head, counterclockwise for both, no hitting, one checker off the head a turn (two on a first throw of 3-3, 4-4 or 6-6), no six-point wall unless an enemy checker is already past it, both dice used where possible (the larger if only one), bearing off as in backgammon. A win before the loser bears off any checker is a mars.
 - **Tâb:** four rows of nine. Four palm sticks: 1 (a tâb), 2, 3, 4, or 6 for no white face; a tâb, 4 or 6 throws again. A piece needs a tâb to start. Pieces run along their own row, back along the next, out along the third, then round the two middle rows; once in its life a piece may go through the enemy's home row instead, and it cannot move there while its owner has pieces at home. Landing on an enemy piece takes it; you may not land on your own. Each throw is moved at once, and Lane's stacking is left out. Taking every enemy piece wins; after 150 throws each the side with more pieces wins (house rule).
 - **Morabaraba:** Mind Sports South Africa's rules on the board with diagonals: twelve cows each, mills along any line including the diagonals, flying at three, and a draw when both sides have three and no cow is shot in ten moves each. The rule that a broken mill cannot be remade at once is left out, and a mill always shoots.
 

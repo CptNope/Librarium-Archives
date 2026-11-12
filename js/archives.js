@@ -887,7 +887,7 @@ function tbPointX(abs) {
   if (abs <= 18) return -TB_HALF + (abs - 12 - 0.5) * TB_W;
   return TB_BAR + (abs - 18 - 0.5) * TB_W;
 }
-function buildTablesBoard(group) {
+function buildTablesBoard(group, look = {}) {
   const W = 1.42, D = 0.98;
   const wood = new THREE.MeshStandardMaterial({ color: 0x3a2312, roughness: 0.5 });
   const box = new THREE.Mesh(new THREE.BoxGeometry(W, 0.05, D), wood); box.position.y = TOP + 0.025; group.add(box);
@@ -897,12 +897,12 @@ function buildTablesBoard(group) {
     // Felt fields either side of the bar
     for (const s of [-1, 1]) {
       const x0 = px / 2 + s * TB_BAR * sc, x1 = px / 2 + s * (TB_HALF + 0.02) * sc;
-      g.fillStyle = '#21402e'; g.fillRect(Math.min(x0, x1), 0.05 * sc, Math.abs(x1 - x0), py - 0.1 * sc);
+      g.fillStyle = look.felt || '#21402e'; g.fillRect(Math.min(x0, x1), 0.05 * sc, Math.abs(x1 - x0), py - 0.1 * sc);
     }
     for (let abs = 1; abs <= 24; abs++) {
       const x = px / 2 + tbPointX(abs) * sc, top = abs > 12;
       const yBase = top ? 0.05 * sc : py - 0.05 * sc, yTip = top ? yBase + 0.36 * sc : yBase - 0.36 * sc;
-      g.fillStyle = abs % 2 ? '#e7d6b0' : '#7a2a1c';
+      g.fillStyle = abs % 2 ? (look.light || '#e7d6b0') : (look.dark || '#7a2a1c');
       g.beginPath(); g.moveTo(x - TB_W / 2 * sc + 3, yBase); g.lineTo(x + TB_W / 2 * sc - 3, yBase); g.lineTo(x, yTip); g.closePath(); g.fill();
     }
     g.fillStyle = '#2a170a'; g.fillRect(px / 2 - TB_BAR * sc, 0, 2 * TB_BAR * sc, py);
@@ -3214,9 +3214,9 @@ const STOPS = [
     eyebrow: 'Wing II · Librarium Archives', status: null, begin: 'go',
     body: [
       'The games in the first wing were races, and the dice or sticks had the final word. Here the luck drains away. These are games of position, where you win by surrounding, trapping or outthinking the person across from you.',
-      'Five tables are open: Go on a small board, Nine Men\'s Morris, the mancala game Oware, Alquerque, and the Irish game Brandubh. Petteia, Liubo and Patolli are on display. The Scribe is waiting at each of them, and it plays these games much more carefully than it rolls dice.'
+      'Eight tables are open: Go on a small board; the Roman games Ludus latrunculorum and Duodecim scripta, both modern reconstructions; Patolli from Mesoamerica, also reconstructed; Nine Men\'s Morris; the mancala game Oware; Alquerque; and the Irish game Brandubh. Petteia and Liubo are on display. The Scribe is waiting at each table.'
     ],
-    facts: [['Tables', 'Go, Morris, Oware, Alquerque, Brandubh'], ['Luck', 'None. Every move is a choice']],
+    facts: [['Tables', 'Go, Latrunculi, Duodecim scripta, Patolli, Morris, Oware, Alquerque, Brandubh'], ['Display', 'Petteia, Liubo']],
   },
   { id: 'petteia', wing: 2, title: 'Petteia', date: 'by 443 BCE', rail: 'Petteia',
     eyebrow: 'Classical Greece', status: ['recon', 'Rules mostly lost'],
@@ -3256,6 +3256,16 @@ const STOPS = [
     ],
     facts: [['Board', '7 × 8 to 9 × 10 (8 × 8 here)'], ['Pieces', 'Glass counters, 20 a side here'], ['Capture', 'Trap between two'], ['Rules', 'Lost; modern reconstruction (Locus Ludi)']],
     build: buildLatrunculi },
+  { id: 'xii', wing: 2, title: 'Ludus Duodecim Scriptorum', short: 'Duodecim Scripta (Twelve Lines)', date: '1st century BCE onward', rail: 'Twelve Lines',
+    eyebrow: 'Roman Empire', status: ['recon', 'Modern reconstruction'], game: 'xii',
+    note: 'No Roman account of the rules survives. This table plays a modern reconstruction, after the basics worked out by Roland Austin and H. J. R. Murray, in the version the J. Paul Getty Museum gives.',
+    body: [
+      'The game of twelve lines, ludus duodecim scriptorum, was played on boards of three rows of twelve, each row split in half. Ovid mentions it in his Art of Love, early in the 1st century CE, and boards survive across the Empire from Egypt to Britain, many from army camps.',
+      'Many boards spell out six six-letter words instead of plain marks. The one on this table reads LEVATE DALOCV, LVDERE NESCIS, IDIOTA RECEDE: "Get up, make way! You don\'t know how to play: fool, go away!"',
+      'Fifteen pieces a side and three dice raced around the board. The game is the ancestor of tabula, and so of backgammon, but how it was played was never written down.'
+    ],
+    facts: [['Board', 'Three rows of twelve'], ['Pieces', '15 each, three dice'], ['Mentioned', 'Ovid, Art of Love'], ['Descendant', 'Tabula, then backgammon']],
+    build: buildXii },
   { id: 'patolli', wing: 2, title: 'Patolli', date: 'by c. 300 CE', rail: 'Patolli',
     eyebrow: 'Mesoamerica', status: ['recon', 'Modern reconstruction'], game: 'patolli',
     note: 'Only parts of the rules were written down. This table plays a modern reconstruction.',
@@ -3607,9 +3617,9 @@ const STOPS = [
     eyebrow: 'Wing VI · Librarium Archives', status: null, begin: 'mutorere',
     body: [
       'The other wings follow one long road, from Egypt and Mesopotamia through Europe to the shop shelf. But play has many homelands. This wing gathers games from the Pacific, Africa and Asia: some ancient, some first written down by visitors, all still played today.',
-      'All fourteen tables are open: Mū tōrere from Aotearoa New Zealand, Shogi and Gomoku from Japan, Jungle from China, Makruk from Thailand, Bagh-chal from Nepal, Kōnane from Hawaiʻi, Yut Nori and Janggi from Korea, Fanorona from Madagascar, Bao from the Swahili coast, Morabaraba from southern Africa, and Seega and Tâb from Egypt.'
+      'All sixteen tables are open: Mū tōrere from Aotearoa New Zealand, Shogi, Gomoku and Hanafuda from Japan, Jungle from China, Nard from Iran and the Caucasus, Makruk from Thailand, Bagh-chal from Nepal, Kōnane from Hawaiʻi, Yut Nori and Janggi from Korea, Fanorona from Madagascar, Bao from the Swahili coast, Morabaraba from southern Africa, and Seega and Tâb from Egypt.'
     ],
-    facts: [['Tables', 'Mū tōrere, Shogi, Gomoku, Jungle, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega, Tâb']],
+    facts: [['Tables', 'Mū tōrere, Shogi, Gomoku, Hanafuda, Jungle, Nard, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega, Tâb']],
   },
   { id: 'mutorere', wing: 6, title: 'Mū tōrere', date: 'first described in 1917', rail: 'Mū tōrere',
     eyebrow: 'Aotearoa New Zealand · Māori', status: ['known', 'Still played'], game: 'mutorere',
@@ -3635,6 +3645,15 @@ const STOPS = [
     ],
     facts: [['Board', '15 × 15, or a Go board'], ['Renju', 'Named by Kuroiwa Ruikō, 1899'], ['Solved', 'A first-player win (Allis, 1994)']],
     build: buildGomoku },
+  { id: 'koikoi', wing: 6, title: 'Hanafuda', short: 'Hanafuda (Koi-koi)', date: 'Edo period onward', rail: 'Hanafuda',
+    eyebrow: 'Japan', status: ['known', 'Still played'], game: 'koikoi',
+    body: [
+      'Hanafuda, "flower cards", emerged in Edo-period Japan after repeated bans on Western-style playing cards. There are no numbers and no suits as Europe knew them: forty-eight small cards in twelve suits, one for each month, each shown by its plant, from the pine of January to the paulownia of December. By the 19th century the twelve-month pack was standard.',
+      'Each month has four cards, some worth more than others: brights such as the crane and the moon, animals such as the boar and the deer, poem ribbons, and plain cards. In 1889 a small company in Kyoto was founded to make hanafuda packs. It was called Nintendo.',
+      'Koi-koi, the game at this table, is a two-player matching game: collect combinations, then decide whether to stop or to call "koi-koi" and push your luck. These cards are drawn in our own simple style, not copied from a printed pack.'
+    ],
+    facts: [['Cards', '48, four for each month'], ['Kinds', 'Brights, animals, ribbons, plain'], ['Maker', 'Nintendo, founded 1889 for hanafuda'], ['Game here', 'Koi-koi, for two']],
+    build: buildKoikoi },
   { id: 'makruk', wing: 6, title: 'Makruk', date: 'traditional', rail: 'Makruk',
     eyebrow: 'Thailand', status: ['known', 'Still played'], game: 'makruk',
     body: [
@@ -3728,6 +3747,14 @@ const STOPS = [
     ],
     facts: [['Board', '4 rows of 9 squares'], ['Dice', 'Four palm sticks: 1, 2, 3, 4 or 6'], ['Goal', 'Take every enemy piece'], ['Source', 'Edward Lane, 1836']],
     build: buildTab },
+  { id: 'nard', wing: 6, title: 'Nard', short: 'Nard (Long Nardy)', date: 'traditional', rail: 'Nard',
+    eyebrow: 'Iran, the Caucasus and Russia', status: ['known', 'Still played'], game: 'nard',
+    body: [
+      'Nard is the Persian branch of the tables family, and long nard, played today from Iran and Azerbaijan to Georgia, Armenia and Russia, is its most popular form. It is likely descended from nardshir, the ancient Persian game that the Tables exhibit in Wing III describes.',
+      'It is played on a backgammon board, but everything else is different. All fifteen checkers start on one point, the head, and both sides run the same way round the board. Nobody hits: a single checker holds its point, so the game is about building blocks in the other player\'s path, short of a full wall of six.'
+    ],
+    facts: [['Board', '24 points, as backgammon'], ['Start', 'All fifteen on the head'], ['Hitting', 'None: one checker holds a point'], ['Played', 'Iran, the Caucasus, Russia']],
+    build: buildNard },
   { id: 'next', wing: 6, title: 'From These Tables to Yours', short: 'Librarium', date: 'Today', rail: 'Today',
     eyebrow: 'Librarium Games', status: null,
     body: [
@@ -3789,7 +3816,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet, nard: R.nard, xii: R.xii, koikoi: R.koikoi };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -4035,6 +4062,250 @@ const TABLES_P = {
   score: () => { const G = GAMES.tables; return [['You', G.home(0) + '/15'], ['Scribe', G.home(1) + '/15'], `borne off · pips ${G.pip(0)} to ${G.pip(1)}`]; },
 };
 
+// Nard is played on a tables board; both sides run counterclockwise, so the Scribe's points sit twelve along.
+const NARD_P = Object.assign({}, TABLES_P, {
+  intro: () => 'All fifteen of your pale checkers start on your head, the far right point, and race counterclockwise to the near right. Nobody hits. Throw to begin.',
+  setup(ex) {
+    const G = GAMES.nard;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) {
+      const cols = [0xe8dcc0, 0x2a1c14];
+      ex.pieces = [0, 1].map(pl => Array.from({ length: 15 }, () => {
+        const mat = new THREE.MeshStandardMaterial({ color: cols[pl], roughness: pl ? 0.35 : 0.45 });
+        const m = new THREE.Mesh(tbCheckerGeo, mat); m.userData.mats = [mat]; ex.group.add(m); return m;
+      }));
+    }
+    ex.pieces.flat().forEach(m => { m.visible = true; });
+    this.stacks = [0, 1].map(() => Array.from({ length: 26 }, () => []));
+    for (const pl of [0, 1]) {
+      let k = 0;
+      for (let rel = 0; rel <= 24; rel++) for (let n = 0; n < G.c[pl][rel]; n++) this.stacks[pl][rel].push(ex.pieces[pl][k++]);
+      for (let rel = 0; rel <= 24; rel++) this.layout(pl, rel).forEach(([m, v]) => m.position.copy(v));
+    }
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); if (ex.pieces) ex.pieces.flat().forEach(m => { m.visible = false; }); },
+  slot(pl, rel, k, n) {
+    const y = GAMES.nard.surface;
+    if (rel === 0) return V3(0.76, TOP + k * 0.0152, pl === 0 ? 0.3 : -0.3);
+    const abs = pl === 0 ? rel : (rel > 12 ? rel - 12 : rel + 12);
+    const sp = n > 5 ? 0.34 / (n - 1) : 0.084;
+    const bottom = abs <= 12;
+    return V3(tbPointX(abs), y + k * 0.0009, bottom ? 0.4 - k * sp : -0.4 + k * sp);
+  },
+  async play(m) {
+    const G = GAMES.nard;
+    const mesh = this.stacks[m.pl][m.from].pop();
+    this.stacks[m.pl][m.to].push(mesh);
+    const res = G.apply(m);
+    const st = this.stacks[m.pl][m.to];
+    await hop(mesh, this.slot(m.pl, m.to, st.length - 1, st.length), m.to === 0 ? 0.36 : 0.3, 0.1);
+    const jobs = [];
+    for (const rel of [m.from, m.to]) for (const [mm, v] of this.layout(m.pl, rel)) if (mm.position.distanceTo(v) > 0.002) jobs.push(tween(0.2, k => mm.position.lerp(v, k)));
+    await Promise.all(jobs);
+    return res;
+  },
+  score: () => { const G = GAMES.nard; return [['You', G.home(0) + '/15'], ['Scribe', G.home(1) + '/15'], `borne off · pips ${G.pip(0)} to ${G.pip(1)}`]; },
+});
+
+// Duodecim scripta: route positions to cells on the three rows. Row 0 is nearest you.
+const XII_S = 0.068, XII_GAP = 0.05;
+function xiiCell(row, col) { return { x: (col - 5.5) * XII_S + (col >= 6 ? XII_GAP / 2 : -XII_GAP / 2), z: (1 - row) * XII_S * 1.15 }; }
+function xiiRoute(pl, p) {
+  if (p <= 6) return xiiCell(1, pl === 0 ? 5 + p : p - 1); // each side's own half of the middle row
+  if (p <= 18) return xiiCell(2, 18 - p); // the far row, right to left
+  return xiiCell(0, p - 19); // the near row, left to right, to the finish
+}
+const xiiPieceGeo = new THREE.CylinderGeometry(0.024, 0.026, 0.011, 24);
+const XII_P = {
+  camW: 1.15,
+  intro: () => 'A modern reconstruction. Bring your fifteen white pieces onto the right half of the middle row, then race along the far row and back along the near row. Throw to begin.',
+  prompt: () => 'Throw when you are ready.',
+  choosePrompt: moves => (moves.length > 1 ? 'Pick a glowing piece (or a waiting one beside the board), then a ring.' : 'Pick the glowing piece to move it.'),
+  setup(ex) {
+    const G = GAMES.xii;
+    ex.group.userData.display.forEach(m => { m.visible = false; });
+    if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 15 }, () => { const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x23201c : 0xeee6d2, roughness: 0.35 }); const m = new THREE.Mesh(xiiPieceGeo, mat); m.userData.mats = [mat]; ex.group.add(m); return m; }));
+    ex.pieces.flat().forEach(m => { m.visible = true; });
+    this.ex = ex; this.stacks = [0, 1].map(() => Array.from({ length: 32 }, () => []));
+    for (const pl of [0, 1]) { let k = 0; for (let p = 0; p <= 31; p++) for (let n = 0; n < G.p[pl][p]; n++) this.stacks[pl][p].push(ex.pieces[pl][k++]); for (let p = 0; p <= 31; p++) this.relay(pl, p, true); }
+  },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); if (ex.pieces) ex.pieces.flat().forEach(m => { m.visible = false; }); },
+  slot(pl, p, k) {
+    const y = GAMES.xii.surface + 0.0055;
+    if (p === 0) return V3((pl ? -1 : 1) * (0.56 + (k % 3) * 0.055), TOP + 0.0055 + ((k / 3) | 0) * 0.012, 0.1 - (pl ? 1 : 0) * 0.2); // waiting beside the board
+    if (p === 31) return V3(0.56 + (k % 3) * 0.055, TOP + 0.0055 + ((k / 3) | 0) * 0.012, pl ? -0.22 : 0.26); // finished
+    const c = xiiRoute(pl, p);
+    return V3(c.x, y + k * 0.0115, c.z);
+  },
+  relay(pl, p, instant) { const jobs = []; this.stacks[pl][p].forEach((m, k) => { const v = this.slot(pl, p, k); if (instant) m.position.copy(v); else if (m.position.distanceTo(v) > 0.002) jobs.push(tween(0.2, t => m.position.lerp(v, t))); }); return Promise.all(jobs); },
+  meshesFor(m) { const st = this.stacks[m.pl][m.from]; return [st[st.length - 1]]; },
+  fromFor(m) { const st = this.stacks[m.pl][m.from]; return this.slot(m.pl, m.from, st.length - 1); },
+  ringFor(m) { return this.slot(m.pl, m.to, this.stacks[m.pl][m.to].length); },
+  async play(m) {
+    const G = GAMES.xii, opp = 1 - m.pl;
+    const mesh = this.stacks[m.pl][m.from].pop(); this.stacks[m.pl][m.to].push(mesh);
+    let victim = null; if (m.hit) { victim = this.stacks[opp][m.to].pop(); this.stacks[opp][0].push(victim); }
+    const res = G.apply(m);
+    await hop(mesh, this.slot(m.pl, m.to, this.stacks[m.pl][m.to].length - 1), 0.3, 0.06);
+    if (victim) await hop(victim, this.slot(opp, 0, this.stacks[opp][0].length - 1), 0.4, 0.12);
+    await this.relay(m.pl, m.from);
+    return res;
+  },
+  score: () => { const G = GAMES.xii; return [['You', G.home(0) + '/15'], ['Scribe', G.home(1) + '/15'], 'borne off']; },
+};
+
+// Hanafuda cards, drawn here in our own simple style: the month's plant, its emblem and a label.
+const HF_W = 0.046, HF_H = 0.074;
+const HF_PLANT = ['松', '梅', '桜', '藤', '菖', '牡丹', '萩', '芒', '菊', '紅葉', '柳', '桐'];
+const HF_COLOR = ['#2f6b3a', '#b0305a', '#e58aa8', '#7a5aa8', '#4a5ab0', '#c0304a', '#a05a8a', '#c8b070', '#d8a020', '#c8401a', '#5a8a3a', '#7a4a9a'];
+const HF_EMBLEM = { crane: '鶴', curtain: '幕', moon: '月', 'rain man': '雨', phoenix: '鳳凰', 'bush warbler': '鶯', cuckoo: '時鳥', 'eight-plank bridge': '八橋', butterflies: '蝶', boar: '猪', geese: '雁', 'sake cup': '盃', deer: '鹿', swallow: '燕' };
+const hfFaceCache = new Map();
+function hfFace(c) {
+  if (hfFaceCache.has(c)) return hfFaceCache.get(c);
+  const R = window.LibrariumRules.koikoi, mo = c >> 2, kind = R.kind(c), name = R.cardName(c).slice(R.MONTH[mo].length + 1);
+  const map = cardTex((g, w, h) => {
+    g.fillStyle = '#f3ead2'; g.fillRect(0, 0, w, h); g.strokeStyle = '#1a1410'; g.lineWidth = 8; g.strokeRect(4, 4, w - 8, h - 8);
+    g.fillStyle = HF_COLOR[mo]; g.globalAlpha = 0.85; g.fillRect(10, h * 0.62, w - 20, h * 0.3); g.globalAlpha = 1; // the month's colour, low on the card
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#1a1410';
+    g.font = `bold ${HF_PLANT[mo].length > 1 ? 46 : 64}px "Noto Serif CJK JP","Noto Serif CJK SC","Yu Mincho","MS Mincho",serif`; g.fillText(HF_PLANT[mo], w / 2, h * 0.17);
+    if (kind === 'b') { g.fillStyle = '#c8281e'; g.beginPath(); g.arc(w / 2, h * 0.42, 34, 0, TAU); g.fill(); g.fillStyle = '#f3ead2'; g.font = `bold ${HF_EMBLEM[name].length > 1 ? 26 : 40}px "Noto Serif CJK JP","Noto Serif CJK SC",serif`; g.fillText(HF_EMBLEM[name], w / 2, h * 0.42); }
+    else if (kind === 'a') { g.fillStyle = '#1a1410'; g.font = `bold ${HF_EMBLEM[name].length > 1 ? 34 : 50}px "Noto Serif CJK JP","Noto Serif CJK SC",serif`; g.fillText(HF_EMBLEM[name], w / 2, h * 0.42); }
+    else if (kind[0] === 'r') {
+      g.fillStyle = kind === 'rb' ? '#2a46a0' : '#c8281e'; g.fillRect(w / 2 - 17, h * 0.27, 34, h * 0.34);
+      if (kind === 'rp') { g.fillStyle = '#1a1410'; g.font = 'bold 18px "Noto Serif CJK JP","Noto Serif CJK SC",serif'; [...(mo === 2 ? 'みよしの' : 'あかよろし')].forEach((ch, k) => g.fillText(ch, w / 2, h * 0.3 + k * 17)); }
+    } else if (name === 'lightning') { g.strokeStyle = '#c8281e'; g.lineWidth = 6; g.beginPath(); g.moveTo(w * 0.6, h * 0.28); g.lineTo(w * 0.42, h * 0.42); g.lineTo(w * 0.56, h * 0.44); g.lineTo(w * 0.38, h * 0.58); g.stroke(); }
+    g.fillStyle = '#f3ead2'; g.font = '600 15px "Montserrat",sans-serif'; g.fillText(R.MONTH[mo], w / 2, h * 0.71);
+    g.font = '600 13px "Montserrat",sans-serif'; g.fillText(name, w / 2, h * 0.82);
+    g.fillStyle = '#1a1410'; g.font = '700 14px "Montserrat",sans-serif'; g.fillText(kind === 'b' ? '20' : kind === 'a' ? '10' : kind[0] === 'r' ? '5' : '1', w - 22, h - 22);
+  }, 128, 206);
+  hfFaceCache.set(c, map); return map;
+}
+const hfGeo = new THREE.BoxGeometry(HF_W, 0.0016, HF_H);
+const hfBackMat = new THREE.MeshStandardMaterial({ roughness: 0.6, map: cardTex((g, w, h) => { g.fillStyle = '#1a1210'; g.fillRect(0, 0, w, h); g.fillStyle = '#8a1a12'; g.fillRect(12, 12, w - 24, h - 24); }, 64, 104) });
+const hfEdgeMat = new THREE.MeshStandardMaterial({ color: 0x1a1210, roughness: 0.6 });
+function hfCard(c) { const face = new THREE.MeshStandardMaterial({ map: hfFace(c), roughness: 0.55 }); const m = new THREE.Mesh(hfGeo, [hfEdgeMat, hfEdgeMat, face, hfBackMat, hfEdgeMat, hfEdgeMat]); m.userData.mats = [face]; m.userData.c = c; return m; }
+const KOIKOI_P = {
+  camW: 1.05,
+  intro() { return 'You deal the first month and play first. ' + this.prompt(); },
+  prompt() {
+    const G = GAMES.koikoi;
+    if (G.need === 'next') return G.notes.join(' ') + ' Press the button when you are ready.';
+    if (G.need === 'koi') return G.followPrompt;
+    if (G.need === 'draw') return G.followPrompt;
+    return 'Play a card from your hand. A ring shows the card it takes; with no match it stays on the table.';
+  },
+  setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.koikoi.surface + 0.001,
+  card(c) { let m = this.mesh.get(c); if (!m) { m = hfCard(c); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
+  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.034 : 0.052), this.y() + i * 0.0003, pl ? -0.3 : 0.31); },
+  fieldSpot(i) { return V3(-0.17 + (i % 8) * 0.054, this.y(), i < 8 ? -0.07 : 0.06 + ((i / 8) | 0) * 0.0); },
+  pileSpot: k => V3(-0.42, GAMES.koikoi.surface + 0.001 + k * 0.0012, 0),
+  // Captured cards lie in four small fans by kind: brights, animals, ribbons, chaff.
+  wonSpot(pl, c, k) { const g = 'barkk'.indexOf(window.LibrariumRules.koikoi.kind(c)[0]); return V3(0.3 + g * 0.06 + k * 0.009, this.y() + k * 0.0004, pl ? -0.17 : 0.18); },
+  redeal() {
+    const G = GAMES.koikoi;
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map();
+    G.pile.forEach((c, k) => { const m = this.card(c); m.rotation.set(0, 0, Math.PI); m.position.copy(this.pileSpot(G.pile.length - 1 - k)); });
+    this.layField(true); this.layHand(0, true); this.layHand(1, true); this.layWon(true);
+  },
+  layHand(pl, instant) {
+    const G = GAMES.koikoi, h = G.hands[pl], jobs = [];
+    h.forEach((c, i) => { const m = this.card(c), to = this.handSpot(pl, i, h.length); m.rotation.set(0, pl ? Math.PI : 0, pl ? Math.PI : 0); if (instant) m.position.copy(to); else jobs.push(hop(m, to, 0.2, 0.01)); });
+    return Promise.all(jobs);
+  },
+  layField(instant) {
+    const G = GAMES.koikoi, jobs = [];
+    G.field.forEach((c, i) => { const m = this.card(c), to = this.fieldSpot(i); m.rotation.set(0, 0, 0); if (instant) m.position.copy(to); else if (m.position.distanceTo(to) > 0.002) jobs.push(hop(m, to, 0.25, 0.02)); });
+    return Promise.all(jobs);
+  },
+  layWon(instant) {
+    const G = GAMES.koikoi, jobs = [];
+    for (const pl of [0, 1]) {
+      const n = {}; G.won[pl].slice().sort((a, b) => a - b).forEach(c => { const g = G.kind(c)[0]; n[g] = (n[g] || 0) + 1; const m = this.card(c), to = this.wonSpot(pl, c, n[g] - 1); m.rotation.set(0, 0, 0); if (instant) m.position.copy(to); else if (m.position.distanceTo(to) > 0.002) jobs.push(hop(m, to, 0.3, 0.03)); });
+    }
+    return Promise.all(jobs);
+  },
+  meshesFor(m) { return m.kind === 'play' && m.pl === 0 ? [this.mesh.get(m.c)] : []; },
+  ringFor(m) {
+    if (m.kind === 'draw') return this.mesh.get(m.take).position.clone();
+    if (m.kind !== 'play' || m.pl !== 0) return null;
+    return m.take !== null && m.take !== undefined ? this.mesh.get(m.take).position.clone() : V3(-0.17 + (GAMES.koikoi.field.length % 8) * 0.054, this.y(), GAMES.koikoi.field.length < 8 ? -0.07 : 0.06);
+  },
+  ringScale: 0.55,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.koikoi, tok = play.token;
+    const res = G.apply(m);
+    for (const e of res.events || []) {
+      if (tok !== play.token) return res;
+      if (e.type === 'deal') { this.redeal(); continue; }
+      if (e.type === 'drawn') { const mc = this.card(e.c); sfx.card(); tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); }); await hop(mc, V3(-0.3, this.y() + 0.01, 0), 0.3, 0.04); await wait(250); continue; }
+      if (e.type === 'toField' || e.type === 'capture') {
+        const mc = this.card(e.type === 'capture' ? e.cards[0] : e.c); sfx.card();
+        if (mc.rotation.z) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        await this.layField(); await this.layWon(); await this.layHand(e.pl);
+      }
+    }
+    await this.layField(); await this.layWon();
+    return res;
+  },
+  score() { const G = GAMES.koikoi; return [['You', G.total[0]], ['Scribe', G.total[1]], `month ${Math.min(G.month, G.rounds)} of ${G.rounds}${G.koi[0] ? ' · you called koi-koi' : ''}${G.koi[1] ? ' · the Scribe called koi-koi' : ''}`]; },
+};
+
+/* --- Wing VI: Nard, on a tables board with every checker on its head */
+function buildNard(group) {
+  const y = buildTablesBoard(group, { felt: '#4a1a16', light: '#e7d6b0', dark: '#1d3550' });
+  const shown = [], cols = [0xe8dcc0, 0x2a1c14];
+  for (const pl of [0, 1]) for (let k = 0; k < 15; k++) {
+    const m = new THREE.Mesh(tbCheckerGeo, new THREE.MeshStandardMaterial({ color: cols[pl], roughness: 0.4 }));
+    const abs = pl ? 12 : 24, sp = 0.34 / 14;
+    m.position.set(tbPointX(abs), y + k * 0.0009, abs <= 12 ? 0.4 - k * sp : -0.4 + k * sp); group.add(m); shown.push(m);
+  }
+  group.userData.display = shown;
+  return y;
+}
+
+/* --- Wing II: Ludus duodecim scriptorum, three rows of twelve, with a board's famous taunt */
+function buildXii(group) {
+  const W = 12 * XII_S + XII_GAP + 0.1, D = 3 * XII_S * 1.15 + 0.1;
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, D), new THREE.MeshStandardMaterial({ color: 0xbdb3a0, roughness: 0.9 }));
+  slab.position.y = TOP + 0.02; group.add(slab);
+  // LEVATE DALOCV / LVDERE NESCIS / IDIOTA RECEDE: "Get up, make way! You don't know how to play: fool, go away!"
+  const words = [['IDIOTA', 'RECEDE'], ['LVDERE', 'NESCIS'], ['LEVATE', 'DALOCV']];
+  const pw = 1024, ph = Math.round(pw * D / W), sc = pw / W;
+  topPlane(group, W, D, TOP + 0.0405, tex(pw, ph, (g) => {
+    g.fillStyle = '#c4baa6'; g.fillRect(0, 0, pw, ph);
+    for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(70,60,48,${rand(0.03, 0.12)})`; g.fillRect(rand(0, pw), rand(0, ph), rand(1, 5), rand(1, 4)); }
+    g.fillStyle = 'rgba(60,48,36,.85)'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `600 ${(XII_S * sc * 0.6) | 0}px "Cinzel","Trajan Pro","Times New Roman",serif`;
+    for (let row = 0; row < 3; row++) for (let col = 0; col < 12; col++) {
+      const c = xiiCell(row, col), x = pw / 2 + c.x * sc, yy = ph / 2 + c.z * sc;
+      g.fillText(words[row][col < 6 ? 0 : 1][col % 6], x, yy);
+    }
+    g.strokeStyle = 'rgba(60,48,36,.5)'; g.lineWidth = 3; g.beginPath(); g.moveTo(pw / 2, 14); g.lineTo(pw / 2, ph - 14); g.stroke();
+  }), { roughness: 0.9 });
+  const y = TOP + 0.041, shown = [];
+  for (const pl of [0, 1]) for (let k = 0; k < 6; k++) {
+    const m = new THREE.Mesh(xiiPieceGeo, new THREE.MeshStandardMaterial({ color: pl ? 0x23201c : 0xeee6d2, roughness: 0.35 }));
+    m.position.set((pl ? -1 : 1) * (0.56 + (k % 3) * 0.055), TOP + 0.0055 + ((k / 3) | 0) * 0.012, pl ? -0.1 : 0.1); group.add(m); shown.push(m);
+  }
+  group.userData.display = shown;
+  return y;
+}
+
+/* --- Wing VI: Hanafuda, a game of koi-koi laid out on a low lacquered table */
+function buildKoikoi(group) {
+  const table = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.03, 0.8), new THREE.MeshStandardMaterial({ color: 0x2a0e0a, roughness: 0.35 }));
+  table.position.y = TOP + 0.015; group.add(table);
+  topPlane(group, 0.96, 0.74, TOP + 0.0305, tex(512, 384, (g, w, h) => { g.fillStyle = '#3a120c'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(200,160,80,.45)'; g.lineWidth = 3; g.strokeRect(12, 12, w - 24, h - 24); }), { roughness: 0.35 });
+  const y = TOP + 0.031, shown = [];
+  // On display: one card of each month, fanned.
+  for (let mo = 0; mo < 12; mo++) { const m = hfCard(mo * 4); m.position.set((mo - 5.5) * 0.06, y + mo * 0.0004, 0.02 + Math.abs(mo - 5.5) * 0.01); m.rotation.y = (mo - 5.5) * -0.05; group.add(m); shown.push(m); }
+  group.userData.display = shown;
+  return y;
+}
+
 const SHATRANJ_P = {
   camW: 1.24,
   intro() { return 'You play the pale pieces and move first. ' + this.prompt(); },
@@ -4147,8 +4418,10 @@ const DRAUGHTS_P = {
     for (let i = 0; i < 64; i++) {
       const v = G.b[i]; if (!v) continue;
       const pl = G.owner(v), m = ex.pieces[pl][k[pl]++];
-      this.cell[i] = m; m.position.copy(this.pos(i));
+      this.cell[i] = m; m.position.copy(this.pos(i)); this.crown(m, G.king(v));
     }
+    // A resumed or taken-back game: pieces no longer on the board wait beside it.
+    for (const pl of [0, 1]) for (let j = k[pl]; j < 12; j++) ex.pieces[pl][j].position.copy(this.lostSpot(1 - pl, this.lost[1 - pl]++));
   },
   crown(m, on) { m.userData.crown.visible = on; m.userData.band.visible = on; },
   pos(i) { const c = drCell(i); return V3(c.x, GAMES.draughts.surface, c.z); },
@@ -6084,7 +6357,7 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P, nard: NARD_P, xii: XII_P, koikoi: KOIKOI_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -6511,6 +6784,9 @@ async function startGame(ex) {
   $('#lm-throwBtn').hidden = !g.dice; $('#lm-dice').hidden = !g.dice;
   $('#lm-passBtn').hidden = !(g.canPass || g.stopLabel); $('#lm-passBtn').disabled = true;
   $('#lm-passBtn').textContent = g.stopLabel || 'Pass';
+  play.undo = []; play.hintCount = 0;
+  $('#lm-hintBtn').hidden = !canHint(g); $('#lm-undoBtn').hidden = !UNDO_OK.has(g.id);
+  refreshAids();
   renderRules(g);
   if (!store.rulesSeen[g.id]) { $('#lm-rules').hidden = false; store.rulesSeen[g.id] = true; save(); }
   clearLastMove();
@@ -6521,6 +6797,62 @@ async function startGame(ex) {
   if (play.resumed) { beginTurn(0); setMsg('Your turn', 'Your saved game is back on the table, as you left it. ' + P.prompt()); return; }
   beginTurn(g.first, true);
 }
+
+/* ---------------------------------------------------- hints and undo
+ * Hint asks the Sharp Scribe what it would play in your seat and lights that
+ * move. Undo takes the table back to the start of your previous turn. Both copy
+ * the engine's data fields first, so nothing the Scribe tries can leak out. */
+// Only tables whose pieces are rebuilt entirely from the engine's state can be taken back.
+const UNDO_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'draughts', 'tablut', 'halma', 'reversi', 'jungle', 'mutorere', 'oware', 'kalah']);
+const canHint = g => !!g.aiPlan && !g.dice && !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'fourseasons', 'chaturaji'].includes(g.id);
+function copyState(g) {
+  const out = {}, d = Object.getOwnPropertyDescriptors(g);
+  for (const k of Object.keys(d)) if ('value' in d[k] && typeof d[k].value !== 'function' && k !== 'rules' && k !== 'source' && k !== 'surface') out[k] = d[k].value;
+  return structuredClone(out);
+}
+function refreshAids() {
+  const g = play.game; if (!g) return;
+  const mine = play.phase === 'choose' && (play.cur === 0 || play.hotseat);
+  $('#lm-hintBtn').disabled = !mine;
+  $('#lm-undoBtn').disabled = !(mine && !play.hotseat && play.undo && play.undo.length > 1);
+}
+function rememberTurn() {
+  if (!UNDO_OK.has(play.game.id) || play.hotseat) return;
+  try { play.undo.push(copyState(play.game)); if (play.undo.length > 60) play.undo.shift(); } catch (e) { /* a state that cannot be copied: no undo for it */ }
+  refreshAids();
+}
+$('#lm-undoBtn').addEventListener('click', () => {
+  if (play.phase !== 'choose' || play.cur !== 0 || play.undo.length < 2) return;
+  const g = play.game, P = play.P;
+  play.undo.pop(); const back = play.undo.pop();
+  play.token++; clearHighlights(); clearLastMove(); $('#lm-choices').hidden = true;
+  Object.assign(g, structuredClone(back));
+  P.setup(play.ex);
+  updateScore();
+  beginTurn(0);
+  setMsg('Your turn', 'Taken back: the board is as it was at the start of your last turn. ' + P.prompt());
+});
+$('#lm-hintBtn').addEventListener('click', async () => {
+  if (play.phase !== 'choose') return;
+  const g = play.game, tok = play.token, pl = play.hotseat ? play.cur : 0, level = R.level();
+  const moves = play.moves, before = copyState(g);
+  setMsg(turnName(), 'The Scribe looks over your position…');
+  $('#lm-hintBtn').disabled = true;
+  await new Promise(r => setTimeout(r, 60));
+  let plan = null;
+  try { R.setLevel('sharp'); plan = g.aiPlan(pl); } catch (e) { plan = null; } finally { R.setLevel(level); Object.assign(g, structuredClone(before)); }
+  if (tok !== play.token || play.phase !== 'choose') return;
+  const want = plan && plan[0], keys = ['kind', 'from', 'to', 'c', 'card', 'place', 'pit', 'i', 'n', 'line', 'over', 'swap', 'pass', 'label', 'drop', 'promo'];
+  const same = (a, b) => keys.every(k => JSON.stringify(a[k]) === JSON.stringify(b[k]));
+  const m = want && (moves.find(x => x === want) || moves.find(x => same(x, Object.assign({}, x, want)) && same(want, x)) || moves.find(x => same(x, want)));
+  refreshAids();
+  if (!m) { setMsg(turnName(), 'The Scribe has no clear advice here. ' + play.P.prompt()); return; }
+  play.hintCount++;
+  const mesh = (play.P.meshesFor(m) || []).find(Boolean);
+  if (mesh && play.twoStep) { if (play.selected !== mesh) { if (play.selected) select(play.selected); select(mesh); } }
+  play.hintMove = m; play.hover = play.rings.find(r => r.userData.move === m) || mesh || null;
+  setMsg(turnName(), (m.label ? `The Scribe would choose “${m.label}”. ` : 'The Scribe would play the move now lit up. ') + 'Play it, or choose your own.');
+});
 
 /* ---------------------------------------------------- saved games
  * A long game against the Scribe is kept in this browser at the start of each of
@@ -6673,7 +7005,7 @@ function beginTurn(pl, first) {
       setMsg('Your turn', first ? P.intro() : P.prompt());
       $('#lm-throwBtn').focus({ preventScroll: true });
     } else offer(g.legal(0), first ? P.intro() : P.prompt());
-    saveGame();
+    saveGame(); rememberTurn();
   } else if (play.hotseat) {
     offer(g.legal(1), first ? 'Your friend moves first, in the Scribe\'s seat. ' + P.prompt() : P.prompt());
   } else {
@@ -6697,6 +7029,7 @@ function offer(moves, text) {
   $('#lm-passBtn').disabled = !(play.game.canPass || moves.some(m => m.pass));
   highlight(moves);
   setMsg(turnName(), text);
+  refreshAids();
 }
 async function humanThrow() {
   if (play.phase !== 'throw') return;
@@ -6723,7 +7056,7 @@ async function choose(m) {
   if (play.phase !== 'choose') return;
   play.phase = 'anim'; clearHighlights(); clearLastMove();
   $('#lm-choices').hidden = true;
-  $('#lm-passBtn').disabled = true;
+  $('#lm-passBtn').disabled = true; refreshAids();
   const g = play.game, tok = play.token;
   const res = await play.P.play(m);
   if (tok !== play.token) return;
@@ -6871,7 +7204,7 @@ function select(mesh) {
 function clearHighlights() {
   dropRings(() => false);
   play.glowing.forEach(ms => glowMats(ms).forEach(x => x.emissive.setRGB(0, 0, 0)));
-  play.glowing.clear(); play.byMesh = new Map(); play.selected = null; play.hover = null;
+  play.glowing.clear(); play.byMesh = new Map(); play.selected = null; play.hover = null; play.hintMove = null;
 }
 
 /* ------------------------------------------------------------- input */
@@ -7184,12 +7517,12 @@ function step() {
     const pulse = 0.42 + 0.18 * Math.sin(t * 5);
     const hoverMove = play.hover && play.hover.userData.move;
     play.glowing.forEach(ms => {
-      const hot = ms === play.selected || ms === play.hover || (hoverMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(hoverMove));
+      const hot = ms === play.selected || ms === play.hover || (play.hintMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(play.hintMove)) || (hoverMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(hoverMove));
       const k = hot ? 0.5 : pulse;
       glowMats(ms).forEach(x => x.emissive.setRGB(0.55 * k, 0.32 * k, 0.02));
     });
     play.rings.forEach(r => {
-      const hot = play.hover === r || (play.hover && play.byMesh.get(play.hover) && play.byMesh.get(play.hover).includes(r.userData.move));
+      const hot = play.hover === r || r.userData.move === play.hintMove || (play.hover && play.byMesh.get(play.hover) && play.byMesh.get(play.hover).includes(r.userData.move));
       r.material.opacity = hot ? 1 : 0.6 + 0.25 * Math.sin(t * 5);
       r.scale.setScalar(r.userData.base * (hot ? 1.25 : 1));
     });

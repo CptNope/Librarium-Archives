@@ -2424,3 +2424,74 @@ test('Saved games: every saveable engine restores to the same position and moves
     assert.equal(JSON.stringify(g.legal(pl)), before, id);
   }
 });
+
+/* ---------------------------------------------------------- Nard */
+
+const ND = rules.nard;
+test('Nard: everyone on the head, one checker off it a turn, and no landing on the enemy', () => {
+  ND.init();
+  assert.equal(ND.c[0][24], 15); assert.equal(ND.c[1][24], 15);
+  const ms = ND.legal(0, 7, { faces: [5, 2] });
+  assert.ok(ND.turn.seqs.every(s => s.filter(m => m.from === 24).length === 1)); // only one leaves the head
+  assert.ok(ms.length > 0);
+  ND.init(); ND.legal(0, 12, { faces: [6, 6] }); // a first throw of 6-6 lets two leave
+  assert.ok(ND.turn.seqs.some(s => s.filter(m => m.from === 24).length === 2));
+  ND.init(); ND.c[0][24] = 14; ND.c[0][20] = 1; ND.c[1][24] = 14; ND.c[1][8] = 1; // the Scribe's point 8 is your point 20, and one checker there blocks it
+  ND.headUsed = 0; ND.headLimit = 1;
+  assert.ok(!ND.single(0, 4).some(m => m.to === 20 && m.from === 24));
+});
+
+test('Nard: no wall of six with every enemy checker behind it', () => {
+  ND.init(); ND.c[0].fill(0); ND.c[1].fill(0); ND.c[1][24] = 15;
+  for (const t of [18, 17, 16, 15, 14]) ND.c[0][t] = 2; ND.c[0][24] = 5;
+  ND.headUsed = 0; ND.headLimit = 1;
+  assert.ok(!ND.single(0, 5).some(m => m.from === 24 && m.to === 19)); // 19 to 14 would wall in every Scribe checker
+  ND.c[1][24] = 14; ND.c[1][1] = 1; // one Scribe checker is already past the wall
+  assert.ok(ND.single(0, 5).some(m => m.from === 24 && m.to === 19));
+});
+
+/* ---------------------------------------------------------- Duodecim scripta */
+
+const XS = rules.xii;
+test('Duodecim scripta: entering, the home row rule, hits and exact bearing off', () => {
+  XS.init();
+  XS.legal(0, 9, { faces: [1, 3, 5] });
+  assert.ok(XS.turn.seqs.length && XS.turn.seqs.every(s => s.length === 3)); // all three dice used
+  assert.ok(XS.turn.seqs.every(s => s.every(m => m.to <= 6))); // nothing leaves the home row while pieces wait
+  XS.init(); XS.p[0].fill(0); XS.p[1].fill(0); XS.p[0][10] = 1; XS.p[0][3] = 14; XS.p[1][13] = 1; XS.p[1][31] = 14;
+  const hit = XS.single(0, 3).find(m => m.from === 10);
+  assert.ok(hit.hit); XS.doMove(hit); assert.equal(XS.p[1][0], 1);
+  XS.p[1][15] = 2; assert.ok(!XS.single(0, 2).some(m => m.from === 13)); // two together block
+  XS.init(); XS.p[0].fill(0); XS.p[0][30] = 1; XS.p[0][25] = 14;
+  assert.ok(XS.single(0, 1).some(m => m.from === 30 && m.to === 31)); // the last space needs exactly a 1
+  assert.ok(!XS.single(0, 3).some(m => m.from === 30));
+});
+
+/* ---------------------------------------------------------- Koi-koi */
+
+const KK = rules.koikoi;
+test('Koi-koi: the pack, the yaku and their points', () => {
+  const kinds = Array.from({ length: 48 }, (_, c) => KK.kind(c));
+  assert.equal(kinds.filter(k => k === 'b').length, 5); assert.equal(kinds.filter(k => k === 'a').length, 9);
+  assert.equal(kinds.filter(k => k[0] === 'r').length, 10); assert.equal(kinds.filter(k => k === 'k').length, 24);
+  assert.equal(KK.points([0, 8, 28]), 5); // three brights
+  assert.equal(KK.points([0, 8, 28, 40]), 7); // four with the rain man
+  assert.equal(KK.points([28, 32]), 5); // moon and sake
+  assert.equal(KK.points([24, 36, 20]), 5); // boar, deer, butterflies
+  assert.equal(KK.points([1, 5, 9, 21, 33, 37]), 10 + 2); // red poem and blue ribbons, plus six ribbons
+});
+
+test('Koi-koi: matching, koi-koi and a full game between Scribes', () => {
+  rules.setLevel('fair'); KK.setVariant('3'); KK.init();
+  assert.equal(KK.hands[0].length + KK.hands[1].length + KK.field.length + KK.pile.length, 48);
+  let n = 0;
+  while (!KK.over && n++ < 2000) {
+    const pl = KK.toMove;
+    if (KK.need === 'next') { KK.apply({ pl, kind: 'next' }); continue; }
+    if (KK.need === 'koi') { KK.apply({ pl, kind: 'stop' }); continue; }
+    if (KK.need === 'draw') { KK.apply(KK.legal(pl)[0]); continue; }
+    const [m] = KK.aiPlan(pl); assert.ok(KK.legal(pl).some(x => x.c === m.c && x.take === m.take)); KK.apply(m);
+  }
+  assert.ok(KK.over); assert.equal(KK.month, 3);
+  KK.setVariant('6');
+});

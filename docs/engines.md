@@ -204,6 +204,7 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Alquerque | `alquerque` | Captures | Search | |
 | Brandubh | `brandubh` | Tafl | Search | |
 | Tables | `tables` | Race, dice | Full-turn scoring | `followUp` for the second die |
+| Duodecim scripta | `xii` | Race, three dice (modern reconstruction) | Full-turn scoring | `followUp` per die, `rollName` |
 | Chaturaji | `chaturaji` | Chess family, dice, four seats | Every use of the throw, with danger odds | `followUp` for the second die, `stopLabel`, `passTurn`, `scribeName` |
 | Four Seasons chess | `fourseasons` | Chess family, four seats | Every move, then the next player's reply | `passTurn`, `scribeName`, armies change hands |
 | Chaturanga | `chaturanga` | Chess family (modern reconstruction) | Search | shatranj's engine under Sanskrit names |
@@ -248,6 +249,8 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Morabaraba | `morabaraba` | Placement, then moves | Search | shared morris engine |
 | Bagh-chal | `baghchal` | Hunt, placement then moves | Search | `variants` choose your side; no repeated positions |
 | Seega | `seega` | Placement, then custodian captures | Search over capture chains | `followUp` for the second placement, chains and opening a way; `skipTurn` |
+| Nard | `nard` | Race, dice, blocking | Full-turn scoring | extends `tables`; `final` for a mars |
+| Hanafuda (koi-koi) | `koikoi` | Cards: matching by month | Greedy card choice; Sharp presses koi-koi only when safe | labelled stop / koi-koi and Next month moves, `variants` |
 | Tâb | `tab` | Race and capture, sticks | Heuristic with danger | `extra` on 1, 4 and 6; `steps` |
 
 ## Adding a game

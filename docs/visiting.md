@@ -51,6 +51,7 @@ flowchart LR
 - **Board games:** click a glowing piece, then one of its rings. Where pieces are placed (Go, Hex, Gomoku, Morris placement) or pits are sown (Oware, Kalah, Bao), click the ring or pit directly.
 - **Card and tile games:** click a card or tile in your hand; claims and other choices appear as buttons above the message bar.
 - **Keyboard:** the arrow keys step through the pieces (or cards) you can move, in reading order on screen; Enter picks one, the arrow keys then step through the rings it can go to, and Enter plays the move. A screen reader announces where you are ("Piece 3 of 12", or the card's name).
+- **Hint** (at tables without dice or hidden cards, and at Whist) asks the Sharp Scribe for the move it would make in your seat and lights it. **Undo** (at the chess family, draughts, Tablut, Halma, Reversi, Rithmomachia, Jungle, Mū tōrere, Oware and Kalah) takes the board back to the start of your previous turn.
 - **Esc** clears a selection, or leaves the table.
 - **Rules** reopens the *How to play* panel, which ends with a note on where the rules come from.
 
@@ -66,6 +67,7 @@ flowchart LR
 | | The Landlord's Game | three rounds · five (as in the patent) |
 | | Cribbage | to 61 · to 121 |
 | Seeds | Kalah | 3 · 4 · 6 a pit |
+| Months | Hanafuda (koi-koi) | 3 · 6 (default) · 12 |
 
 Choosing a variant or an opponent restarts the game, and every choice is remembered.
 
