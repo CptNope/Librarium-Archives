@@ -90,7 +90,7 @@
 #lm-app .rail .stop .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 #lm-app .rail .stop:not(.seen):not(.playable) .sr{display:none}
 #lm-app .rail .railindex{flex:0 0 auto;align-self:center;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1px solid var(--line);background:rgba(20,15,11,.75);font-family:var(--f-ui);font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--parchment)}
-#lm-app .rail .railindex:hover,#lm-app .rail.indexing .railindex{color:#1a120a;background:var(--gold);border-color:var(--gold)}
+#lm-app .rail .railindex:hover,#lm-app .rail.indexing #lm-indexBtn,#lm-app .rail #lm-passBtnRail[aria-expanded="true"]{color:#1a120a;background:var(--gold);border-color:var(--gold)}
 /* The index of every exhibit */
 #lm-app .index{position:absolute;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));bottom:calc(80px + env(safe-area-inset-bottom,0px));max-height:min(72%,640px);display:flex;flex-direction:column;background:rgba(18,13,10,.97);border:1px solid var(--line);box-shadow:0 18px 60px rgba(0,0,0,.6);z-index:6}
 #lm-app .index[hidden]{display:none}
@@ -176,11 +176,11 @@
 
 @container archives (max-width:720px){
   #lm-app .placard{top:auto;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));width:auto;bottom:calc(144px + env(safe-area-inset-bottom,0px));max-height:min(48vh,480px)}
-  /* The bar takes two rows: wing tabs and the index on top, then the exhibits with previous and next. */
+  /* The bar takes two rows: wing tabs, the index, the tour and the passport on top, then the exhibits with previous and next. */
   #lm-app .rail{flex-wrap:wrap;gap:6px;padding-top:18px}
-  #lm-app .rail .wings{order:1;flex:1 1 calc(100% - 64px)}
+  #lm-app .rail .wings{order:1;flex:1 1 calc(100% - 150px)}
   #lm-app .rail .wingtab{flex:1 1 0;min-width:0}
-  #lm-app .rail .railindex{order:2;padding:0 12px}
+  #lm-app .rail .railindex{order:2;padding:0 11px}
   #lm-app .rail .railindex span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
   #lm-app .rail .railstep{order:3;height:46px;width:34px}
   #lm-app .rail .stops{order:4;flex:1 1 calc(100% - 88px)}
@@ -229,3 +229,8 @@
 #lm-app .stamp.seen .l{color:var(--parchment)}
 #lm-app .stamp:hover .ring,#lm-app .stamp:focus-visible .ring{outline:2px solid var(--gold);outline-offset:3px}
 @media (prefers-reduced-motion:reduce){#lm-app .stamp.seen .ring,#lm-app .stamp .seal{transform:none}}
+/* On middling widths the tour and passport buttons drop their words, so the strip of exhibits keeps its room. */
+@container archives (min-width:721px) and (max-width:1100px){
+  #lm-app .rail #lm-tourBtn,#lm-app .rail #lm-passBtnRail{padding:0 12px}
+  #lm-app .rail #lm-tourBtn span,#lm-app .rail #lm-passBtnRail span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+}
