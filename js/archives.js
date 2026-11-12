@@ -7026,7 +7026,9 @@ setScribeLevel(store.level || 'fair');
 // Some tables offer variants (a bigger grid, say). Choosing one restarts the game.
 function toggleOn(g, t) { const v = ((store.toggles || {})[g.id] || {})[t.id]; return v === undefined ? !!t.default : !!v; }
 // Pass-and-play: two visitors share the screen at a two-player table with nothing hidden.
-const HOTSEAT = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier', 'idraughts', 'hnefatafl']);
+const HOTSEAT = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier', 'idraughts', 'hnefatafl',
+  // dice games too: each player throws for themselves
+  'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii']);
 const friendOn = g => HOTSEAT.has(g.id) && ((store.opponent || {})[g.id] === 'friend');
 function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex); }
 function renderVariants(g) {
@@ -7314,15 +7316,16 @@ function beginTurn(pl, first) {
       return;
     }
   }
-  if (pl === 0) {
-    const pre = g.dice && g.preThrow ? g.preThrow(0) : null;
-    if (pre) { $('#lm-throwBtn').disabled = true; offer(pre, first ? P.intro() : P.prompt()); }
+  if (pl === 0 || (play.hotseat && g.dice)) { // at a dice table a friend throws for themselves
+    const say = first && pl === 0 ? P.intro() : P.prompt();
+    const pre = g.dice && g.preThrow ? g.preThrow(pl) : null;
+    if (pre) { $('#lm-throwBtn').disabled = true; offer(pre, say); }
     else if (g.dice) {
       play.phase = 'throw'; $('#lm-throwBtn').disabled = false;
-      setMsg('Your turn', first ? P.intro() : P.prompt());
+      setMsg(turnName(), pl === 1 && first ? 'Your friend throws first, in the Scribe\'s seat. ' + say : say);
       $('#lm-throwBtn').focus({ preventScroll: true });
-    } else offer(g.legal(0), first ? P.intro() : P.prompt());
-    saveGame(); rememberTurn();
+    } else offer(g.legal(0), say);
+    if (pl === 0) { saveGame(); rememberTurn(); }
   } else if (play.hotseat) {
     offer(g.legal(1), first ? 'Your friend moves first, in the Scribe\'s seat. ' + P.prompt() : P.prompt());
   } else {
@@ -7351,23 +7354,23 @@ function offer(moves, text) {
 async function humanThrow() {
   if (play.phase !== 'throw') return;
   play.phase = 'rolling'; $('#lm-throwBtn').disabled = true;
-  const g = play.game, tok = play.token;
+  const g = play.game, tok = play.token, pl = play.cur || 0, you = pl ? 'Your friend' : 'You';
   const r = g.roll();
   if (!(await showRoll(r))) return;
   play.roll = r;
-  const moves = g.legal(0, r.value, r);
+  const moves = g.legal(pl, r.value, r);
   if (!moves.length) {
-    setMsg('Your turn', `You threw ${rollText(g, r)}. No piece can move, so the turn passes.`);
+    setMsg(turnName(), `${you} threw ${rollText(g, r)}. No piece can move, so the turn passes.`);
     await wait(1500); if (tok !== play.token) return;
-    beginTurn(nextPl(g, 1)); return;
+    beginTurn(nextPl(g, 1 - pl)); return;
   }
   if (g.autoMove && moves.length === 1) {
-    setMsg('Your turn', `You threw ${rollText(g, r)}.`);
+    setMsg(turnName(), `${you} threw ${rollText(g, r)}.`);
     play.moves = moves; play.phase = 'choose';
     await wait(400); if (tok !== play.token) return;
     return choose(moves[0]);
   }
-  offer(moves, `You threw ${rollText(g, r)}. ` + (play.P.choosePrompt ? play.P.choosePrompt(moves) : `Choose a glowing piece${moves.length === 1 ? ' (only one can move)' : ''}.`));
+  offer(moves, `${you} threw ${rollText(g, r)}. ` + (play.P.choosePrompt ? play.P.choosePrompt(moves) : `Choose a glowing piece${moves.length === 1 ? ' (only one can move)' : ''}.`));
 }
 async function choose(m) {
   if (play.phase !== 'choose') return;
@@ -7382,13 +7385,14 @@ async function choose(m) {
   if (res.followUp && res.followUp.length) { offer(res.followUp, (res.note ? res.note + ' ' : '') + g.followPrompt); return; }
   if (m.pre && res.thenThrow) { // a choice made before throwing, such as paying a fine
     play.phase = 'throw'; $('#lm-throwBtn').disabled = false;
-    setMsg('Your turn', (res.note ? res.note + ' ' : '') + 'Now throw the dice.');
+    setMsg(turnName(), (res.note ? res.note + ' ' : '') + 'Now throw the dice.');
     $('#lm-throwBtn').focus({ preventScroll: true }); return;
   }
   if (g.dice) {
-    if (g.done(0)) return finish(g.final ? g.final() : { winner: 0, text: g.winText ? g.winText(0) : '' });
+    const pl = play.cur || 0;
+    if (g.done(pl)) return finish(g.final ? g.final() : { winner: pl, text: g.winText ? g.winText(pl) : '' });
     if (g.extra(m, play.roll.value)) {
-      setMsg('Your turn', (res.note ? res.note + ' ' : '') + g.extraNote);
+      setMsg(turnName(), (res.note ? res.note + ' ' : '') + g.extraNote);
       play.phase = 'throw'; $('#lm-throwBtn').disabled = false; return;
     }
   }
