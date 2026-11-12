@@ -144,7 +144,7 @@ stateDiagram-v2
 
 | Convention | Rule |
 | --- | --- |
-| Players | `0` is the visitor, `1` the Scribe (Mahjong, Chaturaji, Four Seasons chess and Whist seat four, with seat 0 the visitor and `1` standing for whichever Scribe is at play) |
+| Players | `0` is the visitor, `1` the Scribe, or a friend at the same screen in pass-and-play (`HOTSEAT` lists the eligible games; the turn loop then offers `legal(1)` instead of asking `aiPlan`, and Scribe lines read as the friend's). Mahjong, Chaturaji, Four Seasons chess and Whist seat four, with seat 0 the visitor and `1` standing for whichever Scribe is at play) |
 | Board rows | Row 0 is nearest the visitor; world `+z` points toward the visitor |
 | Moves | Plain objects. `label` makes a move a button instead of a piece-and-ring choice |
 | Notes | `apply()` returns `note` text in the visitor's voice ("You capture…", "The Scribe…") |
@@ -164,6 +164,16 @@ erDiagram
     STORE {
         string level "gentle, fair or sharp"
         bool sound "false when muted"
+    }
+    STORE ||--o{ OPPONENT : "opponent[game id]"
+    STORE ||--o{ SAVE : "saves[game id]"
+    OPPONENT {
+        string who "scribe or friend"
+    }
+    SAVE {
+        int v "save format version"
+        string variant "the variant it was played on"
+        object state "the engine's own data fields"
     }
     RECORD {
         int wins "record[id][0]"

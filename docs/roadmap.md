@@ -19,6 +19,7 @@ timeline
     0.22 : The Mansion of Happiness and the Checkered Game of Life, from board scans
     0.23 : Jungle · Whist · Chaturanga and Rithmomachia, as modern reconstructions
     0.24 : Medieval chess at the Lewis chessmen · Courier chess · Hazard · Piquet
+    0.25 : Pass-and-play · Saved games · Keyboard play
 ```
 
 ```mermaid
@@ -34,6 +35,8 @@ pie showData
 - [ ] Hare and Hounds (the French military game), once the lines of its eleven-point board can be checked against a primary source
 - [ ] A stronger Brandubh attacker
 - [ ] A stronger Sharp level for Janggi, Latrunculi and Rithmomachia
+- [ ] Saved games for Shogi, Go and Mahjong (their tables do not yet rebuild pieces in hand, stones or melds from a saved state)
+- [ ] Pass-and-play for the dice games
 
 ## Done
 
@@ -50,6 +53,7 @@ pie showData
 - [x] The Landlord's Game, from the patent drawing and text
 - [x] New exhibits: Dominoes, Chinese checkers, Hex and Gomoku
 - [x] New exhibits: Cribbage, Tablut, Kalah and Makruk
+- [x] Pass-and-play against a friend, saved games for long games, and keyboard play with screen-reader announcements
 - [x] The last display tables of Wings I and III made playable: Hazard at the first dice, Piquet at the playing cards, and medieval chess (a labelled reconstruction) on the Lewis chessmen
 - [x] Courier chess, on twelve files
 - [x] Jungle (dou shou qi) and Whist, with a Scribe as your partner

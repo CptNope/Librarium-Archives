@@ -5432,6 +5432,12 @@ const WHIST_P = {
     (this.cards || []).forEach(m => this.ex.group.remove(m));
     this.cards = []; this.mesh = new Map(); this.piles = [0, 0];
     for (let s = 0; s < 4; s++) this.layHand(s, true);
+    // A resumed game: the tricks already taken go back on their piles.
+    const done = G.played.slice(0, G.played.length - G.trick.length);
+    for (let t = 0; t * 4 < done.length; t++) {
+      const side = t < G.tricks[0] ? 0 : 1, k = this.piles[side]++, to = this.pileSpot(side, k);
+      done.slice(t * 4, t * 4 + 4).forEach((c, j) => { const m = this.card(c); m.position.set(to.x, to.y + j * 0.0004, to.z); m.rotation.set(0, Math.PI / 2, Math.PI); });
+    }
   },
   layHand(seat, instant) {
     const G = GAMES.whist, h = G.hands[seat], jobs = [];
@@ -5476,7 +5482,7 @@ const WHIST_P = {
   },
 };
 const RITHMO_P = {
-  camW: 1.15, ringScale: 0.62,
+  camW: 0.7, camD: 0.8, camElev: 70, ringScale: 0.62,
   intro() { return 'A modern reconstruction. You play the white Evens and move first. ' + this.prompt(); },
   prompt() { const G = GAMES.rithmo; return `Pick a piece, then a ring. Take the Scribe's pyramid (190) or any ${G.WIN} pieces to win.`; },
   setup(ex) {
@@ -5671,6 +5677,13 @@ const PIQUET_P = {
     this.cards = []; this.mesh = new Map(); this.piles = [0, 0]; this.dis = [0, 0];
     G.talon.forEach((c, k) => { const m = this.card(c); m.rotation.set(0, Math.PI / 2, Math.PI); m.position.copy(this.talonSpot(k)); });
     this.layHand(0, true); this.layHand(1, true);
+    // A resumed game: discards and the tricks already taken go back where they were.
+    for (const pl of [0, 1]) G.discards[pl].forEach(c => { const m = this.card(c); m.rotation.set(0, Math.PI / 2, Math.PI); m.position.copy(this.discardSpot(pl, this.dis[pl]++)); });
+    const done = G.played.slice(0, G.played.length - G.trick.length);
+    for (let t = 0; t * 2 < done.length; t++) {
+      const w = t < G.tricks[0] ? 0 : 1, to = this.pileSpot(w, this.piles[w]++);
+      done.slice(t * 2, t * 2 + 2).forEach((c, j) => { const m = this.card(c); m.position.set(to.x, to.y + j * 0.0005, to.z); m.rotation.set(0, Math.PI / 2, Math.PI); });
+    }
   },
   layHand(pl, instant) {
     const G = GAMES.piquet, h = G.hands[pl], jobs = [];
@@ -6106,12 +6119,12 @@ function stopView(stop) {
 }
 function flyToPlay(stop, dur = 1.4) {
   const g = stop.group;
-  const W = PRES[stop.game].camW;
+  const P = PRES[stop.game], W = P.camW;
   const vf = THREE.MathUtils.degToRad(camera.fov) / 2;
   const hf = Math.atan(Math.tan(vf) * camera.aspect);
-  const elev = THREE.MathUtils.degToRad(58);
+  const elev = THREE.MathUtils.degToRad(P.camElev || 58); // a long board is seen from higher up
   let dist = (W / 2) / Math.tan(hf) * 1.06;
-  dist = Math.max(dist, 0.62 / Math.tan(vf) * 1.1);
+  dist = Math.max(dist, (P.camD || 0.62) / Math.tan(vf) * 1.1);
   const center = V3(0, TOP + 0.05, 0.02);
   const pos = center.clone().add(V3(0, Math.sin(elev) * dist, Math.cos(elev) * dist));
   play.camDist = dist;
@@ -6424,16 +6437,30 @@ levelButtons.forEach(b => b.addEventListener('click', () => setScribeLevel(b.dat
 setScribeLevel(store.level || 'fair');
 // Some tables offer variants (a bigger grid, say). Choosing one restarts the game.
 function toggleOn(g, t) { const v = ((store.toggles || {})[g.id] || {})[t.id]; return v === undefined ? !!t.default : !!v; }
+// Pass-and-play: two visitors share the screen at a two-player table with nothing hidden.
+const HOTSEAT = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier']);
+const friendOn = g => HOTSEAT.has(g.id) && ((store.opponent || {})[g.id] === 'friend');
+function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex); }
 function renderVariants(g) {
   const box = $('#lm-variant'); box.innerHTML = '';
-  box.hidden = !g.variants && !g.toggles;
+  box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !play.resumed;
+  $('#lm-level').hidden = friendOn(g);
+  if (HOTSEAT.has(g.id)) {
+    const label = document.createElement('span'); label.textContent = 'Opponent'; box.appendChild(label);
+    for (const [id, text] of [['scribe', 'The Scribe'], ['friend', 'A friend']]) {
+      const b = document.createElement('button'); b.textContent = text; b.setAttribute('aria-pressed', String((friendOn(g) ? 'friend' : 'scribe') === id));
+      b.addEventListener('click', () => { if ((friendOn(g) ? 'friend' : 'scribe') === id) return; store.opponent = Object.assign(store.opponent || {}, { [g.id]: id }); save(); restartTable(); });
+      box.appendChild(b);
+    }
+  }
+  if (play.resumed) { const b = document.createElement('button'); b.textContent = 'New game'; b.addEventListener('click', restartTable); box.appendChild(b); }
   // On-off rules, such as Hex's swap rule. Changing one restarts the game, like a variant.
   for (const t of g.toggles || []) {
     const on = toggleOn(g, t), b = document.createElement('button');
     b.textContent = `${t.label}: ${on ? 'on' : 'off'}`; b.setAttribute('aria-pressed', String(on));
     b.addEventListener('click', () => {
       store.toggles = store.toggles || {}; store.toggles[g.id] = Object.assign(store.toggles[g.id] || {}, { [t.id]: !on }); save();
-      const ex = play.ex; play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex);
+      restartTable();
     });
     box.appendChild(b);
   }
@@ -6444,7 +6471,7 @@ function renderVariants(g) {
     b.addEventListener('click', () => {
       if (v.id === g.variant) return;
       store.variants = Object.assign(store.variants || {}, { [g.id]: v.id }); save();
-      const ex = play.ex; play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex);
+      restartTable();
     });
     box.appendChild(b);
   }
@@ -6471,8 +6498,11 @@ async function startGame(ex) {
   g.surface = ex.surface;
   if (g.variants) g.setVariant((store.variants || {})[g.id] || g.variant);
   for (const t of g.toggles || []) g.setToggle(t.id, toggleOn(g, t));
+  play.hotseat = friendOn(g);
+  g.init();
+  play.resumed = loadGame(g);
   renderVariants(g);
-  g.init(); P.setup(ex);
+  P.setup(ex);
   showPlacard(false); $('#lm-hint').style.opacity = 0; rail.hidden = true; index.hidden = true; indexBtn.setAttribute('aria-expanded', 'false');
   root.classList.add('playing');
   resetView(true); updateJoy();
@@ -6488,13 +6518,46 @@ async function startGame(ex) {
   updateScore();
   setMsg(g.first === 0 ? 'Your turn' : scribeName(g), g.first === 0 ? '' : `${scribeName(g)} moves first.`);
   await flyToPlay(ex);
+  if (play.resumed) { beginTurn(0); setMsg('Your turn', 'Your saved game is back on the table, as you left it. ' + P.prompt()); return; }
   beginTurn(g.first, true);
 }
+
+/* ---------------------------------------------------- saved games
+ * A long game against the Scribe is kept in this browser at the start of each of
+ * your turns (between tricks, at card tables), and comes back when you sit down
+ * again. Only the engine's own state is kept; the table is rebuilt from it. */
+const SAVE_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi']);
+const SAVE_VERSION = 1;
+function engineState(g) { // plain data fields only: no methods, no getters
+  const out = {}, d = Object.getOwnPropertyDescriptors(g);
+  for (const k of Object.keys(d)) {
+    if (!('value' in d[k]) || typeof d[k].value === 'function' || k === 'rules' || k === 'source' || k === 'surface') continue;
+    if (d[k].value instanceof Map || d[k].value instanceof Set) return null; // not kept: this game's state will not fit in storage
+    out[k] = d[k].value;
+  }
+  return out;
+}
+function saveGame() {
+  const g = play.game;
+  if (!g || !SAVE_OK.has(g.id) || play.hotseat || play.phase !== 'choose' || (g.trick && g.trick.length) || (g.stage && g.stage === 'exchange' && g.marked && g.marked.length)) return;
+  if (g.ended && g.ended()) return;
+  const state = engineState(g); if (!state) return;
+  store.saves = store.saves || {};
+  try { store.saves[g.id] = { v: SAVE_VERSION, variant: g.variant || null, state: JSON.parse(JSON.stringify(state)) }; save(); } catch (e) { /* too large or blocked: carry on unsaved */ }
+}
+function loadGame(g) {
+  const s = (store.saves || {})[g.id];
+  if (!s || s.v !== SAVE_VERSION || play.hotseat || !SAVE_OK.has(g.id)) return false;
+  if ((s.variant || null) !== (g.variant || null)) return false;
+  try { Object.assign(g, JSON.parse(JSON.stringify(s.state))); return true; } catch (e) { clearSave(g.id); g.init(); return false; }
+}
+function clearSave(id) { if (store.saves && store.saves[id]) { delete store.saves[id]; save(); } }
 function renderRules(g) {
   const r = $('#lm-rules'); r.innerHTML = '';
   const h = document.createElement('h3'); h.textContent = 'How to play ' + g.name; r.appendChild(h);
   const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); r.appendChild(ul);
   const p = document.createElement('p'); p.className = 'src'; p.textContent = g.source; r.appendChild(p);
+  const k = document.createElement('p'); k.className = 'src'; k.textContent = 'Keyboard: the arrow keys step through the pieces you can move, then the places they can go; Enter plays, Escape steps back.'; r.appendChild(k);
   const close = document.createElement('button'); close.className = 'hudbtn'; close.textContent = 'Got it';
   close.addEventListener('click', () => { r.hidden = true; }); r.appendChild(close);
 }
@@ -6510,23 +6573,25 @@ function leaveGame() {
 }
 $('#lm-leaveBtn').addEventListener('click', leaveGame);
 $('#lm-winLeave').addEventListener('click', leaveGame);
-$('#lm-againBtn').addEventListener('click', () => { const ex = play.ex; play.token++; clearHighlights(); mode = 'gallery'; startGame(ex); });
+$('#lm-againBtn').addEventListener('click', restartTable);
 $('#lm-rulesBtn').addEventListener('click', () => { $('#lm-rules').hidden = !$('#lm-rules').hidden; });
 $('#lm-throwBtn').addEventListener('click', humanThrow);
 $('#lm-passBtn').addEventListener('click', () => {
   if (play.phase !== 'choose') return;
-  const m = play.moves.find(x => x.pass) || (play.game.canPass ? { pl: 0, pass: true } : null);
+  const m = play.moves.find(x => x.pass) || (play.game.canPass ? { pl: play.cur || 0, pass: true } : null);
   if (m) choose(m);
 });
 
+const asFriend = t => (play.hotseat && mode === 'play' && t ? String(t).replace(/The Scribe/g, 'Your friend').replace(/the Scribe/g, 'your friend').replace(/\bScribe\b/g, 'Friend') : t);
 function setMsg(who, text) {
+  who = asFriend(who); text = asFriend(text);
   const m = $('#lm-msg'); m.innerHTML = '';
   const w = document.createElement('span'); w.className = 'who'; w.textContent = who; m.appendChild(w);
   m.appendChild(document.createTextNode(text));
 }
 function updateScore() {
   const s = $('#lm-score'); s.innerHTML = '';
-  const add = ([label, val]) => { const el = document.createElement('b'); el.textContent = val; s.append(label + ' ', el); };
+  const add = ([label, val]) => { const el = document.createElement('b'); el.textContent = val; s.append(asFriend(label) + ' ', el); };
   if (play.P.scores) { // more than two players
     const list = play.P.scores(), tail = typeof list[list.length - 1] === 'string' ? list.pop() : '';
     list.forEach((x, k) => { if (k) s.append('  ·  '); add(x); });
@@ -6586,6 +6651,7 @@ async function showRoll(r) {
 function beginTurn(pl, first) {
   if (mode !== 'play') return;
   const g = play.game, P = play.P;
+  play.cur = pl;
   updateScore();
   if (!g.dice) { const r = g.result(pl); if (r) return finish(r); }
   if (g.ended && g.ended()) return finish(g.final());
@@ -6607,6 +6673,9 @@ function beginTurn(pl, first) {
       setMsg('Your turn', first ? P.intro() : P.prompt());
       $('#lm-throwBtn').focus({ preventScroll: true });
     } else offer(g.legal(0), first ? P.intro() : P.prompt());
+    saveGame();
+  } else if (play.hotseat) {
+    offer(g.legal(1), first ? 'Your friend moves first, in the Scribe\'s seat. ' + P.prompt() : P.prompt());
   } else {
     play.phase = 'ai'; $('#lm-throwBtn').disabled = true;
     const who = scribeName(g);
@@ -6620,12 +6689,14 @@ function renderChoices(moves) {
   box.hidden = !list.length;
   for (const m of list) { const b = document.createElement('button'); b.className = 'btn' + (/^Mahjong/.test(m.label) ? ' primary' : ''); b.textContent = m.label; b.addEventListener('click', () => choose(m)); box.appendChild(b); }
 }
+// Whose turn the message names: you, or in pass-and-play the friend in the Scribe's seat.
+const turnName = () => (play.cur === 1 ? 'Your friend\'s turn' : 'Your turn');
 function offer(moves, text) {
-  play.moves = moves; play.phase = 'choose';
+  play.moves = moves; play.phase = 'choose'; play.kb = -1;
   renderChoices(moves);
   $('#lm-passBtn').disabled = !(play.game.canPass || moves.some(m => m.pass));
   highlight(moves);
-  setMsg('Your turn', text);
+  setMsg(turnName(), text);
 }
 async function humanThrow() {
   if (play.phase !== 'throw') return;
@@ -6671,8 +6742,8 @@ async function choose(m) {
       play.phase = 'throw'; $('#lm-throwBtn').disabled = false; return;
     }
   }
-  if (res.note) { setMsg('Your turn', res.note); await wait(readTime(res.note)); if (tok !== play.token) return; }
-  beginTurn(nextPl(g, 1));
+  if (res.note) { setMsg(turnName(), res.note); await wait(readTime(res.note)); if (tok !== play.token) return; }
+  beginTurn(nextPl(g, 1 - (play.cur || 0)));
 }
 async function aiTurn() {
   const g = play.game, P = play.P, tok = play.token;
@@ -6740,13 +6811,13 @@ function finish(res) {
   const g = play.game, P = play.P;
   if (P.onFinish) P.onFinish(res);
   updateScore();
-  $('#lm-winTitle').textContent = res.title || (res.winner === 0 ? 'You win' : res.winner === 1 ? 'The Scribe wins' : 'A draw');
-  $('#lm-winText').textContent = res.text || (res.winner === 0
+  clearSave(g.id);
+  $('#lm-winTitle').textContent = asFriend(res.title || (res.winner === 0 ? 'You win' : res.winner === 1 ? 'The Scribe wins' : 'A draw'));
+  $('#lm-winText').textContent = asFriend(res.text || (res.winner === 0
     ? `All ${g.N} of your pieces are home. The Scribe bows and resets the board.`
-    : `The Scribe brought all ${g.N} pieces home first. You bore off ${g.home(0)}.`);
-  const rec = store.record[g.id] || (store.record[g.id] = [0, 0, 0]);
-  rec[res.winner === 0 ? 0 : res.winner === 1 ? 1 : 2]++; save();
-  $('#lm-winRecord').textContent = recordText(g.id).replace('Your record against the Scribe here', 'Your record at this table') + ` The Scribe was playing ${R.level()}.`;
+    : `The Scribe brought all ${g.N} pieces home first. You bore off ${g.home(0)}.`));
+  if (!play.hotseat) { const rec = store.record[g.id] || (store.record[g.id] = [0, 0, 0]); rec[res.winner === 0 ? 0 : res.winner === 1 ? 1 : 2]++; save(); }
+  $('#lm-winRecord').textContent = play.hotseat ? 'A game between two visitors: it does not count toward your record against the Scribe.' : recordText(g.id).replace('Your record against the Scribe here', 'Your record at this table') + ` The Scribe was playing ${R.level()}.`;
   setTimeout(() => { if (play.phase === 'over') { $('#lm-win').hidden = false; $('#lm-againBtn').focus({ preventScroll: true }); } }, res.sweep ? 900 : 300);
 }
 // Ember marks show where the Scribe's last move went from and to.
@@ -6818,6 +6889,42 @@ function resolveTarget(hit) {
   const set = new Set(playTargets());
   for (let o = hit.object; o; o = o.parent) if (set.has(o)) return o;
   return null;
+}
+function activateTarget(t) {
+  if (play.rings.includes(t)) return choose(t.userData.move);
+  const list = play.byMesh.get(t);
+  if (!list) return;
+  if (!play.twoStep) return choose(list[0]);
+  select(t); play.kb = -1;
+}
+/* Keyboard play: the arrow keys step through what can be chosen (pieces first,
+ * then, once a piece is picked, the rings it can go to) in reading order on
+ * screen; Enter or Space plays it, and a screen reader hears where focus is. */
+const srBox = (() => {
+  const d = document.createElement('div'); d.setAttribute('aria-live', 'polite'); d.className = 'lm-sr';
+  d.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap';
+  root.appendChild(d); return d;
+})();
+function kbTargets() {
+  const list = play.selected ? play.rings.slice() : playTargets();
+  const v = new THREE.Vector3();
+  const at = o => { o.getWorldPosition(v); v.project(camera); return [Math.round(-v.y * 12), v.x]; };
+  return list.map(o => [o, at(o)]).sort((a, b) => a[1][0] - b[1][0] || a[1][1] - b[1][1]).map(x => x[0]);
+}
+function kbPlay(code) {
+  const list = kbTargets(); if (!list.length) return false;
+  if (code === 'Enter' || code === 'Space') {
+    if (!play.hover || !list.includes(play.hover)) return false;
+    activateTarget(play.hover); return true;
+  }
+  const step = code === 'ArrowRight' || code === 'ArrowDown' ? 1 : -1;
+  play.kb = ((play.kb ?? -1) + step + list.length) % list.length;
+  if (play.kb < 0) play.kb = list.length - 1;
+  play.hover = list[play.kb];
+  const isRing = play.rings.includes(play.hover), card = play.hover.userData.c;
+  const what = card !== undefined && play.game.cardName ? play.game.cardName(card) : isRing ? 'Move' : 'Piece';
+  srBox.textContent = `${what} ${play.kb + 1} of ${list.length}. Enter to ${isRing || !play.twoStep ? 'play it' : 'pick it'}.`;
+  return true;
 }
 function galleryTargets() { return STOPS.filter(s => s.group).map(s => s.group.userData.hit); }
 function stopFromHit(o) { return STOPS.findIndex(s => s.group && s.group.userData.hit === o); }
@@ -6910,11 +7017,7 @@ canvas.addEventListener('pointerup', e => {
     if (play.phase !== 'choose') return;
     const t = resolveTarget(pickAt(e.clientX, e.clientY, playTargets()));
     if (!t) { if (play.selected) select(play.selected); return; }
-    if (play.rings.includes(t)) return choose(t.userData.move);
-    const list = play.byMesh.get(t);
-    if (!play.twoStep) return choose(list[0]);
-    select(t);
-    return;
+    return activateTarget(t);
   }
   const hit = pickAt(e.clientX, e.clientY, galleryTargets());
   if (hit) { const i = stopFromHit(hit.object); if (i >= 0) goStop(i); return; }
@@ -7001,7 +7104,10 @@ window.addEventListener('keydown', e => {
   if (mode === 'gallery' && (e.code === 'BracketLeft' || e.code === 'BracketRight')) { stepStop(e.code === 'BracketLeft' ? -1 : 1); e.preventDefault(); return; }
   if (mode === 'play') {
     if (e.code === 'Space' && play.phase === 'throw' && document.activeElement !== $('#lm-throwBtn')) { e.preventDefault(); humanThrow(); }
-    if (e.code === 'Escape') { if (play.selected) select(play.selected); else leaveGame(); }
+    const onButton = document.activeElement && /^(BUTTON|A)$/.test(document.activeElement.tagName);
+    if (play.phase === 'choose' && /^Arrow/.test(e.code) && kbPlay(e.code)) { e.preventDefault(); return; }
+    if (play.phase === 'choose' && !onButton && (e.code === 'Enter' || e.code === 'Space') && kbPlay(e.code)) { e.preventDefault(); return; }
+    if (e.code === 'Escape') { if (play.selected) { select(play.selected); play.kb = -1; play.hover = null; } else leaveGame(); }
     return;
   }
   if (KEYMAP[e.code]) { keys.add(KEYMAP[e.code]); camTween = null; e.preventDefault(); }

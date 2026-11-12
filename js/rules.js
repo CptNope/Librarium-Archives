@@ -2745,7 +2745,7 @@
     variants: [{ id: '61', label: 'To 61' }, { id: '121', label: 'To 121' }],
     variant: '61', variantLabel: 'Game',
     setVariant(id) { this.variant = id === '121' ? '121' : '61'; this.target = +this.variant; },
-    show: crShow, peg: crPeg, name_: crName, rank: crRank, suit: crSuit, val: crVal,
+    show: crShow, peg: crPeg, name_: crName, cardName: crName, rank: crRank, suit: crSuit, val: crVal,
     get followPrompt() {
       const t = this.need.type;
       if (t === 'discard') return `Lay one more card aside for ${this.dealer === 0 ? 'your' : 'the Scribe\'s'} crib.`;
@@ -6431,7 +6431,7 @@
     return { point, seqs, sets, blanche };
   }
   const PIQUET = {
-    id: 'piquet', name: 'Piquet', dice: false, first: 0,
+    id: 'piquet', name: 'Piquet', dice: false, first: 0, cardName: pqName,
     variants: [{ id: '6', label: 'Partie of six' }, { id: '2', label: 'Two deals' }], variant: '6', variantLabel: 'Game',
     setVariant(id) { this.variant = id === '2' ? '2' : '6'; },
     get followPrompt() { return this.prompt0(); },
