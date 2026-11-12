@@ -2,15 +2,15 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**64 exhibits, 60 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**66 exhibits, 62 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
     title Exhibits by wing (playable tables)
     "Wing I · 4 of 6" : 6
-    "Wing II · 8 of 10" : 10
+    "Wing II · 9 of 11" : 11
     "Wing III · 11 of 11" : 11
-    "Wing IV · 12 of 12" : 12
+    "Wing IV · 13 of 13" : 13
     "Wing V · 9 of 9" : 9
     "Wing VI · 16 of 16" : 16
 ```
@@ -75,7 +75,7 @@ timeline
     Roman era onward : Nine Men's Morris
     6th–7th century CE : Mancala (Oware)
     by 10th century CE : Alquerque
-    c. 900–1000 CE : Brandubh
+    c. 900–1000 CE : Brandubh : Hnefatafl
 ```
 
 | Exhibit | Date | Rules | In the Archives |
@@ -90,12 +90,14 @@ timeline
 | Mancala (Oware) | c. 6th–7th century CE (Aksum) | Survive in tradition (abapa) | Playable |
 | Alquerque | by the 10th century CE | Reconstructed (R. C. Bell, from Alfonso X) | Playable |
 | Brandubh | c. 900–1000 CE (Ballinderry board) | Reconstructed | Playable, as the king's side |
+| Hnefatafl | c. 400–1200 CE (Viking Age) | Reconstructed (Copenhagen rules, 2012) | Playable, as the king's side |
 
 Rule choices, each a modern reconstruction stated as such on the placard:
 
 - **Ludus latrunculorum:** the "Piso" rules of Locus Ludi (University of Fribourg). An 8 × 8 board; twenty counters each, placed one at a time with no captures. Then a counter steps one square orthogonally, and may not step straight back to the square it just left. A counter trapped between the mover and another enemy counter along a line is taken, several at once if so; a counter in a corner is trapped by the two squares beside it; moving between two enemies is safe. The game ends when a player is down to one counter or cannot move, and whoever has taken more wins. House rule: 30 moves each without a capture also ends it.
 - **Duodecim scripta:** fifteen pieces and three dice a side, every die used if it can be. Pieces enter on your half of the middle row by the number thrown, then run along the far row right to left and back along the near row; the Scribe enters on the other half and shares the course. No piece leaves the home row until all fifteen are on; a single piece can be hit and must re-enter before anything else moves; two together block. Bearing off from the last six spaces needs exact throws. The route follows the Getty's numbered board; the rules are reconstructions, and the placard says so.
 - **Patolli:** the reconstruction most often given today, from Diego Durán's account. 52 houses; six markers and six treasures each; five beans (1 to 4 marks move that many, all five move 10, none costs an offering to Macuilxochitl). A 1 enters a marker on its centre house; markers run the whole circuit clockwise and leave by exact count. No landing on an occupied house except in the centre, where an enemy is sent back and its owner pays a treasure. Dark houses cost a treasure; red tips give another throw. Our choices: a treasure is paid for each completed circuit, the game is one round, and when one side has all six markers home (or after 150 throws each) the side with more treasures wins. A player who cannot pay loses.
+- **Hnefatafl:** the Copenhagen rules (Aage Nielsen, Adam Bartley and Tim Millar, 2012), simplified. 24 attackers move first against the king and 12 defenders. Pieces move like rooks; only the king may stop on the throne or the corners, and anyone may pass over the empty throne. Capture by trapping between two of yours; corners are hostile to all, the throne to attackers always and to defenders when empty. The armed king is taken by four attackers, or three beside the throne, and never on the edge. The king wins on a corner; the attackers win by taking him or by surrounding him and every defender. Left out: the shieldwall capture, the exit fort and the ban on repetition. House rule: 150 moves each is a draw.
 
 ## Wing III: Kings, Cards and Courts (c. 480–1450 CE)
 
@@ -145,6 +147,7 @@ timeline
     title Wing IV · Printed Boards and Parlour Tables
     by c. 1300 CE : Fox and Geese
     12th–16th century CE : Draughts
+    c. 1550–1700 CE : International draughts
     c. 1475 CE : The New Queen (chess)
     16th century CE : Pachisi
     c. 1575 CE : The Game of the Goose
@@ -161,6 +164,7 @@ timeline
 | Fox and Geese | by c. 1300 CE | Survive in tradition; many local variants | Playable, as the fox |
 | The New Queen (chess) | c. 1475 CE | Survive in writing (*Scachs d'amor*; Lucena) | Playable as modern chess; the old firzan and the new queen stand beside the board |
 | Draughts | c. 1100s–1500s CE | English draughts (checkers) | Playable |
+| International draughts | c. 1550–1700 CE (the Netherlands) | Survive in writing (FMJD) | Playable, as white |
 | Pachisi (chaupar) | 16th century CE | Still played; ancestor of Ludo | Playable for two (you play two partner colours), short or full game |
 | The Game of the Goose | c. 1575 CE | Survive in print | Playable |
 | Cribbage | 1630s CE | Still played | Playable: two-player six-card cribbage, to 61 or 121, pegged on a board |
@@ -174,6 +178,7 @@ timeline
 Rule choices:
 
 - **Fox and Geese** is played on the plain cross board (no diagonal lines) with 13 geese that may move forward or sideways but never back. A **house rule** lets the fox win if the geese go twenty moves each without advancing or losing a goose: without it, games with sideways moves can go on forever.
+- **International draughts:** the FMJD rules. Men step forward and capture forward or backward; captures are compulsory and you must take the most pieces you can; taken pieces stay on the board until the move ends and none may be jumped twice; a man is crowned only if its move ends on the far row; kings fly. The one draw rule we keep is twenty-five moves each of kings alone, with nothing taken.
 - **Chess:** modern rules, with castling and en passant. Pawns always promote to a queen; there is no draw by repetition, but stalemate, bare kings and the fifty-move rule are draws.
 - **Pachisi:** six cowries (2, 3, 4, 5; one mouth up is 10, none 25, all six 6). A 6, 10 or 25 is a grace and earns another throw, as does a capture. Each colour's first piece may come out on any throw, later ones only on a grace. Castles are safe and can't be entered while the enemy holds them. No throw is 1, so a piece may not stop on the last square before home. The short game gives each colour two pieces (about a hundred throws), the full game four.
 - **The Goose:** a throw of 9 from the start goes to 26 (6 and 3) or 53 (5 and 4), whenever the piece is at the start, since geese every nine squares would otherwise fly it straight home. With two players, the Well and the Prison hold a player for two and three turns instead of until someone else arrives.

@@ -12,6 +12,7 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - National Museum of Ireland, The Ballinderry gaming board
 - Traditional Board Games (tradgames.org.uk), Nine Men's Morris
 - Masters Traditional Games, Brandubh rules
+- Aage Nielsen (aagenielsen.dk): Copenhagen Hnefatafl 11 × 11 rules and the history of the Fetlar and Copenhagen rule sets; Dark Ages Re-Creation Company (darkcompany.ca): the historical evidence for tafl, from Baldursheimur, Birka and Trondheim
 - Edward William Lane, *An Account of the Manners and Customs of the Modern Egyptians* (1836; Project Gutenberg): seega and tâb; Wikipedia: Seega (game), Tâb
 - Alfonso X, *Libro de los juegos* (1283), on four seasons chess; Hans Bodlaender, Four seasons chess (chessvariants.com); Wikipedia: Libro de los juegos
 - Wikipedia: Bagh-chal, Lambs and tigers
@@ -32,6 +33,7 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - Tarot Heritage: tarot history chronology
 - Wikipedia: Fox games, Game of the Goose, Ludo, Mahjong culture; Britannica: mah-jongg
 - Masters Traditional Games, Fox and Geese; Traditional Board Games (tradgames.org.uk), Draughts
+- Wikipedia: International draughts (after Arie van der Stoep); the official FMJD rules
 - Kasparov–Wilson (kwabc.org): Scachs d'amor; ISTC: Lucena, *Repetición de amores y arte de ajedrez*
 - Live History India: Ludo's Indian roots
 - Library of Congress: The Mansion of Happiness (1843); a scan of the 1843 W. & S. B. Ives board, supplied for the Archives, from which every square was read

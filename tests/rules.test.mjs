@@ -2401,7 +2401,7 @@ test('Piquet: exchange, scoring the deal, and a full partie between Scribes', ()
  * The hall saves an engine's plain data fields as JSON and restores them over a
  * fresh init(). Every game that offers saving must come back exactly. */
 
-const SAVED = ['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi'];
+const SAVED = ['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl'];
 const dataFields = g => {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
   for (const k of Object.keys(d)) if ('value' in d[k] && typeof d[k].value !== 'function' && !['rules', 'source', 'surface'].includes(k)) out[k] = d[k].value;
@@ -2494,4 +2494,84 @@ test('Koi-koi: matching, koi-koi and a full game between Scribes', () => {
   }
   assert.ok(KK.over); assert.equal(KK.month, 3);
   KK.setVariant('6');
+});
+
+/* ---------------------------------------------------------- International draughts */
+
+const ID = rules.idraughts;
+const idEmpty = () => { ID.init(); ID.b.fill(0); };
+test('International draughts: the opening, men and the numbered squares', () => {
+  ID.init();
+  assert.equal(ID.count(0), 20); assert.equal(ID.count(1), 20);
+  assert.equal(ID.b[0], 1); assert.equal(ID.b[99], 3); // each side's near-left corner is dark
+  assert.equal(ID.legal(0).length, 9);
+  assert.ok(ID.legal(0).every(m => m.to >= 40 && m.to < 50 && !m.caps.length));
+});
+test('International draughts: men capture backwards, and the most pieces must be taken', () => {
+  idEmpty();
+  ID.b[46] = 1; ID.b[35] = 3; // a man that can take backwards, once
+  ID.b[11] = 1; ID.b[22] = 3; ID.b[42] = 3; // another man that can take two
+  const ms = ID.legal(0);
+  assert.equal(ms.length, 1); assert.equal(ms[0].from, 11); assert.equal(ms[0].to, 51); assert.deepEqual(ms[0].caps.sort((a, b) => a - b), [22, 42]);
+  idEmpty(); ID.b[46] = 1; ID.b[35] = 3;
+  const back = ID.legal(0); assert.equal(back.length, 1); assert.equal(back[0].to, 24);
+});
+test('International draughts: flying kings, no piece jumped twice, and crowning only at the end', () => {
+  idEmpty();
+  ID.b[0] = 2; ID.b[44] = 3; // the king takes from a distance and may land on any square beyond
+  const ms = ID.legal(0);
+  assert.deepEqual(ms.map(m => m.to).sort((a, b) => a - b), [55, 66, 77, 88, 99]);
+  assert.ok(ms.every(m => m.caps.length === 1 && m.caps[0] === 44));
+  idEmpty(); ID.b[0] = 2; ID.b[1] = 4; ID.b[2] = 4; // nothing to take along the main diagonal: the king flies
+  assert.equal(ID.legal(0).length, 9);
+  idEmpty(); ID.b[86] = 1; ID.b[97] = 0; // a man stepping onto the far row is crowned
+  const up = ID.legal(0).find(m => m.to === 97); assert.ok(up.crown); ID.apply(up); assert.equal(ID.b[97], 2);
+  idEmpty(); ID.b[75] = 1; ID.b[86] = 3; ID.b[88] = 3; // through the far row and back out: no crown
+  const pass = ID.legal(0); assert.equal(pass.length, 1); assert.equal(pass[0].to, 79); assert.ok(!pass[0].crown);
+});
+test('International draughts: a game between Scribes ends', () => {
+  rules.setLevel('gentle'); ID.init(); let pl = 0, res, n = 0;
+  while (!(res = ID.result(pl)) && n++ < 600) { for (const m of ID.aiPlan(pl)) ID.apply(m); pl = 1 - pl; }
+  assert.ok(res);
+});
+
+/* ---------------------------------------------------------- Hnefatafl */
+
+const HN = rules.hnefatafl;
+const hnEmpty = () => { HN.init(); HN.b.fill(0); };
+test('Hnefatafl: the Copenhagen opening, and the throne and corners', () => {
+  HN.init();
+  assert.equal(HN.count(1), 24); assert.equal(HN.count(0), 13); assert.equal(HN.b[60], 3);
+  assert.equal(HN.first, 1);
+  hnEmpty(); HN.b[5] = 1; HN.b[49] = 2; // a defender passes over the empty throne but may not stop on it
+  const d = HN.legal(0).filter(m => m.from === 49).map(m => m.to);
+  assert.ok(!d.includes(60)); assert.ok(d.includes(71));
+  hnEmpty(); HN.b[1] = 1; // only the king may stop on a corner
+  assert.ok(!HN.legal(1).some(m => m.to === 0));
+});
+test('Hnefatafl: custodial capture, hostile squares and the armed king', () => {
+  hnEmpty(); HN.b[12] = 2; HN.b[33] = 1; HN.apply({ pl: 1, from: 33, to: 11 }); assert.equal(HN.b[12], 2); // one side only: no capture
+  hnEmpty(); HN.b[12] = 2; HN.b[13] = 1; HN.b[33] = 1; HN.apply({ pl: 1, from: 33, to: 11 }); assert.equal(HN.b[12], 0); // two sides
+  hnEmpty(); HN.b[1] = 2; HN.b[24] = 1; HN.apply({ pl: 1, from: 24, to: 2 }); assert.equal(HN.b[1], 0); // the corner closes the trap
+  hnEmpty(); HN.b[49] = 2; HN.b[27] = 1; HN.apply({ pl: 1, from: 27, to: 38 }); assert.equal(HN.b[49], 0); // the empty throne is hostile to defenders
+  hnEmpty(); HN.b[60] = 3; HN.b[49] = 2; HN.b[27] = 1; HN.apply({ pl: 1, from: 27, to: 38 }); assert.equal(HN.b[49], 2); // but not with the king on it
+  hnEmpty(); HN.b[50] = 1; HN.b[49] = 3; HN.b[73] = 2; HN.apply({ pl: 0, from: 73, to: 51 }); assert.equal(HN.b[50], 0); // the king helps to capture
+});
+test('Hnefatafl: taking the king, the edge, the corner and the ring', () => {
+  hnEmpty(); HN.b[38] = 3; HN.b[27] = 1; HN.b[37] = 1; HN.b[39] = 1; HN.b[71] = 1;
+  HN.apply({ pl: 1, from: 71, to: 49 }); assert.equal(HN.result(0).winner, 1); // four sides
+  hnEmpty(); HN.b[49] = 3; HN.b[38] = 1; HN.b[48] = 1; HN.b[72] = 1;
+  HN.apply({ pl: 1, from: 72, to: 50 }); assert.equal(HN.result(0).winner, 1); // three sides and the throne
+  hnEmpty(); HN.b[5] = 3; HN.b[4] = 1; HN.b[6] = 1; HN.b[27] = 1;
+  HN.apply({ pl: 1, from: 27, to: 16 }); assert.equal(HN.win, null); // never on the edge
+  hnEmpty(); HN.b[5] = 3; HN.b[60] = 1; HN.apply({ pl: 0, from: 5, to: 10 }); assert.equal(HN.result(1).winner, 0);
+  hnEmpty(); HN.b[60] = 3; HN.b[59] = 2;
+  for (const i of [47, 48, 49, 50, 57, 62, 69, 70, 71, 72, 73]) HN.b[i] = 1; HN.b[58] = 0; HN.b[46] = 1; HN.b[61] = 1;
+  HN.b[80] = 1; HN.apply({ pl: 1, from: 80, to: 58 });
+  assert.ok(HN.enclosed()); assert.equal(HN.result(0).winner, 1);
+});
+test('Hnefatafl: a game between Scribes ends', () => {
+  rules.setLevel('gentle'); HN.init(); let pl = HN.first, res, n = 0;
+  while (!(res = HN.result(pl)) && n++ < 400) { for (const m of HN.aiPlan(pl)) HN.apply(m); pl = 1 - pl; }
+  assert.ok(res);
 });

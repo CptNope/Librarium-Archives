@@ -19,7 +19,7 @@ Local plugin builds load three.js from cdnjs unless `vendor/three.min.js` exists
 ```text
 index.html                    Page markup, fonts, script order
 css/archives.css              All styles (brand: Almendra SC, Amethysta, Montserrat; logo gold #F6A01A)
-js/rules.js                   49 rule engines and the Scribe (no rendering; runs in Node)
+js/rules.js                   62 rule engines and the Scribe (no rendering; runs in Node)
 js/archives.js                three.js hall, 64 exhibits, table presenters, turn loop, navigation, sound
 tests/rules.test.mjs          Rule tests, simulated games and AI timing checks
 tests/plugin-render.test.php  Renders the shortcode with stubbed WordPress functions

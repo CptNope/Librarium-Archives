@@ -203,6 +203,7 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Oware | `oware` | Sowing | Search | |
 | Alquerque | `alquerque` | Captures | Search | |
 | Brandubh | `brandubh` | Tafl | Search | |
+| Hnefatafl | `hnefatafl` | Tafl, 11 × 11 (Copenhagen rules, simplified) | Search | Scribe moves first; encirclement ends the game |
 | Tables | `tables` | Race, dice | Full-turn scoring | `followUp` for the second die |
 | Duodecim scripta | `xii` | Race, three dice (modern reconstruction) | Full-turn scoring | `followUp` per die, `rollName` |
 | Chaturaji | `chaturaji` | Chess family, dice, four seats | Every use of the throw, with danger odds | `followUp` for the second die, `stopLabel`, `passTurn`, `scribeName` |
@@ -218,6 +219,7 @@ Presenters always check `play.token` after an `await`: if the visitor left the t
 | Fox and Geese | `foxgeese` | Hunt | Search (as the geese) | |
 | Chess | `chess` | Chess | Search | |
 | Draughts | `draughts` | Captures | Search | a multi-jump is one move |
+| International draughts | `idraughts` | Captures, 10 × 10 | Search | flying kings; only the longest captures are legal |
 | Pachisi | `pachisi` | Race, cowries | Heuristic | `variants` |
 | Game of the Goose | `goose` | Race, dice | Heuristic | `skipTurn` |
 | Cribbage | `cribbage` | Cards | Heuristic over every starter | own turn order, `variants` |
