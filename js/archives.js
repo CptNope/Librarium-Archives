@@ -3962,9 +3962,17 @@ const MORRIS_P = {
       const mat = new THREE.MeshStandardMaterial({ color: pl ? 0x1c1916 : 0xe8dcc0, roughness: pl ? 0.3 : 0.45 });
       const m = new THREE.Mesh(morrisPieceGeo, mat); m.userData.mats = [mat]; ex.group.add(m); return m;
     }));
+    const G = GAMES[this.gid];
     this.hand = [ex.pieces[0].slice(), ex.pieces[1].slice()];
     this.at = Array(24).fill(null); this.lost = [0, 0];
     [0, 1].forEach(pl => ex.pieces[pl].forEach((m, k) => m.position.copy(this.handSpot(pl, k))));
+    // Rebuilt from the engine, for a game taken back or resumed: placed pieces first, then those taken.
+    for (const pl of [0, 1]) {
+      const placed = G.N - G.hand[pl], mine = this.hand[pl].splice(0, placed);
+      for (let p = 0; p < 24; p++) if (G.board[p] === pl) { const m = mine.shift(); this.at[p] = m; m.position.copy(this.pt(p)); }
+      mine.forEach(m => m.position.copy(this.lostSpot(pl, this.lost[pl]++)));
+      this.hand[pl].forEach((m, k) => m.position.copy(this.handSpot(pl, k + placed)));
+    }
   },
   handSpot: (pl, k) => V3(-0.4 + k * 0.1, TOP, pl === 0 ? 0.54 : -0.54),
   lostSpot: (owner, k) => V3(owner === 0 ? -0.8 : 0.8, TOP, -0.32 + k * 0.08),
@@ -4061,6 +4069,9 @@ const BRANDUBH_P = {
       const v = G.b[i]; const m = v === 1 ? ex.pieces.att[a++] : v === 2 ? ex.pieces.def[d++] : v === 3 ? ex.pieces.king : null;
       if (m) { this.cell[i] = m; m.position.copy(this.pos(i)); m.rotation.set(0, 0, 0); }
     }
+    // Pieces already taken, in a game taken back or resumed, wait beside the board.
+    ex.pieces.att.slice(a).forEach(m => m.position.copy(this.lostSpot(1, this.lost[1]++)));
+    ex.pieces.def.slice(d).forEach(m => m.position.copy(this.lostSpot(0, this.lost[0]++)));
   },
   pos(i) { const c = brCell(i); return V3(c.x, GAMES.brandubh.surface, c.z); },
   lostSpot: (owner, k) => V3(owner === 1 ? 0.64 : -0.64, TOP, -0.36 + k * 0.09),
@@ -4446,6 +4457,7 @@ const FOXGEESE_P = {
       const m = v === 1 ? ex.pieces.fox : ex.pieces.geese[k++];
       this.cell[i] = m; m.position.copy(this.pos(i));
     }
+    ex.pieces.geese.slice(k).forEach(g => g.position.copy(this.lostSpot(this.lost++)));
     ex.pieces.fox.rotation.set(0, Math.PI / 2, 0);
   },
   pos(i) { const c = fgCell(i); return V3(c.x, GAMES.foxgeese.surface, c.z); },
@@ -4499,7 +4511,7 @@ const DRAUGHTS_P = {
       this.cell[i] = m; m.position.copy(this.pos(i)); this.crown(m, G.king(v));
     }
     // A resumed or taken-back game: pieces no longer on the board wait beside it.
-    for (const pl of [0, 1]) for (let j = k[pl]; j < 12; j++) ex.pieces[pl][j].position.copy(this.lostSpot(1 - pl, this.lost[1 - pl]++));
+    for (const pl of [0, 1]) for (let j = k[pl]; j < 12; j++) ex.pieces[pl][j].position.copy(this.lostSpot(pl, this.lost[pl]++));
   },
   crown(m, on) { m.userData.crown.visible = on; m.userData.band.visible = on; },
   pos(i) { const c = drCell(i); return V3(c.x, GAMES.draughts.surface, c.z); },
@@ -4549,6 +4561,7 @@ const ALQUERQUE_P = {
     const k = [0, 0];
     ex.pieces.flat().forEach(m => { m.visible = true; });
     for (let i = 0; i < 25; i++) { const v = G.b[i]; if (!v) continue; const m = ex.pieces[v - 1][k[v - 1]++]; this.cell[i] = m; m.position.copy(this.pos(i)); }
+    for (const pl of [0, 1]) ex.pieces[pl].slice(k[pl]).forEach(m => m.position.copy(this.lostSpot(pl, this.lost[pl]++)));
   },
   pos(i) { const c = aqCell(i); return V3(c.x, GAMES.alquerque.surface, c.z); },
   lostSpot(owner, k) { return V3(owner === 1 ? 0.5 : -0.5, TOP + (k % 6) * 0.0165, -0.25 + ((k / 6) | 0) * 0.09); },
@@ -4702,6 +4715,7 @@ const KONANE_P = {
     this.cell = Array(64).fill(null); this.lost = [0, 0];
     const pools = [ex.pieces.filter((_, i) => (((i / 8) | 0) + (i % 8)) % 2 === 0), ex.pieces.filter((_, i) => (((i / 8) | 0) + (i % 8)) % 2 === 1)], k = [0, 0];
     for (let i = 0; i < 64; i++) { const v = G.b[i]; if (!v) continue; const m = pools[v - 1][k[v - 1]++]; m.visible = true; m.scale.set(1, 0.62, 1); this.cell[i] = m; m.position.copy(this.pos(i)); }
+    for (const pl of [0, 1]) pools[pl].slice(k[pl]).forEach(m => { m.visible = true; m.position.copy(this.lostSpot(pl, this.lost[pl]++)); });
   },
   pos(i) { const p = knCell(i); return V3(p.x, GAMES.konane.surface + 0.012, p.z); },
   lostSpot(owner, k) { return V3(owner ? 0.46 : -0.46, TOP + 0.015 + ((k / 16) | 0) * 0.02, -0.3 + (k % 16) * 0.04); },
@@ -4736,6 +4750,7 @@ const FANORONA_P = {
     this.cell = Array(45).fill(null); this.lost = [0, 0]; const k = [0, 0];
     ex.pieces.flat().forEach(m => { m.visible = true; });
     for (let i = 0; i < 45; i++) { const v = G.b[i]; if (!v) continue; const m = ex.pieces[v - 1][k[v - 1]++]; this.cell[i] = m; m.position.copy(this.pos(i)); }
+    for (const pl of [0, 1]) ex.pieces[pl].slice(k[pl]).forEach(m => m.position.copy(this.lostSpot(pl, this.lost[pl]++)));
   },
   pos(i) { const p = fnCell(i); return V3(p.x, GAMES.fanorona.surface + 0.016, p.z); },
   lostSpot(owner, k) { return V3(-0.4 + (k % 11) * 0.08, TOP + 0.017, owner ? -0.34 - ((k / 11) | 0) * 0.07 : 0.34 + ((k / 11) | 0) * 0.07); },
@@ -4809,6 +4824,10 @@ const SHOGI_P = {
     (ex.pieces || []).forEach(m => ex.group.remove(m));
     ex.pieces = []; this.ex = ex; this.cell = Array(81).fill(null); this.hand = [[], []];
     for (let i = 0; i < 81; i++) { const v = G.b[i]; if (v) { const p = this.make(v); p.position.copy(this.pos(i)); this.cell[i] = p; } }
+    // Pieces in hand, for a game taken back or resumed.
+    for (const pl of [0, 1]) for (let t = 1; t <= 7; t++) for (let n = 0; n < G.hands[pl][t - 1]; n++) {
+      const p = this.make(t + (pl ? 32 : 0)); this.hand[pl].push(p); p.position.copy(this.handSpot(pl, t, n));
+    }
   },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => { m.visible = false; }); },
   make(v) {
@@ -5141,6 +5160,7 @@ const HEX_P = {
     if (!ex.pieces) ex.pieces = [];
     ex.pieces.forEach(m => { ex.group.remove(m); }); ex.pieces = [];
     this.ex = ex; this.cell = Array(G.n * G.n).fill(null);
+    for (let i = 0; i < G.n * G.n; i++) if (G.b[i]) { const s = this.stone(G.b[i] - 1, i); s.position.y = G.surface + 0.006; }
   },
   leave(ex) { const h = ex.group.userData.hex; h.display.forEach(m => { m.visible = true; }); h.face(11); (ex.pieces || []).forEach(m => { ex.group.remove(m); }); ex.pieces = []; },
   pos(i) { const c = hxCell(GAMES.hex.n, i); return V3(c.x, GAMES.hex.surface, c.z); },
@@ -5172,6 +5192,12 @@ const GOMOKU_P = {
     ex.group.userData.display.forEach(m => { m.visible = false; });
     if (!ex.pieces) ex.pieces = [];
     ex.pieces.forEach(m => { ex.group.remove(m); }); ex.pieces = []; this.ex = ex; this.cell = Array(225).fill(null);
+    const G = GAMES.gomoku;
+    for (let i = 0; i < 225; i++) if (G.b[i]) this.stone(G.b[i] - 1, i);
+  },
+  stone(pl, i) {
+    const s = new THREE.Mesh(gmStoneGeo, GO9_MATS[pl]); s.scale.y = 0.42; this.ex.group.add(s); this.ex.pieces.push(s); this.cell[i] = s;
+    const to = this.pos(i); s.position.set(to.x, to.y + 0.0095, to.z); return s;
   },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => { ex.group.remove(m); }); ex.pieces = []; },
   pos(i) { const c = gmCell(i); return V3(c.x, GAMES.gomoku.surface, c.z); },
@@ -5180,8 +5206,7 @@ const GOMOKU_P = {
   fromFor: () => null,
   async play(m) {
     const G = GAMES.gomoku, res = G.apply(m);
-    const s = new THREE.Mesh(gmStoneGeo, GO9_MATS[m.pl]); s.scale.y = 0.42; this.ex.group.add(s); this.ex.pieces.push(s); this.cell[m.at] = s;
-    const to = this.pos(m.at); to.y += 0.0095; s.position.set(to.x, to.y + 0.07, to.z);
+    const s = this.stone(m.pl, m.at), to = s.position.clone(); s.position.y = to.y + 0.07;
     await tween(0.16, k => { s.position.y = to.y + 0.07 * (1 - k); }, k => k * k);
     return res;
   },
@@ -5322,7 +5347,7 @@ const IDRAUGHTS_P = {
       m.position.copy(this.pos(i)); this.crown(m, G.king(v)); ex.group.add(m); ex.pieces.push(m); this.cell[i] = m; left[pl]--;
     });
     // A resumed or taken-back game: the pieces already taken wait beside the board.
-    for (const pl of [0, 1]) for (let j = 0; j < left[pl]; j++) { const m = idPiece(pl); m.position.copy(this.lostSpot(1 - pl, this.lost[1 - pl]++)); ex.group.add(m); ex.pieces.push(m); }
+    for (const pl of [0, 1]) for (let j = 0; j < left[pl]; j++) { const m = idPiece(pl); m.position.copy(this.lostSpot(pl, this.lost[pl]++)); ex.group.add(m); ex.pieces.push(m); }
   },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).forEach(m => ex.group.remove(m)); ex.pieces = []; },
   crown(m, on) { m.userData.crown.visible = on; m.userData.band.visible = on; },
@@ -5473,6 +5498,13 @@ const SEEGA_P = {
     if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 12 }, () => { const s = sgStone(pl); ex.group.add(s); return s; }));
     this.cell = Array(25).fill(null); this.used = [0, 0]; this.lost = [0, 0];
     ex.pieces.forEach((list, pl) => list.forEach((s, k) => { s.visible = true; s.position.copy(this.handSpot(pl, k)); }));
+    // Rebuilt from the engine: stones on the board, those lost, the rest still in hand.
+    const G = GAMES.seega;
+    for (const pl of [0, 1]) {
+      const placed = ex.pieces[pl].slice(0, G.placed[pl]); this.used[pl] = G.placed[pl];
+      for (let i = 0; i < 25; i++) if (G.b[i] === pl + 1) { const s = placed.shift(); this.cell[i] = s; s.position.copy(this.pos(i)); }
+      placed.forEach(s => s.position.copy(this.lostSpot(pl, this.lost[pl]++)));
+    }
   },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(s => { s.visible = false; }); },
   pos(i) { const c = sgCell(i); return V3(c.x, GAMES.seega.surface + 0.012, c.z); },
@@ -5543,8 +5575,15 @@ const BAGHCHAL_P = {
     ex.group.userData.display.forEach(m => { m.visible = false; });
     if (!ex.pieces) { ex.pieces = { tigers: [0, 1, 2, 3].map(() => { const t = bcTiger(); ex.group.add(t); return t; }), goats: Array.from({ length: 20 }, () => { const t = bcGoat(); ex.group.add(t); return t; }) }; }
     this.cell = Array(25).fill(null); this.used = 0; this.lost = 0;
-    ex.pieces.tigers.forEach((t, k) => { t.visible = true; const i = [0, 4, 20, 24][k]; t.position.copy(this.pos(i)); this.cell[i] = t; });
     ex.pieces.goats.forEach((t, k) => { t.visible = true; t.position.copy(this.handSpot(k)); });
+    // Rebuilt from the engine: tigers and goats where they stand, taken goats aside, the rest waiting.
+    const tigers = ex.pieces.tigers.slice(), goats = ex.pieces.goats.slice(0, 20 - G.inHand);
+    this.used = 20 - G.inHand;
+    for (let i = 0; i < 25; i++) {
+      if (G.b[i] === 2) { const t = tigers.shift(); t.visible = true; t.position.copy(this.pos(i)); this.cell[i] = t; }
+      else if (G.b[i] === 1) { const t = goats.shift(); t.position.copy(this.pos(i)); this.cell[i] = t; }
+    }
+    goats.forEach(t => t.position.copy(this.lostSpot(this.lost++)));
   },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); if (ex.pieces) [...ex.pieces.tigers, ...ex.pieces.goats].forEach(m => { m.visible = false; }); },
   pos(i) { const c = bcCell(i); return V3(c.x, GAMES.baghchal.surface, c.z); },
@@ -5659,6 +5698,13 @@ const LATRUNCULI_P = {
     if (!ex.pieces) ex.pieces = [0, 1].map(pl => Array.from({ length: 20 }, () => { const c = ltCounter(pl); ex.group.add(c); return c; }));
     this.cell = Array(64).fill(null); this.used = [0, 0]; this.lost = [0, 0];
     ex.pieces.forEach((list, pl) => list.forEach((c, k) => { c.visible = true; c.position.copy(this.handSpot(pl, k)); }));
+    // Rebuilt from the engine: counters on the board, those taken, the rest still to place.
+    const G = GAMES.latrunculi;
+    for (const pl of [0, 1]) {
+      const placed = ex.pieces[pl].slice(0, G.placed[pl]); this.used[pl] = G.placed[pl];
+      for (let i = 0; i < 64; i++) if (G.b[i] === pl + 1) { const c = placed.shift(); this.cell[i] = c; c.position.copy(this.pos(i)); }
+      placed.forEach(c => c.position.copy(this.lostSpot(pl, this.lost[pl]++)));
+    }
   },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (ex.pieces || []).flat().forEach(c => { c.visible = false; }); },
   pos(i) { const c = ltCell(i); return V3(c.x, GAMES.latrunculi.surface, c.z); },
@@ -6362,6 +6408,7 @@ const GO_P = {
     if (!ex.pieces) ex.pieces = [];
     ex.pieces.forEach(m => { m.visible = false; });
     this.ex = ex; this.cell = Array(81).fill(null); this.free = ex.pieces.slice();
+    for (let p = 0; p < 81; p++) if (G.b[p]) { const s = this.stone(G.b[p] - 1); s.position.copy(this.pos(p)); s.visible = true; this.cell[p] = s; }
   },
   leave(ex) {
     const d = ex.group.userData.go;
@@ -6492,8 +6539,11 @@ const DOTS_P = {
       };
     }
     this.ex = ex;
-    ex.pieces.lines.forEach(l => { l.visible = false; });
+    ex.pieces.lines.forEach(l => { l.visible = false; l.scale.set(1, 1, 1); });
     ex.pieces.boxes.forEach(b => { b.visible = false; b.material.opacity = 0; });
+    // Rebuilt from the engine, for a game taken back or resumed.
+    G.drawn.forEach((on, e) => { if (!on) return; const l = ex.pieces.lines[e]; l.material = dbLineMats[Math.max(0, (G.by || [])[e] || 0)]; l.visible = true; });
+    G.owner.forEach((pl, b) => { if (pl < 0) return; const f = ex.pieces.boxes[b]; f.visible = true; f.material.color.setHex(pl === 0 ? 0xd4a23a : 0x5a7aaa); f.material.opacity = 0.55; });
   },
   meshesFor() { return []; },
   ringFor(m) { const p = dbEdgeMid(m.e).pos; return V3(p.x, GAMES.dotsboxes.surface, p.z); },
@@ -7069,7 +7119,7 @@ async function startGame(ex) {
  * move. Undo takes the table back to the start of your previous turn. Both copy
  * the engine's data fields first, so nothing the Scribe tries can leak out. */
 // Only tables whose pieces are rebuilt entirely from the engine's state can be taken back.
-const UNDO_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'draughts', 'tablut', 'halma', 'reversi', 'jungle', 'mutorere', 'oware', 'kalah', 'idraughts', 'hnefatafl']);
+const UNDO_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'draughts', 'tablut', 'halma', 'reversi', 'jungle', 'mutorere', 'oware', 'kalah', 'idraughts', 'hnefatafl', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi']);
 const canHint = g => !!g.aiPlan && !g.dice && !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'fourseasons', 'chaturaji'].includes(g.id);
 function copyState(g) {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
@@ -7124,30 +7174,31 @@ $('#lm-hintBtn').addEventListener('click', async () => {
  * A long game against the Scribe is kept in this browser at the start of each of
  * your turns (between tricks, at card tables), and comes back when you sit down
  * again. Only the engine's own state is kept; the table is rebuilt from it. */
-const SAVE_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl']);
+const SAVE_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl', 'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong']);
 const SAVE_VERSION = 1;
+// Mahjong is kept only when it is your turn to discard: the table is laid out again from the hands, melds and discards.
+GAMES.mahjong.saveable = function () { return this.need.type === 'discard' && this.need.seat === 0 && this.winner === null; };
 function engineState(g) { // plain data fields only: no methods, no getters
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
   for (const k of Object.keys(d)) {
     if (!('value' in d[k]) || typeof d[k].value === 'function' || k === 'rules' || k === 'source' || k === 'surface') continue;
-    if (d[k].value instanceof Map || d[k].value instanceof Set) return null; // not kept: this game's state will not fit in storage
     out[k] = d[k].value;
   }
-  return out;
+  return R.packState(out); // typed-array boards, Sets and Maps are tagged so they come back as they were
 }
 function saveGame() {
   const g = play.game;
   if (!g || !SAVE_OK.has(g.id) || play.hotseat || play.phase !== 'choose' || (g.trick && g.trick.length) || (g.stage && g.stage === 'exchange' && g.marked && g.marked.length)) return;
   if (g.ended && g.ended()) return;
-  const state = engineState(g); if (!state) return;
+  if (g.saveable && !g.saveable()) return;
   store.saves = store.saves || {};
-  try { store.saves[g.id] = { v: SAVE_VERSION, variant: g.variant || null, state: JSON.parse(JSON.stringify(state)) }; save(); } catch (e) { /* too large or blocked: carry on unsaved */ }
+  try { store.saves[g.id] = { v: SAVE_VERSION, variant: g.variant || null, state: JSON.parse(JSON.stringify(engineState(g))) }; save(); } catch (e) { /* too large or blocked: carry on unsaved */ }
 }
 function loadGame(g) {
   const s = (store.saves || {})[g.id];
   if (!s || s.v !== SAVE_VERSION || play.hotseat || !SAVE_OK.has(g.id)) return false;
   if ((s.variant || null) !== (g.variant || null)) return false;
-  try { Object.assign(g, JSON.parse(JSON.stringify(s.state))); return true; } catch (e) { clearSave(g.id); g.init(); return false; }
+  try { Object.assign(g, R.unpackState(JSON.parse(JSON.stringify(s.state)))); return true; } catch (e) { clearSave(g.id); g.init(); return false; }
 }
 function clearSave(id) { if (store.saves && store.saves[id]) { delete store.saves[id]; save(); } }
 function renderRules(g) {

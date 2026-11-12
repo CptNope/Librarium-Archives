@@ -2401,11 +2401,12 @@ test('Piquet: exchange, scoring the deal, and a full partie between Scribes', ()
  * The hall saves an engine's plain data fields as JSON and restores them over a
  * fresh init(). Every game that offers saving must come back exactly. */
 
-const SAVED = ['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl'];
+const SAVED = ['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl',
+  'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong'];
 const dataFields = g => {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
   for (const k of Object.keys(d)) if ('value' in d[k] && typeof d[k].value !== 'function' && !['rules', 'source', 'surface'].includes(k)) out[k] = d[k].value;
-  return JSON.parse(JSON.stringify(out));
+  return rules.unpackState(JSON.parse(JSON.stringify(rules.packState(out)))); // as the hall stores it
 };
 test('Saved games: every saveable engine restores to the same position and moves', () => {
   rules.setLevel('gentle');
