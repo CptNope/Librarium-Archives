@@ -20,12 +20,13 @@ timeline
     0.23 : Jungle · Whist · Chaturanga and Rithmomachia, as modern reconstructions
     0.24 : Medieval chess at the Lewis chessmen · Courier chess · Hazard · Piquet
     0.25 : Pass-and-play · Saved games · Keyboard play
+    0.26 : Hint and Undo · Nard · Duodecim scripta · Hanafuda
 ```
 
 ```mermaid
 pie showData
     title Exhibits
-    "Playable" : 57
+    "Playable" : 60
     "On display" : 4
 ```
 
@@ -53,6 +54,8 @@ pie showData
 - [x] The Landlord's Game, from the patent drawing and text
 - [x] New exhibits: Dominoes, Chinese checkers, Hex and Gomoku
 - [x] New exhibits: Cribbage, Tablut, Kalah and Makruk
+- [x] Hint and Undo buttons at the tables
+- [x] Nard, Duodecim scripta (a labelled reconstruction) and Hanafuda koi-koi
 - [x] Pass-and-play against a friend, saved games for long games, and keyboard play with screen-reader announcements
 - [x] The last display tables of Wings I and III made playable: Hazard at the first dice, Piquet at the playing cards, and medieval chess (a labelled reconstruction) on the Lewis chessmen
 - [x] Courier chess, on twelve files

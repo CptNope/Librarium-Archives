@@ -698,6 +698,386 @@
     },
   };
 
+  /* ------------------------------------------------------------------ Nard
+   * Long nard on a tables board. Like TABLES, c[pl][1..24] counts a player's
+   * checkers by distance from home and c[pl][0] those borne off; there is no bar,
+   * since nobody hits. Both sides run counterclockwise, so a player's point t is
+   * the other's point ndOpp(t). Point 24 is the head, where all fifteen start. */
+  const ndOpp = t => (t > 12 ? t - 12 : t + 12);
+  const NARD = Object.assign({}, TABLES, {
+    id: 'nard', name: 'Nard',
+    rules: [
+      'All fifteen of your checkers start on your head, the far right point. Both sides race the same way, counterclockwise, the Scribe from the near left corner.',
+      'Throw two dice and move one checker by each die, or one checker by both. Doubles are played four times. Use both dice if you can, or the larger if only one can be played.',
+      'Nobody hits. A single checker holds its point, and you may not land where the Scribe has any checker.',
+      'Only one checker may leave the head each turn. On your first throw, a double 3, 4 or 6 lets two leave.',
+      'You may not build six points in a row unless at least one of the Scribe\'s checkers is already past them.',
+      'When all fifteen are home, in the near-right quarter, bear them off. The first to bear off all fifteen wins; a win before the loser has borne off any is a mars, worth double.'
+    ],
+    source: 'Long nard (long nardy) as played across Iran, the Caucasus and Russia, after the rules collected at bkgm.com and Wikipedia.',
+    followPrompt: 'Move again with your remaining dice.',
+    init() {
+      this.c = [Array(26).fill(0), Array(26).fill(0)];
+      this.c[0][24] = 15; this.c[1][24] = 15;
+      this.turn = null; this.thrown = [0, 0]; this.headUsed = 0; this.headLimit = 1;
+    },
+    canBearOff(pl) { const c = this.c[pl]; for (let i = 7; i <= 24; i++) if (c[i]) return false; return true; },
+    // Six of a player's points in a row are allowed only with an enemy checker already past them.
+    primeOK(pl) {
+      const c = this.c[pl], o = this.c[1 - pl];
+      for (let start = 1; start <= 19; start++) {
+        let run = true; for (let k = 0; k < 6; k++) if (!c[start + k]) { run = false; break; }
+        if (!run) continue;
+        const lowest = Math.min(...[0, 1, 2, 3, 4, 5].map(k => ndOpp(start + k))); // where the block begins in the enemy's count
+        let past = false; for (let r = 0; r < lowest; r++) if (o[r]) { past = true; break; } // borne off counts as past
+        if (!past) return false;
+      }
+      return true;
+    },
+    single(pl, d) {
+      const c = this.c[pl], o = this.c[1 - pl], out = [];
+      for (let f = 24; f >= 1; f--) {
+        if (!c[f]) continue;
+        if (f === 24 && this.headUsed >= this.headLimit) continue;
+        const t = f - d;
+        let m = null;
+        if (t >= 1) { if (o[ndOpp(t)]) continue; m = { pl, from: f, to: t, die: d, hit: false }; }
+        else {
+          if (!this.canBearOff(pl)) continue;
+          if (t < 0) { let higher = false; for (let i = f + 1; i <= 6; i++) if (c[i]) { higher = true; break; } if (higher) continue; }
+          m = { pl, from: f, to: 0, die: d, hit: false };
+        }
+        this.doMove(m); const ok = this.primeOK(pl); this.undoMove(m);
+        if (ok) out.push(m);
+      }
+      return out;
+    },
+    doMove(m) { const c = this.c[m.pl]; c[m.from]--; c[m.to]++; if (m.from === 24) this.headUsed++; },
+    undoMove(m) { const c = this.c[m.pl]; c[m.to]--; c[m.from]++; if (m.from === 24) this.headUsed--; },
+    legal(pl, value, roll) {
+      const dice = roll ? roll.faces : [value, value];
+      this.headUsed = 0;
+      this.headLimit = !this.thrown[pl] && dice[0] === dice[1] && [3, 4, 6].includes(dice[0]) ? 2 : 1;
+      this.thrown[pl]++;
+      this.turn = { pl, seqs: this.sequences(pl, dice) };
+      return this.turn.seqs.length ? this.firstMoves() : [];
+    },
+    apply(m) {
+      const res = TABLES.apply.call(this, m);
+      res.note = m.to === 0 && m.pl === 0 ? 'Borne off.' : '';
+      return res;
+    },
+    final() {
+      const w = this.c[0][0] === 15 ? 0 : 1, mars = this.c[1 - w][0] === 0;
+      return { winner: w, title: w ? 'The Scribe wins' : 'You win', text: (w ? 'The Scribe bears off all fifteen first' : 'You bear off all fifteen first') + (mars ? ', before the other side has borne off one: a mars, a double win.' : '.') };
+    },
+    // Race, keep points ahead of the enemy's checkers, and do not leave the head crowded late.
+    evaluate(pl) {
+      const me = this.c[pl], op = this.c[1 - pl];
+      let s = (this.pip(1 - pl) - this.pip(pl)) + me[0] * 4;
+      let opBack = 0; for (let r = 24; r >= 1; r--) if (op[r]) { opBack = r; break; } // the enemy's rearmost checker
+      let run = 0;
+      for (let t = 1; t <= 24; t++) {
+        if (!me[t]) { run = 0; continue; }
+        run++;
+        const ahead = ndOpp(t) < opBack; // the enemy still has to pass this point
+        if (ahead) s += 1.2 + Math.min(run, 5) * 0.8;
+      }
+      s -= Math.max(0, me[24] - 10) * 0.5;
+      return s;
+    },
+  });
+
+  /* -------------------------------------------------- Ludus duodecim scriptorum
+   * A modern reconstruction. p[pl][k] counts a player's pieces at route position
+   * k: 0 waiting off the board, 1-6 the player's own half of the middle row,
+   * 7-18 the far row and 19-30 the near row, shared by both, 31 borne off.
+   * Three dice; every die must be used if it can be. */
+  const XII_DONE = 31;
+  const XII = {
+    id: 'xii', name: 'Duodecim scripta', dice: true, pipDice: true, first: 0, N: 15,
+    rules: [
+      'This is a modern reconstruction: no Roman account of the rules survives. You have fifteen pieces and throw three dice.',
+      'Each die brings a waiting piece onto your half of the middle row, on the space of its number, or moves a piece that many spaces on. You must use every die you can.',
+      'From your half of the middle row the course runs along the far row, right to left, then along the near row to the finish. The Scribe starts on the other half and shares the same course.',
+      'No piece may leave your home row until all fifteen are on the board. A piece taken must come back on before you move anything else.',
+      'Two or more pieces together are safe and block the space. Land on a single enemy piece to send it back to wait off the board.',
+      'When all fifteen are in the last six spaces, bear them off with exact throws: a piece on the last space needs a 1. The first to bear off all fifteen wins.'
+    ],
+    source: 'A modern reconstruction, after the basics worked out by Roland Austin and H. J. R. Murray in the early 20th century and adapted from tabula, in the version the J. Paul Getty Museum gives in Ancient Rome at Home.',
+    followPrompt: 'Move again with your remaining dice.',
+    extraNote: '',
+    rollName: r => `${r.faces.join(', ')}`,
+    init() { this.p = [Array(32).fill(0), Array(32).fill(0)]; this.p[0][0] = 15; this.p[1][0] = 15; this.turn = null; this.hitOnce = [false, false]; },
+    roll() { const f = [0, 0, 0].map(() => 1 + ((Math.random() * 6) | 0)); return { faces: f, value: f[0] + f[1] + f[2] }; },
+    waiting(pl) { return this.p[pl][0]; },
+    home(pl) { return this.p[pl][XII_DONE]; },
+    done(pl) { return this.p[pl][XII_DONE] === 15; },
+    allIn(pl) { const q = this.p[pl]; for (let k = 0; k <= 24; k++) if (q[k]) return false; return true; },
+    blocked(pl, k) { return k >= 7 && k <= 30 && this.p[1 - pl][k] >= 2; },
+    single(pl, d) {
+      const q = this.p[pl], o = this.p[1 - pl], out = [];
+      const add = (from, to) => { if (this.blocked(pl, to)) return; out.push({ pl, from, to, die: d, hit: to >= 7 && to <= 30 && o[to] === 1 }); };
+      if (q[0]) { add(0, d); if (this.reentry(pl)) return out; } // a taken piece comes back before anything else moves
+      const filling = q[0] > 0;
+      for (let k = 1; k <= 30; k++) {
+        if (!q[k]) continue;
+        const to = k + d;
+        if (filling && to > 6) continue; // nothing leaves the home row until all fifteen are on
+        if (to <= 30) add(k, to);
+        else if (to === XII_DONE && this.allIn(pl)) out.push({ pl, from: k, to: XII_DONE, die: d, hit: false });
+      }
+      return out;
+    },
+    reentry(pl) { return this.hitOnce[pl] && this.p[pl][0] > 0; }, // a piece that was taken must come back before others move
+    doMove(m) { const q = this.p[m.pl]; q[m.from]--; q[m.to]++; if (m.hit) { const o = this.p[1 - m.pl]; o[m.to]--; o[0]++; m.wasHit = this.hitOnce[1 - m.pl]; this.hitOnce[1 - m.pl] = true; } },
+    undoMove(m) { const q = this.p[m.pl]; q[m.to]--; q[m.from]++; if (m.hit) { const o = this.p[1 - m.pl]; o[0]--; o[m.to]++; this.hitOnce[1 - m.pl] = m.wasHit; } },
+    sequences(pl, dice) {
+      let best = [], maxLen = 0; const seen = new Set();
+      const rec = (rem, seq) => {
+        let any = false; const tried = new Set();
+        for (let k = 0; k < rem.length; k++) {
+          const d = rem[k]; if (tried.has(d)) continue; tried.add(d);
+          for (const m of this.single(pl, d)) { any = true; this.doMove(m); rec(rem.slice(0, k).concat(rem.slice(k + 1)), seq.concat([m])); this.undoMove(m); }
+        }
+        if (!any && seq.length) {
+          const key = this.p[0].join(',') + '|' + this.p[1].join(',') + '|' + seq.map(m => m.from + '>' + m.to).join(' '); // every order stays open to the visitor
+          if (seq.length > maxLen) { maxLen = seq.length; best = []; seen.clear(); }
+          if (seq.length === maxLen && !seen.has(key)) { seen.add(key); best.push(seq.map(m => Object.assign({}, m))); }
+        }
+      };
+      rec(dice.slice(), []);
+      return best;
+    },
+    firstMoves() {
+      const byKey = new Map();
+      for (const s of this.turn.seqs) { const m = s[0], k = m.from + '>' + m.to; if (!byKey.has(k)) byKey.set(k, m); }
+      return [...byKey.values()];
+    },
+    legal(pl, value, roll) {
+      this.turn = { pl, seqs: this.sequences(pl, roll ? roll.faces : [value]) };
+      return this.turn.seqs.length ? this.firstMoves() : [];
+    },
+    apply(m) {
+      this.doMove(m);
+      const you = m.pl === 0;
+      const note = m.hit ? (you ? 'You take a Scribe\'s piece: it goes back to wait off the board.' : 'The Scribe takes one of your pieces: it goes back to wait off the board.') : '';
+      let followUp = null;
+      if (this.turn && this.turn.pl === m.pl) {
+        this.turn.seqs = this.turn.seqs.filter(s => s[0].from === m.from && s[0].to === m.to && s[0].die === m.die).map(s => s.slice(1)).filter(s => s.length);
+        if (this.turn.seqs.length) followUp = this.firstMoves();
+      }
+      return { note, followUp };
+    },
+    extra() { return false; },
+    final() { const w = this.done(0) ? 0 : 1; return { winner: w, text: w ? `The Scribe bears off all fifteen first. You bore off ${this.home(0)}.` : `You bear off all fifteen first. The Scribe bore off ${this.home(1)}.` }; },
+    progress(pl) { const q = this.p[pl]; let s = 0; for (let k = 1; k <= XII_DONE; k++) s += q[k] * k; return s; },
+    evaluate(pl) {
+      const me = this.p[pl], op = this.p[1 - pl];
+      let s = this.progress(pl) - this.progress(1 - pl) + op[0] * 6 * (this.hitOnce[1 - pl] ? 1 : 0.2) + (me[XII_DONE] - op[XII_DONE]) * 14;
+      // Bearing off needs exact throws, so pieces spread over the last six spaces use more of each throw;
+      // a crowd on the last spaces waits for ones and twos.
+      for (let k = 25; k <= 30; k++) s -= Math.max(0, me[k] - 2) * 3 + me[k] * Math.max(0, k - 27) * 1.5;
+      for (let k = 7; k <= 30; k++) {
+        if (me[k] >= 2) s += 1.5;
+        if (me[k] === 1) { // a lone piece the enemy can reach with up to three dice: weigh what it would lose
+          let near = 99; for (let b = Math.max(1, k - 18); b < k; b++) if (op[b]) near = Math.min(near, k - b);
+          const risk = near <= 6 ? 0.55 : near <= 12 ? 0.3 : near <= 18 ? 0.12 : 0;
+          s -= risk * (k + 6);
+        }
+      }
+      return s;
+    },
+    aiPlan(pl) {
+      const seqs = this.turn && this.turn.pl === pl ? this.turn.seqs : [];
+      let best = seqs[0], bv = -Infinity;
+      for (const seq of seqs) {
+        const done = []; for (const m of seq) { const c = Object.assign({}, m); this.doMove(c); done.push(c); }
+        const v = this.evaluate(pl) + Math.random() * pick(60, 3, 0);
+        for (let k = done.length - 1; k >= 0; k--) this.undoMove(done[k]);
+        if (v > bv) { bv = v; best = seq; }
+      }
+      return best ? best.map(m => Object.assign({}, m)) : [];
+    },
+  };
+
+  /* --------------------------------------------------------------- Koi-koi
+   * 48 hanafuda cards: card c is month c >> 2 (0 pine ... 11 paulownia), and
+   * HF_KIND[c] its kind: b bright, a animal, r ribbon (red poem, blue or plain
+   * red), k chaff. Player 0 is the visitor; the oya (dealer) plays first. */
+  const HF_MONTH = ['pine', 'plum', 'cherry', 'wisteria', 'iris', 'peony', 'bush clover', 'pampas', 'chrysanthemum', 'maple', 'willow', 'paulownia'];
+  const HF_CARDS = [ // [kind, name] for the four cards of each month
+    [['b', 'crane'], ['rp', 'red poem ribbon'], ['k', 'chaff'], ['k', 'chaff']],
+    [['a', 'bush warbler'], ['rp', 'red poem ribbon'], ['k', 'chaff'], ['k', 'chaff']],
+    [['b', 'curtain'], ['rp', 'red poem ribbon'], ['k', 'chaff'], ['k', 'chaff']],
+    [['a', 'cuckoo'], ['rr', 'red ribbon'], ['k', 'chaff'], ['k', 'chaff']],
+    [['a', 'eight-plank bridge'], ['rr', 'red ribbon'], ['k', 'chaff'], ['k', 'chaff']],
+    [['a', 'butterflies'], ['rb', 'blue ribbon'], ['k', 'chaff'], ['k', 'chaff']],
+    [['a', 'boar'], ['rr', 'red ribbon'], ['k', 'chaff'], ['k', 'chaff']],
+    [['b', 'moon'], ['a', 'geese'], ['k', 'chaff'], ['k', 'chaff']],
+    [['a', 'sake cup'], ['rb', 'blue ribbon'], ['k', 'chaff'], ['k', 'chaff']],
+    [['a', 'deer'], ['rb', 'blue ribbon'], ['k', 'chaff'], ['k', 'chaff']],
+    [['b', 'rain man'], ['a', 'swallow'], ['rr', 'red ribbon'], ['k', 'lightning']],
+    [['b', 'phoenix'], ['k', 'chaff'], ['k', 'chaff'], ['k', 'chaff']]
+  ];
+  const hfKind = c => HF_CARDS[c >> 2][c & 3][0];
+  const hfName = c => `${HF_MONTH[c >> 2]} ${HF_CARDS[c >> 2][c & 3][1]}`;
+  const HF = { RAIN: 40, MOON: 28, CURTAIN: 8, SAKE: 32, BOAR: 24, DEER: 36, BUTTERFLIES: 20 };
+  const hfValue = c => { const k = hfKind(c); return k === 'b' ? 20 : k === 'a' ? (c === HF.SAKE ? 16 : [HF.BOAR, HF.DEER, HF.BUTTERFLIES].includes(c) ? 12 : 10) : k === 'rp' || k === 'rb' ? 7 : k === 'rr' ? 5 : 1; };
+  function hfYaku(pile) { // [{name, pts}] for a pile of captured cards
+    const has = c => pile.includes(c), out = [];
+    const brights = pile.filter(c => hfKind(c) === 'b'), rain = has(HF.RAIN);
+    if (brights.length === 5) out.push(['gokō, five brights', 10]);
+    else if (brights.length === 4) out.push(rain ? ['ame-shikō, four brights with the rain man', 7] : ['shikō, four brights', 8]);
+    else if (brights.length === 3 && !rain) out.push(['sankō, three brights', 5]);
+    if (has(HF.MOON) && has(HF.SAKE)) out.push(['tsukimi-zake, moon and sake', 5]);
+    if (has(HF.CURTAIN) && has(HF.SAKE)) out.push(['hanami-zake, cherry blossom and sake', 5]);
+    if (has(HF.BOAR) && has(HF.DEER) && has(HF.BUTTERFLIES)) out.push(['inoshikachō, boar, deer and butterflies', 5]);
+    if (pile.filter(c => hfKind(c) === 'rp').length === 3) out.push(['akatan, the red poem ribbons', 5]);
+    if (pile.filter(c => hfKind(c) === 'rb').length === 3) out.push(['aotan, the blue ribbons', 5]);
+    const n = { a: 0, r: 0, k: 0 }; pile.forEach(c => { const k = hfKind(c)[0]; if (n[k] !== undefined) n[k]++; });
+    if (n.a >= 5) out.push([`tane, ${n.a} animals`, n.a - 4]);
+    if (n.r >= 5) out.push([`tan, ${n.r} ribbons`, n.r - 4]);
+    if (n.k >= 10) out.push([`kasu, ${n.k} chaff`, n.k - 9]);
+    return out;
+  }
+  const hfPoints = pile => hfYaku(pile).reduce((t, y) => t + y[1], 0);
+  const KOIKOI = {
+    id: 'koikoi', name: 'Koi-koi', dice: false, first: 0, cardName: hfName,
+    MONTH: HF_MONTH, kind: hfKind, yaku: hfYaku, points: hfPoints,
+    variants: [{ id: '3', label: '3 months' }, { id: '6', label: '6 months' }, { id: '12', label: '12 months' }], variant: '6', variantLabel: 'Game',
+    setVariant(id) { this.variant = ['3', '6', '12'].includes(id) ? id : '6'; },
+    rules: [
+      'Forty-eight flower cards, four for each month. Each of you holds eight, eight lie face up between you, and the rest are the draw pile. The dealer (oya) plays first; you deal the first month.',
+      'On your turn, play a card from your hand. If a card of the same month lies on the table, take both into your pile; if two do, choose one; if three do, take all four. If none does, your card stays on the table.',
+      'Then turn up the top card of the pile and match it the same way.',
+      'Collect combinations (yaku): five brights 10, four brights 8 (7 with the rain man), three brights 5 (not with the rain man); moon and sake 5; cherry blossom and sake 5; boar, deer and butterflies 5; the three red poem ribbons 5; the three blue ribbons 5; five animals, five ribbons or ten chaff 1, and 1 more for each card beyond.',
+      'When you make a new yaku you may stop and score, or call koi-koi and play on for more. If you call koi-koi and the Scribe then stops first, it scores double and you score nothing. A score of 7 or more doubles.',
+      'If the hands run out with no yaku, the dealer scores 1. The winner of a month deals the next. Highest total after the last month wins.'
+    ],
+    source: 'Koi-koi as commonly played in Japan, after the rules on Wikipedia. Four of a month or four pairs dealt to a player score 6 at once; the same on the table means a redeal.',
+    get followPrompt() { return this.need === 'koi' ? 'You have a new yaku. Stop and score, or call koi-koi and play on?' : 'Two cards of that month are on the table: choose one to take.'; },
+    init() { this.total = [0, 0]; this.month = 0; this.oya = 0; this.over = null; this.deal(); },
+    deal() {
+      for (let tries = 0; tries < 50; tries++) {
+        const d = Array.from({ length: 48 }, (_, i) => i); for (let i = 47; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+        this.hands = [d.slice(0, 8), d.slice(8, 16)]; this.field = d.slice(16, 24); this.pile = d.slice(24);
+        const four = cs => { const n = Array(12).fill(0); cs.forEach(c => n[c >> 2]++); return n.some(x => x === 4) || n.filter(x => x === 2).length === 4; };
+        if (!four(this.field)) break; // four of a month, or four pairs, on the table: deal again
+      }
+      this.hands.forEach(h => h.sort((a, b) => a - b));
+      this.won = [[], []]; this.koi = [false, false]; this.lastPts = [0, 0];
+      this.toMove = this.oya; this.need = 'play'; this.pendingDraw = null; this.notes = []; this.month++;
+      // Four of a month or four pairs in a hand (teshi, kuttsuki) score 6 at once.
+      for (const pl of [this.oya, 1 - this.oya]) {
+        const n = Array(12).fill(0); this.hands[pl].forEach(c => n[c >> 2]++);
+        if (n.some(x => x === 4) || n.filter(x => x === 2).length === 4) { this.endMonth(pl, 6, [`${pl ? 'The Scribe was' : 'You were'} dealt ${n.some(x => x === 4) ? 'all four cards of a month (teshi)' : 'four pairs (kuttsuki)'}: 6 points.`]); break; }
+      }
+    },
+    get rounds() { return +this.variant; },
+    matches(c) { return this.field.filter(f => f >> 2 === c >> 2); },
+    legal(pl) {
+      if (this.over || pl !== this.toMove) return [];
+      if (this.need === 'next') return [{ pl, kind: 'next', label: this.month >= this.rounds ? 'See the result' : 'Next month' }];
+      if (this.need === 'koi') return [{ pl, kind: 'stop', label: `Stop and score ${this.scoreNow(pl)}` }, { pl, kind: 'koikoi', label: 'Koi-koi!' }];
+      if (this.need === 'draw') return this.matches(this.pendingDraw).map(f => ({ pl, kind: 'draw', c: this.pendingDraw, take: f }));
+      const out = [];
+      for (const c of this.hands[pl]) {
+        const m = this.matches(c);
+        if (m.length === 2) for (const f of m) out.push({ pl, kind: 'play', c, take: f });
+        else out.push({ pl, kind: 'play', c, take: m.length ? m[0] : null });
+      }
+      return out;
+    },
+    // The score a player would bank by stopping now.
+    scoreNow(pl) { let p = hfPoints(this.won[pl]); if (p >= 7) p *= 2; if (this.koi[1 - pl]) p *= 2; return p; },
+    capture(pl, c, take, events) {
+      const same = this.matches(c);
+      if (!same.length) { this.field.push(c); events.push({ type: 'toField', pl, c }); return; }
+      const got = same.length === 3 ? same : [take];
+      for (const f of got) this.field.splice(this.field.indexOf(f), 1);
+      this.won[pl].push(c, ...got); events.push({ type: 'capture', pl, cards: [c, ...got] });
+    },
+    apply(m) {
+      const pl = m.pl, events = [], notes = [];
+      if (m.kind === 'next') {
+        if (this.month >= this.rounds) { this.finishGame(); return { note: '', events }; }
+        this.deal(); events.push({ type: 'deal' });
+        return { note: this.need === 'next' ? this.notes.join(' ') : `${HF_MONTH[(this.month - 1) % 12][0].toUpperCase() + HF_MONTH[(this.month - 1) % 12].slice(1)} month. ${this.oya ? 'The Scribe deals and plays first.' : 'You deal and play first.'}`, events };
+      }
+      if (m.kind === 'stop') { this.endMonth(pl, this.scoreNow(pl), [`${pl ? 'The Scribe stops' : 'You stop'} and ${pl ? 'scores' : 'score'} ${this.scoreNow(pl)}.`]); return { note: this.notes.join(' '), events: [{ type: 'end' }] }; }
+      if (m.kind === 'koikoi') { this.koi[pl] = true; this.passOn(pl); return { note: pl ? 'The Scribe calls koi-koi!' : 'Koi-koi! You play on.', events }; }
+      if (m.kind === 'play') {
+        this.hands[pl].splice(this.hands[pl].indexOf(m.c), 1);
+        this.capture(pl, m.c, m.take, events);
+        const d = this.pile.shift(); events.push({ type: 'drawn', pl, c: d });
+        if (this.matches(d).length === 2 && pl === 0) { this.pendingDraw = d; this.need = 'draw'; return { note: `You turn up the ${hfName(d)}.`, events, followUp: this.legal(pl) }; }
+        const two = this.matches(d); this.capture(pl, d, two.length === 2 ? two.reduce((x, y) => (hfValue(y) > hfValue(x) ? y : x)) : two[0], events);
+      } else if (m.kind === 'draw') { this.capture(pl, m.c, m.take, events); this.pendingDraw = null; }
+      return this.afterTurn(pl, events, notes);
+    },
+    afterTurn(pl, events, notes) {
+      const pts = hfPoints(this.won[pl]);
+      if (pts > this.lastPts[pl]) {
+        this.lastPts[pl] = pts;
+        const names = hfYaku(this.won[pl]).map(y => y[0]).join('; ');
+        notes.push(`${pl ? 'The Scribe has' : 'You have'} ${names}.`);
+        if (pl === 0) { this.need = 'koi'; return { note: notes.join(' '), events, followUp: this.legal(0) }; }
+        if (this.aiStop()) { const s = this.scoreNow(1); this.endMonth(1, s, notes.concat([`The Scribe stops and scores ${s}.`])); return { note: this.notes.join(' '), events: events.concat([{ type: 'end' }]) }; }
+        this.koi[1] = true; notes.push('The Scribe calls koi-koi!');
+      }
+      this.passOn(pl);
+      if (this.need === 'next') events.push({ type: 'end' });
+      return { note: (notes.concat(this.need === 'next' ? this.notes : [])).join(' '), events };
+    },
+    passOn(pl) {
+      this.need = 'play'; this.toMove = 1 - pl;
+      if (!this.hands[0].length && !this.hands[1].length) this.endMonth(this.oya, 1, ['The hands are empty with no one stopping: the dealer scores 1.']);
+    },
+    endMonth(pl, pts, notes) {
+      this.total[pl] += pts; this.oya = pl;
+      this.notes = notes.concat([`After ${this.month} of ${this.rounds} months: you ${this.total[0]}, the Scribe ${this.total[1]}.`]);
+      this.need = 'next'; this.toMove = 0;
+    },
+    finishGame() {
+      const [a, b] = this.total;
+      this.over = { winner: a > b ? 0 : b > a ? 1 : -1, title: a > b ? 'You win' : b > a ? 'The Scribe wins' : 'A draw', text: `${a} to ${b} after ${this.rounds} months.` };
+    },
+    passTurn() { return this.over ? 0 : this.toMove; },
+    ended() { return !!this.over; },
+    final() { return this.over; },
+    result() { return this.over || null; },
+    // The Scribe stops when it is ahead in the match or holds 7 or more; otherwise, with cards left, it may press on.
+    aiStop() {
+      const s = this.scoreNow(1), left = this.hands[1].length, behind = this.total[0] - this.total[1];
+      if (LEVEL.name === 'gentle') return Math.random() < 0.6;
+      if (s >= 7 || left <= 2) return true;
+      if (LEVEL.name === 'sharp') { const oppNear = hfPoints(this.won[0]) > 0 || this.won[0].length >= 10; return oppNear || behind <= 0 ? true : left < 5; }
+      return true;
+    },
+    // Score a play: what it takes now, what it leaves for the opponent, and yaku in the making.
+    aiPlan(pl) {
+      const ms = this.legal(pl);
+      if (LEVEL.name === 'gentle' && Math.random() < 0.4) return [ms[(Math.random() * ms.length) | 0]];
+      const seen = new Set(this.won[0].concat(this.won[1], this.field, this.hands[pl]));
+      const deadMonth = m => [0, 1, 2, 3].every(k => seen.has(m * 4 + k)); // every card of the month accounted for
+      let best = ms[0], bv = -Infinity;
+      for (const m of ms) {
+        let v = 0;
+        if (m.kind !== 'play' && m.kind !== 'draw') { v = 0; }
+        else {
+          const same = this.matches(m.c), got = !same.length ? [] : same.length === 3 ? [m.c, ...same] : [m.c, m.take];
+          const before = hfPoints(this.won[pl]), after = hfPoints(this.won[pl].concat(got));
+          v = got.reduce((t, c) => t + hfValue(c), 0) + (after - before) * 25;
+          if (!got.length) v -= hfValue(m.c) * (deadMonth(m.c >> 2) ? 0.2 : 1.2); // a card left on the table may feed the opponent
+        }
+        v += Math.random() * pick(6, 1, 0.2);
+        if (v > bv) { bv = v; best = m; }
+      }
+      return [best];
+    },
+  };
+
   /* --------------------------------------------------------------- Shatranj
    * 64 squares, index r*8+c with rank 0 on the visitor's side. A square holds
    * 0 or type + 8*player: 1 shah (king), 2 firzan, 3 alfil, 4 faras (knight),
@@ -7025,7 +7405,7 @@
     aiPlan(pl, depth) { return bestPlan(this, pl, depth, 6); },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, rithmo: RITHMO, lewischess: LEWISCHESS, courier: COURIER, hazard: HAZARD, piquet: PIQUET };
+  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, rithmo: RITHMO, lewischess: LEWISCHESS, courier: COURIER, hazard: HAZARD, piquet: PIQUET, nard: NARD, xii: XII, koikoi: KOIKOI };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);

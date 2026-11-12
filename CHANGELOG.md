@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.26.0: Hints, undo, Nard, Duodecim scripta and Hanafuda
+
+- **Hint:** at every table without dice or hidden cards, plus Whist, a **Hint** button asks the Sharp Scribe what it would play in your seat and lights that move. You can play it or ignore it.
+- **Undo:** at 17 tables (the chess family, draughts, Tablut, Halma, Reversi, Rithmomachia, Jungle, Mū tōrere, Oware and Kalah), **Undo** takes the board back to the start of your previous turn.
+- **Nard** (Wing VI): long nard on a tables board. All fifteen checkers start on the head, both sides run counterclockwise, nobody hits, only one checker may leave the head each turn, and there is no wall of six with every enemy checker behind it.
+- **Duodecim scripta** (Wing II), the Roman game of twelve lines, as a labelled modern reconstruction after Austin and Murray, in the Getty Museum's version. The board carries the famous inscription LEVATE DALOCV, LVDERE NESCIS, IDIOTA RECEDE.
+- **Hanafuda** (Wing VI): koi-koi with 48 flower cards drawn in our own style. It has yaku, the koi-koi gamble, the doubling at 7, and games of 3, 6 or 12 months.
+- Draughts lays out its kings and taken pieces correctly when a game is resumed or taken back.
+- 5 new rule tests (263 in all).
+
 ## 0.25.0: Pass-and-play, saved games and keyboard play
 
 - **Play a friend:** at 32 two-player tables with nothing hidden (the chess family, Go, draughts, the mancala games, tafl and more), an **Opponent** switch above the board seats a second visitor in the Scribe's place. Turns alternate on one screen, messages name "your friend", and these games stay out of your record against the Scribe.

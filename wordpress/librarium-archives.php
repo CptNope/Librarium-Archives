@@ -40,6 +40,7 @@ function librarium_archives_exhibits() {
 		'liubo'      => 'Liubo',
 		'go'         => __( 'Weiqi (Go)', 'librarium-archives' ),
 		'latrunculi' => 'Ludus Latrunculorum',
+		'xii'        => 'Ludus Duodecim Scriptorum',
 		'patolli'    => 'Patolli',
 		'morris'     => __( "Nine Men's Morris", 'librarium-archives' ),
 		'oware'      => __( 'Mancala (Oware)', 'librarium-archives' ),
@@ -84,6 +85,7 @@ function librarium_archives_exhibits() {
 		'mutorere'   => __( 'Mū tōrere', 'librarium-archives' ),
 		'shogi'      => 'Shogi',
 		'gomoku'     => __( 'Gomoku', 'librarium-archives' ),
+		'koikoi'     => __( 'Hanafuda (koi-koi)', 'librarium-archives' ),
 		'makruk'     => __( 'Makruk', 'librarium-archives' ),
 		'baghchal'   => __( 'Bagh-chal (tigers and goats)', 'librarium-archives' ),
 		'jungle'     => __( 'Jungle (dou shou qi)', 'librarium-archives' ),
@@ -95,6 +97,7 @@ function librarium_archives_exhibits() {
 		'morabaraba' => __( 'Morabaraba', 'librarium-archives' ),
 		'seega'      => __( 'Seega', 'librarium-archives' ),
 		'tab'        => __( 'Tâb', 'librarium-archives' ),
+		'nard'       => __( 'Nard', 'librarium-archives' ),
 		'next'       => __( 'Librarium lectern', 'librarium-archives' ),
 	);
 }

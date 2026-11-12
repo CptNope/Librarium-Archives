@@ -2,7 +2,7 @@
 
 A walkable 3D archive of the oldest board and card games, built for [Librarium Games](https://librarium.games). Visitors stroll a candlelit library hall, read the history of each game on its placard, and sit down to play the ones whose rules are known against an AI opponent, the Scribe.
 
-| 61 exhibits | 57 playable tables | 6 wings | 3 Scribe levels | 258 rule tests |
+| 64 exhibits | 60 playable tables | 6 wings | 3 Scribe levels | 263 rule tests |
 | :---: | :---: | :---: | :---: | :---: |
 | from Senet (c. 3100 BCE) to Hex (1942) | every one with its own board and pieces | walked in date order | Gentle · Fair · Sharp | plus simulated games and AI timing |
 
@@ -16,11 +16,11 @@ The Archives were first called the Librarium Museum of Play, and the repository 
 flowchart LR
     E([Entrance]) --> W1
     W1["<b>Wing I</b><br/>The Dawn of Play<br/>c. 3100–2000 BCE<br/>▶ 4 of 6"] --> W2
-    W2["<b>Wing II</b><br/>Strategy Takes the Table<br/>c. 500 BCE – 1000 CE<br/>▶ 7 of 9"] --> W3
+    W2["<b>Wing II</b><br/>Strategy Takes the Table<br/>c. 500 BCE – 1000 CE<br/>▶ 8 of 10"] --> W3
     W3["<b>Wing III</b><br/>Kings, Cards and Courts<br/>c. 480–1450 CE<br/>▶ 11 of 11"] --> W4
     W4["<b>Wing IV</b><br/>Printed Boards and<br/>Parlour Tables<br/>c. 1300–1900 CE<br/>▶ 12 of 12"] --> W5
     W5["<b>Wing V</b><br/>The Modern Board Game<br/>c. 1840 CE – today<br/>▶ 9 of 9"] --> W6
-    W6["<b>Wing VI</b><br/>Games of the World<br/>▶ 14 of 14"] --> L([Librarium lectern])
+    W6["<b>Wing VI</b><br/>Games of the World<br/>▶ 16 of 16"] --> L([Librarium lectern])
 ```
 
 ▶ playable tables of exhibits in the wing.
@@ -28,11 +28,11 @@ flowchart LR
 | Wing | Playable tables |
 | --- | --- |
 | I | Senet · Royal Game of Ur · Hazard (at the first dice) · Hounds and Jackals |
-| II | Weiqi (Go) · Ludus latrunculorum · Patolli · Nine Men's Morris · Oware · Alquerque · Brandubh |
+| II | Weiqi (Go) · Ludus latrunculorum · Duodecim scripta · Patolli · Nine Men's Morris · Oware · Alquerque · Brandubh |
 | III | Tables (backgammon) · Chaturanga · Shatranj · Xiangqi · Chaturaji · Rithmomachia · Medieval chess (on the Lewis chessmen) · Courier chess · Four Seasons chess · Piquet (at the playing cards) · Tarocchi |
 | IV | Fox and Geese · Chess · Draughts · Pachisi · Game of the Goose · Cribbage · Dominoes · Tablut · Whist · Snakes and Ladders · Ludo · Mahjong |
 | V | The Mansion of Happiness · The Checkered Game of Life · Reversi · Halma · Dots and Boxes · Chinese checkers · The Landlord's Game · Kalah · Hex |
-| VI | Mū tōrere · Shogi · Gomoku · Jungle · Makruk · Bagh-chal · Kōnane · Yut Nori · Janggi · Fanorona · Bao · Morabaraba · Seega · Tâb |
+| VI | Mū tōrere · Shogi · Gomoku · Hanafuda (koi-koi) · Jungle · Nard · Makruk · Bagh-chal · Kōnane · Yut Nori · Janggi · Fanorona · Bao · Morabaraba · Seega · Tâb |
 
 Every exhibit, its date, how sure we are of its rules, and the rule choices made at each table are in **[the exhibits guide](docs/exhibits.md)**.
 
@@ -56,7 +56,7 @@ No bundler, no framework, no audio files: a static page on three.js, with every 
 | Guide | What's in it |
 | --- | --- |
 | [Visiting the Archives](docs/visiting.md) | Controls on touch and keyboard, getting around, playing at a table (keyboard play included), playing a friend, saved games, options, sound |
-| [The exhibits](docs/exhibits.md) | All 61 exhibits by wing, with timelines, rule status and the rule choices at each table |
+| [The exhibits](docs/exhibits.md) | All 64 exhibits by wing, with timelines, rule status and the rule choices at each table |
 | [The Scribe](docs/scribe.md) | How the AI plays each game, its three levels, and measured strength |
 | [Architecture](docs/architecture.md) | Files, modules, the turn loop, table phases, conventions, stored progress |
 | [Rule engines and presenters](docs/engines.md) | The contract every game implements, a feature matrix of all 49, and how to add a game |

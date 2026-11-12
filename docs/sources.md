@@ -21,6 +21,9 @@ The placard text is written for the Archives. Where scholarship is uncertain, th
 - Claude de Boissière's rithmomachia of 1556 (in English by William Fulke, 1563), as set out by J. F. C. Richards (1946) and in Jeff Joyner's rules summary (2025); Wikipedia: Rithmomachia
 - Wikipedia: Courier chess (Wirnt von Gravenberg's *Wigalois*, c. 1202–1205; Gustavus Selenus, 1616; Lucas van Leyden's *The Chess Players*)
 - Wikipedia: Hazard (game), after *Hoyle's Games Improved* (1790)
+- Backgammon Galore (bkgm.com): Narde; Wikipedia: Long Nardy
+- The J. Paul Getty Museum, *Ancient Rome at Home*: Ludus duodecim scriptorum (rules after Roland Austin and H. J. R. Murray); bead.game and imperiumromanum.pl on the game and its boards
+- Wikipedia: Koi-Koi; The World of Playing Cards (wopc.co.uk): Hanafuda; sloperama.com: Hanafuda
 - John McLeod, pagat.com: Piquet, after Cavendish (1882); Wikipedia: Piquet
 - Mark Weeks (mark-weeks.com): notes on the fers and alfin of medieval European chess
 - Edmond Hoyle, *A Short Treatise on the Game of Whist* (1742); John McLeod, pagat.com: Whist; Wikipedia: Whist
