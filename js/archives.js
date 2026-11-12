@@ -4155,7 +4155,7 @@ const XII_P = {
 };
 
 // Hanafuda cards, drawn here in our own simple style: the month's plant, its emblem and a label.
-const HF_W = 0.046, HF_H = 0.074;
+const HF_W = 0.056, HF_H = 0.09;
 const HF_PLANT = ['松', '梅', '桜', '藤', '菖', '牡丹', '萩', '芒', '菊', '紅葉', '柳', '桐'];
 const HF_COLOR = ['#2f6b3a', '#b0305a', '#e58aa8', '#7a5aa8', '#4a5ab0', '#c0304a', '#a05a8a', '#c8b070', '#d8a020', '#c8401a', '#5a8a3a', '#7a4a9a'];
 const HF_EMBLEM = { crane: '鶴', curtain: '幕', moon: '月', 'rain man': '雨', phoenix: '鳳凰', 'bush warbler': '鶯', cuckoo: '時鳥', 'eight-plank bridge': '八橋', butterflies: '蝶', boar: '猪', geese: '雁', 'sake cup': '盃', deer: '鹿', swallow: '燕' };
@@ -4185,7 +4185,7 @@ const hfBackMat = new THREE.MeshStandardMaterial({ roughness: 0.6, map: cardTex(
 const hfEdgeMat = new THREE.MeshStandardMaterial({ color: 0x1a1210, roughness: 0.6 });
 function hfCard(c) { const face = new THREE.MeshStandardMaterial({ map: hfFace(c), roughness: 0.55 }); const m = new THREE.Mesh(hfGeo, [hfEdgeMat, hfEdgeMat, face, hfBackMat, hfEdgeMat, hfEdgeMat]); m.userData.mats = [face]; m.userData.c = c; return m; }
 const KOIKOI_P = {
-  camW: 1.05,
+  camW: 1.1,
   intro() { return 'You deal the first month and play first. ' + this.prompt(); },
   prompt() {
     const G = GAMES.koikoi;
@@ -4198,11 +4198,11 @@ const KOIKOI_P = {
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
   y: () => GAMES.koikoi.surface + 0.001,
   card(c) { let m = this.mesh.get(c); if (!m) { m = hfCard(c); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
-  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.034 : 0.052), this.y() + i * 0.0003, pl ? -0.3 : 0.31); },
-  fieldSpot(i) { return V3(-0.17 + (i % 8) * 0.054, this.y(), i < 8 ? -0.07 : 0.06 + ((i / 8) | 0) * 0.0); },
-  pileSpot: k => V3(-0.42, GAMES.koikoi.surface + 0.001 + k * 0.0012, 0),
+  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.036 : 0.062), this.y() + i * 0.0003, pl ? -0.31 : 0.31); },
+  fieldSpot(i) { return V3(-0.2 + (i % 8) * 0.062, this.y() + ((i / 16) | 0) * 0.002, (i % 16) < 8 ? -0.07 : 0.045); },
+  pileSpot: k => V3(-0.45, GAMES.koikoi.surface + 0.001 + k * 0.0012, -0.01),
   // Captured cards lie in four small fans by kind: brights, animals, ribbons, chaff.
-  wonSpot(pl, c, k) { const g = 'barkk'.indexOf(window.LibrariumRules.koikoi.kind(c)[0]); return V3(0.3 + g * 0.06 + k * 0.009, this.y() + k * 0.0004, pl ? -0.17 : 0.18); },
+  wonSpot(pl, c, k) { const g = 'barkk'.indexOf(window.LibrariumRules.koikoi.kind(c)[0]); return V3(0.3 + g * 0.05 + Math.min(k, 10) * 0.007, this.y() + k * 0.0004, pl ? -0.17 : 0.18); },
   redeal() {
     const G = GAMES.koikoi;
     (this.cards || []).forEach(m => this.ex.group.remove(m));
@@ -4231,7 +4231,7 @@ const KOIKOI_P = {
   ringFor(m) {
     if (m.kind === 'draw') return this.mesh.get(m.take).position.clone();
     if (m.kind !== 'play' || m.pl !== 0) return null;
-    return m.take !== null && m.take !== undefined ? this.mesh.get(m.take).position.clone() : V3(-0.17 + (GAMES.koikoi.field.length % 8) * 0.054, this.y(), GAMES.koikoi.field.length < 8 ? -0.07 : 0.06);
+    return m.take !== null && m.take !== undefined ? this.mesh.get(m.take).position.clone() : this.fieldSpot(GAMES.koikoi.field.length);
   },
   ringScale: 0.55,
   fromFor: () => null,
@@ -4241,7 +4241,7 @@ const KOIKOI_P = {
     for (const e of res.events || []) {
       if (tok !== play.token) return res;
       if (e.type === 'deal') { this.redeal(); continue; }
-      if (e.type === 'drawn') { const mc = this.card(e.c); sfx.card(); tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); }); await hop(mc, V3(-0.3, this.y() + 0.01, 0), 0.3, 0.04); await wait(250); continue; }
+      if (e.type === 'drawn') { const mc = this.card(e.c); sfx.card(); tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); }); await hop(mc, V3(-0.36, this.y() + 0.01, -0.01), 0.3, 0.04); await wait(250); continue; }
       if (e.type === 'toField' || e.type === 'capture') {
         const mc = this.card(e.type === 'capture' ? e.cards[0] : e.c); sfx.card();
         if (mc.rotation.z) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
@@ -4296,9 +4296,9 @@ function buildXii(group) {
 
 /* --- Wing VI: Hanafuda, a game of koi-koi laid out on a low lacquered table */
 function buildKoikoi(group) {
-  const table = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.03, 0.8), new THREE.MeshStandardMaterial({ color: 0x2a0e0a, roughness: 0.35 }));
+  const table = new THREE.Mesh(new THREE.BoxGeometry(1.14, 0.03, 0.82), new THREE.MeshStandardMaterial({ color: 0x2a0e0a, roughness: 0.35 }));
   table.position.y = TOP + 0.015; group.add(table);
-  topPlane(group, 0.96, 0.74, TOP + 0.0305, tex(512, 384, (g, w, h) => { g.fillStyle = '#3a120c'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(200,160,80,.45)'; g.lineWidth = 3; g.strokeRect(12, 12, w - 24, h - 24); }), { roughness: 0.35 });
+  topPlane(group, 1.08, 0.76, TOP + 0.0305, tex(512, 384, (g, w, h) => { g.fillStyle = '#3a120c'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(200,160,80,.45)'; g.lineWidth = 3; g.strokeRect(12, 12, w - 24, h - 24); }), { roughness: 0.35 });
   const y = TOP + 0.031, shown = [];
   // On display: one card of each month, fanned.
   for (let mo = 0; mo < 12; mo++) { const m = hfCard(mo * 4); m.position.set((mo - 5.5) * 0.06, y + mo * 0.0004, 0.02 + Math.abs(mo - 5.5) * 0.01); m.rotation.y = (mo - 5.5) * -0.05; group.add(m); shown.push(m); }

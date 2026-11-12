@@ -841,7 +841,7 @@
           for (const m of this.single(pl, d)) { any = true; this.doMove(m); rec(rem.slice(0, k).concat(rem.slice(k + 1)), seq.concat([m])); this.undoMove(m); }
         }
         if (!any && seq.length) {
-          const key = this.p[0].join(',') + '|' + this.p[1].join(',');
+          const key = this.p[0].join(',') + '|' + this.p[1].join(',') + '|' + seq.map(m => m.from + '>' + m.to).join(' '); // every order stays open to the visitor
           if (seq.length > maxLen) { maxLen = seq.length; best = []; seen.clear(); }
           if (seq.length === maxLen && !seen.has(key)) { seen.add(key); best.push(seq.map(m => Object.assign({}, m))); }
         }

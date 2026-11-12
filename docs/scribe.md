@@ -94,7 +94,13 @@ The Scribe never looks at the visitor's hand or the deck. Each game's Scribe wor
 | Whist | Each Scribe plays by the book from what its seat can see: cash sure winners, draw trumps when long in them, lead a suit its partner can ruff, second hand low, third hand high, win as cheaply as possible, and discard its least useful card. Gentle and Fair play some cards at random. (A sampling search over the unseen cards was tried and played no better.) |
 | Piquet | Exchange: keeps aces, long suits, sets and runs in the making; Sharp tries every discard among its weakest cards against many random draws and keeps the best on average. Play: cashes sure winners, leads low from its longest suit, wins cheaply, and throws cards that cannot win |
 | Hazard | Always calls a main of 7, the caster's best. Fair stakes 2; Sharp stakes 1, since the caster has the worse of every bet, unless it is behind near the end |
+| Nard, Duodecim scripta | Every legal full turn, scored for the race, points held ahead of the enemy (Nard), lone pieces the enemy can reach weighed by what a hit would cost, and, in Duodecim scripta, pieces spread over the last six spaces so exact throws can bear them off |
+| Hanafuda (koi-koi) | Takes the most valuable cards and yaku in the making; a card that will not match goes to the table only if its month is spent. It stops at 7 points or with few cards left; Sharp calls koi-koi when it is ahead and the visitor is far from a yaku |
 | Mahjong | Each of the three Scribes counts how far its hand is from ready (shanten) and keeps the discards that leave the most useful draws open. It claims only when a claim brings its hand closer |
+
+## Hints
+
+The Hint button asks the Sharp Scribe for its move in the visitor's seat, on a copy of the game, so its thinking cannot change anything. It is offered wherever the Scribe can plan for either seat: every table without dice or hidden hands, and Whist.
 
 ## Measured strength
 
@@ -127,6 +133,9 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Courier chess | 5–0, 1 draw | 5–0, 1 draw | 6 each |
 | Piquet | 74% | 55% | 400 parties of six deals each |
 | Hazard | about 50% | 56% | 4,000 each; the dice decide almost everything |
+| Nard | 58% | 59% | 100 each |
+| Duodecim scripta | 59% | 56% | 100 each |
+| Hanafuda (koi-koi) | 77% | about even | 400 games of six months; Sharp differs from Fair only in when it dares call koi-koi |
 | Chaturanga | 6–0 | as Shatranj | 6; the same engine as Shatranj |
 | Rithmomachia | 5–0, 1 draw | 2–2, 2 draws | 6 each; most games run to the 150-move limit |
 | Whist (both seats of a side at one level) | +0.9 tricks a deal | +0.3 tricks a deal | 150 deals each, every deal played twice with the sides swapped |
