@@ -184,7 +184,7 @@ stateDiagram-v2
 | `intro()`, `prompt()` | The first message and the standing instruction |
 | `choosePrompt(moves)` | Optional wording after a throw |
 | `onFinish()` | Optional flourish when the game ends (Gomoku lifts the winning line) |
-| `camW`, `ringScale`, `ringOpacity`, `ringTone` | Camera width at the table and ring styling |
+| `camW`, `camD`, `camElev`, `ringScale`, `ringOpacity`, `ringTone` | Camera framing at the table (width, depth, and how steeply it looks down; long boards such as Rithmomachia look from higher up) and ring styling |
 
 Presenters always check `play.token` after an `await`: if the visitor left the table mid-animation, the presenter stops.
 

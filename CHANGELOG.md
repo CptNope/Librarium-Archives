@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.25.0: Pass-and-play, saved games and keyboard play
+
+- **Play a friend:** at 32 two-player tables with nothing hidden (the chess family, Go, draughts, the mancala games, tafl and more), an **Opponent** switch above the board seats a second visitor in the Scribe's place. Turns alternate on one screen, messages name "your friend", and these games stay out of your record against the Scribe.
+- **Saved games:** long games against the Scribe (the chess family, draughts, Tablut, Halma, Reversi, Rithmomachia, Whist and Piquet) are saved in your browser at the start of each of your turns, and are back on the table when you sit down again. A **New game** button starts afresh.
+- **Keyboard play:** at any table the arrow keys step through what you can move, then where it can go, and Enter plays it. A screen reader hears each step ("Piece 3 of 12", or the card's name). The rules panel says how.
+- **Rithmomachia** is seen from higher up, so its long board is less foreshortened and the whole of it fits on screen. Zoom in to read the numbers on small screens.
+
 ## 0.24.0: Medieval chess, Courier chess, Hazard and Piquet
 
 - **The Lewis Chessmen** (Wing III) are playable: chess as Europe played it around 1200, as a modern reconstruction after H. J. R. Murray (shatranj's moves under European names, only checkmate wins). A checkered board appears on the velvet, and the game uses Lewis-style figures, our own carvings.

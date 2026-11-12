@@ -2396,3 +2396,31 @@ test('Piquet: exchange, scoring the deal, and a full partie between Scribes', ()
   assert.ok(PQ.over); assert.equal(PQ.deals, 2);
   PQ.setVariant('6');
 });
+
+/* ---------------------------------------------------------- Saved games
+ * The hall saves an engine's plain data fields as JSON and restores them over a
+ * fresh init(). Every game that offers saving must come back exactly. */
+
+const SAVED = ['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi'];
+const dataFields = g => {
+  const out = {}, d = Object.getOwnPropertyDescriptors(g);
+  for (const k of Object.keys(d)) if ('value' in d[k] && typeof d[k].value !== 'function' && !['rules', 'source', 'surface'].includes(k)) out[k] = d[k].value;
+  return JSON.parse(JSON.stringify(out));
+};
+test('Saved games: every saveable engine restores to the same position and moves', () => {
+  rules.setLevel('gentle');
+  for (const id of SAVED) {
+    const g = rules[id]; g.init();
+    let pl = g.first;
+    for (let k = 0; k < 6; k++) { // a few plies by the Scribe for both sides
+      if (g.stage === 'next' || g.need === 'next') { g.apply({ pl: 0, kind: 'next' }); }
+      const who = g.toMove !== undefined ? (g.toMove === 0 ? 0 : 1) : pl;
+      const plan = g.aiPlan(who); if (!plan || !plan.length) break;
+      for (const m of plan) g.apply(m);
+      pl = g.passTurn ? g.passTurn() : 1 - pl;
+    }
+    const saved = dataFields(g), before = JSON.stringify(g.legal(pl));
+    g.init(); Object.assign(g, saved);
+    assert.equal(JSON.stringify(g.legal(pl)), before, id);
+  }
+});
