@@ -2,7 +2,7 @@
 
 A walkable 3D archive of the oldest board and card games, built for [Librarium Games](https://librarium.games). Visitors stroll a candlelit library hall, read the history of each game on its placard, and sit down to play the ones whose rules are known against an AI opponent, the Scribe.
 
-| 66 exhibits | 62 playable tables | 6 wings | 3 Scribe levels | 271 rule tests |
+| 66 exhibits | 62 playable tables | 6 wings | 3 Scribe levels | 275 rule tests |
 | :---: | :---: | :---: | :---: | :---: |
 | from Senet (c. 3100 BCE) to Hex (1942) | every one with its own board and pieces | walked in date order | Gentle · Fair · Sharp | plus simulated games and AI timing |
 

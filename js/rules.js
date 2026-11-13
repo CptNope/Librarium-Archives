@@ -190,7 +190,7 @@
     if ((++nodes & 127) === 0 && Date.now() > deadline) throw OUT_OF_TIME;
     const t = G.terminal(pl, depth);
     if (t !== null) return t;
-    if (depth === 0) return G.evaluate(pl);
+    if (depth === 0) return G.noisy && quiet ? quiesce(G, pl, alpha, beta, G.noisyDepth || 4) : G.evaluate(pl);
     let best = -Infinity;
     for (const seq of G.turns(pl)) {
       const s = G.snapshot();
@@ -202,6 +202,25 @@
       if (alpha >= beta) break;
     }
     return best;
+  }
+  // At the end of the search, an engine that names its captures (noisy) plays them out, so the Scribe does not
+  // stop counting in the middle of an exchange. Each side may also stand pat on the position as it is.
+  let quiet = true;
+  function quiesce(G, pl, alpha, beta, q) {
+    if (Date.now() > deadline) throw OUT_OF_TIME; // these nodes are dear (every one lists moves), so the clock is read at each
+    const t = G.terminal(pl, 0); if (t !== null) return t;
+    const stand = G.evaluate(pl);
+    if (q === 0 || stand >= beta) return stand;
+    if (stand > alpha) alpha = stand;
+    for (const seq of G.noisy(pl)) {
+      const s = G.snapshot();
+      for (const m of seq) G.apply(m);
+      const v = -quiesce(G, 1 - pl, -beta, -alpha, q - 1);
+      G.restore(s);
+      if (v >= beta) return v;
+      if (v > alpha) alpha = v;
+    }
+    return alpha;
   }
   function searchAt(G, pl, depth, first) {
     let best = null, bv = -Infinity;
@@ -227,7 +246,9 @@
     if (depth) return searchAt(G, pl, depth);
     const t0 = Date.now(), budget = BUDGET_MS[LEVEL.name], cap = pick(2, maxDepth, maxDepth + 2);
     const root = G.snapshot();
-    let best = searchAt(G, pl, 1);
+    quiet = false; // the first, one-move look always finishes: it plays out no captures, so it cannot run long
+    let best;
+    try { best = searchAt(G, pl, 1); } finally { quiet = true; }
     deadline = t0 + budget;
     try {
       for (let d = 2; d <= cap; d++) {
@@ -522,6 +543,7 @@
     terminal(pl, depth) {
       if (this.win) return this.win.winner === pl ? 1000 + depth : -1000 - depth;
       if (this.ply >= 200) return 0;
+      if (pl === 0 && this.kingRuns()) return 999 + depth; // the king is to move with a corner open: he is out next move
       return null;
     },
     kingRuns() {
@@ -547,14 +569,17 @@
         const adj = this.neighbors(k).filter(j => j >= 0 && this.b[j] === 1).length;
         const kr = (k / 7) | 0, kc = k % 7;
         const dist = Math.min(...BR_CORNERS.map(q => Math.abs(((q / 7) | 0) - kr) + Math.abs((q % 7) - kc)));
-        // Attackers on the squares beside a corner shut that corner; a king with room to run is dangerous.
-        const guards = [1, 7, 5, 13, 35, 43, 41, 47].filter(j => this.b[j] === 1).length;
+        // Attackers beside a corner shut it; on the square diagonally in from it they also bar row and column 1 or 5,
+        // the king's road to the corners, and cannot be trapped against the corner there.
+        const guards = [1, 7, 5, 13, 35, 43, 41, 47].filter(j => this.b[j] === 1).length + 2 * [8, 12, 36, 40].filter(j => this.b[j] === 1).length;
         let kingMoves = 0;
         for (const [dr, dc] of BR_DIRS) {
           let rr = kr + dr, cc = kc + dc;
           while (rr >= 0 && rr < 7 && cc >= 0 && cc < 7 && !this.b[rr * 7 + cc]) { kingMoves++; rr += dr; cc += dc; }
         }
-        s = def * 3 - att * 2.5 + this.kingRuns() * 25 - adj * 6 - dist - guards * 3 + kingMoves * 0.8;
+        // A king with room to run is dangerous; with two corners open he cannot be stopped.
+        const runs = this.kingRuns();
+        s = def * 3 - att * 2.5 + runs * (runs > 1 ? 60 : 25) - adj * 6 - dist - guards * 3 + kingMoves * 0.8;
       }
       return pl === 0 ? s : -s;
     },
@@ -1055,6 +1080,22 @@
       if (LEVEL.name === 'sharp') { const oppNear = hfPoints(this.won[0]) > 0 || this.won[0].length >= 10; return oppNear || behind <= 0 ? true : left < 5; }
       return true;
     },
+    // Sharp: what the field left after a play offers the opponent, weighed by the chance they hold a card of
+    // each month there (counted from the cards it cannot see) and the yaku each card would build for them.
+    threat(pl, seen, taken, added) {
+      const opp = 1 - pl, h = this.hands[opp].length; if (!h) return 0;
+      const field = this.field.filter(c => !taken.includes(c)).concat(added);
+      const unseen = []; for (let c = 0; c < 48; c++) if (!seen.has(c) && !added.includes(c)) unseen.push(c);
+      const U = unseen.length, base = hfPoints(this.won[opp]), months = new Map();
+      for (const f of field) { const gain = hfValue(f) + 25 * (hfPoints(this.won[opp].concat([f])) - base); months.set(f >> 2, Math.max(months.get(f >> 2) || 0, gain)); }
+      let t = 0;
+      for (const [mo, gain] of months) {
+        const k = unseen.filter(c => c >> 2 === mo).length; if (!k) continue;
+        let none = 1; for (let i = 0; i < h; i++) none *= Math.max(0, (U - k - i) / (U - i)); // chance they hold none of the k
+        t += (1 - none) * gain;
+      }
+      return t;
+    },
     // Score a play: what it takes now, what it leaves for the opponent, and yaku in the making.
     aiPlan(pl) {
       const ms = this.legal(pl);
@@ -1070,6 +1111,7 @@
           const before = hfPoints(this.won[pl]), after = hfPoints(this.won[pl].concat(got));
           v = got.reduce((t, c) => t + hfValue(c), 0) + (after - before) * 25;
           if (!got.length) v -= hfValue(m.c) * (deadMonth(m.c >> 2) ? 0.2 : 1.2); // a card left on the table may feed the opponent
+          if (LEVEL.name === 'sharp' && m.kind === 'play') v -= 1.5 * this.threat(pl, seen, got.length ? got : [], got.length ? [] : [m.c]);
         }
         v += Math.random() * pick(6, 1, 0.2);
         if (v > bv) { bv = v; best = m; }
@@ -3775,7 +3817,7 @@
     snapshot() { return [this.b.slice(), this.ply, this.passes, this.over]; },
     restore(s) { this.b = s[0].slice(); this.ply = s[1]; this.passes = s[2]; this.over = s[3]; },
     turns(pl) {
-      const ms = this.legal(pl).filter(m => !m.pass || this.passes === 0);
+      const all = this.legal(pl), moves = all.filter(m => !m.pass || this.passes === 0), ms = moves.length ? moves : all; // a pass after a pass only when nothing else is legal
       const val = m => (m.pass ? -5 : this.b[m.to] ? 10 * JG_VAL[this.b[m.to] & 7] - JG_VAL[this.b[m.from] & 7] : 0);
       ms.sort((a, b) => val(b) - val(a));
       return ms.map(m => [m]);
@@ -5243,14 +5285,14 @@
     ],
     source: 'The rules Édouard Lucas published as "la pipopipette", here on a grid of sixteen boxes.',
     followPrompt: 'You closed a box, so draw another line.',
-    init() { this.drawn = Array(DB_EDGES).fill(false); this.owner = Array(DB_N * DB_N).fill(-1); this.score = [0, 0]; },
+    init() { this.drawn = Array(DB_EDGES).fill(false); this.by = Array(DB_EDGES).fill(-1); this.owner = Array(DB_N * DB_N).fill(-1); this.score = [0, 0]; },
     sides(b) { let n = 0; for (const e of DB_BOX_EDGES[b]) if (this.drawn[e]) n++; return n; },
     gain(e) { let n = 0; for (const b of DB_EDGE_BOXES[e]) if (this.sides(b) === 3) n++; return n; },
     gift(e) { let n = 0; for (const b of DB_EDGE_BOXES[e]) if (this.sides(b) === 2) n++; return n; },
     left() { let n = 0; for (const d of this.drawn) if (!d) n++; return n; },
     legal(pl) { const out = []; for (let e = 0; e < DB_EDGES; e++) if (!this.drawn[e]) out.push({ pl, e }); return out; },
     apply(m) {
-      this.drawn[m.e] = true;
+      this.drawn[m.e] = true; if (this.by) this.by[m.e] = m.pl; // who drew it, so a resumed table can colour it
       const boxes = [];
       for (const b of DB_EDGE_BOXES[m.e]) if (this.sides(b) === 4 && this.owner[b] < 0) { this.owner[b] = m.pl; this.score[m.pl]++; boxes.push(b); }
       let note = '';
@@ -6424,6 +6466,7 @@
     snapshot() { return [this.b.slice(), this.placed.slice(), this.last.map(x => x && x.slice()), this.quiet, this.taken.slice(), this.over]; },
     restore(s) { this.b = s[0].slice(); this.placed = s[1].slice(); this.last = s[2].map(x => x && x.slice()); this.quiet = s[3]; this.taken = s[4].slice(); this.over = s[5]; },
     turns(pl) { return this.legal(pl).sort((a, b) => (b.cap || 0) - (a.cap || 0)).map(m => [m]); },
+    noisy(pl) { return this.placing() ? [] : this.steps(pl).filter(m => m.cap).sort((a, b) => b.cap - a.cap).map(m => [m]); }, // captures, for the end of the search
     terminal(pl, depth) { const r = this.over; if (!r) return null; return r.winner === -1 ? 0 : r.winner === pl ? 1000 + depth : -1000 - depth; },
     evaluate(pl) {
       const opp = 1 - pl, sp = this.steps(pl), so = this.steps(opp);
@@ -7668,7 +7711,27 @@
     aiPlan(pl, depth) { return bestPlan(this, pl, depth, 6); },
   };
 
-  const api = { DICE_P, LEVELS, setLevel, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, rithmo: RITHMO, lewischess: LEWISCHESS, courier: COURIER, hazard: HAZARD, piquet: PIQUET, nard: NARD, xii: XII, koikoi: KOIKOI, idraughts: IDRAUGHTS, hnefatafl: HNEFATAFL };
+  /* Saved games go to JSON. Boards kept in typed arrays, and the odd Set or Map,
+   * are tagged on the way out and rebuilt on the way back. */
+  const TYPED = { Int8Array, Uint8Array, Int16Array, Uint16Array, Int32Array, Uint32Array, Float32Array, Float64Array };
+  function packState(v) {
+    if (v === null || typeof v !== 'object') return v;
+    if (ArrayBuffer.isView(v)) return { __typed: v.constructor.name, d: Array.from(v) };
+    if (v instanceof Set) return { __set: [...v].map(packState) };
+    if (v instanceof Map) return { __map: [...v].map(([k, x]) => [packState(k), packState(x)]) };
+    if (Array.isArray(v)) return v.map(packState);
+    const out = {}; for (const k of Object.keys(v)) out[k] = packState(v[k]); return out;
+  }
+  function unpackState(v) {
+    if (v === null || typeof v !== 'object') return v;
+    if (Array.isArray(v)) return v.map(unpackState);
+    if (v.__typed && TYPED[v.__typed]) return TYPED[v.__typed].from(v.d);
+    if (v.__set) return new Set(v.__set.map(unpackState));
+    if (v.__map) return new Map(v.__map.map(([k, x]) => [unpackState(k), unpackState(x)]));
+    const out = {}; for (const k of Object.keys(v)) out[k] = unpackState(v[k]); return out;
+  }
+
+  const api = { DICE_P, LEVELS, setLevel, packState, unpackState, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, rithmo: RITHMO, lewischess: LEWISCHESS, courier: COURIER, hazard: HAZARD, piquet: PIQUET, nard: NARD, xii: XII, koikoi: KOIKOI, idraughts: IDRAUGHTS, hnefatafl: HNEFATAFL };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -59,7 +59,7 @@ flowchart LR
 - **Board games:** click a glowing piece, then one of its rings. Where pieces are placed (Go, Hex, Gomoku, Morris placement) or pits are sown (Oware, Kalah, Bao), click the ring or pit directly.
 - **Card and tile games:** click a card or tile in your hand; claims and other choices appear as buttons above the message bar.
 - **Keyboard:** the arrow keys step through the pieces (or cards) you can move, in reading order on screen; Enter picks one, the arrow keys then step through the rings it can go to, and Enter plays the move. A screen reader announces where you are ("Piece 3 of 12", or the card's name).
-- **Hint** (at tables without dice or hidden cards, and at Whist) asks the Sharp Scribe for the move it would make in your seat and lights it. **Undo** (at the chess family, both draughts, Tablut, Hnefatafl, Halma, Reversi, Rithmomachia, Jungle, Mū tōrere, Oware and Kalah) takes the board back to the start of your previous turn.
+- **Hint** (at tables without dice or hidden cards, and at Whist) asks the Sharp Scribe for the move it would make in your seat and lights it. **Undo** (at every two-player table without dice or hidden cards) takes the board back to the start of your previous turn.
 - **Esc** clears a selection, or leaves the table.
 - **Rules** reopens the *How to play* panel, which ends with a note on where the rules come from.
 
@@ -68,7 +68,7 @@ flowchart LR
 | Option | Where | Choices |
 | --- | --- | --- |
 | The Scribe's level | every table | Gentle · Fair (default) · Sharp |
-| Opponent | two-player tables with nothing hidden (the chess family, Go, draughts, mancala, tafl and the rest) | The Scribe · A friend (pass-and-play on one screen; the Scribe's level is hidden and the game is not added to your record) |
+| Opponent | two-player tables with nothing hidden (the chess family, Go, draughts, mancala, tafl and the rest) and the two-player dice games, where each player throws for themselves | The Scribe · A friend (pass-and-play on one screen; the Scribe's level is hidden and the game is not added to your record) |
 | Board size | Dots and Boxes | 4 × 4 · 5 × 5 |
 | | Hex | 7 × 7 · 9 × 9 · 11 × 11 |
 | Game length | Pachisi | short (two pieces each) · full (four) |
@@ -81,7 +81,7 @@ Choosing a variant or an opponent restarts the game, and every choice is remembe
 
 ## Saved games
 
-Long games against the Scribe are kept as you play: the chess family (chess, shatranj, chaturanga, medieval chess, Courier chess, xiangqi, janggi, makruk), both draughts, Tablut, Hnefatafl, Halma, Reversi, Rithmomachia, Whist and Piquet. The game is saved at the start of each of your turns (at the card tables, between tricks). Leave the table, or close the page, and the game is back on the table as you left it when you sit down again; a **New game** button above the board starts afresh. A finished game clears its save. Pieces already taken are not laid out again beside the board, but the score keeps them.
+Games against the Scribe are kept as you play at every two-player table without dice (the chess family, Go, Shogi, both draughts, the tafl games, the mancala games, Morris and the rest), and at Whist, Piquet and Mahjong. The game is saved at the start of each of your turns (at the card tables, between tricks; at Mahjong, when it is your turn to discard). Leave the table, or close the page, and the game is back on the table as you left it when you sit down again; a **New game** button above the board starts afresh. A finished game clears its save. Pieces already taken are laid out beside the board again, and pieces in hand (in Shogi, and at the tables where pieces are placed first) go back to their places.
 
 ## Sound
 

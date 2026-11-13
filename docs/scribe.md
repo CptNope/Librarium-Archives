@@ -7,6 +7,7 @@ mindmap
   root((The Scribe))
     Shared search
       negamax with alpha-beta
+      captures played out at the leaves
       iterative deepening
       time budget per level
       Morris · Oware · Alquerque · Brandubh · Hnefatafl
@@ -68,6 +69,7 @@ flowchart TD
 - **Move ordering.** Engines list captures and threats first, and each new depth tries the previous best plan first, so alpha-beta prunes more.
 - **Safe interruption.** When the deadline passes mid-search, the search throws, and the root position is restored before the best plan so far is returned.
 - **Wins sooner, losses later.** `terminal()` scores a finished game as `±1000 ± depth`.
+- **Exchanges played out.** An engine that lists its captures (`noisy`) has them played out where the search stops, each side free to stand pat, so the Scribe does not count a piece won in the middle of an exchange. Latrunculi does this. These nodes read the clock at every step, and the first one-move look plays out nothing, so it always finishes.
 
 ## Monte Carlo search (Go and Hex)
 
@@ -95,7 +97,7 @@ The Scribe never looks at the visitor's hand or the deck. Each game's Scribe wor
 | Piquet | Exchange: keeps aces, long suits, sets and runs in the making; Sharp tries every discard among its weakest cards against many random draws and keeps the best on average. Play: cashes sure winners, leads low from its longest suit, wins cheaply, and throws cards that cannot win |
 | Hazard | Always calls a main of 7, the caster's best. Fair stakes 2; Sharp stakes 1, since the caster has the worse of every bet, unless it is behind near the end |
 | Nard, Duodecim scripta | Every legal full turn, scored for the race, points held ahead of the enemy (Nard), lone pieces the enemy can reach weighed by what a hit would cost, and, in Duodecim scripta, pieces spread over the last six spaces so exact throws can bear them off |
-| Hanafuda (koi-koi) | Takes the most valuable cards and yaku in the making; a card that will not match goes to the table only if its month is spent. It stops at 7 points or with few cards left; Sharp calls koi-koi when it is ahead and the visitor is far from a yaku |
+| Hanafuda (koi-koi) | Takes the most valuable cards and yaku in the making; a card that will not match goes to the table only if its month is spent. Sharp also weighs each card a play leaves on the field by the chance you hold one of its month (counted from the cards it cannot see) and the yaku it would build for you. It stops at 7 points or with few cards left; Sharp calls koi-koi when it is ahead and the visitor is far from a yaku |
 | Mahjong | Each of the three Scribes counts how far its hand is from ready (shanten) and keeps the discards that leave the most useful draws open. It claims only when a claim brings its hand closer |
 
 ## Hints
@@ -129,7 +131,7 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Hounds and Jackals | 75% | 55% | 400 and 1,000; the two tracks never meet, so luck decides most games |
 | Patolli | 91% | 73% | 400 and 600 |
 | Checkered Game of Life | 71% | 50% | 1,000 each; the spin decides most games |
-| Latrunculi | 4–1, 1 draw | 3–4, 1 draw | 6 and 8 |
+| Latrunculi | 4–1, 1 draw | 6–0, 1 draw | 6 and 7; with captures played out, the new Sharp beat the old one 7–0, with 7 draws |
 | Jungle | 12–0 | 7–3, 2 draws | 12 each |
 | Medieval chess (Lewis chessmen) | 6–0 | 1–0, 5 draws | 6 each; with only checkmate winning, many games are drawn |
 | Courier chess | 5–0, 1 draw | 5–0, 1 draw | 6 each |
@@ -137,7 +139,7 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Hazard | about 50% | 56% | 4,000 each; the dice decide almost everything |
 | Nard | 58% | 59% | 100 each |
 | Duodecim scripta | 59% | 56% | 100 each |
-| Hanafuda (koi-koi) | 77% | about even | 400 games of six months; Sharp differs from Fair only in when it dares call koi-koi |
+| Hanafuda (koi-koi) | 77% | 53% to 43% | 400 and 800 games of six months; Sharp also weighs what a play leaves on the field for you, and when to call koi-koi |
 | Chaturanga | 6–0 | as Shatranj | 6; the same engine as Shatranj |
 | Rithmomachia | 5–0, 1 draw | 2–2, 2 draws | 6 each; most games run to the 150-move limit |
 | Whist (both seats of a side at one level) | +0.9 tricks a deal | +0.3 tricks a deal | 150 deals each, every deal played twice with the sides swapped |
@@ -148,7 +150,7 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Yut Nori | about 55% | | hundreds |
 | Mū tōrere | | | Sharp looks 16 moves ahead and never loses |
 
-Known weak spots: in Brandubh the visitor's side still wins most games against Sharp, and the Sharp level of Janggi, Latrunculi and Rithmomachia is barely stronger than Fair in short matches. Both are on the [roadmap](roadmap.md).
+Known weak spots: in Brandubh the visitor's side still wins most games against Sharp. The attackers now value the squares diagonally in from each corner and see when the king is one move from a corner, but in Scribe-against-Scribe games the defenders still win most often: on a 7 × 7 board, with these reconstructed rules, the king has a short road out. The Sharp level of Janggi and Rithmomachia is barely stronger than Fair in short matches; playing captures out at the end of the search was tried at both and dropped, since it cost more depth than it gained (on a busy or slower machine it made Janggi weaker). These are on the [roadmap](roadmap.md).
 
 ## Game by game
 

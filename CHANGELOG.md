@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.28.0: Undo and saves everywhere, dice pass-and-play, sharper Scribes
+
+- **Undo at every two-player table** without dice or hidden cards. Go, Shogi (with pieces in hand), Morris and Morabaraba, the tafl games, Fox and Geese, Dots and Boxes, Alquerque, Kōnane, Fanorona, Bao, Chinese checkers, Hex, Gomoku, Seega, Bagh-chal and Latrunculi now rebuild their pieces from the game's state, taken pieces laid out beside the board.
+- **Saved games at all of those tables**, and at Mahjong (kept when it is your turn to discard).
+- **Pass-and-play at fifteen dice tables**: Senet, Ur, Tables, the Goose, Snakes and Ladders, Yut Nori, Pachisi, Ludo, Tâb, Hounds and Jackals, Patolli, the Mansion of Happiness, the Checkered Game of Life, Nard and Duodecim scripta. Each player throws for themselves.
+- **Sharper Scribes:** at Latrunculi the search now plays out captures before it judges a position (the new Sharp beat the old one 7–0, with 7 draws). At Hanafuda, Sharp weighs what each play leaves on the field for you; it now wins 53% of games against Fair, up from about even.
+- Brandubh's attackers value the squares diagonally in from each corner and see when the king is one move from escaping. The defenders still win most games.
+- Janggi always offers a move when only a pass is left.
+- Undo finishes any running animation before it rebuilds the table. Draughts and International draughts lay taken pieces on the correct side.
+- 4 new rule tests (275 in all).
+
 ## 0.27.0: A guided tour, the passport, International draughts and Hnefatafl
 
 - **Guided tour:** a **Tour** button on the bar walks you through the hall from wherever you stand, stopping at each exhibit. With sound on, the Archives read each placard aloud; with sound off, each stop waits long enough to read it. Walk off on your own, pick another exhibit, press Esc or sit down to play, and the tour stops.

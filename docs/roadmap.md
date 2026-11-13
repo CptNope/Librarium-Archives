@@ -22,6 +22,7 @@ timeline
     0.25 : Pass-and-play · Saved games · Keyboard play
     0.26 : Hint and Undo · Nard · Duodecim scripta · Hanafuda
     0.27 : Guided tour and passport · International draughts · Hnefatafl
+    0.28 : Undo and saved games at every table · Dice pass-and-play · Sharper Scribes
 ```
 
 ```mermaid
@@ -35,10 +36,9 @@ pie showData
 
 - [ ] Swap the type-set wordmark for Librarium's logo files
 - [ ] Hare and Hounds (the French military game), once the lines of its eleven-point board can be checked against a primary source
-- [ ] A stronger Brandubh attacker
-- [ ] A stronger Sharp level for Janggi, Latrunculi and Rithmomachia
-- [ ] Saved games for Shogi, Go and Mahjong (their tables do not yet rebuild pieces in hand, stones or melds from a saved state)
-- [ ] Pass-and-play for the dice games
+- [ ] A stronger Brandubh attacker (the defenders still win most Scribe-against-Scribe games)
+- [ ] A stronger Sharp level for Janggi and Rithmomachia
+- [ ] Pass-and-play at Hazard, the Landlord's Game and the four-player tables
 
 ## Done
 
@@ -59,6 +59,9 @@ pie showData
 - [x] Nard, Duodecim scripta (a labelled reconstruction) and Hanafuda koi-koi
 - [x] A guided tour with read-aloud placards, and the visitor's passport
 - [x] International draughts, and Hnefatafl on the Copenhagen rules (a labelled reconstruction)
+- [x] Undo and saved games at every two-player table without dice, and saved games at Mahjong
+- [x] Pass-and-play at fifteen dice tables
+- [x] A stronger Sharp level for Latrunculi and Hanafuda
 - [x] Pass-and-play against a friend, saved games for long games, and keyboard play with screen-reader announcements
 - [x] The last display tables of Wings I and III made playable: Hazard at the first dice, Piquet at the playing cards, and medieval chess (a labelled reconstruction) on the Lewis chessmen
 - [x] Courier chess, on twelve files

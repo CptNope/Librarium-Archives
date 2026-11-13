@@ -94,6 +94,7 @@ classDiagram
 | `turns(pl)` | Whole turns as arrays of moves, best-looking first (so alpha-beta prunes more). A turn can be a chain: a capture sequence, a Kalah extra move |
 | `terminal(pl, depth)` | `null`, or a score for a finished position (`±1000 ± depth` prefers quicker wins and slower losses) |
 | `evaluate(pl)` | A heuristic score from `pl`'s side |
+| `noisy(pl)` (optional) | Captures only, best first: played out where the search stops, so an exchange is not cut off halfway. `noisyDepth` caps how far (default 4) |
 
 With these, `aiPlan(pl, depth)` is usually one line: `return bestPlan(this, pl, depth, maxDepth)`.
 
@@ -175,7 +176,7 @@ stateDiagram-v2
 
 | Member | Purpose |
 | --- | --- |
-| `setup(ex)` | Put the pieces where the fresh engine says; hide any display-only pieces on the exhibit |
+| `setup(ex)` | Put every piece where the engine's state says: on the board, in hand, or taken and beside the board. It runs on a fresh game, after Undo and on a resumed game, so it must not assume the opening position. Hide any display-only pieces on the exhibit |
 | `leave(ex)` | Put the exhibit back as it stands in the hall |
 | `meshesFor(m)` | The mesh to glow and click for a move; return `[]` (with a `label` on the move) for a button |
 | `ringFor(m)` / `fromFor(m)` | Where to draw the target ring and the last-move ember; `null` for none |
@@ -186,7 +187,9 @@ stateDiagram-v2
 | `onFinish()` | Optional flourish when the game ends (Gomoku lifts the winning line) |
 | `camW`, `camD`, `camElev`, `ringScale`, `ringOpacity`, `ringTone` | Camera framing at the table (width, depth, and how steeply it looks down; long boards such as Rithmomachia look from higher up) and ring styling |
 
-Presenters always check `play.token` after an `await`: if the visitor left the table mid-animation, the presenter stops.
+Presenters always check `play.token` after an `await`: if the visitor left the table mid-animation, the presenter stops. Undo finishes every running animation before `setup` runs, so nothing in flight moves a piece afterwards.
+
+Saved games store the engine's plain data fields as JSON. Typed-array boards, Sets and Maps are tagged on the way out and rebuilt on the way back (`packState` and `unpackState` in `rules.js`). An engine can add `saveable()` to say when its state is safe to keep (Mahjong: only when it is your turn to discard).
 
 ## Feature matrix
 
