@@ -2576,3 +2576,37 @@ test('Hnefatafl: a game between Scribes ends', () => {
   while (!(res = HN.result(pl)) && n++ < 400) { for (const m of HN.aiPlan(pl)) HN.apply(m); pl = 1 - pl; }
   assert.ok(res);
 });
+
+/* ---------------------------------------------------------- 0.28: state, search */
+
+test('Saved state: typed-array boards, Sets and Maps survive JSON', () => {
+  const st = { b: Int8Array.from([0, 1, -1, 2]), seen: new Set(['a', 'b']), m: new Map([[1, [2, 3]]]), n: { u: Uint8Array.from([7]) }, plain: [1, { x: 2 }] };
+  const back = rules.unpackState(JSON.parse(JSON.stringify(rules.packState(st))));
+  assert.ok(back.b instanceof Int8Array); assert.deepEqual(Array.from(back.b), [0, 1, -1, 2]);
+  assert.ok(back.seen instanceof Set && back.seen.has('b')); assert.deepEqual(back.m.get(1), [2, 3]);
+  assert.ok(back.n.u instanceof Uint8Array); assert.deepEqual(back.plain, [1, { x: 2 }]);
+});
+test('Janggi: the Scribe always has a move to offer while the game goes on', () => {
+  const J = rules.janggi; J.init(); J.passes = 1;
+  // After a pass, the Scribe still offers a move; and with nothing but a pass left, it offers the pass.
+  assert.ok(J.turns(1).length && J.turns(1).every(([m]) => !m.pass));
+  J.b.fill(0); J.b[3] = 1; J.b[76] = 9; J.b[66] = 2 + 8; J.b[84] = 2 + 8; // Han's general, hemmed in by its own guards
+  for (const m of J.legal(1)) assert.ok(m.pass || m.from !== undefined);
+  assert.ok(J.turns(1).length);
+});
+test('Sharp search: capture playouts keep to the clock', () => {
+  rules.setLevel('sharp');
+  for (const id of ['janggi', 'latrunculi']) {
+    const g = rules[id]; g.init(); let pl = g.first, worst = 0;
+    for (let k = 0; k < (id === 'latrunculi' ? 44 : 6); k++) { const t = Date.now(); const p = g.aiPlan(pl); worst = Math.max(worst, Date.now() - t); for (const m of p) g.apply(m); pl = 1 - pl; }
+    assert.ok(worst < 4000, `${id} took ${worst} ms`);
+  }
+  rules.setLevel('fair');
+});
+test('Koi-koi: Sharp counts what a play leaves the opponent', () => {
+  const K = rules.koikoi; K.setVariant('6'); K.init();
+  const seen = new Set(K.won[0].concat(K.won[1], K.field, K.hands[1]));
+  const t = K.threat(1, seen, [], []);
+  assert.ok(t >= 0 && Number.isFinite(t));
+  K.hands[0] = []; assert.equal(K.threat(1, seen, [], []), 0); // nothing in their hand, nothing to fear
+});

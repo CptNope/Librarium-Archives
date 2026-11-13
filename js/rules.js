@@ -190,7 +190,7 @@
     if ((++nodes & 127) === 0 && Date.now() > deadline) throw OUT_OF_TIME;
     const t = G.terminal(pl, depth);
     if (t !== null) return t;
-    if (depth === 0) return G.noisy ? quiesce(G, pl, alpha, beta, G.noisyDepth || 4) : G.evaluate(pl);
+    if (depth === 0) return G.noisy && quiet ? quiesce(G, pl, alpha, beta, G.noisyDepth || 4) : G.evaluate(pl);
     let best = -Infinity;
     for (const seq of G.turns(pl)) {
       const s = G.snapshot();
@@ -205,8 +205,9 @@
   }
   // At the end of the search, an engine that names its captures (noisy) plays them out, so the Scribe does not
   // stop counting in the middle of an exchange. Each side may also stand pat on the position as it is.
+  let quiet = true;
   function quiesce(G, pl, alpha, beta, q) {
-    if ((++nodes & 127) === 0 && Date.now() > deadline) throw OUT_OF_TIME;
+    if (Date.now() > deadline) throw OUT_OF_TIME; // these nodes are dear (every one lists moves), so the clock is read at each
     const t = G.terminal(pl, 0); if (t !== null) return t;
     const stand = G.evaluate(pl);
     if (q === 0 || stand >= beta) return stand;
@@ -245,7 +246,9 @@
     if (depth) return searchAt(G, pl, depth);
     const t0 = Date.now(), budget = BUDGET_MS[LEVEL.name], cap = pick(2, maxDepth, maxDepth + 2);
     const root = G.snapshot();
-    let best = searchAt(G, pl, 1);
+    quiet = false; // the first, one-move look always finishes: it plays out no captures, so it cannot run long
+    let best;
+    try { best = searchAt(G, pl, 1); } finally { quiet = true; }
     deadline = t0 + budget;
     try {
       for (let d = 2; d <= cap; d++) {
@@ -3825,7 +3828,7 @@
     snapshot() { return [this.b.slice(), this.ply, this.passes, this.over]; },
     restore(s) { this.b = s[0].slice(); this.ply = s[1]; this.passes = s[2]; this.over = s[3]; },
     turns(pl) {
-      const ms = this.legal(pl).filter(m => !m.pass || this.passes === 0);
+      const all = this.legal(pl), moves = all.filter(m => !m.pass || this.passes === 0), ms = moves.length ? moves : all; // a pass after a pass only when nothing else is legal
       const val = m => (m.pass ? -5 : this.b[m.to] ? 10 * JG_VAL[this.b[m.to] & 7] - JG_VAL[this.b[m.from] & 7] : 0);
       ms.sort((a, b) => val(b) - val(a));
       return ms.map(m => [m]);
@@ -7576,16 +7579,6 @@
     },
     snapshot() { return [this.b.slice(), this.taken.slice(), this.ply, this.over]; },
     restore(s) { this.b = s[0].slice(); this.taken = s[1].slice(); this.ply = s[2]; this.over = s[3]; this.pyr = false; },
-    noisyDepth: 2,
-    noisy(pl) { // moves that take something, tried by making them: captures here come from where pieces end up
-      const out = [];
-      for (const m of this.legal(pl)) {
-        if (m.meet) { out.push([m]); continue; }
-        const s = this.snapshot(), r = this.apply(m); this.restore(s);
-        if (r.caps.length) out.push([m]);
-      }
-      return out;
-    },
     turns(pl) { // meetings first, then moves forward
       const fwd = m => (pl === 0 ? 1 : -1) * ((m.to >> 3) - (m.from >> 3));
       return this.legal(pl).sort((a, b) => (b.meet ? 10 : 0) + fwd(b) - (a.meet ? 10 : 0) - fwd(a)).map(m => [m]);
