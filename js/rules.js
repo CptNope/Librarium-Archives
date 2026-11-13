@@ -190,7 +190,7 @@
     if ((++nodes & 127) === 0 && Date.now() > deadline) throw OUT_OF_TIME;
     const t = G.terminal(pl, depth);
     if (t !== null) return t;
-    if (depth === 0) return G.evaluate(pl);
+    if (depth === 0) return G.noisy ? quiesce(G, pl, alpha, beta, G.noisyDepth || 4) : G.evaluate(pl);
     let best = -Infinity;
     for (const seq of G.turns(pl)) {
       const s = G.snapshot();
@@ -202,6 +202,24 @@
       if (alpha >= beta) break;
     }
     return best;
+  }
+  // At the end of the search, an engine that names its captures (noisy) plays them out, so the Scribe does not
+  // stop counting in the middle of an exchange. Each side may also stand pat on the position as it is.
+  function quiesce(G, pl, alpha, beta, q) {
+    if ((++nodes & 127) === 0 && Date.now() > deadline) throw OUT_OF_TIME;
+    const t = G.terminal(pl, 0); if (t !== null) return t;
+    const stand = G.evaluate(pl);
+    if (q === 0 || stand >= beta) return stand;
+    if (stand > alpha) alpha = stand;
+    for (const seq of G.noisy(pl)) {
+      const s = G.snapshot();
+      for (const m of seq) G.apply(m);
+      const v = -quiesce(G, 1 - pl, -beta, -alpha, q - 1);
+      G.restore(s);
+      if (v >= beta) return v;
+      if (v > alpha) alpha = v;
+    }
+    return alpha;
   }
   function searchAt(G, pl, depth, first) {
     let best = null, bv = -Infinity;
@@ -522,6 +540,7 @@
     terminal(pl, depth) {
       if (this.win) return this.win.winner === pl ? 1000 + depth : -1000 - depth;
       if (this.ply >= 200) return 0;
+      if (pl === 0 && this.kingRuns()) return 999 + depth; // the king is to move with a corner open: he is out next move
       return null;
     },
     kingRuns() {
@@ -548,13 +567,27 @@
         const kr = (k / 7) | 0, kc = k % 7;
         const dist = Math.min(...BR_CORNERS.map(q => Math.abs(((q / 7) | 0) - kr) + Math.abs((q % 7) - kc)));
         // Attackers on the squares beside a corner shut that corner; a king with room to run is dangerous.
-        const guards = [1, 7, 5, 13, 35, 43, 41, 47].filter(j => this.b[j] === 1).length;
+        // Attackers beside a corner shut it; on the square diagonally in from it they also bar row and column 1 or 5,
+        // the king's road to the corners, and cannot be trapped against the corner there.
+        const guards = [1, 7, 5, 13, 35, 43, 41, 47].filter(j => this.b[j] === 1).length + 2 * [8, 12, 36, 40].filter(j => this.b[j] === 1).length;
         let kingMoves = 0;
         for (const [dr, dc] of BR_DIRS) {
           let rr = kr + dr, cc = kc + dc;
           while (rr >= 0 && rr < 7 && cc >= 0 && cc < 7 && !this.b[rr * 7 + cc]) { kingMoves++; rr += dr; cc += dc; }
         }
-        s = def * 3 - att * 2.5 + this.kingRuns() * 25 - adj * 6 - dist - guards * 3 + kingMoves * 0.8;
+        // A square one king move away from which two corners lie open is a fork the attackers must stop now.
+        // Squares one king move away with a corner open beyond: two of them, or one with two corners, is a fork.
+        let threat = 0, escapes = 0;
+        for (const [dr, dc] of BR_DIRS) {
+          let rr = kr + dr, cc = kc + dc;
+          while (rr >= 0 && rr < 7 && cc >= 0 && cc < 7 && !this.b[rr * 7 + cc]) {
+            const q = rr * 7 + cc;
+            if (!BR_CORNERS.includes(q)) { this.b[k] = 0; this.b[q] = 3; const n = this.kingRuns(); this.b[q] = 0; this.b[k] = 3; if (n > threat) threat = n; if (n) escapes++; }
+            rr += dr; cc += dc;
+          }
+        }
+        const runs = this.kingRuns(), fork = threat > 1 || escapes > 1;
+        s = def * 3 - att * 2.5 + runs * (runs > 1 ? 60 : 25) + threat * 5 + escapes * 3 + (fork ? 18 : 0) - adj * 6 - dist - guards * 3 + kingMoves * 0.8;
       }
       return pl === 0 ? s : -s;
     },
@@ -1055,6 +1088,22 @@
       if (LEVEL.name === 'sharp') { const oppNear = hfPoints(this.won[0]) > 0 || this.won[0].length >= 10; return oppNear || behind <= 0 ? true : left < 5; }
       return true;
     },
+    // Sharp: what the field left after a play offers the opponent, weighed by the chance they hold a card of
+    // each month there (counted from the cards it cannot see) and the yaku each card would build for them.
+    threat(pl, seen, taken, added) {
+      const opp = 1 - pl, h = this.hands[opp].length; if (!h) return 0;
+      const field = this.field.filter(c => !taken.includes(c)).concat(added);
+      const unseen = []; for (let c = 0; c < 48; c++) if (!seen.has(c) && !added.includes(c)) unseen.push(c);
+      const U = unseen.length, base = hfPoints(this.won[opp]), months = new Map();
+      for (const f of field) { const gain = hfValue(f) + 25 * (hfPoints(this.won[opp].concat([f])) - base); months.set(f >> 2, Math.max(months.get(f >> 2) || 0, gain)); }
+      let t = 0;
+      for (const [mo, gain] of months) {
+        const k = unseen.filter(c => c >> 2 === mo).length; if (!k) continue;
+        let none = 1; for (let i = 0; i < h; i++) none *= Math.max(0, (U - k - i) / (U - i)); // chance they hold none of the k
+        t += (1 - none) * gain;
+      }
+      return t;
+    },
     // Score a play: what it takes now, what it leaves for the opponent, and yaku in the making.
     aiPlan(pl) {
       const ms = this.legal(pl);
@@ -1070,6 +1119,7 @@
           const before = hfPoints(this.won[pl]), after = hfPoints(this.won[pl].concat(got));
           v = got.reduce((t, c) => t + hfValue(c), 0) + (after - before) * 25;
           if (!got.length) v -= hfValue(m.c) * (deadMonth(m.c >> 2) ? 0.2 : 1.2); // a card left on the table may feed the opponent
+          if (LEVEL.name === 'sharp' && m.kind === 'play') v -= 1.5 * this.threat(pl, seen, got.length ? got : [], got.length ? [] : [m.c]);
         }
         v += Math.random() * pick(6, 1, 0.2);
         if (v > bv) { bv = v; best = m; }
@@ -3780,6 +3830,10 @@
       ms.sort((a, b) => val(b) - val(a));
       return ms.map(m => [m]);
     },
+    noisy(pl) { // captures only, the most valuable victim first
+      const val = m => 10 * JG_VAL[this.b[m.to] & 7] - JG_VAL[this.b[m.from] & 7];
+      return this.legal(pl).filter(m => !m.pass && this.b[m.to]).sort((a, b) => val(b) - val(a)).map(m => [m]);
+    },
     terminal(pl, depth) {
       if (this.over) return this.over.winner === pl ? 1000 + depth : -1000 - depth;
       const ms = this.legal(pl);
@@ -6424,6 +6478,7 @@
     snapshot() { return [this.b.slice(), this.placed.slice(), this.last.map(x => x && x.slice()), this.quiet, this.taken.slice(), this.over]; },
     restore(s) { this.b = s[0].slice(); this.placed = s[1].slice(); this.last = s[2].map(x => x && x.slice()); this.quiet = s[3]; this.taken = s[4].slice(); this.over = s[5]; },
     turns(pl) { return this.legal(pl).sort((a, b) => (b.cap || 0) - (a.cap || 0)).map(m => [m]); },
+    noisy(pl) { return this.placing() ? [] : this.steps(pl).filter(m => m.cap).sort((a, b) => b.cap - a.cap).map(m => [m]); }, // captures, for the end of the search
     terminal(pl, depth) { const r = this.over; if (!r) return null; return r.winner === -1 ? 0 : r.winner === pl ? 1000 + depth : -1000 - depth; },
     evaluate(pl) {
       const opp = 1 - pl, sp = this.steps(pl), so = this.steps(opp);
@@ -7521,6 +7576,16 @@
     },
     snapshot() { return [this.b.slice(), this.taken.slice(), this.ply, this.over]; },
     restore(s) { this.b = s[0].slice(); this.taken = s[1].slice(); this.ply = s[2]; this.over = s[3]; this.pyr = false; },
+    noisyDepth: 2,
+    noisy(pl) { // moves that take something, tried by making them: captures here come from where pieces end up
+      const out = [];
+      for (const m of this.legal(pl)) {
+        if (m.meet) { out.push([m]); continue; }
+        const s = this.snapshot(), r = this.apply(m); this.restore(s);
+        if (r.caps.length) out.push([m]);
+      }
+      return out;
+    },
     turns(pl) { // meetings first, then moves forward
       const fwd = m => (pl === 0 ? 1 : -1) * ((m.to >> 3) - (m.from >> 3));
       return this.legal(pl).sort((a, b) => (b.meet ? 10 : 0) + fwd(b) - (a.meet ? 10 : 0) - fwd(a)).map(m => [m]);
