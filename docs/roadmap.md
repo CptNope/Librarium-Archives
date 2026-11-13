@@ -23,6 +23,7 @@ timeline
     0.26 : Hint and Undo · Nard · Duodecim scripta · Hanafuda
     0.27 : Guided tour and passport · International draughts · Hnefatafl
     0.28 : Undo and saved games at every table · Dice pass-and-play · Sharper Scribes
+    0.29 : Hints that explain · Moves and replay · A guide for first games
 ```
 
 ```mermaid
@@ -62,6 +63,7 @@ pie showData
 - [x] Undo and saved games at every two-player table without dice, and saved games at Mahjong
 - [x] Pass-and-play at fifteen dice tables
 - [x] A stronger Sharp level for Latrunculi and Hanafuda
+- [x] Hints that say why, a list of moves, a replay after each game, and a guide for first games at the hardest tables
 - [x] Pass-and-play against a friend, saved games for long games, and keyboard play with screen-reader announcements
 - [x] The last display tables of Wings I and III made playable: Hazard at the first dice, Piquet at the playing cards, and medieval chess (a labelled reconstruction) on the Lewis chessmen
 - [x] Courier chess, on twelve files

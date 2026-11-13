@@ -7096,6 +7096,8 @@ async function startGame(ex) {
   play.resumed = loadGame(g);
   renderVariants(g);
   P.setup(ex);
+  play.turnNo = 0; play.coachSeen = new Set(); $('#lm-coach').hidden = true; $('#lm-choices').classList.remove('replaybar');
+  $('#lm-replayBtn').hidden = true; startHistory();
   showPlacard(false); $('#lm-hint').style.opacity = 0; rail.hidden = true; index.hidden = true; indexBtn.setAttribute('aria-expanded', 'false');
   root.classList.add('playing');
   resetView(true); updateJoy();
@@ -7138,13 +7140,17 @@ function refreshAids() {
 }
 function rememberTurn() {
   if (!UNDO_OK.has(play.game.id) || play.hotseat) return;
-  try { play.undo.push(copyState(play.game)); if (play.undo.length > 60) play.undo.shift(); } catch (e) { /* a state that cannot be copied: no undo for it */ }
+  try {
+    play.undo.push(copyState(play.game)); play.undoH.push(play.history ? play.history.length : 0); // and where the move list stood
+    if (play.undo.length > 60) { play.undo.shift(); play.undoH.shift(); }
+  } catch (e) { /* a state that cannot be copied: no undo for it */ }
   refreshAids();
 }
 $('#lm-undoBtn').addEventListener('click', () => {
   if (play.phase !== 'choose' || play.cur !== 0 || play.undo.length < 2) return;
   const g = play.game, P = play.P;
   play.undo.pop(); const back = play.undo.pop();
+  play.undoH.pop(); const h = play.undoH.pop(); if (play.history && h !== undefined) { play.history.length = h; renderMoves(); }
   play.token++; clearHighlights(); clearLastMove(); $('#lm-choices').hidden = true;
   settleTweens();
   Object.assign(g, structuredClone(back));
@@ -7172,7 +7178,8 @@ $('#lm-hintBtn').addEventListener('click', async () => {
   const mesh = (play.P.meshesFor(m) || []).find(Boolean);
   if (mesh && play.twoStep) { if (play.selected !== mesh) { if (play.selected) select(play.selected); select(mesh); } }
   play.hintMove = m; play.hover = play.rings.find(r => r.userData.move === m) || mesh || null;
-  setMsg(turnName(), (m.label ? `The Scribe would choose “${m.label}”. ` : 'The Scribe would play the move now lit up. ') + 'Play it, or choose your own.');
+  const why = explainHint(g, pl, m);
+  setMsg(turnName(), (m.label ? `The Scribe would choose “${m.label}”. ` : `The Scribe would play the move now lit up${moveText(g, m) ? ` (${moveText(g, m)})` : ''}. `) + why + ' Play it, or choose your own.');
 });
 
 /* ---------------------------------------------------- saved games
@@ -7206,12 +7213,232 @@ function loadGame(g) {
   try { Object.assign(g, R.unpackState(JSON.parse(JSON.stringify(s.state)))); return true; } catch (e) { clearSave(g.id); g.init(); return false; }
 }
 function clearSave(id) { if (store.saves && store.saves[id]) { delete store.saves[id]; save(); } }
+/* ---------------------------------------------------- learning the game
+ * A list of the moves so far, a replay once a game is over, a reason with
+ * every hint, and a guide that walks a first game at the hardest tables. */
+// Boards laid out on a square grid, where a square can take a name from the visitor's side: files a, b, c… from the
+// left, ranks 1, 2, 3… from the near edge. The names come from where each square is drawn, so every board agrees.
+const GRID_NAMES = new Set(['chess', 'shatranj', 'chaturanga', 'lewischess', 'makruk', 'courier', 'xiangqi', 'janggi', 'shogi', 'draughts', 'tablut', 'brandubh', 'hnefatafl', 'jungle', 'rithmo', 'reversi', 'halma', 'go', 'gomoku', 'latrunculi', 'seega', 'alquerque', 'konane', 'fanorona', 'baghchal', 'foxgeese', 'morris', 'morabaraba']);
+const squareNames = {};
+function squareName(g, i) {
+  const key = g.id + ':' + (g.variant || '');
+  if (!squareNames[key]) {
+    const P = PRES[g.id], at = P.pos || P.pt, n = (g.b || g.board || []).length, pts = [];
+    for (let k = 0; k < n; k++) { try { const v = at.call(P, k); if (v) pts.push([k, Math.round(v.x * 1000), Math.round(v.z * 1000)]); } catch (e) { /* a square the board does not draw */ } }
+    const xs = [...new Set(pts.map(p => p[1]))].sort((a, b) => a - b), zs = [...new Set(pts.map(p => p[2]))].sort((a, b) => b - a);
+    const names = {}; for (const [k, x, z] of pts) names[k] = 'abcdefghijklmnopqrstuvwxyz'[xs.indexOf(x)] + (zs.indexOf(z) + 1);
+    squareNames[key] = names;
+  }
+  return squareNames[key][i] || '?';
+}
+// A short written form of a move, worked out before it is played (a capture shows ×).
+function moveText(g, m) {
+  if (!m || g.dice) return '';
+  if (m.label) return m.label;
+  if (m.pass) return 'Pass';
+  if (g.id === 'idraughts') return [m.from, ...m.path].map(idNumber).join(m.caps.length ? '×' : '–') + (m.crown ? ', crowned' : ''); // the board's own numbers, as the FMJD writes them
+  if (g.id === 'hex') { const n = g.n; return 'abcdefghijk'[m.at % n] + (((m.at / n) | 0) + 1); }
+  if (!GRID_NAMES.has(g.id)) {
+    if (m.pit !== undefined) return `pit ${(m.pit % 16) + 1}` + (m.dir ? (m.dir > 0 ? ', sowing right' : ', sowing left') : '');
+    if (m.e !== undefined) return `line ${m.e + 1}`;
+    return '';
+  }
+  const sq = i => squareName(g, i);
+  if (m.type === 'remove') return `takes on ${sq(m.at)}`;
+  if (m.drop) return `drop on ${sq(m.to)}`;
+  const at = m.place !== undefined ? m.place : m.at !== undefined ? m.at : m.p !== undefined ? m.p : m.type === 'place' ? m.to : m.remove !== undefined ? m.remove : m.lift;
+  if (m.from === undefined && at !== undefined) return (m.remove !== undefined || m.lift !== undefined ? 'lifts ' : '') + sq(at);
+  if (m.from === undefined || m.to === undefined) return '';
+  const cap = (m.caps && m.caps.length) || m.cap || m.meet || (g.b && g.b[m.to] && g.b[m.to] !== 0);
+  const via = m.path && m.path.length > 1 ? m.path.slice(0, -1).map(sq) : [];
+  return [sq(m.from), ...via, sq(m.to)].join(cap ? '×' : '–') + (m.promo ? ', promoted' : '') + (m.crown ? ', crowned' : '');
+}
+const canReview = g => UNDO_OK.has(g.id); // tables that rebuild from their state can be replayed
+function startHistory() {
+  const g = play.game;
+  play.history = canReview(g) ? [{ pl: -1, text: play.resumed ? 'The saved game' : 'The start', note: '', state: copyState(g) }] : [];
+  play.undoH = [];
+  $('#lm-movesBtn').hidden = !canReview(g); $('#lm-moves').hidden = true; $('#lm-movesBtn').setAttribute('aria-expanded', 'false');
+  $('#lm-movesKey').textContent = g.id === 'idraughts' ? 'Squares carry the board\'s own numbers, 1 to 50, as players write them; × marks a capture.'
+    : GRID_NAMES.has(g.id) ? 'Squares are named from your side: files a, b, c… from your left, ranks 1, 2, 3… from the row nearest you. × marks a capture.' : '';
+  renderMoves();
+}
+function recordMove(pl, m, text, res) {
+  const g = play.game; if (!play.history || !play.history.length) return;
+  const caps = res && res.caps && res.caps.length;
+  if (caps && text && !text.includes('×')) text += ` (takes ${caps})`;
+  try { play.history.push({ pl, m, text, note: (res && res.note) || '', state: copyState(g) }); } catch (e) { return; }
+  if (!$('#lm-moves').hidden) renderMoves();
+}
+function renderMoves(now) {
+  const ol = $('#lm-moveList'); ol.innerHTML = '';
+  const h = play.history || [];
+  if (h.length < 2) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = 'No moves yet.'; ol.appendChild(li); return; }
+  let turn = 0;
+  h.forEach((e, k) => {
+    if (k === 0) return;
+    if (e.pl === 0 && (k === 1 || h[k - 1].pl !== 0)) turn++;
+    const li = document.createElement('li'); li.className = (e.pl === 0 ? 'you' : 'scribe') + (k === now ? ' now' : '');
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = e.pl === 0 && (k === 1 || h[k - 1].pl !== 0) ? turn + '.' : '';
+    const w = document.createElement('span'); w.className = 'w'; w.textContent = e.pl === 0 ? 'You' : asFriend('Scribe');
+    const t = document.createElement('span'); t.className = 't';
+    if (e.text) { const b = document.createElement('b'); b.textContent = e.text; t.appendChild(b); }
+    if (e.note) { const i = document.createElement('i'); i.textContent = (e.text ? ' · ' : '') + asFriend(e.note); t.appendChild(i); }
+    li.append(n, w, t); ol.appendChild(li);
+  });
+  if (now !== undefined) { const on = ol.querySelector('.now'); if (on) on.scrollIntoView({ block: 'nearest' }); }
+  else ol.parentElement.scrollTop = ol.parentElement.scrollHeight;
+}
+$('#lm-movesBtn').addEventListener('click', () => {
+  const box = $('#lm-moves'), on = box.hidden;
+  box.hidden = !on; $('#lm-movesBtn').setAttribute('aria-expanded', String(on));
+  if (on) { $('#lm-rules').hidden = true; renderMoves(play.phase === 'replay' ? play.replayAt : undefined); }
+});
+
+/* Replay: once the game is over, step through it position by position. */
+function showReplay(k) {
+  const g = play.game, P = play.P, h = play.history, e = h[k];
+  play.replayAt = k; settleTweens(); clearLastMove();
+  Object.assign(g, structuredClone(e.state)); P.setup(play.ex); updateScore();
+  if (e.m) { try { markLastMove(P.fromFor ? P.fromFor(e.m) : null, P.ringFor(e.m)); } catch (err) { /* a move with no spot */ } }
+  const who = e.pl === 0 ? 'You' : e.pl === 1 ? asFriend('The Scribe') : '';
+  setMsg('Replay', k === 0 ? `${e.text}. Step through the game with the arrows.` : `Move ${k} of ${h.length - 1}. ${who}${e.text ? ': ' + e.text : ''}.${e.note ? ' ' + asFriend(e.note) : ''}`);
+  const box = $('#lm-choices'); box.innerHTML = ''; box.hidden = false; box.classList.add('replaybar');
+  const add = (label, aria, to, off) => { const b = document.createElement('button'); b.className = 'btn'; b.textContent = label; b.setAttribute('aria-label', aria); b.disabled = off; b.addEventListener('click', () => (to === 'done' ? endReplay() : showReplay(to))); box.appendChild(b); };
+  add('⏮', 'Back to the start', 0, k === 0); add('◀', 'Previous move', k - 1, k === 0); add('▶', 'Next move', k + 1, k === h.length - 1); add('Done', 'Leave the replay', 'done', false);
+  if (!$('#lm-moves').hidden) renderMoves(k);
+}
+function startReplay() {
+  if (!play.history || play.history.length < 2) return;
+  play.phase = 'replay'; $('#lm-win').hidden = true; $('#lm-throwBtn').hidden = true; $('#lm-passBtn').hidden = true; $('#lm-hintBtn').hidden = true; $('#lm-undoBtn').hidden = true;
+  showReplay(0);
+}
+function endReplay() {
+  showReplay(play.history.length - 1); // the board as the game ended
+  const box = $('#lm-choices'); box.innerHTML = ''; box.hidden = true; box.classList.remove('replaybar');
+  play.phase = 'over'; clearLastMove();
+  $('#lm-win').hidden = false; $('#lm-replayBtn').focus({ preventScroll: true });
+}
+$('#lm-replayBtn').addEventListener('click', startReplay);
+addEventListener('keydown', e => {
+  if (mode !== 'play' || play.phase !== 'replay') return;
+  if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { e.preventDefault(); e.stopImmediatePropagation(); } // the arrows step the replay, nothing else
+  if (e.code === 'ArrowLeft' && play.replayAt > 0) showReplay(play.replayAt - 1);
+  else if (e.code === 'ArrowRight' && play.replayAt < play.history.length - 1) showReplay(play.replayAt + 1);
+  else if (e.code === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); endReplay(); }
+}, true);
+
+/* Why a hint is good: play it on the side, see what it does, and put everything back. */
+const HINT_NOUN = { oware: ['a pit of seeds', 'pits of seeds'], kalah: ['a pit of seeds', 'pits of seeds'], bao: ['seeds', 'lots of seeds'], go: ['a stone', 'stones'], konane: ['a stone', 'stones'], fanorona: ['a stone', 'stones'], seega: ['a stone', 'stones'], latrunculi: ['a counter', 'counters'], gomoku: ['a stone', 'stones'] };
+function capturesFor(g, p) { // how many of p's moves take something, where that can be told from the move itself
+  if (g.dice || !g.legal) return null;
+  let ms; try { ms = g.legal(p); } catch (e) { return null; }
+  const telling = ms.some(m => m.caps !== undefined || m.cap !== undefined || m.meet !== undefined) || ['chess', 'shatranj', 'chaturanga', 'lewischess', 'makruk', 'courier', 'xiangqi', 'janggi', 'shogi', 'jungle'].includes(g.id);
+  if (!telling) return null;
+  return ms.filter(m => (m.caps && m.caps.length) || m.cap || m.meet || (m.from !== undefined && m.to !== undefined && !m.drop && g.b && g.b[m.to])).length;
+}
+function explainHint(g, pl, m) {
+  const before = copyState(g), why = [], opp = 1 - pl;
+  const threatsBefore = capturesFor(g, opp);
+  const runsBefore = g.kingRuns ? g.kingRuns() : g.kingLines ? g.kingLines().open : 0;
+  const countBefore = g.count ? g.count(pl) : null;
+  try {
+    const res = g.apply(Object.assign({}, m)) || {};
+    const r = !g.dice && g.result ? g.result(opp) : null;
+    if (r && r.winner === pl) why.push('it wins the game');
+    else {
+      const noun = HINT_NOUN[g.id] || ['a piece', 'pieces'];
+      if (res.boxes && res.boxes.length) why.push(`it completes ${res.boxes.length > 1 ? res.boxes.length + ' boxes' : 'a box'} and you move again`);
+      else if (pl === 0 && res.note && /^You (take|capture|meet)/.test(res.note)) why.push(res.note.split('. ')[0].replace(/^You /, 'you ').replace(/\.$/, '')); // the table's own words
+      else if (res.caps && res.caps.length) why.push(`it takes ${res.caps.length > 1 ? res.caps.length + ' ' + noun[1] : noun[0]}`);
+      else if (m.flips && m.flips.length) why.push(`it turns ${m.flips.length > 1 ? m.flips.length + ' discs' : 'a disc'}`);
+      if (m.promo || m.crown) why.push('it promotes your piece');
+      if (res.followUp && res.followUp.length && g.id.match(/morris|morabaraba/)) why.push('it makes a mill, so you take a piece');
+      if ((g.inCheck && g.inCheck(opp)) || (g.id === 'janggi' && g.attacked(opp))) why.push(asFriend('it puts the Scribe in check'));
+      const runsAfter = g.kingRuns ? g.kingRuns() : g.kingLines ? g.kingLines().open : 0;
+      if (pl === 0 && runsAfter > runsBefore) why.push('it opens a road for your king');
+      if (pl === 1 && runsAfter < runsBefore) why.push('it closes a road for the king');
+      const threatsAfter = threatsBefore === null ? null : capturesFor(g, opp);
+      if (threatsBefore && threatsAfter === 0) why.push(asFriend('it leaves the Scribe nothing to take'));
+      else if (threatsBefore !== null && threatsAfter < threatsBefore && !why.length) why.push('it takes a piece out of danger');
+      if (g.id === 'reversi' && countBefore !== null && !why.length) why.push(`it turns ${g.count(pl) - countBefore - 1} discs`);
+    }
+  } catch (e) { /* the reason is a courtesy: the hint stands without it */ }
+  Object.assign(g, structuredClone(before));
+  if (!why.length) return g.id === 'go' || g.id === 'hex' ? 'It is the move that wins most often when the Scribe plays the game out from here many times.' : 'It is the move the Scribe rates best after looking several moves ahead.';
+  const text = why.slice(0, 2).join(', and ');
+  return text[0].toUpperCase() + text.slice(1) + '.';
+}
+
+/* The guide: a few words at the right moment in a first game at the hardest tables. Each tip shows once a game. */
+const COACH = {
+  rithmo: [
+    { when: (g, c) => c.turn === 1, text: 'Every piece carries its number. Rounds step exactly one square, triangles two and squares three, always straight along a row or a column and never over another piece. Pick a piece to see where it can go.' },
+    { when: (g, c) => c.moves.some(m => m.meet), text: 'A ring on an enemy piece is a meeting: that piece has exactly your piece\'s value, so moving onto it takes it.' },
+    { when: (g, c) => c.turn >= 3, text: 'Captures also happen after you move. An enemy is taken if one of your pieces, times the empty squares between them, makes its value (assault); if two of yours on either side add up to it (ambuscade); or if it is shut in on all four sides (siege).' },
+    { when: (g) => g.taken[0] + g.taken[1] >= 1, text: 'Take five of the Scribe\'s pieces, or its pyramid, to win. The score bar keeps the count. If no one gets there in 150 moves each, whoever has taken more wins.' },
+  ],
+  bao: [
+    { when: (g, c) => c.turn === 1, text: 'A move lifts every seed in one of your pits and drops them one at a time into the pits that follow, round your own two rows and never into the Scribe\'s. The two rings sit on the pits either side of the one you pick: choose the way to sow.' },
+    { when: (g, c) => c.turn >= 2 && c.moves.some(m => m.mtaji), text: 'You can capture, so you must. If your last seed lands in an occupied pit of your inner row and the Scribe\'s pit opposite has seeds, you take them and sow them in from an end of your inner row.' },
+    { when: (g, c) => c.turn >= 2, text: 'When your last seed lands in a pit that already has seeds, you lift them all and keep sowing. The turn ends only when a last seed falls into an empty pit.' },
+    { when: (g, c) => c.turn >= 4 || g.innerCount(0) <= 8, text: 'Watch your inner row, the one nearer the middle: you lose if it is ever empty, or if you cannot move.' },
+  ],
+  mahjong: [
+    { when: (g) => g.need.type === 'discard' && g.need.seat === 0, text: 'You hold fourteen tiles: click one to discard it. You are building four sets and a pair. A set is three alike (a pung) or a run of three in one suit (a chow).' },
+    { when: (g) => g.need.type === 'claim', text: 'Someone has discarded a tile you can use. The buttons show your claims: a pung or kong from anyone, a chow only from North, the player on your left. Or press Pass to let it go.' },
+    { when: (g, c) => c.turn >= 3, text: 'Winds and dragons can make pungs and pairs but never runs, so a lone one is often a good early discard.' },
+    { when: (g) => g.need.type === 'discard' && g.shanten(g.hands[0], g.open(0)) === 0, text: 'Your hand is ready: one tile from going out. When that tile comes, from the wall or from anyone\'s discard, a Mahjong button appears.' },
+  ],
+};
+function coachOn(g) {
+  if (!COACH[g.id] || play.hotseat) return false;
+  const pref = (store.guide || {})[g.id];
+  if (pref !== undefined) return pref;
+  const rec = store.record[g.id]; return !rec || !rec.some(Boolean); // on for a first game, unless set
+}
+function coachCheck() {
+  const g = play.game, box = $('#lm-coach');
+  if (!g || !coachOn(g) || play.phase !== 'choose' || play.cur !== 0) return;
+  const ctx = { turn: play.turnNo || 0, moves: play.moves };
+  play.coachSeen = play.coachSeen || new Set();
+  const tips = COACH[g.id];
+  for (let k = 0; k < tips.length; k++) {
+    if (play.coachSeen.has(k)) continue;
+    let fire = false; try { fire = tips[k].when(g, ctx); } catch (e) { fire = false; }
+    if (!fire) continue;
+    play.coachSeen.add(k); $('#lm-coachText').textContent = tips[k].text; box.hidden = false; placeCoach(); return;
+  }
+}
+// On a wide screen the card sits at the top left, beside the table. Where there is no room beside it, the card
+// lies over the message bar instead, so it covers the panel and not the rows you play from.
+function placeCoach() {
+  const box = $('#lm-coach'); if (box.hidden) return;
+  const app = root.getBoundingClientRect(), bar = $('#lm-hud .hudbottom').getBoundingClientRect();
+  if (app.width >= 1000) {
+    const top = $('#lm-hud .hudtop').getBoundingClientRect().bottom - app.top + 10;
+    Object.assign(box.style, { top: top + 'px', bottom: '', left: '', width: '', transform: '', maxHeight: Math.max(120, bar.top - app.top - top - 12) + 'px' });
+  } else {
+    Object.assign(box.style, { top: 'auto', bottom: (app.bottom - bar.bottom) + 'px', left: (bar.left - app.left) + 'px', width: bar.width + 'px', transform: 'none', maxHeight: '45%' });
+  }
+}
+addEventListener('resize', placeCoach);
+$('#lm-coachOk').addEventListener('click', () => { $('#lm-coach').hidden = true; });
+$('#lm-coachOff').addEventListener('click', () => {
+  store.guide = Object.assign(store.guide || {}, { [play.game.id]: false }); save();
+  $('#lm-coach').hidden = true; renderRules(play.game);
+});
 function renderRules(g) {
   const r = $('#lm-rules'); r.innerHTML = '';
   const h = document.createElement('h3'); h.textContent = 'How to play ' + g.name; r.appendChild(h);
   const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); r.appendChild(ul);
   const p = document.createElement('p'); p.className = 'src'; p.textContent = g.source; r.appendChild(p);
   const k = document.createElement('p'); k.className = 'src'; k.textContent = 'Keyboard: the arrow keys step through the pieces you can move, then the places they can go; Enter plays, Escape steps back.'; r.appendChild(k);
+  if (COACH[g.id] && !play.hotseat) {
+    const on = coachOn(g), gb = document.createElement('button'); gb.className = 'hudbtn'; gb.textContent = on ? 'Guide: on' : 'Guide: off'; gb.setAttribute('aria-pressed', String(on));
+    gb.addEventListener('click', () => { store.guide = Object.assign(store.guide || {}, { [g.id]: !on }); save(); if (on) $('#lm-coach').hidden = true; else coachCheck(); renderRules(g); });
+    r.appendChild(gb); r.appendChild(document.createTextNode(' '));
+  }
   const close = document.createElement('button'); close.className = 'hudbtn'; close.textContent = 'Got it';
   close.addEventListener('click', () => { r.hidden = true; }); r.appendChild(close);
 }
@@ -7219,6 +7446,7 @@ function leaveGame() {
   if (mode !== 'play') return;
   play.token++; clearHighlights(); clearLastMove(); $('#lm-choices').hidden = true;
   if (play.P && play.P.leave) play.P.leave(play.ex);
+  $('#lm-coach').hidden = true; $('#lm-moves').hidden = true; $('#lm-choices').classList.remove('replaybar');
   mode = 'gallery';
   $('#lm-hud').hidden = true; rail.hidden = false; $('#lm-hint').style.opacity = 1;
   root.classList.remove('playing');
@@ -7228,7 +7456,7 @@ function leaveGame() {
 $('#lm-leaveBtn').addEventListener('click', leaveGame);
 $('#lm-winLeave').addEventListener('click', leaveGame);
 $('#lm-againBtn').addEventListener('click', restartTable);
-$('#lm-rulesBtn').addEventListener('click', () => { $('#lm-rules').hidden = !$('#lm-rules').hidden; });
+$('#lm-rulesBtn').addEventListener('click', () => { $('#lm-rules').hidden = !$('#lm-rules').hidden; if (!$('#lm-rules').hidden) { $('#lm-moves').hidden = true; $('#lm-movesBtn').setAttribute('aria-expanded', 'false'); } });
 $('#lm-throwBtn').addEventListener('click', humanThrow);
 $('#lm-passBtn').addEventListener('click', () => {
   if (play.phase !== 'choose') return;
@@ -7319,6 +7547,7 @@ function beginTurn(pl, first) {
       return;
     }
   }
+  if (pl === 0) play.turnNo = (play.turnNo || 0) + 1;
   if (pl === 0 || (play.hotseat && g.dice)) { // at a dice table a friend throws for themselves
     const say = first && pl === 0 ? P.intro() : P.prompt();
     const pre = g.dice && g.preThrow ? g.preThrow(pl) : null;
@@ -7353,6 +7582,7 @@ function offer(moves, text) {
   highlight(moves);
   setMsg(turnName(), text);
   refreshAids();
+  coachCheck();
 }
 async function humanThrow() {
   if (play.phase !== 'throw') return;
@@ -7380,9 +7610,11 @@ async function choose(m) {
   play.phase = 'anim'; clearHighlights(); clearLastMove();
   $('#lm-choices').hidden = true;
   $('#lm-passBtn').disabled = true; refreshAids();
-  const g = play.game, tok = play.token;
+  const g = play.game, tok = play.token, mover = play.cur || 0, text = moveText(g, m);
+  $('#lm-coach').hidden = true;
   const res = await play.P.play(m);
   if (tok !== play.token) return;
+  recordMove(mover, m, text, res);
   sfx.move(g, m, res);
   updateScore();
   if (res.followUp && res.followUp.length) { offer(res.followUp, (res.note ? res.note + ' ' : '') + g.followPrompt); return; }
@@ -7451,10 +7683,11 @@ async function aiTurn() {
   let said = false;
   clearLastMove();
   for (const m of plan) {
-    const from = P.fromFor ? P.fromFor(m) : null, to = P.ringFor(m);
+    const from = P.fromFor ? P.fromFor(m) : null, to = P.ringFor(m), text = moveText(g, m);
     const res = await P.play(m);
     markLastMove(from, to);
     if (tok !== play.token) return;
+    recordMove(1, m, text, res);
     sfx.move(g, m, res);
     updateScore();
     if (res.note) { setMsg(who, res.note); said = true; }
@@ -7469,6 +7702,8 @@ function finish(res) {
   if (P.onFinish) P.onFinish(res);
   updateScore();
   clearSave(g.id);
+  $('#lm-coach').hidden = true;
+  $('#lm-replayBtn').hidden = !(play.history && play.history.length > 1);
   $('#lm-winTitle').textContent = asFriend(res.title || (res.winner === 0 ? 'You win' : res.winner === 1 ? 'The Scribe wins' : 'A draw'));
   $('#lm-winText').textContent = asFriend(res.text || (res.winner === 0
     ? `All ${g.N} of your pieces are home. The Scribe bows and resets the board.`

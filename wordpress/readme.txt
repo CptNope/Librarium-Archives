@@ -50,6 +50,9 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 
 == Changelog ==
 
+= 0.29.0 =
+* Hints say why their move is good; a list of moves, a replay after each game, and a guide for first games at Rithmomachia, Bao and Mahjong.
+
 = 0.28.0 =
 * Undo and saved games at every two-player table without dice, and saved games at Mahjong.
 * Pass-and-play at fifteen dice tables.
