@@ -569,7 +569,6 @@
         const adj = this.neighbors(k).filter(j => j >= 0 && this.b[j] === 1).length;
         const kr = (k / 7) | 0, kc = k % 7;
         const dist = Math.min(...BR_CORNERS.map(q => Math.abs(((q / 7) | 0) - kr) + Math.abs((q % 7) - kc)));
-        // Attackers on the squares beside a corner shut that corner; a king with room to run is dangerous.
         // Attackers beside a corner shut it; on the square diagonally in from it they also bar row and column 1 or 5,
         // the king's road to the corners, and cannot be trapped against the corner there.
         const guards = [1, 7, 5, 13, 35, 43, 41, 47].filter(j => this.b[j] === 1).length + 2 * [8, 12, 36, 40].filter(j => this.b[j] === 1).length;
@@ -578,19 +577,9 @@
           let rr = kr + dr, cc = kc + dc;
           while (rr >= 0 && rr < 7 && cc >= 0 && cc < 7 && !this.b[rr * 7 + cc]) { kingMoves++; rr += dr; cc += dc; }
         }
-        // A square one king move away from which two corners lie open is a fork the attackers must stop now.
-        // Squares one king move away with a corner open beyond: two of them, or one with two corners, is a fork.
-        let threat = 0, escapes = 0;
-        for (const [dr, dc] of BR_DIRS) {
-          let rr = kr + dr, cc = kc + dc;
-          while (rr >= 0 && rr < 7 && cc >= 0 && cc < 7 && !this.b[rr * 7 + cc]) {
-            const q = rr * 7 + cc;
-            if (!BR_CORNERS.includes(q)) { this.b[k] = 0; this.b[q] = 3; const n = this.kingRuns(); this.b[q] = 0; this.b[k] = 3; if (n > threat) threat = n; if (n) escapes++; }
-            rr += dr; cc += dc;
-          }
-        }
-        const runs = this.kingRuns(), fork = threat > 1 || escapes > 1;
-        s = def * 3 - att * 2.5 + runs * (runs > 1 ? 60 : 25) + threat * 5 + escapes * 3 + (fork ? 18 : 0) - adj * 6 - dist - guards * 3 + kingMoves * 0.8;
+        // A king with room to run is dangerous; with two corners open he cannot be stopped.
+        const runs = this.kingRuns();
+        s = def * 3 - att * 2.5 + runs * (runs > 1 ? 60 : 25) - adj * 6 - dist - guards * 3 + kingMoves * 0.8;
       }
       return pl === 0 ? s : -s;
     },
@@ -3832,10 +3821,6 @@
       const val = m => (m.pass ? -5 : this.b[m.to] ? 10 * JG_VAL[this.b[m.to] & 7] - JG_VAL[this.b[m.from] & 7] : 0);
       ms.sort((a, b) => val(b) - val(a));
       return ms.map(m => [m]);
-    },
-    noisy(pl) { // captures only, the most valuable victim first
-      const val = m => 10 * JG_VAL[this.b[m.to] & 7] - JG_VAL[this.b[m.from] & 7];
-      return this.legal(pl).filter(m => !m.pass && this.b[m.to]).sort((a, b) => val(b) - val(a)).map(m => [m]);
     },
     terminal(pl, depth) {
       if (this.over) return this.over.winner === pl ? 1000 + depth : -1000 - depth;

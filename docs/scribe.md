@@ -7,6 +7,7 @@ mindmap
   root((The Scribe))
     Shared search
       negamax with alpha-beta
+      captures played out at the leaves
       iterative deepening
       time budget per level
       Morris · Oware · Alquerque · Brandubh · Hnefatafl
@@ -68,6 +69,7 @@ flowchart TD
 - **Move ordering.** Engines list captures and threats first, and each new depth tries the previous best plan first, so alpha-beta prunes more.
 - **Safe interruption.** When the deadline passes mid-search, the search throws, and the root position is restored before the best plan so far is returned.
 - **Wins sooner, losses later.** `terminal()` scores a finished game as `±1000 ± depth`.
+- **Exchanges played out.** An engine that lists its captures (`noisy`) has them played out where the search stops, each side free to stand pat, so the Scribe does not count a piece won in the middle of an exchange. Janggi and Latrunculi do this. These nodes read the clock at every step, and the first one-move look plays out nothing, so it always finishes.
 
 ## Monte Carlo search (Go and Hex)
 
