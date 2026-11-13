@@ -7379,7 +7379,7 @@ const COACH = {
     { when: (g) => g.taken[0] + g.taken[1] >= 1, text: 'Take five of the Scribe\'s pieces, or its pyramid, to win. The score bar keeps the count. If no one gets there in 150 moves each, whoever has taken more wins.' },
   ],
   bao: [
-    { when: (g, c) => c.turn === 1, text: 'Your pits are the two rows nearest you, and every pit starts with two seeds. Pick a pit with two or more seeds, then the ring on the side you want to sow toward. You sow round your own sixteen pits only.' },
+    { when: (g, c) => c.turn === 1, text: 'A move lifts every seed in one of your pits and drops them one at a time into the pits that follow, round your own two rows and never into the Scribe\'s. The two rings sit on the pits either side of the one you pick: choose the way to sow.' },
     { when: (g, c) => c.turn >= 2 && c.moves.some(m => m.mtaji), text: 'You can capture, so you must. If your last seed lands in an occupied pit of your inner row and the Scribe\'s pit opposite has seeds, you take them and sow them in from an end of your inner row.' },
     { when: (g, c) => c.turn >= 2, text: 'When your last seed lands in a pit that already has seeds, you lift them all and keep sowing. The turn ends only when a last seed falls into an empty pit.' },
     { when: (g, c) => c.turn >= 4 || g.innerCount(0) <= 8, text: 'Watch your inner row, the one nearer the middle: you lose if it is ever empty, or if you cannot move.' },
