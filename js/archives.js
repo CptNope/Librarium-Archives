@@ -7410,12 +7410,17 @@ function coachCheck() {
     play.coachSeen.add(k); $('#lm-coachText').textContent = tips[k].text; box.hidden = false; placeCoach(); return;
   }
 }
-// The card sits just under the buttons along the top, over the Scribe's side of the table, and never reaches the message bar.
+// On a wide screen the card sits at the top left, beside the table. Where there is no room beside it, the card
+// lies over the message bar instead, so it covers the panel and not the rows you play from.
 function placeCoach() {
   const box = $('#lm-coach'); if (box.hidden) return;
-  const app = root.getBoundingClientRect(), top = $('#lm-hud .hudtop').getBoundingClientRect().bottom - app.top + 10;
-  const bar = $('#lm-hud .hudbottom').getBoundingClientRect().top - app.top;
-  box.style.top = top + 'px'; box.style.maxHeight = Math.max(120, bar - top - 12) + 'px';
+  const app = root.getBoundingClientRect(), bar = $('#lm-hud .hudbottom').getBoundingClientRect();
+  if (app.width >= 1000) {
+    const top = $('#lm-hud .hudtop').getBoundingClientRect().bottom - app.top + 10;
+    Object.assign(box.style, { top: top + 'px', bottom: '', left: '', width: '', transform: '', maxHeight: Math.max(120, bar.top - app.top - top - 12) + 'px' });
+  } else {
+    Object.assign(box.style, { top: '', bottom: (app.bottom - bar.bottom) + 'px', left: (bar.left - app.left) + 'px', width: bar.width + 'px', transform: 'none', maxHeight: '45%' });
+  }
 }
 addEventListener('resize', placeCoach);
 $('#lm-coachOk').addEventListener('click', () => { $('#lm-coach').hidden = true; });
