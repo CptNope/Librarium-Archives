@@ -7407,9 +7407,17 @@ function coachCheck() {
     if (play.coachSeen.has(k)) continue;
     let fire = false; try { fire = tips[k].when(g, ctx); } catch (e) { fire = false; }
     if (!fire) continue;
-    play.coachSeen.add(k); $('#lm-coachText').textContent = tips[k].text; box.hidden = false; return;
+    play.coachSeen.add(k); $('#lm-coachText').textContent = tips[k].text; box.hidden = false; placeCoach(); return;
   }
 }
+// The card sits just under the buttons along the top, over the Scribe's side of the table, and never reaches the message bar.
+function placeCoach() {
+  const box = $('#lm-coach'); if (box.hidden) return;
+  const app = root.getBoundingClientRect(), top = $('#lm-hud .hudtop').getBoundingClientRect().bottom - app.top + 10;
+  const bar = $('#lm-hud .hudbottom').getBoundingClientRect().top - app.top;
+  box.style.top = top + 'px'; box.style.maxHeight = Math.max(120, bar - top - 12) + 'px';
+}
+addEventListener('resize', placeCoach);
 $('#lm-coachOk').addEventListener('click', () => { $('#lm-coach').hidden = true; });
 $('#lm-coachOff').addEventListener('click', () => {
   store.guide = Object.assign(store.guide || {}, { [play.game.id]: false }); save();

@@ -253,5 +253,6 @@
 #lm-app .coach .btn.quiet{border-color:var(--line);color:var(--dust)}
 #lm-app .replaybar{display:flex;gap:8px;flex-wrap:wrap}
 @container archives (max-width:720px){
-  #lm-app .coach{top:auto;bottom:calc(150px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);max-height:30vh;overflow:auto}
+  #lm-app .coach{left:50%;transform:translateX(-50%);overflow:auto;padding:10px 14px}
+  #lm-app .coach p{font-size:14px;margin-bottom:8px}
 }
