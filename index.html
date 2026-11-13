@@ -74,10 +74,21 @@
         <button data-level="sharp" aria-pressed="false">Sharp</button>
       </div>
       <div class="level" id="lm-variant" role="group" aria-label="Game variant" hidden></div>
+      <button class="hudbtn" id="lm-movesBtn" hidden aria-expanded="false" aria-controls="lm-moves">Moves</button>
       <button class="hudbtn" id="lm-rulesBtn">Rules</button>
       <button class="hudbtn" id="lm-leaveBtn">Leave the table</button>
     </div>
     <div class="rules" id="lm-rules" hidden></div>
+    <div class="rules moves" id="lm-moves" role="region" aria-label="Moves so far" hidden>
+      <h3>Moves</h3>
+      <p class="src" id="lm-movesKey">Squares are named from your side: files a, b, c… from your left, ranks 1, 2, 3… from the row nearest you.</p>
+      <ol id="lm-moveList"></ol>
+    </div>
+    <div class="coach" id="lm-coach" role="note" aria-live="polite" hidden>
+      <span class="coachtag">Guide</span>
+      <p id="lm-coachText"></p>
+      <div class="row"><button class="btn" id="lm-coachOk">Got it</button><button class="btn quiet" id="lm-coachOff">Turn the guide off</button></div>
+    </div>
     <div class="hudbottom">
       <div class="dice" id="lm-dice" aria-hidden="true"></div>
       <div class="msg" id="lm-msg" aria-live="polite"></div>
@@ -94,6 +105,7 @@
         <p class="winrec" id="lm-winRecord"></p>
         <div class="row">
           <button class="btn primary" id="lm-againBtn">Play again</button>
+          <button class="btn" id="lm-replayBtn" hidden>Replay the game</button>
           <button class="btn" id="lm-winLeave">Back to the hall</button>
         </div>
       </div>

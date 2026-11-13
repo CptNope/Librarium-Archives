@@ -234,3 +234,24 @@
   #lm-app .rail #lm-tourBtn,#lm-app .rail #lm-passBtnRail{padding:0 12px}
   #lm-app .rail #lm-tourBtn span,#lm-app .rail #lm-passBtnRail span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 }
+/* Moves so far, beside the board like the rules panel; and the guide's card above the message bar. */
+#lm-app .moves ol{margin:8px 0 0;padding:0;list-style:none;font-variant-numeric:tabular-nums}
+#lm-app .moves li{display:grid;grid-template-columns:2.2em 4.6em 1fr;gap:6px;padding:4px 0;border-top:1px solid rgba(236,223,195,.08);font-size:13.5px;line-height:1.35}
+#lm-app .moves li .n{color:var(--dust)}
+#lm-app .moves li .w{font-family:var(--f-ui);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dust);padding-top:2px}
+#lm-app .moves li.you .w{color:var(--gold)}
+#lm-app .moves li .t{min-width:0}
+#lm-app .moves li .t b{font-weight:600;color:var(--parchment)}
+#lm-app .moves li .t i{font-style:normal;color:var(--dust)}
+#lm-app .moves li.now{background:rgba(201,162,78,.12)}
+#lm-app .moves li.empty{display:block;color:var(--dust)}
+#lm-app .coach{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100vw - 32px));background:var(--panel);border:1px solid var(--gold);border-left-width:3px;padding:12px 16px 12px;border-radius:2px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+#lm-app .coach .coachtag{font-family:var(--f-ui);font-size:10.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+#lm-app .coach p{margin:4px 0 10px;font-size:14.5px;line-height:1.45;max-width:62ch}
+#lm-app .coach .row{display:flex;gap:10px;flex-wrap:wrap}
+#lm-app .coach .btn{min-height:36px;font-size:15px;padding:0 14px}
+#lm-app .coach .btn.quiet{border-color:var(--line);color:var(--dust)}
+#lm-app .replaybar{display:flex;gap:8px;flex-wrap:wrap}
+@container archives (max-width:720px){
+  #lm-app .coach{bottom:calc(132px + env(safe-area-inset-bottom,0px))}
+}
