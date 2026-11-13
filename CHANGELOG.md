@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.29.0: Learning the games
+
+- **Hints that explain themselves:** the Hint now says why its move is good. It might win, take something (in the table's own words), give check, make a mill, open a road for your king, or leave the Scribe nothing to take.
+- **Moves:** a list of the game so far beside the board, at every table that has Undo. Squares are named from your side (a1 at your near left). International draughts uses its 1–50 numbers, and × marks a capture.
+- **Replay the game** from the card at the end of a game: step through it move by move, with the last move marked on the board.
+- **A guide for first games** at Rithmomachia, Bao and Mahjong: a few short notes at the right moments. It switches off with one button, and on again from the rules panel.
+
 ## 0.28.0: Undo and saves everywhere, dice pass-and-play, sharper Scribes
 
 - **Undo at every two-player table** without dice or hidden cards. Go, Shogi (with pieces in hand), Morris and Morabaraba, the tafl games, Fox and Geese, Dots and Boxes, Alquerque, Kōnane, Fanorona, Bao, Chinese checkers, Hex, Gomoku, Seega, Bagh-chal and Latrunculi now rebuild their pieces from the game's state, taken pieces laid out beside the board.

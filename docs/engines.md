@@ -189,6 +189,8 @@ stateDiagram-v2
 
 Presenters always check `play.token` after an `await`: if the visitor left the table mid-animation, the presenter stops. Undo finishes every running animation before `setup` runs, so nothing in flight moves a piece afterwards.
 
+The list of moves names squares from the presenter's own `pos(i)` (or `pt(i)`): every square the board draws is sorted by where it sits, so a1 is always the visitor's near left, whatever the engine's numbering. A board only needs adding to `GRID_NAMES` in `archives.js`. Replay steps through engine states recorded after every move, so it works wherever Undo does.
+
 Saved games store the engine's plain data fields as JSON. Typed-array boards, Sets and Maps are tagged on the way out and rebuilt on the way back (`packState` and `unpackState` in `rules.js`). An engine can add `saveable()` to say when its state is safe to keep (Mahjong: only when it is your turn to discard).
 
 ## Feature matrix
