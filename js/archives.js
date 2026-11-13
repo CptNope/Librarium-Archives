@@ -7419,7 +7419,7 @@ function placeCoach() {
     const top = $('#lm-hud .hudtop').getBoundingClientRect().bottom - app.top + 10;
     Object.assign(box.style, { top: top + 'px', bottom: '', left: '', width: '', transform: '', maxHeight: Math.max(120, bar.top - app.top - top - 12) + 'px' });
   } else {
-    Object.assign(box.style, { top: '', bottom: (app.bottom - bar.bottom) + 'px', left: (bar.left - app.left) + 'px', width: bar.width + 'px', transform: 'none', maxHeight: '45%' });
+    Object.assign(box.style, { top: 'auto', bottom: (app.bottom - bar.bottom) + 'px', left: (bar.left - app.left) + 'px', width: bar.width + 'px', transform: 'none', maxHeight: '45%' });
   }
 }
 addEventListener('resize', placeCoach);
