@@ -25,7 +25,7 @@ Visitors walk a candlelit library hall in six wings, read the history of each ga
 
 The hall ends at a lectern of Librarium's own games.
 
-Visitors walk with the arrow keys or WASD, or on phones and tablets with an on-screen joystick or by tapping the floor, and pinch to zoom. The Scribe plays at three levels. Two visitors can play each other on one screen at most two-player tables, and long games are saved as they go. Visitor progress (exhibits visited, records at each table, saved games) is kept in the visitor's own browser only; the plugin stores nothing on the server.
+Visitors walk with the arrow keys or WASD, or on phones and tablets with an on-screen joystick or by tapping the floor, and pinch to zoom. The Scribe plays at three levels. Two visitors can play each other on one screen at most two-player tables, dice games included, and games are saved as they go. Visitor progress (exhibits visited, records at each table, saved games) is kept in the visitor's own browser only; the plugin stores nothing on the server.
 
 == Usage ==
 
@@ -49,6 +49,11 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 * Fonts Almendra SC, Amethysta and Montserrat from Google Fonts (SIL Open Font License).
 
 == Changelog ==
+
+= 0.28.0 =
+* Undo and saved games at every two-player table without dice, and saved games at Mahjong.
+* Pass-and-play at fifteen dice tables.
+* A sharper Scribe at Latrunculi and Hanafuda.
 
 = 0.27.0 =
 * A guided tour that reads the placards aloud, and a passport of stamps for visits and wins.
