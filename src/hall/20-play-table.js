@@ -8,7 +8,7 @@ const RING_COLOR = { gold: 0xffb21f, ember: 0xff6a1a };
 const ringEdgeGeo = new THREE.TorusGeometry(0.05, 0.0135, 8, 36), ringFillGeo = new THREE.CircleGeometry(0.043, 28);
 const RING_EDGE = new THREE.MeshBasicMaterial({ color: 0x140a03, transparent: true, opacity: 0.78, depthWrite: false });
 const RING_FILL = { gold: new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.2, depthWrite: false }), ember: new THREE.MeshBasicMaterial({ color: RING_COLOR.ember, transparent: true, opacity: 0.22, depthWrite: false }) };
-const RING_EDGE_SOFT = new THREE.MeshBasicMaterial({ color: 0x140a03, transparent: true, opacity: 0.4, depthWrite: false });
+const RING_EDGE_SOFT = new THREE.MeshBasicMaterial({ color: 0x140a03, transparent: true, opacity: 0.3, depthWrite: false });
 function markMesh(geo, mat, tone, soft) { // a ring with its dark band and its wash, all lying flat
   const ring = new THREE.Mesh(geo, mat); ring.rotation.x = -Math.PI / 2;
   const edge = new THREE.Mesh(ringEdgeGeo, soft ? RING_EDGE_SOFT : RING_EDGE); edge.position.z = -0.0006; edge.renderOrder = -1; ring.add(edge);

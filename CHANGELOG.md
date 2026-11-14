@@ -1,6 +1,15 @@
 # Changelog
 
-## 0.30.0: Foundations
+## 0.30.0: Foundations, clearer marks, fewer gaps
+
+- **Clearer marks at every table.**
+  - Every square you can move to has a bolder gold ring, sitting on a dark band, over a faint gold wash. The marks no longer fade into pale boards.
+  - Every piece you can move has a ring at its foot as well as its glow. The glow alone hardly showed on white pieces.
+  - At Go, Gomoku and Hex, where nearly every point is a move, the marks stay lighter so the board still shows.
+- **The Scribe searches about twice as fast** at the same depth: each move after the first only has to prove it can beat the best so far. Over 16 Sharp games against the old Sharp at chess, xiangqi, janggi and Brandubh, the new one won 9, lost 5 and drew 2.
+- **Hints at the dice tables** (Ur, Senet, Tables, Nard, Duodecim scripta, Yut, Pachisi, Ludo, Patolli, Tâb, Hounds and Jackals, the Checkered Game of Life): the best use of your throw.
+- **Pass-and-play at Hazard and the Landlord's Game.**
+- **The guide** now covers Shogi, Go, Patolli and Piquet too.
 
 - **The Scribe thinks in a background worker.** The hall no longer freezes while Sharp looks ahead, at every search table and for hints. In a test, the page answered 158 timer ticks during a 1.6-second Sharp search, against 11 before. If a worker cannot start, the Scribe thinks on the page as before.
 - **Faster start.** Exhibits near you are built before the hall appears; the rest are built a slice at a time while you look around. In the test browser the first view came in about half the time (20 seconds down to 10).

@@ -171,6 +171,25 @@ const COACH = {
     { when: (g, c) => c.turn >= 2, text: 'When your last seed lands in a pit that already has seeds, you lift them all and keep sowing. The turn ends only when a last seed falls into an empty pit.' },
     { when: (g, c) => c.turn >= 4 || g.innerCount(0) <= 8, text: 'Watch your inner row, the one nearer the middle: you lose if it is ever empty, or if you cannot move.' },
   ],
+  shogi: [
+    { when: (g, c) => c.turn === 1, text: 'Your pieces point away from you. Each moves its own way, and none as freely as in chess except the bishop and rook. Pick a piece to see where it can go; the rules panel lists every move.' },
+    { when: (g, c) => c.turn >= 4, text: 'A piece that moves into, out of or within the Scribe\'s three back ranks promotes, and here it always does. Most small pieces then step like a gold general; bishop and rook add the king\'s step.' },
+    { when: g => g.hands[0].some(n => n > 0), text: 'A piece you capture joins your hand, at the right of the board. On any later turn you may drop it on an empty square instead of moving: pick it from your hand, then a ring.' },
+  ],
+  go: [
+    { when: (g, c) => c.turn === 1, text: 'Place a stone on any point where the lines cross; stones never move. The aim is territory: empty points that only your stones surround count for you at the end.' },
+    { when: (g, c) => c.turn >= 4, text: 'A stone or a chain of joined stones is captured when every empty point next to it is filled by the other side. Keep your chains connected, and give them room to breathe.' },
+    { when: (g, c) => c.turn >= 12, text: 'When nothing useful is left to play, press Pass. Two passes in a row end the game, and the Scribe counts each side\'s stones and surrounded points; white adds 7 for moving second.' },
+  ],
+  patolli: [
+    { when: (g, c) => c.turn === 1, text: 'Each throw of five beans counts the marked sides: 1 to 4 move that many houses, all five move 10, and none costs you a treasure. A throw of 1 can bring a new marker onto your starting house, in the centre.' },
+    { when: (g, c) => c.turn >= 3, text: 'Markers cannot share a house, except in the four centre houses, where landing on an enemy sends it home and earns you a treasure. Dark houses cost a treasure; the red tips at the ends of the arms give you another throw.' },
+    { when: (g, c) => c.turn >= 6, text: 'Each marker that goes all the way round earns a treasure. When one side has brought all six home, the fuller purse of treasures wins, and a player who cannot pay loses at once.' },
+  ],
+  piquet: [
+    { when: g => g.stage === 'exchange', text: 'First the exchange: click the cards you want to discard, then exchange them for cards from the talon. Keep long suits, runs in one suit, and aces, kings, queens, jacks and tens in fours or threes: they score before play begins.' },
+    { when: g => g.stage === 'play', text: 'Now twelve tricks, with no trumps: follow suit if you can. Each card you lead scores 1, as does each trick you win against the other\'s lead, and taking more tricks than the Scribe is worth 10.' },
+  ],
   mahjong: [
     { when: (g) => g.need.type === 'discard' && g.need.seat === 0, text: 'You hold fourteen tiles: click one to discard it. You are building four sets and a pair. A set is three alike (a pung) or a run of three in one suit (a chow).' },
     { when: (g) => g.need.type === 'claim', text: 'Someone has discarded a tile you can use. The buttons show your claims: a pung or kong from anyone, a chow only from North, the player on your left. Or press Pass to let it go.' },
