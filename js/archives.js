@@ -6900,6 +6900,7 @@ function setActive(i) {
 }
 function goStop(i, fly = true) {
   if (mode !== 'gallery') return;
+  buildExhibit(STOPS[i]);
   if (tour.on && !tour.driving) stopTour();
   setActive(i);
   if (!store.visited[STOPS[i].id]) { store.visited[STOPS[i].id] = true; save(); railButtons[i].classList.add('seen'); }
@@ -7083,6 +7084,7 @@ function glowMats(obj) {
 async function startGame(ex) {
   stopTour(); narrator.stop();
   if (mode !== 'gallery') return;
+  buildExhibit(ex); // in case the visitor got here before it was built
   mode = 'play';
   const g = GAMES[ex.game], P = PRES[ex.game];
   play.ex = ex; play.game = g; play.P = P; play.token++;
@@ -8136,16 +8138,33 @@ function step() {
 }
 
 /* -------------------------------------------------------------- boot */
+const bootTimes = {}; // how long the exhibits took to build (read with ?debug)
+function buildExhibit(s) {
+  if (!s || !s.build || s.built) return;
+  s.built = true; s.surface = s.build(s.group); s.group.updateMatrixWorld(true);
+}
 async function boot() {
   try { await Promise.race([Promise.all([document.fonts.load('64px "Almendra SC"'), document.fonts.load('20px "Amethysta"'), document.fonts.load('20px "Montserrat"')]), wait(2500)]); } catch (e) {}
   layoutHall();
   buildHall();
   buildUrTextures();
-  for (const s of STOPS) {
-    if (!s.build) continue;
-    s.group = makePlinth(s);
-    s.surface = s.build(s.group);
-  }
+  // Every plinth goes up at once (they are plain blocks, and the walk, the camera and the lights need them).
+  // What stands on them is built near the visitor first: the wing they start in before the loader lifts, the
+  // rest a few at a time while the hall is already moving. Sitting down at a table builds it at once if needed.
+  const startAt = STOPS.findIndex(s => s.id === root.dataset.start), first = STOPS[Math.max(0, startAt)];
+  const queue = [];
+  for (const s of STOPS) { if (!s.build) continue; s.group = makePlinth(s); queue.push(s); }
+  const near = s => Math.abs(s.wing - first.wing) * 100 + Math.abs(s.z - (first.z || 0));
+  queue.sort((a, b) => near(a) - near(b));
+  const t0 = performance.now();
+  while (queue.length && queue[0].wing === first.wing) buildExhibit(queue.shift());
+  bootTimes.first = performance.now() - t0;
+  const drip = () => {
+    const t = performance.now();
+    while (queue.length && performance.now() - t < 14) buildExhibit(queue.shift()); // a slice of a frame at a time
+    if (queue.length) setTimeout(drip, 30); else bootTimes.all = performance.now() - t0;
+  };
+  setTimeout(drip, 400);
   buildLectern(HALL.zFar + 4.5);
   STOPS.find(s => s.id === 'next').group = lectern;
   const sconces = [];
@@ -8162,7 +8181,6 @@ async function boot() {
   cam.pos.copy(v.pos).add(V3(0, 0, 1.2)); cam.yaw = a.yaw; cam.pitch = a.pitch;
   touchCopy(); updateJoy();
   frame();
-  const startAt = STOPS.findIndex(s => s.id === root.dataset.start);
   setTimeout(() => {
     $('#lm-loader').classList.add('done');
     if (startAt > 0) goStop(startAt);
@@ -8173,7 +8191,7 @@ async function boot() {
 // Inspect the live state from the console with ?debug in the address.
 if (/[?&]debug\b/.test(location.search)) {
   window.__archives = {
-    play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop, scribe,
+    play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop, scribe, bootTimes,
     // Put the camera at an exhibit straight away, without the glide (for slow test machines).
     jump(id) {
       const i = STOPS.findIndex(x => x.id === id); goStop(i, false); showPlacard(false);

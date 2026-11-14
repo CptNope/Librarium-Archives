@@ -11,6 +11,7 @@ function glowMats(obj) {
 async function startGame(ex) {
   stopTour(); narrator.stop();
   if (mode !== 'gallery') return;
+  buildExhibit(ex); // in case the visitor got here before it was built
   mode = 'play';
   const g = GAMES[ex.game], P = PRES[ex.game];
   play.ex = ex; play.game = g; play.P = P; play.token++;

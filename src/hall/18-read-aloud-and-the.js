@@ -76,6 +76,7 @@ function setActive(i) {
 }
 function goStop(i, fly = true) {
   if (mode !== 'gallery') return;
+  buildExhibit(STOPS[i]);
   if (tour.on && !tour.driving) stopTour();
   setActive(i);
   if (!store.visited[STOPS[i].id]) { store.visited[STOPS[i].id] = true; save(); railButtons[i].classList.add('seen'); }
