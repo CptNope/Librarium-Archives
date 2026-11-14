@@ -13,12 +13,41 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: js/ matches src/
+        run: node tools/build-js.mjs --check
       - name: Syntax check
         run: node --check js/rules.js && node --check js/archives.js
       - name: Rules tests
         run: npm test
       - name: Artifact build
         run: npm run build:artifact
+
+  browser:
+    # The hall in a real (software-rendered) Chromium: see tests/e2e/hall.e2e.mjs.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Fetch three.js r128
+        run: |
+          mkdir -p vendor
+          curl -sSfL https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js -o vendor/three.min.js
+      - name: Build the single-file page
+        run: npm run build:artifact
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Browser tests
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-screenshots
+          path: test-results/
 
   plugin:
     runs-on: ubuntu-latest
@@ -32,6 +61,8 @@ jobs:
           mkdir -p vendor
           curl -sSfL https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js -o vendor/three.min.js
           curl -sSfL https://raw.githubusercontent.com/mrdoob/three.js/r128/LICENSE -o vendor/three.LICENSE
+      - name: Fetch the typefaces to bundle
+        run: node tools/fetch-fonts.mjs
       - name: Build the plugin
         run: npm run build:wp
       - name: Lint PHP
@@ -40,8 +71,11 @@ jobs:
         run: |
           php tests/plugin-render.test.php render
           php tests/plugin-render.test.php sanitize
-      - name: Check three.js is bundled
-        run: test -s dist/librarium-archives/assets/vendor/three.min.js
+      - name: Check three.js and the fonts are bundled
+        run: |
+          test -s dist/librarium-archives/assets/vendor/three.min.js
+          test -s dist/librarium-archives/assets/vendor/fonts/fonts.css
+          ! grep -rl "fonts.googleapis.com\|cdnjs.cloudflare.com" dist/librarium-archives/assets
       - uses: actions/upload-artifact@v4
         with:
           name: librarium-archives-plugin

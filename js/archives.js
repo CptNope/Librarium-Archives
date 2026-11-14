@@ -324,7 +324,13 @@ function addCandle(x, z) {
   scene.add(g);
   candles.push({ pos: new THREE.Vector3(x - s * 0.2, 2.45, z), lightPos: new THREE.Vector3(x - s * 0.35, 2.5, z), flame, halo, seed: Math.random() * 100 });
 }
+// The table lamp: when you sit at a game, a warm light comes up over that board and the
+// hall's own lights ease back, so pieces and move marks read clearly. It is always in the
+// scene (at nought when you are walking), so sitting down never recompiles a shader.
+const lamp = { light: null, k: 0, at: null };
 function buildLightPools() {
+  lamp.light = new THREE.SpotLight(0xfff0d8, 0, 4.2, 0.62, 0.55, 1.1);
+  scene.add(lamp.light); scene.add(lamp.light.target);
   const nP = coarse ? 3 : 5, nS = coarse ? 3 : 4;
   for (let i = 0; i < nP; i++) { const l = new THREE.PointLight(0xff9a4a, 0, 9, 1.6); scene.add(l); POOL.point.push({ light: l, src: null }); }
   for (let i = 0; i < nS; i++) { const l = new THREE.SpotLight(0xffdcae, 0, 7.5, 0.5, 0.65, 1.3); scene.add(l); scene.add(l.target); POOL.spot.push({ light: l, src: null }); }
@@ -343,16 +349,27 @@ function assignPool(pool, sources, at) {
 }
 const fade = d => Math.max(0, Math.min(1, (22 - d) / 8));
 let poolClock = 0;
+function aimLamp(group) {
+  if (!lamp.light) return;
+  lamp.light.position.copy(group.localToWorld(V3(0, TOP + 1.55, 0.35)));
+  lamp.light.target.position.copy(group.localToWorld(V3(0, TOP, 0)));
+  lamp.light.target.updateMatrixWorld();
+}
 function updateLights(dt, time) {
+  const seated = mode === 'play' && play.ex;
+  if (seated && lamp.at !== play.ex) { lamp.at = play.ex; lamp.k = 0; aimLamp(play.ex.group); }
+  lamp.k = reduceMotion ? +!!seated : Math.max(0, Math.min(1, lamp.k + (seated ? dt : -dt) * 1.6));
+  if (lamp.light) lamp.light.intensity = 0.8 * lamp.k;
+  const hallDim = 1 - 0.35 * lamp.k;
   poolClock -= dt;
   if (poolClock <= 0) { poolClock = 0.25; assignPool(POOL.point, candles, cam.pos); assignPool(POOL.spot, spotSources, cam.pos); }
   for (const slot of POOL.point) {
     if (!slot.src) { slot.light.intensity = 0; continue; }
     const c = slot.src;
     const f = reduceMotion ? 0.9 : 0.82 + 0.1 * Math.sin(time * 11 + c.seed) + 0.08 * Math.sin(time * 23.7 + c.seed * 2);
-    slot.light.intensity = 1.25 * f * fade(c.pos.distanceTo(cam.pos));
+    slot.light.intensity = 1.25 * f * fade(c.pos.distanceTo(cam.pos)) * hallDim;
   }
-  for (const slot of POOL.spot) slot.light.intensity = slot.src ? 2.6 * fade(slot.src.pos.distanceTo(cam.pos)) : 0;
+  for (const slot of POOL.spot) slot.light.intensity = slot.src ? 2.6 * fade(slot.src.pos.distanceTo(cam.pos)) * hallDim : 0;
   if (!reduceMotion) for (const c of candles) {
     const f = 0.82 + 0.1 * Math.sin(time * 11 + c.seed) + 0.08 * Math.sin(time * 23.7 + c.seed * 2);
     c.flame.scale.set(0.15 * f, 0.26 * (0.9 + 0.2 * f), 1); c.halo.material.opacity = 0.3 * f;
@@ -3221,7 +3238,7 @@ const STOPS = [
     body: [
       'Pieces of what may be Senet boards turn up in First Dynasty burials around 3100 BCE, and the first unmistakable painting of the game appears in the tomb of Hesy-Re, about 2620 BCE. It is one of the oldest board games we know by name.',
       'The board has 30 squares, called houses, in three rows of ten. Players threw four flat sticks instead of dice. Over the centuries the game took on religious meaning: its name means "passing", and by the New Kingdom a match stood for the soul\'s journey through the underworld. Tutankhamun was buried with several sets.',
-      'No rulebook survives. We play a popular modern reconstruction that follows Timothy Kendall\'s 1979 work.'
+      'No rulebook survives. We play a popular modern reconstruction that follows Timothy Kendall\'s, first published in 1978 and revised since.'
     ],
     facts: [['Board', '30 houses, 3 rows of 10'], ['Pieces', '5 each, spools and cones'], ['Moves', '4 throw sticks, 1 to 5'], ['Goal', 'Bear every piece off the board']],
     build: buildSenetBoard },
@@ -3256,10 +3273,10 @@ const STOPS = [
     note: 'The dice are new, made in the old manner. No rules survive for the Bronze Age games, so this table plays Hazard, the medieval dice game Chaucer knew, as it was written down in the 1700s.',
     body: [
       'Cubic dice are nearly as old as board games. Possibly the oldest yet found come from the Burnt City, Shahr-e Sukhteh in eastern Iran, buried with a set for a race game that has been dated to between 2800 and 2500 BCE.',
-      'Graves at Mohenjo-daro in the Indus Valley held terracotta dice from 2500 to 1900 BCE. On one of them the opposite faces add up to seven, as they do on dice today. Players elsewhere threw other things: Senet\'s sticks and Ur\'s four-sided pyramids are on the tables in this wing.',
+      'Graves at Mohenjo-daro in the Indus Valley held terracotta dice from 2500 to 1900 BCE. Most were numbered one opposite two, three opposite four and five opposite six, but on at least one the opposite faces add up to seven, as they do on dice today. Players elsewhere threw other things: Senet\'s sticks and Ur\'s four-sided pyramids are on the tables in this wing.',
       'The table here plays Hazard, a two-dice game named in Chaucer\'s Canterbury Tales in the 14th century. Its rules were set down in Hoyle\'s Games by 1790, and a simplified form of it became American craps.'
     ],
-    facts: [['Oldest', 'Burnt City, Iran, c. 2800–2500 BCE'], ['Indus', 'Mohenjo-daro, 2500–1900 BCE'], ['Faces', 'Opposites adding to seven, on one Indus die']],
+    facts: [['Oldest', 'Burnt City, Iran, c. 2800–2500 BCE'], ['Indus', 'Mohenjo-daro, 2500–1900 BCE'], ['Faces', 'Mostly 1–2, 3–4, 5–6 opposite; at least one adds to seven']],
     build: buildDice },
   { id: 'hounds', wing: 1, title: 'Hounds and Jackals', date: 'c. 2000 BCE', rail: 'Hounds and Jackals',
     eyebrow: 'Egypt · Middle Kingdom', status: ['recon', 'Modern reconstruction'], game: 'hounds',
@@ -3294,7 +3311,7 @@ const STOPS = [
     note: 'On display. The board, pieces and sticks are new, after the Mawangdui set.',
     body: [
       'Liubo, "six sticks", was the great board game of Han dynasty China, played by emperors and buried with nobles. The oldest boards come from a 4th-century BCE tomb at Pingshan in Hebei, and a complete set in a lacquer box was found in 1973 in a 2nd-century BCE tomb at Mawangdui.',
-      'Each player had six pieces, moved by throws of six sticks, and a piece that reached a certain place was stood on end and became an "owl". The board\'s T, L and V marks also appear on bronze mirrors of the time. After the Han the game faded, perhaps losing out to weiqi, and by the 14th century no one knew how to play it. More than a thousand bamboo slips with its rules were found in the tomb of the Marquis of Haihun in 2019; until they are fully read, every modern version is a reconstruction.'
+      'Each player had six pieces, moved by throws of six sticks, and a piece that reached a certain place was stood on end and became an "owl". The board\'s T, L and V marks also appear on bronze mirrors of the time. After the Han the game faded, perhaps losing out to weiqi, and by the 14th century no one knew how to play it. More than a thousand bamboo slips with its rules from the tomb of the Marquis of Haihun, opened in 2015, were reported in 2019; until they are fully read, every modern version is a reconstruction.'
     ],
     facts: [['Pieces', 'Six a side'], ['Moves', 'Six throwing sticks'], ['Rules', 'Lost; reconstructions only']],
     build: buildLiubo },
@@ -3445,7 +3462,7 @@ const STOPS = [
     note: 'The figures are our own simplified carvings, not copies. The table plays a modern reconstruction of chess as Europe played it around 1200, after H. J. R. Murray: shatranj\'s moves under European names.',
     body: [
       'Around 1831 a hoard of more than ninety game pieces came to light on the Isle of Lewis in the Outer Hebrides. Most are carved from walrus ivory and a few from whale teeth, probably in Trondheim, Norway, in the later 12th century. The British Museum holds 82 of them and National Museums Scotland 11.',
-      'They show chess as medieval Europe played it: kings and queens on thrones, bishops in mitres, knights on ponies, and warders standing in for rooks. Four warders bite the tops of their shields like the berserkers of the Norse sagas. The hoard also held fourteen plain discs for playing tables, and a buckle, perhaps from the bag that carried them.'
+      'They show chess as medieval Europe played it: kings and queens on thrones, bishops in mitres, knights on ponies, and warders standing in for rooks. Four warders bite the tops of their shields like the berserkers of the Norse sagas. The hoard also held fourteen tablemen, mostly plain discs, for playing tables, and a buckle, perhaps from the bag that carried them.'
     ],
     facts: [['Found', 'Isle of Lewis, about 1831'], ['Material', 'Walrus ivory, whale tooth'], ['Pieces', '79 chessmen, 14 tables discs'], ['Held', 'British Museum, National Museums Scotland']],
     build: buildLewis },
@@ -3482,7 +3499,7 @@ const STOPS = [
     note: 'The trumps on the easel are new paintings in the style of the gilded Milan decks. At the table you can play a simplified game of tarocchi for two: the first rules were never written down.',
     body: [
       'Tarot began as a card game, not a way of telling fortunes. Around 1440 Italian courts added a fifth suit of picture cards, called trionfi or triumphs, that beat the ordinary suits as trumps. A Ferrara account book of 1442 records painted packs of trionfi, and the gilded decks made for the Visconti and Sforza dukes of Milan in the 1440s and 1450s are the oldest that survive.',
-      'The game spread to France and Switzerland, where it is still played. Reading the cards came centuries later: Etteilla wrote about divination with tarot around 1770, Antoine Court de Gébelin claimed an ancient Egyptian origin in 1781, and the Rider-Waite deck followed in 1909.'
+      'The game spread to France and Switzerland, where it is still played. Reading the cards came centuries later: Etteilla published a way of reading ordinary cards in 1770 and turned to the tarot in 1783, Antoine Court de Gébelin claimed an ancient Egyptian origin in 1781, and the Rider-Waite deck followed in 1909.'
     ],
     facts: [['Pack', 'Four suits, 21 trumps and the Fool'], ['Played', 'Trick-taking games'], ['Fortune-telling', 'From about 1770']],
     build: buildTarot },
@@ -3543,7 +3560,7 @@ const STOPS = [
     eyebrow: 'Italy and Europe · 16th century', status: ['known', 'Rules survive in print'], game: 'goose',
     body: [
       'The Game of the Goose is often called the first board game made to be sold. Francesco I de\' Medici, Grand Duke of Tuscany, sent one to Philip II of Spain sometime between 1574 and 1587, and in June 1597 the London printer John Wolfe registered "the newe and most pleasant game of the goose".',
-      'It is pure luck: two dice, a spiral of 63 squares, and a goose about every nine squares that sends you flying on. Printed sheets made it cheap, and from a French game of chronology in 1638 onwards, publishers borrowed its spiral to teach history and geography.'
+      'It is pure luck: two dice, a spiral of 63 squares, and geese every four or five squares that send you flying on. Printed sheets made it cheap, and from a French game of chronology in 1638 onwards, publishers borrowed its spiral to teach history and geography.'
     ],
     facts: [['Board', '63 squares in a spiral'], ['Dice', 'Two'], ['Skill', 'None at all'], ['Win', 'Land exactly on 63']],
     build: buildGooseBoard },
@@ -5077,10 +5094,11 @@ const LANDLORD_P = {
   intro() { return 'You play the pale checker and throw first. ' + this.prompt(); },
   prompt() {
     const G = GAMES.landlord;
-    if (G.ticketsOpen[0]) return `Your lot tickets: ${G.tickets[0].join(', ')}. Buy any of those lots now if you like, then start.`;
-    if (G.jailed[0]) return 'You are in jail. Pay the $50 fine, or throw for a double.';
-    const debt = G.notes[0] ? `, notes owed $${100 * G.notes[0]}` : '';
-    return G.laps[0] >= G.ROUNDS ? `You have been round ${G.ROUNDS} times${debt}. Throw when you are ready.` : `Round ${G.laps[0] + 1} of ${G.ROUNDS}. Cash $${G.cash[0]}${debt}. Throw when you are ready.`;
+    const me = play.cur || 0;
+    if (G.ticketsOpen[me]) return `Your lot tickets: ${G.tickets[me].join(', ')}. Buy any of those lots now if you like, then start.`;
+    if (G.jailed[me]) return 'You are in jail. Pay the $50 fine, or throw for a double.';
+    const debt = G.notes[me] ? `, notes owed $${100 * G.notes[me]}` : '';
+    return G.laps[me] >= G.ROUNDS ? `You have been round ${G.ROUNDS} times${debt}. Throw when you are ready.` : `Round ${G.laps[me] + 1} of ${G.ROUNDS}. Cash $${G.cash[me]}${debt}. Throw when you are ready.`;
   },
   choosePrompt: () => 'Pick your checker, then the glowing space to go to.',
   spot(pl, k) { const p = llSpace(k), side = Math.abs(p.ox) === 1 ? [0, 1] : Math.abs(p.oz) === 1 ? [1, 0] : [0.7, -0.7]; const o = (pl ? 1 : -1) * 0.016; return V3(p.x + p.ox * 0.025 + side[0] * o, GAMES.landlord.surface + 0.007, p.z + p.oz * 0.025 + side[1] * o); },
@@ -6071,7 +6089,8 @@ const HAZARD_P = {
   intro() { return 'You cast first. ' + this.prompt(); },
   prompt() {
     const G = GAMES.hazard;
-    if (G.stage === 'stake') return `Choose your stake. You have ${G.purse[0]} shillings, the Scribe ${G.purse[1]}.`;
+    const me = play.cur || 0;
+    if (G.stage === 'stake') return `Choose your stake. You have ${G.purse[me]} shillings, ${me ? 'the other player' : asFriend('the Scribe')} ${G.purse[1 - me]}.`;
     if (G.stage === 'main') return 'Call your main, 5 to 9. Seven gives the caster the best odds.';
     return G.pending ? `Throw: you need ${G.chance} before ${G.main}.` : `Throw the dice. Your main is ${G.main}.`;
   },
@@ -6578,7 +6597,8 @@ function flyTo(pos, target, dur = 1.6) {
   const token = {};
   camTween = token;
   const dist = p0.distanceTo(pos);
-  const d = Math.min(3.2, Math.max(0.6, dur * (0.5 + dist / 18)));
+  // With reduced motion asked for, the view cuts to its new place in a blink instead of gliding down the hall.
+  const d = reduceMotion ? 0.12 : Math.min(3.2, Math.max(0.6, dur * (0.5 + dist / 18)));
   return tween(d, k => {
     if (camTween !== token) return;
     cam.pos.lerpVectors(p0, pos, k);
@@ -6900,6 +6920,7 @@ function setActive(i) {
 }
 function goStop(i, fly = true) {
   if (mode !== 'gallery') return;
+  buildExhibit(STOPS[i]);
   if (tour.on && !tour.driving) stopTour();
   setActive(i);
   if (!store.visited[STOPS[i].id]) { store.visited[STOPS[i].id] = true; save(); railButtons[i].classList.add('seen'); }
@@ -7030,7 +7051,7 @@ function toggleOn(g, t) { const v = ((store.toggles || {})[g.id] || {})[t.id]; r
 // Pass-and-play: two visitors share the screen at a two-player table with nothing hidden.
 const HOTSEAT = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier', 'idraughts', 'hnefatafl',
   // dice games too: each player throws for themselves
-  'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii']);
+  'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard', 'landlord']);
 const friendOn = g => HOTSEAT.has(g.id) && ((store.opponent || {})[g.id] === 'friend');
 function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex); }
 function renderVariants(g) {
@@ -7071,10 +7092,22 @@ function renderVariants(g) {
 $('#lm-helpBtn').addEventListener('click', () => { if (mode === 'gallery') goStop(0); else $('#lm-rules').hidden = !$('#lm-rules').hidden; });
 
 /* ------------------------------------------------------------- play table */
-const play = { ex: null, game: null, P: null, token: 0, phase: 'idle', roll: null, moves: [], rings: [], byMesh: new Map(), glowing: new Set(), selected: null, hover: null, twoStep: false };
-const ringGeo = new THREE.TorusGeometry(0.05, 0.006, 8, 36);
+const play = { ex: null, game: null, P: null, token: 0, phase: 'idle', roll: null, moves: [], rings: [], halos: new Map(), byMesh: new Map(), glowing: new Set(), selected: null, hover: null, twoStep: false };
+const ringGeo = new THREE.TorusGeometry(0.05, 0.008, 8, 36);
 const ringHitGeo = new THREE.CircleGeometry(0.062, 24); // the whole ring face is clickable, not just its outline
-const RING_COLOR = { gold: 0xf6a01a, ember: 0xe06418 };
+const RING_COLOR = { gold: 0xffb21f, ember: 0xff6a1a };
+// Every mark sits on a dark band a little wider than itself, so it reads on a pale board as well as a dark one,
+// over a faint wash of its own colour that shows which square it means.
+const ringEdgeGeo = new THREE.TorusGeometry(0.05, 0.0135, 8, 36), ringFillGeo = new THREE.CircleGeometry(0.043, 28);
+const RING_EDGE = new THREE.MeshBasicMaterial({ color: 0x140a03, transparent: true, opacity: 0.78, depthWrite: false });
+const RING_FILL = { gold: new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.2, depthWrite: false }), ember: new THREE.MeshBasicMaterial({ color: RING_COLOR.ember, transparent: true, opacity: 0.22, depthWrite: false }) };
+const RING_EDGE_SOFT = new THREE.MeshBasicMaterial({ color: 0x140a03, transparent: true, opacity: 0.3, depthWrite: false });
+function markMesh(geo, mat, tone, soft) { // a ring with its dark band and its wash, all lying flat
+  const ring = new THREE.Mesh(geo, mat); ring.rotation.x = -Math.PI / 2;
+  const edge = new THREE.Mesh(ringEdgeGeo, soft ? RING_EDGE_SOFT : RING_EDGE); edge.position.z = -0.0006; edge.renderOrder = -1; ring.add(edge);
+  if (tone) { const fill = new THREE.Mesh(ringFillGeo, RING_FILL[tone]); fill.position.z = -0.0003; ring.add(fill); }
+  return ring;
+}
 function glowMats(obj) {
   if (obj.userData.mats) return obj.userData.mats;
   const a = []; obj.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { if (m.emissive) a.push(m); }); });
@@ -7083,6 +7116,7 @@ function glowMats(obj) {
 async function startGame(ex) {
   stopTour(); narrator.stop();
   if (mode !== 'gallery') return;
+  buildExhibit(ex); // in case the visitor got here before it was built
   mode = 'play';
   const g = GAMES[ex.game], P = PRES[ex.game];
   play.ex = ex; play.game = g; play.P = P; play.token++;
@@ -7093,6 +7127,7 @@ async function startGame(ex) {
   for (const t of g.toggles || []) g.setToggle(t.id, toggleOn(g, t));
   play.hotseat = friendOn(g);
   g.init();
+  if (g.human) g.human = [true, !!play.hotseat]; // engines that ask a person for choices the Scribe makes by itself
   play.resumed = loadGame(g);
   renderVariants(g);
   P.setup(ex);
@@ -7126,7 +7161,10 @@ async function startGame(ex) {
  * the engine's data fields first, so nothing the Scribe tries can leak out. */
 // Only tables whose pieces are rebuilt entirely from the engine's state can be taken back.
 const UNDO_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'draughts', 'tablut', 'halma', 'reversi', 'jungle', 'mutorere', 'oware', 'kalah', 'idraughts', 'hnefatafl', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi']);
-const canHint = g => !!g.aiPlan && !g.dice && !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'fourseasons', 'chaturaji'].includes(g.id);
+// At dice tables the Hint weighs the moves this throw allows; where the moves are fixed (the Goose, Snakes and
+// Ladders, the Mansion, Hazard's bets) there is nothing to weigh.
+const DICE_HINT = new Set(['ur', 'senet', 'tables', 'nard', 'xii', 'yut', 'pachisi', 'ludo', 'patolli', 'tab', 'hounds', 'lifegame']);
+const canHint = g => !!g.aiPlan && (g.dice ? DICE_HINT.has(g.id) : !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'fourseasons', 'chaturaji'].includes(g.id));
 function copyState(g) {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
   for (const k of Object.keys(d)) if ('value' in d[k] && typeof d[k].value !== 'function' && k !== 'rules' && k !== 'source' && k !== 'surface') out[k] = d[k].value;
@@ -7167,11 +7205,15 @@ $('#lm-hintBtn').addEventListener('click', async () => {
   $('#lm-hintBtn').disabled = true;
   await new Promise(r => setTimeout(r, 60));
   let plan = null;
-  try { R.setLevel('sharp'); plan = g.aiPlan(pl); } catch (e) { plan = null; } finally { R.setLevel(level); Object.assign(g, structuredClone(before)); }
+  try {
+    if (g.dice) { R.setLevel('sharp'); plan = g.aiPlan(pl, moves); } // the best use of this throw: quick, so on the page
+    else plan = await scribe.plan(g, pl, 'sharp');
+  } catch (e) { plan = null; } finally { R.setLevel(level); Object.assign(g, structuredClone(before)); }
   if (tok !== play.token || play.phase !== 'choose') return;
   const want = plan && plan[0], keys = ['kind', 'from', 'to', 'c', 'card', 'place', 'pit', 'i', 'n', 'line', 'over', 'swap', 'pass', 'label', 'drop', 'promo'];
   const same = (a, b) => keys.every(k => JSON.stringify(a[k]) === JSON.stringify(b[k]));
-  const m = want && (moves.find(x => x === want) || moves.find(x => same(x, Object.assign({}, x, want)) && same(want, x)) || moves.find(x => same(x, want)));
+  const whole = x => JSON.stringify(x, Object.keys(x).sort()); // the plan comes back from the worker as a copy: match it field by field
+  const m = want && (moves.find(x => x === want) || moves.find(x => whole(x) === whole(want)) || moves.find(x => same(x, Object.assign({}, x, want)) && same(want, x)) || moves.find(x => same(x, want)));
   refreshAids();
   if (!m) { setMsg(turnName(), 'The Scribe has no clear advice here. ' + play.P.prompt()); return; }
   play.hintCount++;
@@ -7348,7 +7390,8 @@ function explainHint(g, pl, m) {
     if (r && r.winner === pl) why.push('it wins the game');
     else {
       const noun = HINT_NOUN[g.id] || ['a piece', 'pieces'];
-      if (res.boxes && res.boxes.length) why.push(`it completes ${res.boxes.length > 1 ? res.boxes.length + ' boxes' : 'a box'} and you move again`);
+      if (g.dice && pl === 0 && res.note) why.push(res.note.split('. ')[0].replace(/^You /, 'you ').replace(/\.$/, '')); // at dice tables the table's own words say it best
+      else if (res.boxes && res.boxes.length) why.push(`it completes ${res.boxes.length > 1 ? res.boxes.length + ' boxes' : 'a box'} and you move again`);
       else if (pl === 0 && res.note && /^You (take|capture|meet)/.test(res.note)) why.push(res.note.split('. ')[0].replace(/^You /, 'you ').replace(/\.$/, '')); // the table's own words
       else if (res.caps && res.caps.length) why.push(`it takes ${res.caps.length > 1 ? res.caps.length + ' ' + noun[1] : noun[0]}`);
       else if (m.flips && m.flips.length) why.push(`it turns ${m.flips.length > 1 ? m.flips.length + ' discs' : 'a disc'}`);
@@ -7365,7 +7408,8 @@ function explainHint(g, pl, m) {
     }
   } catch (e) { /* the reason is a courtesy: the hint stands without it */ }
   Object.assign(g, structuredClone(before));
-  if (!why.length) return g.id === 'go' || g.id === 'hex' ? 'It is the move that wins most often when the Scribe plays the game out from here many times.' : 'It is the move the Scribe rates best after looking several moves ahead.';
+  if (!why.length) return g.id === 'go' || g.id === 'hex' ? 'It is the move that wins most often when the Scribe plays the game out from here many times.'
+    : g.dice ? 'Of the moves this throw allows, it leaves your pieces best placed: furthest on, and least exposed.' : 'It is the move the Scribe rates best after looking several moves ahead.';
   const text = why.slice(0, 2).join(', and ');
   return text[0].toUpperCase() + text.slice(1) + '.';
 }
@@ -7383,6 +7427,25 @@ const COACH = {
     { when: (g, c) => c.turn >= 2 && c.moves.some(m => m.mtaji), text: 'You can capture, so you must. If your last seed lands in an occupied pit of your inner row and the Scribe\'s pit opposite has seeds, you take them and sow them in from an end of your inner row.' },
     { when: (g, c) => c.turn >= 2, text: 'When your last seed lands in a pit that already has seeds, you lift them all and keep sowing. The turn ends only when a last seed falls into an empty pit.' },
     { when: (g, c) => c.turn >= 4 || g.innerCount(0) <= 8, text: 'Watch your inner row, the one nearer the middle: you lose if it is ever empty, or if you cannot move.' },
+  ],
+  shogi: [
+    { when: (g, c) => c.turn === 1, text: 'Your pieces point away from you. Each moves its own way, and none as freely as in chess except the bishop and rook. Pick a piece to see where it can go; the rules panel lists every move.' },
+    { when: (g, c) => c.turn >= 4, text: 'A piece that moves into, out of or within the Scribe\'s three back ranks promotes, and here it always does. Most small pieces then step like a gold general; bishop and rook add the king\'s step.' },
+    { when: g => g.hands[0].some(n => n > 0), text: 'A piece you capture joins your hand, at the right of the board. On any later turn you may drop it on an empty square instead of moving: pick it from your hand, then a ring.' },
+  ],
+  go: [
+    { when: (g, c) => c.turn === 1, text: 'Place a stone on any point where the lines cross; stones never move. The aim is territory: empty points that only your stones surround count for you at the end.' },
+    { when: (g, c) => c.turn >= 4, text: 'A stone or a chain of joined stones is captured when every empty point next to it is filled by the other side. Keep your chains connected, and give them room to breathe.' },
+    { when: (g, c) => c.turn >= 12, text: 'When nothing useful is left to play, press Pass. Two passes in a row end the game, and the Scribe counts each side\'s stones and surrounded points; white adds 7 for moving second.' },
+  ],
+  patolli: [
+    { when: (g, c) => c.turn === 1, text: 'Each throw of five beans counts the marked sides: 1 to 4 move that many houses, all five move 10, and none costs you a treasure. A throw of 1 can bring a new marker onto your starting house, in the centre.' },
+    { when: (g, c) => c.turn >= 3, text: 'Markers cannot share a house, except in the four centre houses, where landing on an enemy sends it home and earns you a treasure. Dark houses cost a treasure; the red tips at the ends of the arms give you another throw.' },
+    { when: (g, c) => c.turn >= 6, text: 'Each marker that goes all the way round earns a treasure. When one side has brought all six home, the fuller purse of treasures wins, and a player who cannot pay loses at once.' },
+  ],
+  piquet: [
+    { when: g => g.stage === 'exchange', text: 'First the exchange: click the cards you want to discard, then exchange them for cards from the talon. Keep long suits, runs in one suit, and aces, kings, queens, jacks and tens in fours or threes: they score before play begins.' },
+    { when: g => g.stage === 'play', text: 'Now twelve tricks, with no trumps: follow suit if you can. Each card you lead scores 1, as does each trick you win against the other\'s lead, and taking more tricks than the Scribe is worth 10.' },
   ],
   mahjong: [
     { when: (g) => g.need.type === 'discard' && g.need.seat === 0, text: 'You hold fourteen tiles: click one to discard it. You are building four sets and a pair. A set is three alike (a pung) or a run of three in one suit (a chow).' },
@@ -7678,7 +7741,7 @@ async function aiTurn() {
   }
   // Let the 'thinking' message paint first, without depending on animation frames (paused in background tabs).
   await new Promise(r => { requestAnimationFrame(() => setTimeout(r, 30)); setTimeout(r, 120); });
-  const plan = g.aiPlan(1);
+  const plan = await scribe.plan(g, 1, R.level());
   if (tok !== play.token || !plan) return;
   let said = false;
   clearLastMove();
@@ -7695,6 +7758,45 @@ async function aiTurn() {
   if (said) { await wait(1000); if (tok !== play.token) return; }
   beginTurn(nextPl(g, 0));
 }
+/* The Scribe thinks in a worker of its own, so the hall keeps moving while it looks ahead. The worker loads
+ * the same rules as the page, is given the game's state, and sends back its plan as plain moves, which the
+ * page then plays. If a worker cannot start (an old browser, a blocked page), or answers nothing in time,
+ * the Scribe thinks on the page as before. Dice tables plan in an instant and stay on the page. */
+const scribe = (() => {
+  let w = null, failed = false, next = 1; const waiting = new Map();
+  const glue = `self.onmessage = function (e) {
+    var d = e.data, R = self.LibrariumRules, plan = null, err = null;
+    try { var g = R[d.game]; if (g.setVariant && d.variant != null) g.setVariant(d.variant); g.init();
+      Object.assign(g, R.unpackState(d.state)); R.setLevel(d.level); plan = g.aiPlan(d.pl); }
+    catch (x) { err = String(x && x.message || x); }
+    self.postMessage({ id: d.id, plan: plan, err: err });
+  };`;
+  function start() {
+    if (w || failed) return w;
+    try {
+      const src = R.source; if (!src || typeof Worker === 'undefined') throw new Error('no worker');
+      const head = src.text ? src.text : `importScripts(${JSON.stringify(new URL(src.url, location.href).href)});`;
+      const url = URL.createObjectURL(new Blob([head, '\n', glue], { type: 'text/javascript' }));
+      w = new Worker(url);
+      w.onmessage = e => { const job = waiting.get(e.data.id); if (job) { waiting.delete(e.data.id); job(e.data); } };
+      w.onerror = () => { failed = true; stop(); };
+    } catch (e) { failed = true; w = null; }
+    return w;
+  }
+  function stop() { if (w) w.terminate(); w = null; for (const job of waiting.values()) job({ err: 'stopped' }); waiting.clear(); }
+  // Ask for a plan; resolves to the plan, or to the page's own answer if the worker cannot give one.
+  function plan(g, pl, level) {
+    const local = () => { const was = R.level(); try { R.setLevel(level); return g.aiPlan(pl); } finally { R.setLevel(was); } };
+    if (g.dice || !start()) return Promise.resolve(local());
+    const id = next++, msg = { id, game: g.id, variant: g.variant != null ? g.variant : null, state: engineState(g), pl, level };
+    return new Promise(resolve => {
+      const late = setTimeout(() => { if (waiting.delete(id)) { failed = true; stop(); resolve(local()); } }, 20000);
+      waiting.set(id, d => { clearTimeout(late); if (d.err || !d.plan) resolve(d.err === 'stopped' ? null : local()); else resolve(d.plan); });
+      try { w.postMessage(msg); } catch (e) { waiting.delete(id); clearTimeout(late); resolve(local()); }
+    });
+  }
+  return { plan, stop, get on() { return !!w && !failed; } };
+})();
 function finish(res) {
   play.phase = 'over'; clearHighlights();
   sfx.end(res.winner);
@@ -7723,18 +7825,22 @@ function clearLastMove() { lastMarks.splice(0).forEach(o => { o.parent && o.pare
 function markLastMove(from, to) {
   const add = (geo, v, opacity) => {
     if (!v) return;
-    const o = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: RING_COLOR.ember, transparent: true, opacity, depthWrite: false }));
+    const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR.ember, transparent: true, opacity, depthWrite: false });
+    const o = geo === ringGeo ? markMesh(geo, mat) : new THREE.Mesh(geo, mat);
     o.rotation.x = -Math.PI / 2; o.position.copy(v); o.position.y += 0.003; o.scale.setScalar(0.9);
     play.ex.group.add(o); lastMarks.push(o);
   };
-  add(markFromGeo, from, 0.4); add(ringGeo, to, 0.75);
+  add(markFromGeo, from, 0.45); add(ringGeo, to, 0.85);
 }
 function addRing(m) {
   const P = play.P, at = P.ringFor(m);
   if (!at) return; // a move with no spot of its own, such as a card played from the hand
-  const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR[P.ringTone ? P.ringTone(m) : 'gold'], transparent: true, opacity: P.ringOpacity || 0.85, depthWrite: false });
-  const ring = new THREE.Mesh(ringGeo, mat);
-  ring.rotation.x = -Math.PI / 2;
+  // Where nearly every point is a move (Go, Gomoku, Hex) the marks stay lighter, so the board still shows;
+  // the one under the pointer comes up in full.
+  const tone = P.ringTone ? P.ringTone(m) : 'gold', soft = !!P.ringOpacity;
+  const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR[tone], transparent: true, opacity: soft ? P.ringOpacity + 0.2 : 0.95, depthWrite: false });
+  const ring = markMesh(ringGeo, mat, soft ? null : tone, soft);
+  ring.userData.op = soft ? P.ringOpacity + 0.2 : 0.85;
   ring.position.copy(at); ring.position.y += 0.004;
   ring.userData.move = m; ring.userData.base = P.ringScale || 1;
   ring.add(new THREE.Mesh(ringHitGeo, MAT.hit));
@@ -7750,7 +7856,7 @@ function highlight(moves) {
     play.byMesh.get(ms).push(m);
   }
   play.twoStep = [...play.byMesh.values()].some(a => a.length > 1);
-  play.byMesh.forEach((_, ms) => play.glowing.add(ms));
+  play.byMesh.forEach((_, ms) => { play.glowing.add(ms); addHalo(ms); });
   for (const m of moves) if (!play.twoStep || !P.meshesFor(m).some(Boolean)) addRing(m);
   if (play.twoStep && play.byMesh.size === 1) select([...play.byMesh.keys()][0]);
 }
@@ -7764,8 +7870,22 @@ function select(mesh) {
   play.selected = mesh;
   play.byMesh.get(mesh).forEach(addRing);
 }
+// A ring at the foot of every piece you can move: the warm glow alone hardly shows on a pale piece.
+function addHalo(ms) {
+  if (!play.ex || play.halos.has(ms)) return;
+  const box = new THREE.Box3().setFromObject(ms); if (box.isEmpty()) return;
+  const size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
+  if (size.y > Math.max(size.x, size.z) * 1.6 && size.y > 0.08) return; // a card or tile held upright: its glow and lift say enough
+  const foot = play.ex.group.worldToLocal(new THREE.Vector3(mid.x, box.min.y, mid.z));
+  const halo = markMesh(ringGeo, new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.9, depthWrite: false }));
+  halo.position.copy(foot); halo.position.y += 0.002;
+  const r = Math.min(0.09, Math.max(0.022, Math.max(size.x, size.z) / 2 * 1.12));
+  halo.userData.base = r / 0.05; halo.scale.setScalar(halo.userData.base);
+  play.ex.group.add(halo); play.halos.set(ms, halo);
+}
 function clearHighlights() {
   dropRings(() => false);
+  play.halos.forEach(h => { h.parent && h.parent.remove(h); h.material.dispose(); }); play.halos.clear();
   play.glowing.forEach(ms => glowMats(ms).forEach(x => x.emissive.setRGB(0, 0, 0)));
   play.glowing.clear(); play.byMesh = new Map(); play.selected = null; play.hover = null; play.hintMove = null;
 }
@@ -8085,10 +8205,12 @@ function step() {
       const hot = ms === play.selected || ms === play.hover || (play.hintMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(play.hintMove)) || (hoverMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(hoverMove));
       const k = hot ? 0.5 : pulse;
       glowMats(ms).forEach(x => x.emissive.setRGB(0.55 * k, 0.32 * k, 0.02));
+      const h = play.halos.get(ms);
+      if (h) { h.material.opacity = hot ? 1 : 0.7 + 0.25 * Math.sin(t * 5); h.scale.setScalar(h.userData.base * (hot ? 1.18 : 1)); }
     });
     play.rings.forEach(r => {
       const hot = play.hover === r || r.userData.move === play.hintMove || (play.hover && play.byMesh.get(play.hover) && play.byMesh.get(play.hover).includes(r.userData.move));
-      r.material.opacity = hot ? 1 : 0.6 + 0.25 * Math.sin(t * 5);
+      r.material.opacity = hot ? 1 : (r.userData.op || 0.85) + 0.12 * Math.sin(t * 5);
       r.scale.setScalar(r.userData.base * (hot ? 1.25 : 1));
     });
   }
@@ -8096,16 +8218,33 @@ function step() {
 }
 
 /* -------------------------------------------------------------- boot */
+const bootTimes = {}; // how long the exhibits took to build (read with ?debug)
+function buildExhibit(s) {
+  if (!s || !s.build || s.built) return;
+  s.built = true; s.surface = s.build(s.group); s.group.updateMatrixWorld(true);
+}
 async function boot() {
   try { await Promise.race([Promise.all([document.fonts.load('64px "Almendra SC"'), document.fonts.load('20px "Amethysta"'), document.fonts.load('20px "Montserrat"')]), wait(2500)]); } catch (e) {}
   layoutHall();
   buildHall();
   buildUrTextures();
-  for (const s of STOPS) {
-    if (!s.build) continue;
-    s.group = makePlinth(s);
-    s.surface = s.build(s.group);
-  }
+  // Every plinth goes up at once (they are plain blocks, and the walk, the camera and the lights need them).
+  // What stands on them is built near the visitor first: the wing they start in before the loader lifts, the
+  // rest a few at a time while the hall is already moving. Sitting down at a table builds it at once if needed.
+  const startAt = STOPS.findIndex(s => s.id === root.dataset.start), first = STOPS[Math.max(0, startAt)];
+  const queue = [];
+  for (const s of STOPS) { if (!s.build) continue; s.group = makePlinth(s); queue.push(s); }
+  const near = s => Math.abs(s.wing - first.wing) * 100 + Math.abs(s.z - (first.z || 0));
+  queue.sort((a, b) => near(a) - near(b));
+  const t0 = performance.now();
+  while (queue.length && queue[0].wing === first.wing) buildExhibit(queue.shift());
+  bootTimes.first = performance.now() - t0;
+  const drip = () => {
+    const t = performance.now();
+    while (queue.length && performance.now() - t < 14) buildExhibit(queue.shift()); // a slice of a frame at a time
+    if (queue.length) setTimeout(drip, 30); else bootTimes.all = performance.now() - t0;
+  };
+  setTimeout(drip, 400);
   buildLectern(HALL.zFar + 4.5);
   STOPS.find(s => s.id === 'next').group = lectern;
   const sconces = [];
@@ -8122,7 +8261,6 @@ async function boot() {
   cam.pos.copy(v.pos).add(V3(0, 0, 1.2)); cam.yaw = a.yaw; cam.pitch = a.pitch;
   touchCopy(); updateJoy();
   frame();
-  const startAt = STOPS.findIndex(s => s.id === root.dataset.start);
   setTimeout(() => {
     $('#lm-loader').classList.add('done');
     if (startAt > 0) goStop(startAt);
@@ -8133,7 +8271,7 @@ async function boot() {
 // Inspect the live state from the console with ?debug in the address.
 if (/[?&]debug\b/.test(location.search)) {
   window.__archives = {
-    play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop,
+    play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop, scribe, bootTimes, select,
     // Put the camera at an exhibit straight away, without the glide (for slow test machines).
     jump(id) {
       const i = STOPS.findIndex(x => x.id === id); goStop(i, false); showPlacard(false);

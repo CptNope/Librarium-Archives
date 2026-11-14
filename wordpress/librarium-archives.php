@@ -109,7 +109,12 @@ function librarium_archives_exhibits() {
  */
 function librarium_archives_register_assets() {
 	$version = LIBRARIUM_ARCHIVES_VERSION;
-	wp_register_style( 'librarium-archives-fonts', 'https://fonts.googleapis.com/css2?family=Almendra+SC&family=Amethysta&family=Montserrat:wght@400;600&display=swap', array(), null ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+	// The typefaces ship inside the plugin too; Google Fonts is only a fallback for development builds.
+	if ( file_exists( LIBRARIUM_ARCHIVES_DIR . 'assets/vendor/fonts/fonts.css' ) ) {
+		wp_register_style( 'librarium-archives-fonts', LIBRARIUM_ARCHIVES_URL . 'assets/vendor/fonts/fonts.css', array(), $version );
+	} else {
+		wp_register_style( 'librarium-archives-fonts', 'https://fonts.googleapis.com/css2?family=Almendra+SC&family=Amethysta&family=Montserrat:wght@400;600&display=swap', array(), null ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+	}
 	wp_register_style( 'librarium-archives', LIBRARIUM_ARCHIVES_URL . 'assets/css/archives.css', array( 'librarium-archives-fonts' ), $version );
 
 	// three.js ships inside the plugin; the CDN is only a fallback for development builds.

@@ -2,14 +2,16 @@
 
 ## Quick start
 
-There is no build step for the site itself: serve the folder with any static server and open the printed address.
+The site needs no build to run: serve the folder with any static server and open the printed address. The code is written in `src/` and joined into the two files in `js/` that the page loads. After editing anything in `src/`, run `npm run build:js`. Do not edit `js/` by hand: CI checks that it matches `src/`.
 
 ```bash
 npx serve .                 # or: python3 -m http.server
+npm run build:js            # joins src/rules and src/hall into js/rules.js and js/archives.js
 npm test                    # rule tests and simulated games (Node 18+)
 npm run build:artifact      # writes dist/artifact.html (everything inlined)
 npm run build:wp            # writes dist/librarium-archives.zip
 npm run test:plugin         # builds the plugin, then runs the PHP render and sanitise tests (needs php and zip)
+npm run test:e2e            # browser tests (needs Playwright and Chromium, see Testing)
 ```
 
 Local plugin builds load three.js from cdnjs unless `vendor/three.min.js` exists; CI downloads it and bundles it.
@@ -19,9 +21,15 @@ Local plugin builds load three.js from cdnjs unless `vendor/three.min.js` exists
 ```text
 index.html                    Page markup, fonts, script order
 css/archives.css              All styles (brand: Almendra SC, Amethysta, Montserrat; logo gold #F6A01A)
-js/rules.js                   62 rule engines and the Scribe (no rendering; runs in Node)
-js/archives.js                three.js hall, 64 exhibits, table presenters, turn loop, navigation, sound
+src/rules/                    The rule engines, one file per game, plus 00-core.js (levels, search,
+                              Ur and Senet) and zz-api.js (saved state, the export); ORDER lists them
+src/hall/                     The hall in parts: 00-head … 27-boot for the systems, build-*.js for the
+                              exhibits' models, table-*.js for each table's presenter; ORDER lists them
+js/rules.js                   Built from src/rules: 62 rule engines and the Scribe (runs in Node too)
+js/archives.js                Built from src/hall: the three.js hall, its tables and systems
 tests/rules.test.mjs          Rule tests, simulated games and AI timing checks
+tests/e2e/hall.e2e.mjs        Browser tests (Playwright)
+tools/build-js.mjs            Joins src/ into js/ (--check fails if js/ is out of date)
 tests/plugin-render.test.php  Renders the shortcode with stubbed WordPress functions
 tools/build-artifact.mjs      Inlines everything into dist/artifact.html
 tools/build-wp.mjs            Builds the WordPress plugin into dist/librarium-archives.zip
@@ -68,10 +76,12 @@ flowchart TB
         p2["render: markup, one per page"]
         p3["sanitise: hostile attributes cleaned"]
     end
-    subgraph browser["Browser checks (by hand or headless)"]
-        b1["play several turns at each new table"]
-        b2["no script errors"]
-        b3["screenshot and look at the board"]
+    subgraph browser["npm run test:e2e · Playwright"]
+        b1["the hall loads; the passport"]
+        b2["chess: worker, Undo, moves, resume"]
+        b3["dots: play out, replay"]
+        b4["ur with a friend; bao's guide"]
+        b5["the single-file build"]
     end
     unit --> php --> browser
 ```
@@ -80,9 +90,21 @@ flowchart TB
 - **Simulated games** play every level against every other with random or AI moves, and check that games always end and that nothing is lost (64 seeds in Bao, 28 dominoes, every card in cribbage).
 - **Strength** is measured outside the test suite with small scripts that play level against level with seats swapped; the results are in [the Scribe](scribe.md#measured-strength).
 
-### Browser checks
+### Browser tests
 
-Chromium and Playwright run the page headless at a small viewport. A check script opens the page with `?debug`, jumps to a table, starts a game, plays turns through `window.__archives`, records the message bar and score after each turn, takes a screenshot, and reports any page errors. Software rendering is slow, so a screenshot can take several minutes; keep the viewport small.
+`tests/e2e/hall.e2e.mjs` runs the page in a headless, software-rendered Chromium. It opens the page with `?debug`, jumps to tables, plays through `window.__archives`, and checks the things that span every table:
+- The hall loads and the passport has a stamp for every exhibit.
+- At chess, the Scribe answers from its worker. Undo takes back a turn and trims the move list. A game you leave is resumed.
+- Dots and Boxes is played to the end, then replayed, with the board matching each step.
+- Ur against a friend: each player throws for themselves.
+- Bao opens a first game with the guide.
+- The single-file build loads, and its Scribe thinks in a worker too.
+
+Any page error fails the run. Screenshots go to `test-results/`, which CI keeps.
+
+To run it locally: `npm install --no-save playwright@1.63.0 && npx playwright install chromium`, then `npm run test:e2e`. It uses `vendor/three.min.js` when present, so it needs no network. Software rendering is slow: the run takes ten to twenty minutes, and a screenshot alone can take a few.
+
+For one-off checks (a new table's first turns, a screenshot of a layout), write a small script in the same way: `?debug`, `jump`, `startGame`, `choose`.
 
 ## CI and deployment
 
@@ -92,6 +114,7 @@ flowchart LR
     subgraph ci["ci.yml"]
         direction TB
         t1["Syntax check<br/>rules.js, archives.js"] --> t2["npm test"] --> t3["build:artifact"]
+        e1["fetch three.js r128"] --> e2["build:artifact"] --> e3["Playwright + Chromium"] --> e4["npm run test:e2e"] --> e5[["upload<br/>browser-screenshots"]]
         p1["fetch three.js r128"] --> p2["build:wp"] --> p3["PHP lint"] --> p4["render and sanitise tests"] --> p5["three.js bundled?"] --> p6[["upload<br/>librarium-archives-plugin"]]
     end
     main(["push to main"]) --> pages
@@ -102,7 +125,7 @@ flowchart LR
 ```
 
 - **GitHub Pages** deploys `main` after the tests pass. In the repository's **Settings › Pages**, set **Source** to **GitHub Actions** once.
-- **CI** runs on every push and pull request and uploads the plugin zip as the `librarium-archives-plugin` artifact.
+- **CI** runs on every push and pull request. It uploads the plugin zip as the `librarium-archives-plugin` artifact and the browser tests' screenshots as `browser-screenshots`.
 
 ## Workflow
 

@@ -24,6 +24,7 @@ timeline
     0.27 : Guided tour and passport · International draughts · Hnefatafl
     0.28 : Undo and saved games at every table · Dice pass-and-play · Sharper Scribes
     0.29 : Hints that explain · Moves and replay · A guide for first games
+    0.30 : The Scribe's worker · Faster start · Clearer marks · Offline · Fact-check
 ```
 
 ```mermaid
@@ -39,10 +40,11 @@ pie showData
 - [ ] Hare and Hounds (the French military game), once the lines of its eleven-point board can be checked against a primary source
 - [ ] A stronger Brandubh attacker (the defenders still win most Scribe-against-Scribe games)
 - [ ] A stronger Sharp level for Janggi and Rithmomachia
-- [ ] Pass-and-play at Hazard, the Landlord's Game and the four-player tables
+- [ ] Pass-and-play at the four-player tables (Chaturaji and Mahjong): each seat needs a hand-off screen so players don't see each other's choices
 
 ## Done
 
+- [x] 0.30: the Scribe thinks in a worker; faster start; the source split into small files; browser tests in CI; clearer move marks; dice Hints; pass-and-play at Hazard and the Landlord's Game; the guide at Shogi, Go, Patolli and Piquet; a table lamp; placards fact-checked; the plugin bundles its fonts; the site installs and works offline
 - [x] Renamed from the Librarium Museum of Play to the Librarium Archives, repository included
 - [x] WordPress plugin with a shortcode and an Elementor widget, loading the Archives only where it is shown
 - [x] Wing II: strategy games (Weiqi, Ludus latrunculorum, Nine Men's Morris, Oware, Brandubh)

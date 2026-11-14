@@ -98,7 +98,7 @@
       'Pieces on houses 28, 29 and 30 leave with an exact 3, 2 or 1.',
       'The first to bear off all five pieces wins.'
     ],
-    source: 'A modern reconstruction after Timothy Kendall (1979). The ancient rules were never written down.',
+    source: 'A modern reconstruction after Timothy Kendall (1978, revised since). The ancient rules were never written down.',
     init() { this.pos = [[1, 3, 5, 7, 9], [2, 4, 6, 8, 10]]; },
     roll() { const f = [0, 0, 0, 0].map(() => (Math.random() < 0.5 ? 1 : 0)); const w = f.reduce((a, b) => a + b, 0); return { faces: f, value: w || 5 }; },
     occ(sq) { for (const pl of [0, 1]) { const i = this.pos[pl].indexOf(sq); if (i >= 0) return { pl, i }; } return null; },
@@ -229,10 +229,14 @@
       const key = JSON.stringify(first), i = turns.findIndex(t => JSON.stringify(t) === key);
       if (i > 0) turns.unshift(turns.splice(i, 1)[0]);
     }
+    const noise = pick(6, 0.6, 0.05);
     for (const seq of turns) {
       const s = G.snapshot();
       for (const m of seq) G.apply(m);
-      const v = -negamax(G, 1 - pl, depth - 1, -Infinity, Infinity) + Math.random() * pick(6, 0.6, 0.05);
+      // Each move after the first only has to show it can beat the best so far (less the noise that varies the
+      // Scribe's play), so the search may stop early on the many that cannot: the same answer, far sooner.
+      const floor = best === null ? -Infinity : bv - noise;
+      const v = -negamax(G, 1 - pl, depth - 1, -Infinity, -floor) + Math.random() * noise;
       G.restore(s);
       if (best === null || v > bv) { bv = v; best = seq; } // even when every move loses, pick one
     }
@@ -2421,6 +2425,7 @@
     source: 'U.S. Patent 748,626, granted to Lizzie J. Magie on January 5, 1904: the board is read from the patent drawing and the rules from its text, for two players. The patent\'s rule for two checkers sharing a lot is left out.',
     init() {
       this.pos = [0, 0]; this.cash = [500, 500]; this.notes = [0, 0]; this.laps = [0, 0]; this.lux = [0, 0]; this.legacies = [0, 0];
+      this.human = [true, false]; // seats a person plays (the hall sets the second for a game against a friend)
       this.jailed = [false, false]; this.owner = new Array(23).fill(-1); this.fran = { 13: -1, 27: -1 };
       const t = Array.from({ length: 22 }, (_, k) => k + 1);
       for (let k = t.length - 1; k > 0; k--) { const j = (Math.random() * (k + 1)) | 0; [t[k], t[j]] = [t[j], t[k]]; }
@@ -2483,7 +2488,7 @@
         case 'ticket': {
           this.cash[pl] -= 10 * m.n; this.owner[m.n] = pl;
           notes.push(`${me} ${pl === 0 ? 'buy' : 'buys'} lot ${m.n}.`);
-          const r = out(); if (pl === 0) r.followUp = this.preThrow(pl); return r;
+          const r = out(); if (this.human[pl]) r.followUp = this.preThrow(pl); return r;
         }
         case 'endTickets': this.ticketsOpen[pl] = false; return Object.assign(out(), { thenThrow: true });
         case 'fine': this.pay(pl, 50, null, notes); this.jailed[pl] = false; notes.unshift(`${me} ${pl === 0 ? 'pay' : 'pays'} the $50 fine.`); return Object.assign(out(), { thenThrow: true });
@@ -7024,6 +7029,7 @@
     init() {
       this.purse = [HZ_START, HZ_START]; this.caster = 0; this.losses = 0; this.rounds = 0;
       this.stage = 'stake'; this.stake = 0; this.main = 0; this.chance = 0; this.pending = false; this.over = null; this.last = null;
+      this.human = [true, false]; // seats a person plays (the hall sets the second for a game against a friend)
     },
     roll() { const a = 1 + ((Math.random() * 6) | 0), b = 1 + ((Math.random() * 6) | 0); return { faces: [a, b], value: a + b }; },
     who(pl, cap) { return pl === 0 ? (cap ? 'You' : 'you') : 'the Scribe'; },
@@ -7040,7 +7046,7 @@
     out(main, v) { return v === 2 || v === 3 || ((v === 11 || v === 12) && !this.nick(main, v)); },
     apply(m) {
       const pl = m.pl, Y = pl === 0;
-      if (m.kind === 'stake') { this.stake = m.n; this.stage = 'main'; return { note: Y ? `You stake ${m.n}.` : `The Scribe stakes ${m.n} shilling${m.n > 1 ? 's' : ''}.`, followUp: Y ? this.preThrow(pl) : null }; }
+      if (m.kind === 'stake') { this.stake = m.n; this.stage = 'main'; return { note: Y ? `You stake ${m.n}.` : `The Scribe stakes ${m.n} shilling${m.n > 1 ? 's' : ''}.`, followUp: this.human[pl] ? this.preThrow(pl) : null }; }
       if (m.kind === 'main') { this.main = m.n; this.stage = 'throw'; this.pending = false; return { note: Y ? `Your main is ${m.n}.` : `The Scribe calls a main of ${m.n}.`, thenThrow: true }; }
       const v = m.value;
       if (!this.pending) {
@@ -7732,6 +7738,10 @@
   }
 
   const api = { DICE_P, LEVELS, setLevel, packState, unpackState, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, rithmo: RITHMO, lewischess: LEWISCHESS, courier: COURIER, hazard: HAZARD, piquet: PIQUET, nard: NARD, xii: XII, koikoi: KOIKOI, idraughts: IDRAUGHTS, hnefatafl: HNEFATAFL };
+  // Where this file came from, so the hall can start a worker that loads the very same rules:
+  // its address when it is a file of its own, its text when it is written into the page.
+  const here = typeof document !== 'undefined' && document.currentScript;
+  api.source = here ? { url: here.src || null, text: here.src ? null : here.textContent } : null;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LibrariumRules = api;
 })(typeof window !== 'undefined' ? window : globalThis);

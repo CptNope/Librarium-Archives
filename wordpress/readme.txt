@@ -2,7 +2,7 @@
 Contributors: cptnope
 Tags: board games, archive, 3d, history, game
 Requires at least: 6.0
-Tested up to: 6.8
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 0.5.0
 License: GPL-2.0-or-later
@@ -46,9 +46,19 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 == Third-party code ==
 
 * three.js r128 (MIT License, https://threejs.org), bundled in assets/vendor.
-* Fonts Almendra SC, Amethysta and Montserrat from Google Fonts (SIL Open Font License).
+* Fonts Almendra SC, Amethysta and Montserrat (SIL Open Font License 1.1), bundled in assets/vendor/fonts with their licences.
+
+== External services ==
+
+None. The released plugin bundles three.js and its fonts, sends nothing anywhere, and stores nothing on the server. The only link out is the "Visit Librarium Games" button at the end of the hall, which goes to the shop_url you set, and only when a visitor clicks it.
+
+(A development build made without the bundled files falls back to three.js from cdnjs.cloudflare.com and the fonts from fonts.googleapis.com.)
 
 == Changelog ==
+
+= 0.30.0 =
+* The Scribe thinks in a background worker, so the hall keeps moving while it plays.
+* Faster start: exhibits near you are built first.
 
 = 0.29.0 =
 * Hints say why their move is good; a list of moves, a replay after each game, and a guide for first games at Rithmomachia, Bao and Mahjong.
