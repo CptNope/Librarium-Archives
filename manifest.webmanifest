@@ -1,0 +1,16 @@
+{
+  "name": "Librarium Archives",
+  "short_name": "Archives",
+  "description": "A candlelit hall of board and card game history, with tables you can play against the Scribe.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "background_color": "#0b0907",
+  "theme_color": "#0b0907",
+  "orientation": "any",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

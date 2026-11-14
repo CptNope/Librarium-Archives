@@ -12,7 +12,8 @@ function flyTo(pos, target, dur = 1.6) {
   const token = {};
   camTween = token;
   const dist = p0.distanceTo(pos);
-  const d = Math.min(3.2, Math.max(0.6, dur * (0.5 + dist / 18)));
+  // With reduced motion asked for, the view cuts to its new place in a blink instead of gliding down the hall.
+  const d = reduceMotion ? 0.12 : Math.min(3.2, Math.max(0.6, dur * (0.5 + dist / 18)));
   return tween(d, k => {
     if (camTween !== token) return;
     cam.pos.lerpVectors(p0, pos, k);

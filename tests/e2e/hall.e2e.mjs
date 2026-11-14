@@ -154,4 +154,20 @@ test('the single-file build loads and its Scribe thinks in a worker too', { time
   await leave();
 });
 
+test('the published site works offline once it has loaded', { timeout: LONG * 2 }, async () => {
+  const ctx = await browser.newContext({ viewport: { width: 640, height: 400 } });
+  const p = await ctx.newPage(); p.on('pageerror', e => errors.push(String(e).slice(0, 300)));
+  if (existsSync(join(ROOT, 'vendor/three.min.js'))) await ctx.route('**/three.min.js', r => r.fulfill({ path: join(ROOT, 'vendor/three.min.js'), contentType: 'text/javascript' }));
+  await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
+  await p.goto(`${base}/index.html?pwa`, { timeout: LONG });
+  await p.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller || navigator.serviceWorker.ready.then(() => true), null, { timeout: LONG });
+  await p.evaluate(() => navigator.serviceWorker.ready);
+  await p.reload({ timeout: LONG }); // now under the worker's control
+  await ctx.setOffline(true);
+  await p.reload({ timeout: LONG });
+  await p.waitForFunction(() => document.querySelector('#lm-loader.done'), null, { timeout: LONG });
+  assert.equal(await p.evaluate(() => !!navigator.serviceWorker.controller), true);
+  await ctx.close();
+});
+
 test('no page errors along the way', () => { assert.deepEqual(errors, []); });

@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Walk a candlelit hall of the oldest known board games and play Senet and the Royal Game of Ur. A Librarium Games project.">
+<meta name="description" content="Walk a candlelit hall of board and card game history, from Senet to Reversi: 66 exhibits, 62 of them tables you can play against the Scribe. A Librarium Games project.">
+<meta name="theme-color" content="#0b0907">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <!-- artifact:head -->
 <title>Librarium Archives</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -119,5 +123,10 @@
 <script src="js/rules.js"></script>
 <script src="js/archives.js"></script>
 <!-- /artifact:body -->
+<script>
+// On the published site the hall installs like an app and opens with no connection (see sw.js).
+// (On a local server only with ?pwa in the address, so a developer never sees a cached copy by surprise.)
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || /[?&]pwa\b/.test(location.search))) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
 </body>
 </html>

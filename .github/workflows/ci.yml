@@ -61,6 +61,8 @@ jobs:
           mkdir -p vendor
           curl -sSfL https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js -o vendor/three.min.js
           curl -sSfL https://raw.githubusercontent.com/mrdoob/three.js/r128/LICENSE -o vendor/three.LICENSE
+      - name: Fetch the typefaces to bundle
+        run: node tools/fetch-fonts.mjs
       - name: Build the plugin
         run: npm run build:wp
       - name: Lint PHP
@@ -69,8 +71,11 @@ jobs:
         run: |
           php tests/plugin-render.test.php render
           php tests/plugin-render.test.php sanitize
-      - name: Check three.js is bundled
-        run: test -s dist/librarium-archives/assets/vendor/three.min.js
+      - name: Check three.js and the fonts are bundled
+        run: |
+          test -s dist/librarium-archives/assets/vendor/three.min.js
+          test -s dist/librarium-archives/assets/vendor/fonts/fonts.css
+          ! grep -rl "fonts.googleapis.com\|cdnjs.cloudflare.com" dist/librarium-archives/assets
       - uses: actions/upload-artifact@v4
         with:
           name: librarium-archives-plugin
