@@ -60,8 +60,8 @@ function updateLights(dt, time) {
   const seated = mode === 'play' && play.ex;
   if (seated && lamp.at !== play.ex) { lamp.at = play.ex; lamp.k = 0; aimLamp(play.ex.group); }
   lamp.k = reduceMotion ? +!!seated : Math.max(0, Math.min(1, lamp.k + (seated ? dt : -dt) * 1.6));
-  if (lamp.light) lamp.light.intensity = 2.4 * lamp.k;
-  const hallDim = 1 - 0.3 * lamp.k;
+  if (lamp.light) lamp.light.intensity = 0.8 * lamp.k;
+  const hallDim = 1 - 0.35 * lamp.k;
   poolClock -= dt;
   if (poolClock <= 0) { poolClock = 0.25; assignPool(POOL.point, candles, cam.pos); assignPool(POOL.spot, spotSources, cam.pos); }
   for (const slot of POOL.point) {
