@@ -119,9 +119,10 @@ test('dots and boxes: played to the end, then replayed move by move', { timeout:
 });
 
 test('ur: pass-and-play, each player throwing for themselves', { timeout: LONG * 2 }, async () => {
-  await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('librarium.archives.v1')); s.opponent = { ur: 'friend' }; localStorage.setItem('librarium.archives.v1', JSON.stringify(s)); });
-  await leave(); await page.reload(); await page.waitForFunction(() => window.__archives && document.querySelector('#lm-loader.done'), null, { timeout: LONG });
-  await sit('ur');
+  await sit('ur'); await sleep(1500);
+  // the Opponent switch beside the board: choosing a friend starts the game again
+  await page.evaluate(() => [...document.querySelectorAll('#lm-hud button')].find(b => b.textContent.trim() === 'A friend').click());
+  await page.waitForFunction(() => window.__archives.play.hotseat === true, null, { timeout: LONG });
   const seats = new Set();
   for (let k = 0; k < 120 && seats.size < 2; k++) {
     await sleep(300); const s = await state();

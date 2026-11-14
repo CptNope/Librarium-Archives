@@ -50,6 +50,10 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 
 == Changelog ==
 
+= 0.30.0 =
+* The Scribe thinks in a background worker, so the hall keeps moving while it plays.
+* Faster start: exhibits near you are built first.
+
 = 0.29.0 =
 * Hints say why their move is good; a list of moves, a replay after each game, and a guide for first games at Rithmomachia, Bao and Mahjong.
 

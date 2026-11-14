@@ -24,6 +24,7 @@ timeline
     0.27 : Guided tour and passport · International draughts · Hnefatafl
     0.28 : Undo and saved games at every table · Dice pass-and-play · Sharper Scribes
     0.29 : Hints that explain · Moves and replay · A guide for first games
+    0.30 : The Scribe's worker · Faster start · Source split · Browser tests
 ```
 
 ```mermaid

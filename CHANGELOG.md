@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.30.0: Foundations
+
+- **The Scribe thinks in a background worker.** The hall no longer freezes while Sharp looks ahead, at every search table and for hints. In a test, the page answered 158 timer ticks during a 1.6-second Sharp search, against 11 before. If a worker cannot start, the Scribe thinks on the page as before.
+- **Faster start.** Exhibits near you are built before the hall appears; the rest are built a slice at a time while you look around. In the test browser the first view came in about half the time (20 seconds down to 10).
+- **The code is split into small files:** `src/rules/` (one per game) and `src/hall/` (the systems, each exhibit's model, each table's presenter). `npm run build:js` joins them into the two files the page loads, and CI checks the two stay in step.
+- **Browser tests in the repo** (`npm run test:e2e`, and a CI job that keeps the screenshots). They cover:
+  - the hall and the passport
+  - the Scribe's worker, Undo, the move list and a resumed game at chess
+  - a full game and its replay at Dots and Boxes
+  - pass-and-play at Ur
+  - the guide at Bao
+  - the single-file build
+
 ## 0.29.0: Learning the games
 
 - **Hints that explain themselves:** the Hint now says why its move is good. It might win, take something (in the table's own words), give check, make a mill, open a road for your king, or leave the Scribe nothing to take.

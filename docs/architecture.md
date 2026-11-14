@@ -18,7 +18,11 @@ flowchart TB
     rules -- "window.LibrariumRules" --> hall
     css --> hall
     hall -- "progress" --> ls[("localStorage<br/>librarium.archives.v1")]
+    rules -. "the same file, in a Worker" .-> worker["the Scribe's worker<br/>plans from a copy of the state"]
+    hall -- "state" --> worker -- "plan" --> hall
+    src["src/rules/*.js · src/hall/*.js"] -- "tools/build-js.mjs" --> rules & hall
     tests["tests/rules.test.mjs<br/>(Node)"] -- "require()" --> rules
+    e2e["tests/e2e/hall.e2e.mjs<br/>(Playwright)"] -- "?debug" --> page
     subgraph builds["tools/"]
         art["build-artifact.mjs<br/>→ dist/artifact.html"]
         wp["build-wp.mjs<br/>→ dist/librarium-archives.zip"]
@@ -31,8 +35,10 @@ flowchart TB
 | --- | ---: | --- |
 | `index.html` | ~100 | Markup for the HUD, placard, rail, index dialog and table controls; script order |
 | `css/archives.css` | ~210 | All styles, scoped under `#lm-app`; ids are prefixed `lm-`; phone layout by container query |
-| `js/rules.js` | ~7,700 | 62 rule engines, the shared negamax search, Monte Carlo searches (Go, Hex), card and tile AIs. UMD: `module.exports` in Node, `window.LibrariumRules` in the browser |
-| `js/archives.js` | ~7,900 | The three.js hall, 75 exhibit builders, the `STOPS` list, 62 table presenters, the turn loop, navigation, sound, storage |
+| `src/rules/` | 62 files | One file per game, plus `00-core.js` (levels, search, Ur, Senet) and `zz-api.js` (saved state, export). `ORDER` lists them |
+| `src/hall/` | 140 files | The hall's systems (`00-head.js` … `27-boot.js`), each exhibit's model (`build-*.js`), each table's presenter (`table-*.js`). `ORDER` lists them |
+| `js/rules.js` | ~7,700 | Built from `src/rules/`: 62 rule engines, the shared negamax search, Monte Carlo searches (Go, Hex), card and tile AIs. UMD: `module.exports` in Node, `window.LibrariumRules` in the browser and in the Scribe's worker |
+| `js/archives.js` | ~8,200 | Built from `src/hall/`: the three.js hall, 75 exhibit builders, the `STOPS` list, 62 table presenters, the turn loop, navigation, sound, storage |
 | `tests/rules.test.mjs` | ~2,600 | Rule tests, simulated games, AI timing checks |
 | `tests/plugin-render.test.php` | | Renders the shortcode with stubbed WordPress functions |
 | `wordpress/` | | Plugin PHP, Elementor widget, `readme.txt` |
@@ -74,6 +80,14 @@ flowchart LR
 - **`GAMES`** maps a game id to its rule engine from `js/rules.js`. **`PRES`** maps the same id to its presenter, which owns the 3D pieces and animation for that table.
 - **`layoutHall()`** computes each stop's position from the order of `STOPS`, so adding an exhibit never means moving the others by hand.
 
+### Start-up
+
+Every plinth goes up at once: they are plain blocks, and the walk, the camera, the lights and the rail all need them. What stands on them is built near the visitor first. The wing they start in is built before the loader lifts, and the rest follows a slice of a frame at a time while the hall is already moving. Going to an exhibit, or sitting at its table, builds it at once if it is not ready. In the software-rendered test browser this halved the time to the first view, from about 20 seconds to about 10.
+
+### The Scribe's worker
+
+Search games plan in a Web Worker so the hall keeps moving while the Scribe thinks. The worker is started from a Blob holding the very same `rules.js` (its text when it is written into the page, as in the single-file build; an `importScripts` of its address otherwise). Each turn it is sent the engine's plain state (`packState`), the player and the level. It returns the plan as plain moves, which the page plays. Hints go the same way, at Sharp. If a worker cannot start or does not answer within 20 seconds, the Scribe thinks on the page as before. Dice tables plan in an instant and stay on the page.
+
 ## A turn at the table
 
 ```mermaid
@@ -101,7 +115,7 @@ sequenceDiagram
                 L-->>V: offer the follow-up choices (same player)
             end
         else the Scribe's turn
-            L->>G: aiPlan(1) (or aiPlan(1, moves) after a throw)
+            L->>G: aiPlan(1) in the Scribe's worker, on a copy of the state (on the page after a throw)
             G-->>L: plan: one or more steps
             loop each step
                 L->>P: play(step)
