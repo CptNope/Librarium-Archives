@@ -7167,11 +7167,12 @@ $('#lm-hintBtn').addEventListener('click', async () => {
   $('#lm-hintBtn').disabled = true;
   await new Promise(r => setTimeout(r, 60));
   let plan = null;
-  try { R.setLevel('sharp'); plan = g.aiPlan(pl); } catch (e) { plan = null; } finally { R.setLevel(level); Object.assign(g, structuredClone(before)); }
+  try { plan = await scribe.plan(g, pl, 'sharp'); } catch (e) { plan = null; } finally { R.setLevel(level); Object.assign(g, structuredClone(before)); }
   if (tok !== play.token || play.phase !== 'choose') return;
   const want = plan && plan[0], keys = ['kind', 'from', 'to', 'c', 'card', 'place', 'pit', 'i', 'n', 'line', 'over', 'swap', 'pass', 'label', 'drop', 'promo'];
   const same = (a, b) => keys.every(k => JSON.stringify(a[k]) === JSON.stringify(b[k]));
-  const m = want && (moves.find(x => x === want) || moves.find(x => same(x, Object.assign({}, x, want)) && same(want, x)) || moves.find(x => same(x, want)));
+  const whole = x => JSON.stringify(x, Object.keys(x).sort()); // the plan comes back from the worker as a copy: match it field by field
+  const m = want && (moves.find(x => x === want) || moves.find(x => whole(x) === whole(want)) || moves.find(x => same(x, Object.assign({}, x, want)) && same(want, x)) || moves.find(x => same(x, want)));
   refreshAids();
   if (!m) { setMsg(turnName(), 'The Scribe has no clear advice here. ' + play.P.prompt()); return; }
   play.hintCount++;
@@ -7678,7 +7679,7 @@ async function aiTurn() {
   }
   // Let the 'thinking' message paint first, without depending on animation frames (paused in background tabs).
   await new Promise(r => { requestAnimationFrame(() => setTimeout(r, 30)); setTimeout(r, 120); });
-  const plan = g.aiPlan(1);
+  const plan = await scribe.plan(g, 1, R.level());
   if (tok !== play.token || !plan) return;
   let said = false;
   clearLastMove();
@@ -7695,6 +7696,45 @@ async function aiTurn() {
   if (said) { await wait(1000); if (tok !== play.token) return; }
   beginTurn(nextPl(g, 0));
 }
+/* The Scribe thinks in a worker of its own, so the hall keeps moving while it looks ahead. The worker loads
+ * the same rules as the page, is given the game's state, and sends back its plan as plain moves, which the
+ * page then plays. If a worker cannot start (an old browser, a blocked page), or answers nothing in time,
+ * the Scribe thinks on the page as before. Dice tables plan in an instant and stay on the page. */
+const scribe = (() => {
+  let w = null, failed = false, next = 1; const waiting = new Map();
+  const glue = `self.onmessage = function (e) {
+    var d = e.data, R = self.LibrariumRules, plan = null, err = null;
+    try { var g = R[d.game]; if (g.setVariant && d.variant != null) g.setVariant(d.variant); g.init();
+      Object.assign(g, R.unpackState(d.state)); R.setLevel(d.level); plan = g.aiPlan(d.pl); }
+    catch (x) { err = String(x && x.message || x); }
+    self.postMessage({ id: d.id, plan: plan, err: err });
+  };`;
+  function start() {
+    if (w || failed) return w;
+    try {
+      const src = R.source; if (!src || typeof Worker === 'undefined') throw new Error('no worker');
+      const head = src.text ? src.text : `importScripts(${JSON.stringify(new URL(src.url, location.href).href)});`;
+      const url = URL.createObjectURL(new Blob([head, '\n', glue], { type: 'text/javascript' }));
+      w = new Worker(url);
+      w.onmessage = e => { const job = waiting.get(e.data.id); if (job) { waiting.delete(e.data.id); job(e.data); } };
+      w.onerror = () => { failed = true; stop(); };
+    } catch (e) { failed = true; w = null; }
+    return w;
+  }
+  function stop() { if (w) w.terminate(); w = null; for (const job of waiting.values()) job({ err: 'stopped' }); waiting.clear(); }
+  // Ask for a plan; resolves to the plan, or to the page's own answer if the worker cannot give one.
+  function plan(g, pl, level) {
+    const local = () => { const was = R.level(); try { R.setLevel(level); return g.aiPlan(pl); } finally { R.setLevel(was); } };
+    if (g.dice || !start()) return Promise.resolve(local());
+    const id = next++, msg = { id, game: g.id, variant: g.variant != null ? g.variant : null, state: engineState(g), pl, level };
+    return new Promise(resolve => {
+      const late = setTimeout(() => { if (waiting.delete(id)) { failed = true; stop(); resolve(local()); } }, 20000);
+      waiting.set(id, d => { clearTimeout(late); if (d.err || !d.plan) resolve(d.err === 'stopped' ? null : local()); else resolve(d.plan); });
+      try { w.postMessage(msg); } catch (e) { waiting.delete(id); clearTimeout(late); resolve(local()); }
+    });
+  }
+  return { plan, stop, get on() { return !!w && !failed; } };
+})();
 function finish(res) {
   play.phase = 'over'; clearHighlights();
   sfx.end(res.winner);
@@ -8133,7 +8173,7 @@ async function boot() {
 // Inspect the live state from the console with ?debug in the address.
 if (/[?&]debug\b/.test(location.search)) {
   window.__archives = {
-    play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop,
+    play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop, scribe,
     // Put the camera at an exhibit straight away, without the glide (for slow test machines).
     jump(id) {
       const i = STOPS.findIndex(x => x.id === id); goStop(i, false); showPlacard(false);
