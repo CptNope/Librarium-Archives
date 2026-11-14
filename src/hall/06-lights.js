@@ -25,7 +25,13 @@ function addCandle(x, z) {
   scene.add(g);
   candles.push({ pos: new THREE.Vector3(x - s * 0.2, 2.45, z), lightPos: new THREE.Vector3(x - s * 0.35, 2.5, z), flame, halo, seed: Math.random() * 100 });
 }
+// The table lamp: when you sit at a game, a warm light comes up over that board and the
+// hall's own lights ease back, so pieces and move marks read clearly. It is always in the
+// scene (at nought when you are walking), so sitting down never recompiles a shader.
+const lamp = { light: null, k: 0, at: null };
 function buildLightPools() {
+  lamp.light = new THREE.SpotLight(0xfff0d8, 0, 4.2, 0.62, 0.55, 1.1);
+  scene.add(lamp.light); scene.add(lamp.light.target);
   const nP = coarse ? 3 : 5, nS = coarse ? 3 : 4;
   for (let i = 0; i < nP; i++) { const l = new THREE.PointLight(0xff9a4a, 0, 9, 1.6); scene.add(l); POOL.point.push({ light: l, src: null }); }
   for (let i = 0; i < nS; i++) { const l = new THREE.SpotLight(0xffdcae, 0, 7.5, 0.5, 0.65, 1.3); scene.add(l); scene.add(l.target); POOL.spot.push({ light: l, src: null }); }
@@ -44,16 +50,27 @@ function assignPool(pool, sources, at) {
 }
 const fade = d => Math.max(0, Math.min(1, (22 - d) / 8));
 let poolClock = 0;
+function aimLamp(group) {
+  if (!lamp.light) return;
+  lamp.light.position.copy(group.localToWorld(V3(0, TOP + 1.55, 0.35)));
+  lamp.light.target.position.copy(group.localToWorld(V3(0, TOP, 0)));
+  lamp.light.target.updateMatrixWorld();
+}
 function updateLights(dt, time) {
+  const seated = mode === 'play' && play.ex;
+  if (seated && lamp.at !== play.ex) { lamp.at = play.ex; lamp.k = 0; aimLamp(play.ex.group); }
+  lamp.k = reduceMotion ? +!!seated : Math.max(0, Math.min(1, lamp.k + (seated ? dt : -dt) * 1.6));
+  if (lamp.light) lamp.light.intensity = 2.4 * lamp.k;
+  const hallDim = 1 - 0.3 * lamp.k;
   poolClock -= dt;
   if (poolClock <= 0) { poolClock = 0.25; assignPool(POOL.point, candles, cam.pos); assignPool(POOL.spot, spotSources, cam.pos); }
   for (const slot of POOL.point) {
     if (!slot.src) { slot.light.intensity = 0; continue; }
     const c = slot.src;
     const f = reduceMotion ? 0.9 : 0.82 + 0.1 * Math.sin(time * 11 + c.seed) + 0.08 * Math.sin(time * 23.7 + c.seed * 2);
-    slot.light.intensity = 1.25 * f * fade(c.pos.distanceTo(cam.pos));
+    slot.light.intensity = 1.25 * f * fade(c.pos.distanceTo(cam.pos)) * hallDim;
   }
-  for (const slot of POOL.spot) slot.light.intensity = slot.src ? 2.6 * fade(slot.src.pos.distanceTo(cam.pos)) : 0;
+  for (const slot of POOL.spot) slot.light.intensity = slot.src ? 2.6 * fade(slot.src.pos.distanceTo(cam.pos)) * hallDim : 0;
   if (!reduceMotion) for (const c of candles) {
     const f = 0.82 + 0.1 * Math.sin(time * 11 + c.seed) + 0.08 * Math.sin(time * 23.7 + c.seed * 2);
     c.flame.scale.set(0.15 * f, 0.26 * (0.9 + 0.2 * f), 1); c.halo.material.opacity = 0.3 * f;

@@ -51,7 +51,7 @@ timeline
 
 | Exhibit | Date | Rules | In the Archives |
 | --- | --- | --- | --- |
-| Senet | c. 3100 BCE | Reconstructed (after Kendall, 1979) | Playable |
+| Senet | c. 3100 BCE | Reconstructed (after Kendall, 1978) | Playable |
 | Mehen | c. 3100–2300 BCE | Lost | On display |
 | Başur Höyük pieces | c. 3000 BCE | Game unknown | On display |
 | Royal Game of Ur | c. 2600–2400 BCE | Survive in writing (tablet, c. 177 BCE; Finkel) | Playable |

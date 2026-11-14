@@ -82,7 +82,7 @@
       <button class="hudbtn" id="lm-rulesBtn">Rules</button>
       <button class="hudbtn" id="lm-leaveBtn">Leave the table</button>
     </div>
-    <div class="rules" id="lm-rules" hidden></div>
+    <div class="rules" id="lm-rules" role="region" aria-label="Rules of this game" hidden></div>
     <div class="rules moves" id="lm-moves" role="region" aria-label="Moves so far" hidden>
       <h3>Moves</h3>
       <p class="src" id="lm-movesKey">Squares are named from your side: files a, b, c… from your left, ranks 1, 2, 3… from the row nearest you.</p>
@@ -102,7 +102,7 @@
       <button class="btn" id="lm-undoBtn" hidden title="Take back your last move">Undo</button>
       <button class="btn" id="lm-hintBtn" hidden title="Ask the Scribe for a good move">Hint</button>
     </div>
-    <div class="win" id="lm-win" hidden>
+    <div class="win" id="lm-win" role="dialog" aria-labelledby="lm-winTitle" aria-describedby="lm-winText" hidden>
       <div class="card">
         <h3 id="lm-winTitle"></h3>
         <p id="lm-winText"></p>

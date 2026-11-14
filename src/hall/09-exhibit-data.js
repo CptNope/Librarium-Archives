@@ -13,7 +13,7 @@ const STOPS = [
     body: [
       'Pieces of what may be Senet boards turn up in First Dynasty burials around 3100 BCE, and the first unmistakable painting of the game appears in the tomb of Hesy-Re, about 2620 BCE. It is one of the oldest board games we know by name.',
       'The board has 30 squares, called houses, in three rows of ten. Players threw four flat sticks instead of dice. Over the centuries the game took on religious meaning: its name means "passing", and by the New Kingdom a match stood for the soul\'s journey through the underworld. Tutankhamun was buried with several sets.',
-      'No rulebook survives. We play a popular modern reconstruction that follows Timothy Kendall\'s 1979 work.'
+      'No rulebook survives. We play a popular modern reconstruction that follows Timothy Kendall\'s, first published in 1978 and revised since.'
     ],
     facts: [['Board', '30 houses, 3 rows of 10'], ['Pieces', '5 each, spools and cones'], ['Moves', '4 throw sticks, 1 to 5'], ['Goal', 'Bear every piece off the board']],
     build: buildSenetBoard },
@@ -48,10 +48,10 @@ const STOPS = [
     note: 'The dice are new, made in the old manner. No rules survive for the Bronze Age games, so this table plays Hazard, the medieval dice game Chaucer knew, as it was written down in the 1700s.',
     body: [
       'Cubic dice are nearly as old as board games. Possibly the oldest yet found come from the Burnt City, Shahr-e Sukhteh in eastern Iran, buried with a set for a race game that has been dated to between 2800 and 2500 BCE.',
-      'Graves at Mohenjo-daro in the Indus Valley held terracotta dice from 2500 to 1900 BCE. On one of them the opposite faces add up to seven, as they do on dice today. Players elsewhere threw other things: Senet\'s sticks and Ur\'s four-sided pyramids are on the tables in this wing.',
+      'Graves at Mohenjo-daro in the Indus Valley held terracotta dice from 2500 to 1900 BCE. Most were numbered one opposite two, three opposite four and five opposite six, but on at least one the opposite faces add up to seven, as they do on dice today. Players elsewhere threw other things: Senet\'s sticks and Ur\'s four-sided pyramids are on the tables in this wing.',
       'The table here plays Hazard, a two-dice game named in Chaucer\'s Canterbury Tales in the 14th century. Its rules were set down in Hoyle\'s Games by 1790, and a simplified form of it became American craps.'
     ],
-    facts: [['Oldest', 'Burnt City, Iran, c. 2800–2500 BCE'], ['Indus', 'Mohenjo-daro, 2500–1900 BCE'], ['Faces', 'Opposites adding to seven, on one Indus die']],
+    facts: [['Oldest', 'Burnt City, Iran, c. 2800–2500 BCE'], ['Indus', 'Mohenjo-daro, 2500–1900 BCE'], ['Faces', 'Mostly 1–2, 3–4, 5–6 opposite; at least one adds to seven']],
     build: buildDice },
   { id: 'hounds', wing: 1, title: 'Hounds and Jackals', date: 'c. 2000 BCE', rail: 'Hounds and Jackals',
     eyebrow: 'Egypt · Middle Kingdom', status: ['recon', 'Modern reconstruction'], game: 'hounds',
@@ -86,7 +86,7 @@ const STOPS = [
     note: 'On display. The board, pieces and sticks are new, after the Mawangdui set.',
     body: [
       'Liubo, "six sticks", was the great board game of Han dynasty China, played by emperors and buried with nobles. The oldest boards come from a 4th-century BCE tomb at Pingshan in Hebei, and a complete set in a lacquer box was found in 1973 in a 2nd-century BCE tomb at Mawangdui.',
-      'Each player had six pieces, moved by throws of six sticks, and a piece that reached a certain place was stood on end and became an "owl". The board\'s T, L and V marks also appear on bronze mirrors of the time. After the Han the game faded, perhaps losing out to weiqi, and by the 14th century no one knew how to play it. More than a thousand bamboo slips with its rules were found in the tomb of the Marquis of Haihun in 2019; until they are fully read, every modern version is a reconstruction.'
+      'Each player had six pieces, moved by throws of six sticks, and a piece that reached a certain place was stood on end and became an "owl". The board\'s T, L and V marks also appear on bronze mirrors of the time. After the Han the game faded, perhaps losing out to weiqi, and by the 14th century no one knew how to play it. More than a thousand bamboo slips with its rules from the tomb of the Marquis of Haihun, opened in 2015, were reported in 2019; until they are fully read, every modern version is a reconstruction.'
     ],
     facts: [['Pieces', 'Six a side'], ['Moves', 'Six throwing sticks'], ['Rules', 'Lost; reconstructions only']],
     build: buildLiubo },
@@ -237,7 +237,7 @@ const STOPS = [
     note: 'The figures are our own simplified carvings, not copies. The table plays a modern reconstruction of chess as Europe played it around 1200, after H. J. R. Murray: shatranj\'s moves under European names.',
     body: [
       'Around 1831 a hoard of more than ninety game pieces came to light on the Isle of Lewis in the Outer Hebrides. Most are carved from walrus ivory and a few from whale teeth, probably in Trondheim, Norway, in the later 12th century. The British Museum holds 82 of them and National Museums Scotland 11.',
-      'They show chess as medieval Europe played it: kings and queens on thrones, bishops in mitres, knights on ponies, and warders standing in for rooks. Four warders bite the tops of their shields like the berserkers of the Norse sagas. The hoard also held fourteen plain discs for playing tables, and a buckle, perhaps from the bag that carried them.'
+      'They show chess as medieval Europe played it: kings and queens on thrones, bishops in mitres, knights on ponies, and warders standing in for rooks. Four warders bite the tops of their shields like the berserkers of the Norse sagas. The hoard also held fourteen tablemen, mostly plain discs, for playing tables, and a buckle, perhaps from the bag that carried them.'
     ],
     facts: [['Found', 'Isle of Lewis, about 1831'], ['Material', 'Walrus ivory, whale tooth'], ['Pieces', '79 chessmen, 14 tables discs'], ['Held', 'British Museum, National Museums Scotland']],
     build: buildLewis },
@@ -274,7 +274,7 @@ const STOPS = [
     note: 'The trumps on the easel are new paintings in the style of the gilded Milan decks. At the table you can play a simplified game of tarocchi for two: the first rules were never written down.',
     body: [
       'Tarot began as a card game, not a way of telling fortunes. Around 1440 Italian courts added a fifth suit of picture cards, called trionfi or triumphs, that beat the ordinary suits as trumps. A Ferrara account book of 1442 records painted packs of trionfi, and the gilded decks made for the Visconti and Sforza dukes of Milan in the 1440s and 1450s are the oldest that survive.',
-      'The game spread to France and Switzerland, where it is still played. Reading the cards came centuries later: Etteilla wrote about divination with tarot around 1770, Antoine Court de Gébelin claimed an ancient Egyptian origin in 1781, and the Rider-Waite deck followed in 1909.'
+      'The game spread to France and Switzerland, where it is still played. Reading the cards came centuries later: Etteilla published a way of reading ordinary cards in 1770 and turned to the tarot in 1783, Antoine Court de Gébelin claimed an ancient Egyptian origin in 1781, and the Rider-Waite deck followed in 1909.'
     ],
     facts: [['Pack', 'Four suits, 21 trumps and the Fool'], ['Played', 'Trick-taking games'], ['Fortune-telling', 'From about 1770']],
     build: buildTarot },
@@ -335,7 +335,7 @@ const STOPS = [
     eyebrow: 'Italy and Europe · 16th century', status: ['known', 'Rules survive in print'], game: 'goose',
     body: [
       'The Game of the Goose is often called the first board game made to be sold. Francesco I de\' Medici, Grand Duke of Tuscany, sent one to Philip II of Spain sometime between 1574 and 1587, and in June 1597 the London printer John Wolfe registered "the newe and most pleasant game of the goose".',
-      'It is pure luck: two dice, a spiral of 63 squares, and a goose about every nine squares that sends you flying on. Printed sheets made it cheap, and from a French game of chronology in 1638 onwards, publishers borrowed its spiral to teach history and geography.'
+      'It is pure luck: two dice, a spiral of 63 squares, and geese every four or five squares that send you flying on. Printed sheets made it cheap, and from a French game of chronology in 1638 onwards, publishers borrowed its spiral to teach history and geography.'
     ],
     facts: [['Board', '63 squares in a spiral'], ['Dice', 'Two'], ['Skill', 'None at all'], ['Win', 'Land exactly on 63']],
     build: buildGooseBoard },

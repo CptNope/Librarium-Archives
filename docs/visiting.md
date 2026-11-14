@@ -64,6 +64,7 @@ flowchart LR
 - **Replay the game**, on the card at the end of a game at those tables, steps through it from the start. The arrow buttons (or the arrow keys) go a move at a time, the last move is marked on the board, and **Done** (or Esc) brings back the final position.
 - **The guide** walks you through your first game at seven tables where the rules take some learning: Rithmomachia, Bao, Mahjong, Shogi, Go, Patolli and Piquet. A few short notes appear at the right moments: how pieces move, when you must capture, what a claim button means, and how drops, captures and the exchange work. **Got it** closes a note. **Turn the guide off** (or the switch in the rules panel) silences it, and the same switch brings it back.
 - **Marks:** every piece you can move has a gold ring at its foot, and every square it can go to a gold ring with a faint gold wash. Each sits on a dark band, so it shows on pale boards and dark ones alike. A red-orange ring marks a capture or a removal, and a faint red-orange mark shows where the Scribe's last move came from and went.
+- **The table lamp:** sitting down brings up a warm light over the board while the hall's candles ease back; it fades when you leave.
 - **Esc** clears a selection, or leaves the table.
 - **Rules** reopens the *How to play* panel, which ends with a note on where the rules come from.
 

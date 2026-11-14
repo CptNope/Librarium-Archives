@@ -98,7 +98,7 @@
       'Pieces on houses 28, 29 and 30 leave with an exact 3, 2 or 1.',
       'The first to bear off all five pieces wins.'
     ],
-    source: 'A modern reconstruction after Timothy Kendall (1979). The ancient rules were never written down.',
+    source: 'A modern reconstruction after Timothy Kendall (1978, revised since). The ancient rules were never written down.',
     init() { this.pos = [[1, 3, 5, 7, 9], [2, 4, 6, 8, 10]]; },
     roll() { const f = [0, 0, 0, 0].map(() => (Math.random() < 0.5 ? 1 : 0)); const w = f.reduce((a, b) => a + b, 0); return { faces: f, value: w || 5 }; },
     occ(sq) { for (const pl of [0, 1]) { const i = this.pos[pl].indexOf(sq); if (i >= 0) return { pl, i }; } return null; },

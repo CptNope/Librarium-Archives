@@ -10,6 +10,8 @@
 - **Hints at the dice tables** (Ur, Senet, Tables, Nard, Duodecim scripta, Yut, Pachisi, Ludo, Patolli, Tâb, Hounds and Jackals, the Checkered Game of Life): the best use of your throw.
 - **Pass-and-play at Hazard and the Landlord's Game.**
 - **The guide** now covers Shogi, Go, Patolli and Piquet too.
+- **A lamp over your table.** When you sit down, a warm light comes up over the board and the hall's candles ease back, so the pieces and the move marks stand out. Leave the table and the hall comes back up.
+- **Placards fact-checked** (see `docs/fact-check.md`). Etteilla read ordinary cards in 1770 and turned to the tarot in 1783; most Indus dice put one opposite two; the liubo rule slips came from a tomb opened in 2015 and were reported in 2019; the Goose has a goose every four or five squares; Kendall's Senet rules date from 1978.
 
 - **The Scribe thinks in a background worker.** The hall no longer freezes while Sharp looks ahead, at every search table and for hints. In a test, the page answered 158 timer ticks during a 1.6-second Sharp search, against 11 before. If a worker cannot start, the Scribe thinks on the page as before.
 - **Faster start.** Exhibits near you are built before the hall appears; the rest are built a slice at a time while you look around. In the test browser the first view came in about half the time (20 seconds down to 10).
