@@ -8,7 +8,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, createReadStream, mkdirSync } from 'node:fs';
+import { readFileSync, existsSync, createReadStream, mkdirSync, statSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -17,7 +17,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OUT = join(ROOT, 'test-results'); mkdirSync(OUT, { recursive: true });
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
 const LONG = 300000;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -62,7 +62,8 @@ before(async () => {
       res.writeHead(200, { 'content-type': 'text/html' });
       return res.end('<!doctype html><meta charset="utf-8"><body>' + readFileSync(join(ROOT, 'dist/artifact.html'), 'utf8'));
     }
-    const f = join(ROOT, url);
+    let f = join(ROOT, url);
+    if (f.startsWith(ROOT) && existsSync(f) && statSync(f).isDirectory()) f = join(f, 'index.html'); // as a host would: the service worker caches ./
     if (!f.startsWith(ROOT) || !existsSync(f)) { res.writeHead(404); return res.end(); }
     res.writeHead(200, { 'content-type': TYPES[extname(f)] || 'application/octet-stream' });
     createReadStream(f).pipe(res);

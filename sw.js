@@ -13,6 +13,8 @@ self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('librarium-archives-') && k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
+// A connection that hangs is treated like none at all, so a weak signal can't hold the hall up.
+const patient = (req, ms) => Promise.race([fetch(req), new Promise((_, no) => setTimeout(() => no(new Error('slow')), ms))]);
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -20,13 +22,14 @@ self.addEventListener('fetch', e => {
   const ours = url.origin === location.origin, fonts = /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname), three = url.hostname === 'cdnjs.cloudflare.com';
   if (!ours && !fonts && !three) return;
   if (req.mode === 'navigate') { // the page: fresh if possible
-    e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put('index.html', copy)); return r; })
-      .catch(() => caches.match('index.html')));
+    e.respondWith(patient(req, 6000).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put('index.html', copy)); return r; })
+      .catch(async () => (await caches.match('index.html')) || fetch(req)));
     return;
   }
   e.respondWith(caches.open(CACHE).then(async c => {
     const hit = await c.match(req);
-    const fresh = fetch(req).then(r => { if (r.ok || r.type === 'opaque') c.put(req, r.clone()); return r; }).catch(() => hit);
-    return hit || fresh;
+    const fresh = patient(req, hit ? 30000 : 8000).then(r => { if (r.ok || r.type === 'opaque') c.put(req, r.clone()); return r; });
+    if (hit) { fresh.catch(() => {}); return hit; }
+    return fresh.catch(() => Response.error());
   }));
 });
