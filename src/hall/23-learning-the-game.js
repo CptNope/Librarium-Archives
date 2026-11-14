@@ -133,7 +133,8 @@ function explainHint(g, pl, m) {
     if (r && r.winner === pl) why.push('it wins the game');
     else {
       const noun = HINT_NOUN[g.id] || ['a piece', 'pieces'];
-      if (res.boxes && res.boxes.length) why.push(`it completes ${res.boxes.length > 1 ? res.boxes.length + ' boxes' : 'a box'} and you move again`);
+      if (g.dice && pl === 0 && res.note) why.push(res.note.split('. ')[0].replace(/^You /, 'you ').replace(/\.$/, '')); // at dice tables the table's own words say it best
+      else if (res.boxes && res.boxes.length) why.push(`it completes ${res.boxes.length > 1 ? res.boxes.length + ' boxes' : 'a box'} and you move again`);
       else if (pl === 0 && res.note && /^You (take|capture|meet)/.test(res.note)) why.push(res.note.split('. ')[0].replace(/^You /, 'you ').replace(/\.$/, '')); // the table's own words
       else if (res.caps && res.caps.length) why.push(`it takes ${res.caps.length > 1 ? res.caps.length + ' ' + noun[1] : noun[0]}`);
       else if (m.flips && m.flips.length) why.push(`it turns ${m.flips.length > 1 ? m.flips.length + ' discs' : 'a disc'}`);
@@ -150,7 +151,8 @@ function explainHint(g, pl, m) {
     }
   } catch (e) { /* the reason is a courtesy: the hint stands without it */ }
   Object.assign(g, structuredClone(before));
-  if (!why.length) return g.id === 'go' || g.id === 'hex' ? 'It is the move that wins most often when the Scribe plays the game out from here many times.' : 'It is the move the Scribe rates best after looking several moves ahead.';
+  if (!why.length) return g.id === 'go' || g.id === 'hex' ? 'It is the move that wins most often when the Scribe plays the game out from here many times.'
+    : g.dice ? 'Of the moves this throw allows, it leaves your pieces best placed: furthest on, and least exposed.' : 'It is the move the Scribe rates best after looking several moves ahead.';
   const text = why.slice(0, 2).join(', and ');
   return text[0].toUpperCase() + text.slice(1) + '.';
 }
@@ -547,18 +549,22 @@ function clearLastMove() { lastMarks.splice(0).forEach(o => { o.parent && o.pare
 function markLastMove(from, to) {
   const add = (geo, v, opacity) => {
     if (!v) return;
-    const o = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: RING_COLOR.ember, transparent: true, opacity, depthWrite: false }));
+    const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR.ember, transparent: true, opacity, depthWrite: false });
+    const o = geo === ringGeo ? markMesh(geo, mat) : new THREE.Mesh(geo, mat);
     o.rotation.x = -Math.PI / 2; o.position.copy(v); o.position.y += 0.003; o.scale.setScalar(0.9);
     play.ex.group.add(o); lastMarks.push(o);
   };
-  add(markFromGeo, from, 0.4); add(ringGeo, to, 0.75);
+  add(markFromGeo, from, 0.45); add(ringGeo, to, 0.85);
 }
 function addRing(m) {
   const P = play.P, at = P.ringFor(m);
   if (!at) return; // a move with no spot of its own, such as a card played from the hand
-  const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR[P.ringTone ? P.ringTone(m) : 'gold'], transparent: true, opacity: P.ringOpacity || 0.85, depthWrite: false });
-  const ring = new THREE.Mesh(ringGeo, mat);
-  ring.rotation.x = -Math.PI / 2;
+  // Where nearly every point is a move (Go, Gomoku, Hex) the marks stay lighter, so the board still shows;
+  // the one under the pointer comes up in full.
+  const tone = P.ringTone ? P.ringTone(m) : 'gold', soft = !!P.ringOpacity;
+  const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR[tone], transparent: true, opacity: soft ? P.ringOpacity + 0.2 : 0.95, depthWrite: false });
+  const ring = markMesh(ringGeo, mat, soft ? null : tone, soft);
+  ring.userData.op = soft ? P.ringOpacity + 0.2 : 0.85;
   ring.position.copy(at); ring.position.y += 0.004;
   ring.userData.move = m; ring.userData.base = P.ringScale || 1;
   ring.add(new THREE.Mesh(ringHitGeo, MAT.hit));
@@ -574,7 +580,7 @@ function highlight(moves) {
     play.byMesh.get(ms).push(m);
   }
   play.twoStep = [...play.byMesh.values()].some(a => a.length > 1);
-  play.byMesh.forEach((_, ms) => play.glowing.add(ms));
+  play.byMesh.forEach((_, ms) => { play.glowing.add(ms); addHalo(ms); });
   for (const m of moves) if (!play.twoStep || !P.meshesFor(m).some(Boolean)) addRing(m);
   if (play.twoStep && play.byMesh.size === 1) select([...play.byMesh.keys()][0]);
 }
@@ -588,8 +594,22 @@ function select(mesh) {
   play.selected = mesh;
   play.byMesh.get(mesh).forEach(addRing);
 }
+// A ring at the foot of every piece you can move: the warm glow alone hardly shows on a pale piece.
+function addHalo(ms) {
+  if (!play.ex || play.halos.has(ms)) return;
+  const box = new THREE.Box3().setFromObject(ms); if (box.isEmpty()) return;
+  const size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
+  if (size.y > Math.max(size.x, size.z) * 1.6 && size.y > 0.08) return; // a card or tile held upright: its glow and lift say enough
+  const foot = play.ex.group.worldToLocal(new THREE.Vector3(mid.x, box.min.y, mid.z));
+  const halo = markMesh(ringGeo, new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.9, depthWrite: false }));
+  halo.position.copy(foot); halo.position.y += 0.002;
+  const r = Math.min(0.09, Math.max(0.022, Math.max(size.x, size.z) / 2 * 1.12));
+  halo.userData.base = r / 0.05; halo.scale.setScalar(halo.userData.base);
+  play.ex.group.add(halo); play.halos.set(ms, halo);
+}
 function clearHighlights() {
   dropRings(() => false);
+  play.halos.forEach(h => { h.parent && h.parent.remove(h); h.material.dispose(); }); play.halos.clear();
   play.glowing.forEach(ms => glowMats(ms).forEach(x => x.emissive.setRGB(0, 0, 0)));
   play.glowing.clear(); play.byMesh = new Map(); play.selected = null; play.hover = null; play.hintMove = null;
 }

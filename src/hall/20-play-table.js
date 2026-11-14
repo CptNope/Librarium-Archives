@@ -1,8 +1,20 @@
 /* ------------------------------------------------------------- play table */
-const play = { ex: null, game: null, P: null, token: 0, phase: 'idle', roll: null, moves: [], rings: [], byMesh: new Map(), glowing: new Set(), selected: null, hover: null, twoStep: false };
-const ringGeo = new THREE.TorusGeometry(0.05, 0.006, 8, 36);
+const play = { ex: null, game: null, P: null, token: 0, phase: 'idle', roll: null, moves: [], rings: [], halos: new Map(), byMesh: new Map(), glowing: new Set(), selected: null, hover: null, twoStep: false };
+const ringGeo = new THREE.TorusGeometry(0.05, 0.008, 8, 36);
 const ringHitGeo = new THREE.CircleGeometry(0.062, 24); // the whole ring face is clickable, not just its outline
-const RING_COLOR = { gold: 0xf6a01a, ember: 0xe06418 };
+const RING_COLOR = { gold: 0xffb21f, ember: 0xff6a1a };
+// Every mark sits on a dark band a little wider than itself, so it reads on a pale board as well as a dark one,
+// over a faint wash of its own colour that shows which square it means.
+const ringEdgeGeo = new THREE.TorusGeometry(0.05, 0.0135, 8, 36), ringFillGeo = new THREE.CircleGeometry(0.043, 28);
+const RING_EDGE = new THREE.MeshBasicMaterial({ color: 0x140a03, transparent: true, opacity: 0.78, depthWrite: false });
+const RING_FILL = { gold: new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.2, depthWrite: false }), ember: new THREE.MeshBasicMaterial({ color: RING_COLOR.ember, transparent: true, opacity: 0.22, depthWrite: false }) };
+const RING_EDGE_SOFT = new THREE.MeshBasicMaterial({ color: 0x140a03, transparent: true, opacity: 0.4, depthWrite: false });
+function markMesh(geo, mat, tone, soft) { // a ring with its dark band and its wash, all lying flat
+  const ring = new THREE.Mesh(geo, mat); ring.rotation.x = -Math.PI / 2;
+  const edge = new THREE.Mesh(ringEdgeGeo, soft ? RING_EDGE_SOFT : RING_EDGE); edge.position.z = -0.0006; edge.renderOrder = -1; ring.add(edge);
+  if (tone) { const fill = new THREE.Mesh(ringFillGeo, RING_FILL[tone]); fill.position.z = -0.0003; ring.add(fill); }
+  return ring;
+}
 function glowMats(obj) {
   if (obj.userData.mats) return obj.userData.mats;
   const a = []; obj.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { if (m.emissive) a.push(m); }); });
@@ -22,6 +34,7 @@ async function startGame(ex) {
   for (const t of g.toggles || []) g.setToggle(t.id, toggleOn(g, t));
   play.hotseat = friendOn(g);
   g.init();
+  if (g.human) g.human = [true, !!play.hotseat]; // engines that ask a person for choices the Scribe makes by itself
   play.resumed = loadGame(g);
   renderVariants(g);
   P.setup(ex);

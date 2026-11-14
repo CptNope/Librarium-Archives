@@ -32,6 +32,7 @@
     source: 'U.S. Patent 748,626, granted to Lizzie J. Magie on January 5, 1904: the board is read from the patent drawing and the rules from its text, for two players. The patent\'s rule for two checkers sharing a lot is left out.',
     init() {
       this.pos = [0, 0]; this.cash = [500, 500]; this.notes = [0, 0]; this.laps = [0, 0]; this.lux = [0, 0]; this.legacies = [0, 0];
+      this.human = [true, false]; // seats a person plays (the hall sets the second for a game against a friend)
       this.jailed = [false, false]; this.owner = new Array(23).fill(-1); this.fran = { 13: -1, 27: -1 };
       const t = Array.from({ length: 22 }, (_, k) => k + 1);
       for (let k = t.length - 1; k > 0; k--) { const j = (Math.random() * (k + 1)) | 0; [t[k], t[j]] = [t[j], t[k]]; }
@@ -94,7 +95,7 @@
         case 'ticket': {
           this.cash[pl] -= 10 * m.n; this.owner[m.n] = pl;
           notes.push(`${me} ${pl === 0 ? 'buy' : 'buys'} lot ${m.n}.`);
-          const r = out(); if (pl === 0) r.followUp = this.preThrow(pl); return r;
+          const r = out(); if (this.human[pl]) r.followUp = this.preThrow(pl); return r;
         }
         case 'endTickets': this.ticketsOpen[pl] = false; return Object.assign(out(), { thenThrow: true });
         case 'fine': this.pay(pl, 50, null, notes); this.jailed[pl] = false; notes.unshift(`${me} ${pl === 0 ? 'pay' : 'pays'} the $50 fine.`); return Object.assign(out(), { thenThrow: true });

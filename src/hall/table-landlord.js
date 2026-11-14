@@ -3,10 +3,11 @@ const LANDLORD_P = {
   intro() { return 'You play the pale checker and throw first. ' + this.prompt(); },
   prompt() {
     const G = GAMES.landlord;
-    if (G.ticketsOpen[0]) return `Your lot tickets: ${G.tickets[0].join(', ')}. Buy any of those lots now if you like, then start.`;
-    if (G.jailed[0]) return 'You are in jail. Pay the $50 fine, or throw for a double.';
-    const debt = G.notes[0] ? `, notes owed $${100 * G.notes[0]}` : '';
-    return G.laps[0] >= G.ROUNDS ? `You have been round ${G.ROUNDS} times${debt}. Throw when you are ready.` : `Round ${G.laps[0] + 1} of ${G.ROUNDS}. Cash $${G.cash[0]}${debt}. Throw when you are ready.`;
+    const me = play.cur || 0;
+    if (G.ticketsOpen[me]) return `Your lot tickets: ${G.tickets[me].join(', ')}. Buy any of those lots now if you like, then start.`;
+    if (G.jailed[me]) return 'You are in jail. Pay the $50 fine, or throw for a double.';
+    const debt = G.notes[me] ? `, notes owed $${100 * G.notes[me]}` : '';
+    return G.laps[me] >= G.ROUNDS ? `You have been round ${G.ROUNDS} times${debt}. Throw when you are ready.` : `Round ${G.laps[me] + 1} of ${G.ROUNDS}. Cash $${G.cash[me]}${debt}. Throw when you are ready.`;
   },
   choosePrompt: () => 'Pick your checker, then the glowing space to go to.',
   spot(pl, k) { const p = llSpace(k), side = Math.abs(p.ox) === 1 ? [0, 1] : Math.abs(p.oz) === 1 ? [1, 0] : [0.7, -0.7]; const o = (pl ? 1 : -1) * 0.016; return V3(p.x + p.ox * 0.025 + side[0] * o, GAMES.landlord.surface + 0.007, p.z + p.oz * 0.025 + side[1] * o); },

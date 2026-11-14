@@ -5077,10 +5077,11 @@ const LANDLORD_P = {
   intro() { return 'You play the pale checker and throw first. ' + this.prompt(); },
   prompt() {
     const G = GAMES.landlord;
-    if (G.ticketsOpen[0]) return `Your lot tickets: ${G.tickets[0].join(', ')}. Buy any of those lots now if you like, then start.`;
-    if (G.jailed[0]) return 'You are in jail. Pay the $50 fine, or throw for a double.';
-    const debt = G.notes[0] ? `, notes owed $${100 * G.notes[0]}` : '';
-    return G.laps[0] >= G.ROUNDS ? `You have been round ${G.ROUNDS} times${debt}. Throw when you are ready.` : `Round ${G.laps[0] + 1} of ${G.ROUNDS}. Cash $${G.cash[0]}${debt}. Throw when you are ready.`;
+    const me = play.cur || 0;
+    if (G.ticketsOpen[me]) return `Your lot tickets: ${G.tickets[me].join(', ')}. Buy any of those lots now if you like, then start.`;
+    if (G.jailed[me]) return 'You are in jail. Pay the $50 fine, or throw for a double.';
+    const debt = G.notes[me] ? `, notes owed $${100 * G.notes[me]}` : '';
+    return G.laps[me] >= G.ROUNDS ? `You have been round ${G.ROUNDS} times${debt}. Throw when you are ready.` : `Round ${G.laps[me] + 1} of ${G.ROUNDS}. Cash $${G.cash[me]}${debt}. Throw when you are ready.`;
   },
   choosePrompt: () => 'Pick your checker, then the glowing space to go to.',
   spot(pl, k) { const p = llSpace(k), side = Math.abs(p.ox) === 1 ? [0, 1] : Math.abs(p.oz) === 1 ? [1, 0] : [0.7, -0.7]; const o = (pl ? 1 : -1) * 0.016; return V3(p.x + p.ox * 0.025 + side[0] * o, GAMES.landlord.surface + 0.007, p.z + p.oz * 0.025 + side[1] * o); },
@@ -6071,7 +6072,8 @@ const HAZARD_P = {
   intro() { return 'You cast first. ' + this.prompt(); },
   prompt() {
     const G = GAMES.hazard;
-    if (G.stage === 'stake') return `Choose your stake. You have ${G.purse[0]} shillings, the Scribe ${G.purse[1]}.`;
+    const me = play.cur || 0;
+    if (G.stage === 'stake') return `Choose your stake. You have ${G.purse[me]} shillings, ${me ? 'the other player' : asFriend('the Scribe')} ${G.purse[1 - me]}.`;
     if (G.stage === 'main') return 'Call your main, 5 to 9. Seven gives the caster the best odds.';
     return G.pending ? `Throw: you need ${G.chance} before ${G.main}.` : `Throw the dice. Your main is ${G.main}.`;
   },
@@ -7031,7 +7033,7 @@ function toggleOn(g, t) { const v = ((store.toggles || {})[g.id] || {})[t.id]; r
 // Pass-and-play: two visitors share the screen at a two-player table with nothing hidden.
 const HOTSEAT = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier', 'idraughts', 'hnefatafl',
   // dice games too: each player throws for themselves
-  'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii']);
+  'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard', 'landlord']);
 const friendOn = g => HOTSEAT.has(g.id) && ((store.opponent || {})[g.id] === 'friend');
 function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex); }
 function renderVariants(g) {
@@ -7072,10 +7074,22 @@ function renderVariants(g) {
 $('#lm-helpBtn').addEventListener('click', () => { if (mode === 'gallery') goStop(0); else $('#lm-rules').hidden = !$('#lm-rules').hidden; });
 
 /* ------------------------------------------------------------- play table */
-const play = { ex: null, game: null, P: null, token: 0, phase: 'idle', roll: null, moves: [], rings: [], byMesh: new Map(), glowing: new Set(), selected: null, hover: null, twoStep: false };
-const ringGeo = new THREE.TorusGeometry(0.05, 0.006, 8, 36);
+const play = { ex: null, game: null, P: null, token: 0, phase: 'idle', roll: null, moves: [], rings: [], halos: new Map(), byMesh: new Map(), glowing: new Set(), selected: null, hover: null, twoStep: false };
+const ringGeo = new THREE.TorusGeometry(0.05, 0.008, 8, 36);
 const ringHitGeo = new THREE.CircleGeometry(0.062, 24); // the whole ring face is clickable, not just its outline
-const RING_COLOR = { gold: 0xf6a01a, ember: 0xe06418 };
+const RING_COLOR = { gold: 0xffb21f, ember: 0xff6a1a };
+// Every mark sits on a dark band a little wider than itself, so it reads on a pale board as well as a dark one,
+// over a faint wash of its own colour that shows which square it means.
+const ringEdgeGeo = new THREE.TorusGeometry(0.05, 0.0135, 8, 36), ringFillGeo = new THREE.CircleGeometry(0.043, 28);
+const RING_EDGE = new THREE.MeshBasicMaterial({ color: 0x140a03, transparent: true, opacity: 0.78, depthWrite: false });
+const RING_FILL = { gold: new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.2, depthWrite: false }), ember: new THREE.MeshBasicMaterial({ color: RING_COLOR.ember, transparent: true, opacity: 0.22, depthWrite: false }) };
+const RING_EDGE_SOFT = new THREE.MeshBasicMaterial({ color: 0x140a03, transparent: true, opacity: 0.4, depthWrite: false });
+function markMesh(geo, mat, tone, soft) { // a ring with its dark band and its wash, all lying flat
+  const ring = new THREE.Mesh(geo, mat); ring.rotation.x = -Math.PI / 2;
+  const edge = new THREE.Mesh(ringEdgeGeo, soft ? RING_EDGE_SOFT : RING_EDGE); edge.position.z = -0.0006; edge.renderOrder = -1; ring.add(edge);
+  if (tone) { const fill = new THREE.Mesh(ringFillGeo, RING_FILL[tone]); fill.position.z = -0.0003; ring.add(fill); }
+  return ring;
+}
 function glowMats(obj) {
   if (obj.userData.mats) return obj.userData.mats;
   const a = []; obj.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { if (m.emissive) a.push(m); }); });
@@ -7095,6 +7109,7 @@ async function startGame(ex) {
   for (const t of g.toggles || []) g.setToggle(t.id, toggleOn(g, t));
   play.hotseat = friendOn(g);
   g.init();
+  if (g.human) g.human = [true, !!play.hotseat]; // engines that ask a person for choices the Scribe makes by itself
   play.resumed = loadGame(g);
   renderVariants(g);
   P.setup(ex);
@@ -7128,7 +7143,10 @@ async function startGame(ex) {
  * the engine's data fields first, so nothing the Scribe tries can leak out. */
 // Only tables whose pieces are rebuilt entirely from the engine's state can be taken back.
 const UNDO_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'draughts', 'tablut', 'halma', 'reversi', 'jungle', 'mutorere', 'oware', 'kalah', 'idraughts', 'hnefatafl', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi']);
-const canHint = g => !!g.aiPlan && !g.dice && !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'fourseasons', 'chaturaji'].includes(g.id);
+// At dice tables the Hint weighs the moves this throw allows; where the moves are fixed (the Goose, Snakes and
+// Ladders, the Mansion, Hazard's bets) there is nothing to weigh.
+const DICE_HINT = new Set(['ur', 'senet', 'tables', 'nard', 'xii', 'yut', 'pachisi', 'ludo', 'patolli', 'tab', 'hounds', 'lifegame']);
+const canHint = g => !!g.aiPlan && (g.dice ? DICE_HINT.has(g.id) : !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'fourseasons', 'chaturaji'].includes(g.id));
 function copyState(g) {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
   for (const k of Object.keys(d)) if ('value' in d[k] && typeof d[k].value !== 'function' && k !== 'rules' && k !== 'source' && k !== 'surface') out[k] = d[k].value;
@@ -7169,7 +7187,10 @@ $('#lm-hintBtn').addEventListener('click', async () => {
   $('#lm-hintBtn').disabled = true;
   await new Promise(r => setTimeout(r, 60));
   let plan = null;
-  try { plan = await scribe.plan(g, pl, 'sharp'); } catch (e) { plan = null; } finally { R.setLevel(level); Object.assign(g, structuredClone(before)); }
+  try {
+    if (g.dice) { R.setLevel('sharp'); plan = g.aiPlan(pl, moves); } // the best use of this throw: quick, so on the page
+    else plan = await scribe.plan(g, pl, 'sharp');
+  } catch (e) { plan = null; } finally { R.setLevel(level); Object.assign(g, structuredClone(before)); }
   if (tok !== play.token || play.phase !== 'choose') return;
   const want = plan && plan[0], keys = ['kind', 'from', 'to', 'c', 'card', 'place', 'pit', 'i', 'n', 'line', 'over', 'swap', 'pass', 'label', 'drop', 'promo'];
   const same = (a, b) => keys.every(k => JSON.stringify(a[k]) === JSON.stringify(b[k]));
@@ -7351,7 +7372,8 @@ function explainHint(g, pl, m) {
     if (r && r.winner === pl) why.push('it wins the game');
     else {
       const noun = HINT_NOUN[g.id] || ['a piece', 'pieces'];
-      if (res.boxes && res.boxes.length) why.push(`it completes ${res.boxes.length > 1 ? res.boxes.length + ' boxes' : 'a box'} and you move again`);
+      if (g.dice && pl === 0 && res.note) why.push(res.note.split('. ')[0].replace(/^You /, 'you ').replace(/\.$/, '')); // at dice tables the table's own words say it best
+      else if (res.boxes && res.boxes.length) why.push(`it completes ${res.boxes.length > 1 ? res.boxes.length + ' boxes' : 'a box'} and you move again`);
       else if (pl === 0 && res.note && /^You (take|capture|meet)/.test(res.note)) why.push(res.note.split('. ')[0].replace(/^You /, 'you ').replace(/\.$/, '')); // the table's own words
       else if (res.caps && res.caps.length) why.push(`it takes ${res.caps.length > 1 ? res.caps.length + ' ' + noun[1] : noun[0]}`);
       else if (m.flips && m.flips.length) why.push(`it turns ${m.flips.length > 1 ? m.flips.length + ' discs' : 'a disc'}`);
@@ -7368,7 +7390,8 @@ function explainHint(g, pl, m) {
     }
   } catch (e) { /* the reason is a courtesy: the hint stands without it */ }
   Object.assign(g, structuredClone(before));
-  if (!why.length) return g.id === 'go' || g.id === 'hex' ? 'It is the move that wins most often when the Scribe plays the game out from here many times.' : 'It is the move the Scribe rates best after looking several moves ahead.';
+  if (!why.length) return g.id === 'go' || g.id === 'hex' ? 'It is the move that wins most often when the Scribe plays the game out from here many times.'
+    : g.dice ? 'Of the moves this throw allows, it leaves your pieces best placed: furthest on, and least exposed.' : 'It is the move the Scribe rates best after looking several moves ahead.';
   const text = why.slice(0, 2).join(', and ');
   return text[0].toUpperCase() + text.slice(1) + '.';
 }
@@ -7765,18 +7788,22 @@ function clearLastMove() { lastMarks.splice(0).forEach(o => { o.parent && o.pare
 function markLastMove(from, to) {
   const add = (geo, v, opacity) => {
     if (!v) return;
-    const o = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: RING_COLOR.ember, transparent: true, opacity, depthWrite: false }));
+    const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR.ember, transparent: true, opacity, depthWrite: false });
+    const o = geo === ringGeo ? markMesh(geo, mat) : new THREE.Mesh(geo, mat);
     o.rotation.x = -Math.PI / 2; o.position.copy(v); o.position.y += 0.003; o.scale.setScalar(0.9);
     play.ex.group.add(o); lastMarks.push(o);
   };
-  add(markFromGeo, from, 0.4); add(ringGeo, to, 0.75);
+  add(markFromGeo, from, 0.45); add(ringGeo, to, 0.85);
 }
 function addRing(m) {
   const P = play.P, at = P.ringFor(m);
   if (!at) return; // a move with no spot of its own, such as a card played from the hand
-  const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR[P.ringTone ? P.ringTone(m) : 'gold'], transparent: true, opacity: P.ringOpacity || 0.85, depthWrite: false });
-  const ring = new THREE.Mesh(ringGeo, mat);
-  ring.rotation.x = -Math.PI / 2;
+  // Where nearly every point is a move (Go, Gomoku, Hex) the marks stay lighter, so the board still shows;
+  // the one under the pointer comes up in full.
+  const tone = P.ringTone ? P.ringTone(m) : 'gold', soft = !!P.ringOpacity;
+  const mat = new THREE.MeshBasicMaterial({ color: RING_COLOR[tone], transparent: true, opacity: soft ? P.ringOpacity + 0.2 : 0.95, depthWrite: false });
+  const ring = markMesh(ringGeo, mat, soft ? null : tone, soft);
+  ring.userData.op = soft ? P.ringOpacity + 0.2 : 0.85;
   ring.position.copy(at); ring.position.y += 0.004;
   ring.userData.move = m; ring.userData.base = P.ringScale || 1;
   ring.add(new THREE.Mesh(ringHitGeo, MAT.hit));
@@ -7792,7 +7819,7 @@ function highlight(moves) {
     play.byMesh.get(ms).push(m);
   }
   play.twoStep = [...play.byMesh.values()].some(a => a.length > 1);
-  play.byMesh.forEach((_, ms) => play.glowing.add(ms));
+  play.byMesh.forEach((_, ms) => { play.glowing.add(ms); addHalo(ms); });
   for (const m of moves) if (!play.twoStep || !P.meshesFor(m).some(Boolean)) addRing(m);
   if (play.twoStep && play.byMesh.size === 1) select([...play.byMesh.keys()][0]);
 }
@@ -7806,8 +7833,22 @@ function select(mesh) {
   play.selected = mesh;
   play.byMesh.get(mesh).forEach(addRing);
 }
+// A ring at the foot of every piece you can move: the warm glow alone hardly shows on a pale piece.
+function addHalo(ms) {
+  if (!play.ex || play.halos.has(ms)) return;
+  const box = new THREE.Box3().setFromObject(ms); if (box.isEmpty()) return;
+  const size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
+  if (size.y > Math.max(size.x, size.z) * 1.6 && size.y > 0.08) return; // a card or tile held upright: its glow and lift say enough
+  const foot = play.ex.group.worldToLocal(new THREE.Vector3(mid.x, box.min.y, mid.z));
+  const halo = markMesh(ringGeo, new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.9, depthWrite: false }));
+  halo.position.copy(foot); halo.position.y += 0.002;
+  const r = Math.min(0.09, Math.max(0.022, Math.max(size.x, size.z) / 2 * 1.12));
+  halo.userData.base = r / 0.05; halo.scale.setScalar(halo.userData.base);
+  play.ex.group.add(halo); play.halos.set(ms, halo);
+}
 function clearHighlights() {
   dropRings(() => false);
+  play.halos.forEach(h => { h.parent && h.parent.remove(h); h.material.dispose(); }); play.halos.clear();
   play.glowing.forEach(ms => glowMats(ms).forEach(x => x.emissive.setRGB(0, 0, 0)));
   play.glowing.clear(); play.byMesh = new Map(); play.selected = null; play.hover = null; play.hintMove = null;
 }
@@ -8127,10 +8168,12 @@ function step() {
       const hot = ms === play.selected || ms === play.hover || (play.hintMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(play.hintMove)) || (hoverMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(hoverMove));
       const k = hot ? 0.5 : pulse;
       glowMats(ms).forEach(x => x.emissive.setRGB(0.55 * k, 0.32 * k, 0.02));
+      const h = play.halos.get(ms);
+      if (h) { h.material.opacity = hot ? 1 : 0.7 + 0.25 * Math.sin(t * 5); h.scale.setScalar(h.userData.base * (hot ? 1.18 : 1)); }
     });
     play.rings.forEach(r => {
       const hot = play.hover === r || r.userData.move === play.hintMove || (play.hover && play.byMesh.get(play.hover) && play.byMesh.get(play.hover).includes(r.userData.move));
-      r.material.opacity = hot ? 1 : 0.6 + 0.25 * Math.sin(t * 5);
+      r.material.opacity = hot ? 1 : (r.userData.op || 0.85) + 0.12 * Math.sin(t * 5);
       r.scale.setScalar(r.userData.base * (hot ? 1.25 : 1));
     });
   }
@@ -8191,7 +8234,7 @@ async function boot() {
 // Inspect the live state from the console with ?debug in the address.
 if (/[?&]debug\b/.test(location.search)) {
   window.__archives = {
-    play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop, scribe, bootTimes,
+    play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop, scribe, bootTimes, select,
     // Put the camera at an exhibit straight away, without the glide (for slow test machines).
     jump(id) {
       const i = STOPS.findIndex(x => x.id === id); goStop(i, false); showPlacard(false);

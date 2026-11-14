@@ -18,6 +18,7 @@
     init() {
       this.purse = [HZ_START, HZ_START]; this.caster = 0; this.losses = 0; this.rounds = 0;
       this.stage = 'stake'; this.stake = 0; this.main = 0; this.chance = 0; this.pending = false; this.over = null; this.last = null;
+      this.human = [true, false]; // seats a person plays (the hall sets the second for a game against a friend)
     },
     roll() { const a = 1 + ((Math.random() * 6) | 0), b = 1 + ((Math.random() * 6) | 0); return { faces: [a, b], value: a + b }; },
     who(pl, cap) { return pl === 0 ? (cap ? 'You' : 'you') : 'the Scribe'; },
@@ -34,7 +35,7 @@
     out(main, v) { return v === 2 || v === 3 || ((v === 11 || v === 12) && !this.nick(main, v)); },
     apply(m) {
       const pl = m.pl, Y = pl === 0;
-      if (m.kind === 'stake') { this.stake = m.n; this.stage = 'main'; return { note: Y ? `You stake ${m.n}.` : `The Scribe stakes ${m.n} shilling${m.n > 1 ? 's' : ''}.`, followUp: Y ? this.preThrow(pl) : null }; }
+      if (m.kind === 'stake') { this.stake = m.n; this.stage = 'main'; return { note: Y ? `You stake ${m.n}.` : `The Scribe stakes ${m.n} shilling${m.n > 1 ? 's' : ''}.`, followUp: this.human[pl] ? this.preThrow(pl) : null }; }
       if (m.kind === 'main') { this.main = m.n; this.stage = 'throw'; this.pending = false; return { note: Y ? `Your main is ${m.n}.` : `The Scribe calls a main of ${m.n}.`, thenThrow: true }; }
       const v = m.value;
       if (!this.pending) {

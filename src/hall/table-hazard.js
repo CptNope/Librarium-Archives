@@ -6,7 +6,8 @@ const HAZARD_P = {
   intro() { return 'You cast first. ' + this.prompt(); },
   prompt() {
     const G = GAMES.hazard;
-    if (G.stage === 'stake') return `Choose your stake. You have ${G.purse[0]} shillings, the Scribe ${G.purse[1]}.`;
+    const me = play.cur || 0;
+    if (G.stage === 'stake') return `Choose your stake. You have ${G.purse[me]} shillings, ${me ? 'the other player' : asFriend('the Scribe')} ${G.purse[1 - me]}.`;
     if (G.stage === 'main') return 'Call your main, 5 to 9. Seven gives the caster the best odds.';
     return G.pending ? `Throw: you need ${G.chance} before ${G.main}.` : `Throw the dice. Your main is ${G.main}.`;
   },

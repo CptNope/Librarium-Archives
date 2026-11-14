@@ -229,10 +229,14 @@
       const key = JSON.stringify(first), i = turns.findIndex(t => JSON.stringify(t) === key);
       if (i > 0) turns.unshift(turns.splice(i, 1)[0]);
     }
+    const noise = pick(6, 0.6, 0.05);
     for (const seq of turns) {
       const s = G.snapshot();
       for (const m of seq) G.apply(m);
-      const v = -negamax(G, 1 - pl, depth - 1, -Infinity, Infinity) + Math.random() * pick(6, 0.6, 0.05);
+      // Each move after the first only has to show it can beat the best so far (less the noise that varies the
+      // Scribe's play), so the search may stop early on the many that cannot: the same answer, far sooner.
+      const floor = best === null ? -Infinity : bv - noise;
+      const v = -negamax(G, 1 - pl, depth - 1, -Infinity, -floor) + Math.random() * noise;
       G.restore(s);
       if (best === null || v > bv) { bv = v; best = seq; } // even when every move loses, pick one
     }
