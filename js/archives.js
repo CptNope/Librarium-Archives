@@ -1915,19 +1915,23 @@ function gjAvatar(kind) { // two Dashavatara suits: the fish (Matsya) and the to
   });
 }
 function buildGanjifa(group) {
-  const base = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.04, 0.78), new THREE.MeshLambertMaterial({ color: 0x3a1410 }));
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.04, 0.78), new THREE.MeshLambertMaterial({ color: 0x241008 }));
   base.position.y = TOP + 0.02; group.add(base);
   const y0 = TOP + 0.041, edge = new THREE.MeshStandardMaterial({ color: 0x2a1a0c, roughness: 0.4 });
-  const disc = (map, x, z, r = 0.05) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.003, 40), [edge, new THREE.MeshStandardMaterial({ map, roughness: 0.35, metalness: 0.05 }), edge]); m.position.set(x, y0 + 0.0015, z); m.rotation.y = rand(-0.4, 0.4); group.add(m); return m; };
-  // Each suit: its mir, its wazir and one numeral, in two rows across the cloth.
-  GJ_SUITS.forEach((S, k) => {
-    const x = -0.49 + (k % 4) * 0.33, z = k < 4 ? -0.2 : 0.06;
-    disc(gjFace(k, 12), x, z); disc(gjFace(k, 11), x + 0.105, z); disc(gjFace(k, [1, 3, 5, 7, 9, 4, 6, 10][k]), x + 0.21, z);
+  // A sloped board in dark cloth, so the round faces look at you: three rows of nine.
+  const board = new THREE.Group(); board.position.set(0, TOP + 0.21, -0.05); board.rotation.x = -0.5; group.add(board);
+  board.add(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.36, 0.02), new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.95 })));
+  const faces = [];
+  GJ_SUITS.forEach((S, k) => { faces.push(gjFace(k, 12), gjFace(k, 11), gjFace(k, [1, 3, 5, 7, 9, 4, 6, 10][k])); });
+  faces.push(gjAvatar(0), gjAvatar(1), gjFace(3, 10));
+  faces.forEach((map, i) => {
+    const r = 0.052, m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.003, 40), [edge, new THREE.MeshStandardMaterial({ map, roughness: 0.35, metalness: 0.05 }), edge]);
+    m.rotation.x = Math.PI / 2; m.rotation.y = rand(-0.3, 0.3);
+    m.position.set(-0.48 + (i % 9) * 0.12, 0.115 - Math.floor(i / 9) * 0.115, 0.013); board.add(m);
   });
-  disc(gjAvatar(0), -0.1, 0.28, 0.06); disc(gjAvatar(1), 0.1, 0.28, 0.06);
-  // A lacquered box for the pack, its lid propped open.
-  const box = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.16), new THREE.MeshStandardMaterial({ color: 0x6a1a10, roughness: 0.35 })); box.position.set(0.44, y0 + 0.03, 0.29); group.add(box);
-  glassCase(group, 1.3, 0.3, 0.85);
+  // A lacquered box for the pack, on the cloth in front.
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.14), new THREE.MeshStandardMaterial({ color: 0x6a1a10, roughness: 0.35 })); box.position.set(0.4, y0 + 0.025, 0.28); group.add(box);
+  glassCase(group, 1.3, 0.44, 0.85);
   return y0;
 }
 /* --- Tarocchi cards for the table: original faces in an old Italian manner */
