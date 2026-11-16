@@ -7496,7 +7496,7 @@ function renderRules(g) {
   const h = document.createElement('h3'); h.textContent = 'How to play ' + g.name; r.appendChild(h);
   const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); r.appendChild(ul);
   const p = document.createElement('p'); p.className = 'src'; p.textContent = g.source; r.appendChild(p);
-  const k = document.createElement('p'); k.className = 'src'; k.textContent = 'Keyboard: the arrow keys step through the pieces you can move, then the places they can go; Enter plays, Escape steps back.'; r.appendChild(k);
+  const k = document.createElement('p'); k.className = 'src'; k.textContent = 'Keyboard: the arrow keys step through the pieces you can move, then the places they can go; Enter plays, Escape steps back, and M turns the hints on or off.'; r.appendChild(k);
   if (COACH[g.id] && !play.hotseat) {
     const on = coachOn(g), gb = document.createElement('button'); gb.className = 'hudbtn'; gb.textContent = on ? 'Guide: on' : 'Guide: off'; gb.setAttribute('aria-pressed', String(on));
     gb.addEventListener('click', () => { store.guide = Object.assign(store.guide || {}, { [g.id]: !on }); save(); if (on) $('#lm-coach').hidden = true; else coachCheck(); renderRules(g); });
@@ -7870,9 +7870,26 @@ function select(mesh) {
   play.selected = mesh;
   play.byMesh.get(mesh).forEach(addRing);
 }
+// Hints on (the default): every piece you can move glows and has a ring at its foot, and every place it can go is
+// ringed. Hints off: the board stays bare, and only the ring under the pointer, the keyboard's choice or the Hint
+// button's pick lights up. Rings stay in place either way, so a click on a bare square still plays.
+const marksOn = () => store.marks !== false;
+function showMarks() {
+  const on = marksOn(), b = $('#lm-marksBtn');
+  b.textContent = on ? 'Hints: on' : 'Hints: off'; b.setAttribute('aria-pressed', String(on));
+}
+function setMarks(on) {
+  store.marks = on; save(); showMarks();
+  if (mode !== 'play') return;
+  if (on) play.byMesh.forEach((_, ms) => addHalo(ms));
+  else { play.halos.forEach(h => { h.parent && h.parent.remove(h); h.material.dispose(); }); play.halos.clear(); }
+  srBox.textContent = on ? 'Hints on: the moves you can make are ringed.' : 'Hints off: the arrow keys still step through your moves, and Hint still suggests one.';
+}
+$('#lm-marksBtn').addEventListener('click', () => setMarks(!marksOn()));
+showMarks();
 // A ring at the foot of every piece you can move: the warm glow alone hardly shows on a pale piece.
 function addHalo(ms) {
-  if (!play.ex || play.halos.has(ms)) return;
+  if (!play.ex || play.halos.has(ms) || !marksOn()) return;
   const box = new THREE.Box3().setFromObject(ms); if (box.isEmpty()) return;
   const size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
   if (size.y > Math.max(size.x, size.z) * 1.6 && size.y > 0.08) return; // a card or tile held upright: its glow and lift say enough
@@ -8125,6 +8142,7 @@ window.addEventListener('keydown', e => {
     const onButton = document.activeElement && /^(BUTTON|A)$/.test(document.activeElement.tagName);
     if (play.phase === 'choose' && /^Arrow/.test(e.code) && kbPlay(e.code)) { e.preventDefault(); return; }
     if (play.phase === 'choose' && !onButton && (e.code === 'Enter' || e.code === 'Space') && kbPlay(e.code)) { e.preventDefault(); return; }
+    if (e.code === 'KeyM' && !e.ctrlKey && !e.metaKey && !e.altKey) { setMarks(!marksOn()); e.preventDefault(); return; }
     if (e.code === 'Escape') { if (play.selected) { select(play.selected); play.kb = -1; play.hover = null; } else leaveGame(); }
     return;
   }
@@ -8199,11 +8217,11 @@ function step() {
     a.needsUpdate = true;
   }
   if (mode === 'play' && (play.glowing.size || play.rings.length)) {
-    const pulse = 0.42 + 0.18 * Math.sin(t * 5);
+    const pulse = 0.42 + 0.18 * Math.sin(t * 5), all = marksOn();
     const hoverMove = play.hover && play.hover.userData.move;
     play.glowing.forEach(ms => {
       const hot = ms === play.selected || ms === play.hover || (play.hintMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(play.hintMove)) || (hoverMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(hoverMove));
-      const k = hot ? 0.5 : pulse;
+      const k = hot ? 0.5 : all ? pulse : 0;
       glowMats(ms).forEach(x => x.emissive.setRGB(0.55 * k, 0.32 * k, 0.02));
       const h = play.halos.get(ms);
       if (h) { h.material.opacity = hot ? 1 : 0.7 + 0.25 * Math.sin(t * 5); h.scale.setScalar(h.userData.base * (hot ? 1.18 : 1)); }
@@ -8211,6 +8229,8 @@ function step() {
     play.rings.forEach(r => {
       const hot = play.hover === r || r.userData.move === play.hintMove || (play.hover && play.byMesh.get(play.hover) && play.byMesh.get(play.hover).includes(r.userData.move));
       r.material.opacity = hot ? 1 : (r.userData.op || 0.85) + 0.12 * Math.sin(t * 5);
+      const show = hot || all; // with hints off the ring is still there to click, just not drawn
+      if (r.material.visible !== show) { r.material.visible = show; r.children.forEach(c => { if (c.material !== MAT.hit) c.visible = show; }); }
       r.scale.setScalar(r.userData.base * (hot ? 1.25 : 1));
     });
   }
