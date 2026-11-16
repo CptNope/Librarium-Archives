@@ -125,7 +125,7 @@ function restartTable() { const ex = play.ex; clearSave(play.game.id); play.toke
 function renderVariants(g) {
   const box = $('#lm-variant'); box.innerHTML = '';
   box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !play.resumed && !PACK_TABLES[g.id];
-  $('#lm-level').hidden = friendOn(g);
+  $('#lm-level').hidden = friendOn(g) || !!g.solo; // no Scribe to set at a solo table
   if (HOTSEAT.has(g.id)) {
     const label = document.createElement('span'); label.textContent = 'Opponent'; box.appendChild(label);
     for (const [id, text] of [['scribe', 'The Scribe'], ['friend', 'A friend']]) {
