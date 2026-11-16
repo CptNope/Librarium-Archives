@@ -142,14 +142,13 @@ test('ur: pass-and-play, each player throwing for themselves', { timeout: LONG *
   await leave();
 });
 
-// A software-rendered frame of Bao's sixty-four seeds takes a minute or more to capture, so this test gets room for its screenshot.
+// No screenshot here: a software-rendered frame of Bao's sixty-four seeds took from one to five minutes to capture, depending on the machine's load.
 test('bao: the guide opens a first game', { timeout: LONG * 2 }, async t => {
   let t0 = Date.now(); const lap = n => { t.diagnostic(`${n} ${((Date.now() - t0) / 1000).toFixed(1)} s`); t0 = Date.now(); }; // timings, to see a slow step in CI
   await sit('bao'); lap('sit'); await yourTurn(); lap('turn');
   t.diagnostic('scene objects ' + await page.evaluate(() => { let n = 0; window.__archives.play.ex.group.parent.traverse(() => n++); return n; }));
   const note = await page.evaluate(() => document.getElementById('lm-coach').hidden ? '' : document.getElementById('lm-coachText').textContent);
   assert.match(note, /seed/);
-  await shot('bao-guide'); lap('screenshot');
   await page.evaluate(() => document.getElementById('lm-coachOff').click());
   assert.equal(await page.evaluate(() => document.getElementById('lm-coach').hidden), true);
   await leave();
