@@ -128,14 +128,24 @@ async function run() {
     await page.goto(`${base}/index.html?debug`, { timeout: 300000 });
     await page.waitForFunction(() => window.__archives && document.querySelector('#lm-loader.done'), null, { timeout: 300000 });
     // Two frames a second: the layout is the same, and the audit costs a fraction of the time.
-    await page.evaluate(() => { const raf = window.requestAnimationFrame.bind(window); window.requestAnimationFrame = cb => setTimeout(() => raf(cb), 500); });
+    // (__hold pauses the loop altogether while a screenshot is taken, so the shot waits on the page, not on the 3D scene.)
+    await page.evaluate(() => {
+      const raf = window.requestAnimationFrame.bind(window);
+      window.__held = [];
+      window.requestAnimationFrame = cb => setTimeout(() => (window.__hold ? window.__held.push(cb) : raf(cb)), 500);
+      window.__release = () => { window.__hold = false; const q = window.__held.splice(0); q.forEach(cb => raf(cb)); };
+    });
     const states = [];
     const check = async (state, open = [], prep) => {
       try { if (prep) await prep(); } catch (e) { states.push({ state, error: String(e).slice(0, 200) }); return; }
       await sleep(900);
       const m = await page.evaluate(measure, open);
       states.push({ state, ...m });
-      if (SHOTS) await page.screenshot({ path: join(OUT, `${S.id}--${state}.png`), timeout: 600000 });
+      if (SHOTS) {
+        await page.evaluate(() => { window.__hold = true; }); await sleep(700);
+        try { await page.screenshot({ path: join(OUT, `${S.id}--${state}.png`), timeout: 240000 }); } catch (e) { console.log(`  no screenshot of ${state}: ${String(e).split('\n')[0]}`); }
+        await page.evaluate(() => window.__release());
+      }
     };
     const A = f => page.evaluate(f);
     const click = sel => A(`document.querySelector(${JSON.stringify(sel)}).click()`);
