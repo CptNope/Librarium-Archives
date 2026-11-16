@@ -36,6 +36,7 @@ function renderPassport() {
 // The index and the passport would sit on top of the placard, so it steps aside while they are open.
 let placardAside = false;
 function asideFor(on) {
+  root.classList.toggle('lm-dialog', !!on || !index.hidden || !passport.hidden);
   if (on && placardOpen) { placardAside = true; showPlacard(false); }
   else if (!on && placardAside && index.hidden && passport.hidden) { placardAside = false; showPlacard(true); }
 }
