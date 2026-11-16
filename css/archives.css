@@ -299,3 +299,8 @@
   #lm-app .placard .scroll{padding-top:52px}
   #lm-app .placard .eyebrow{padding-right:0}
 }
+/* A narrow bottom bar wraps its buttons under the message instead of pushing them off the edge. */
+#lm-app.lm-compact .hudbottom{flex-wrap:wrap;row-gap:8px}
+#lm-app.lm-compact .msg{flex:1 1 170px}
+#lm-app.lm-compact .hudbottom>.btn{padding:0 14px;font-size:16px}
+#lm-app.lm-compact .choices{max-width:100%}
