@@ -1782,11 +1782,15 @@ function buildCourtCards(group) {
 }
 // Cards that were never played with: money, a reply, an admission ticket, a note, an invitation.
 function buildNotForPlay(group) {
-  const velvet = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.04, 0.78), new THREE.MeshLambertMaterial({ color: 0x1e2a3a }));
-  velvet.position.y = TOP + 0.02; group.add(velvet);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.04, 0.78), new THREE.MeshLambertMaterial({ color: 0x2a0c10 }));
+  base.position.y = TOP + 0.02; group.add(base);
   const y0 = TOP + 0.042;
+  // A sloped board covered in dark cloth, so the cards stand up to be read.
+  const board = new THREE.Group(); board.position.set(0, TOP + 0.2, -0.05); board.rotation.x = -0.5; group.add(board);
+  const cloth = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.34, 0.02), new THREE.MeshStandardMaterial({ color: 0x3a0f14, roughness: 0.95 })); board.add(cloth);
   const back = new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.8 });
-  const lay = (map, x, z, rot, s = 1) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.11 * s, 0.002, 0.17 * s), [back, back, new THREE.MeshStandardMaterial({ map, roughness: 0.75 }), back, back, back]); m.position.set(x, y0 + Math.random() * 0.002, z); m.rotation.y = rot; group.add(m); return m; };
+  let slot = 0;
+  const lay = (map, _x, _z, rot) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.235, 0.002), [back, back, back, back, new THREE.MeshStandardMaterial({ map, roughness: 0.75 }), back]); m.position.set(-0.46 + slot++ * 0.23, 0, 0.012); m.rotation.z = rot * 0.4; board.add(m); return m; };
   const paper = (g, w, h, tint = '#efe3c5', dirt = 0) => { g.fillStyle = tint; g.fillRect(0, 0, w, h); speckle(g, w, h, 500 + dirt * 1500, ['#cdb98c', '#bba67a'], 1.4); if (dirt) { g.fillStyle = 'rgba(90,70,40,.18)'; g.beginPath(); g.ellipse(w * 0.7, h * 0.3, 60, 40, 0.5, 0, TAU); g.fill(); } };
   const hand = (g, lines, x, y, size = 20, rot = 0) => { g.save(); g.translate(x, y); g.rotate(rot); g.fillStyle = '#2a1e14'; g.font = `italic ${size}px Georgia,serif`; g.textAlign = 'center'; lines.forEach((t, i) => g.fillText(t, 0, i * size * 1.3)); g.restore(); };
   // Card money, New France: the blank back of a playing card, a value, a stamp and three signatures.
@@ -1811,7 +1815,7 @@ function buildNotForPlay(group) {
   lay(cardTex((g, w, h) => { paper(g, w, h, '#e9dcbc', 2); hand(g, ['M. de Voltaire', 'est venu', 'quatre fois'], w / 2, 120, 21, -0.05); }), 0.27, 0.13, -0.16);
   // An invitation to a ball, on the plain back of another.
   lay(cardTex((g, w, h) => { paper(g, w, h, '#f2e8d2'); g.strokeStyle = '#8a6a2a'; g.lineWidth = 3; g.strokeRect(20, 20, w - 40, h - 40); hand(g, ['The favour of', 'your Company', 'is desired', 'at a Ball'], w / 2, 100, 20); }), 0.47, -0.1, 0.18);
-  glassCase(group, 1.3, 0.3, 0.85);
+  glassCase(group, 1.3, 0.42, 0.85);
   return y0;
 }
 /* --- Tarocchi cards for the table: original faces in an old Italian manner */
