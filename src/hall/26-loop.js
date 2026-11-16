@@ -47,11 +47,11 @@ function step() {
     a.needsUpdate = true;
   }
   if (mode === 'play' && (play.glowing.size || play.rings.length)) {
-    const pulse = 0.42 + 0.18 * Math.sin(t * 5);
+    const pulse = 0.42 + 0.18 * Math.sin(t * 5), all = marksOn();
     const hoverMove = play.hover && play.hover.userData.move;
     play.glowing.forEach(ms => {
       const hot = ms === play.selected || ms === play.hover || (play.hintMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(play.hintMove)) || (hoverMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(hoverMove));
-      const k = hot ? 0.5 : pulse;
+      const k = hot ? 0.5 : all ? pulse : 0;
       glowMats(ms).forEach(x => x.emissive.setRGB(0.55 * k, 0.32 * k, 0.02));
       const h = play.halos.get(ms);
       if (h) { h.material.opacity = hot ? 1 : 0.7 + 0.25 * Math.sin(t * 5); h.scale.setScalar(h.userData.base * (hot ? 1.18 : 1)); }
@@ -59,6 +59,8 @@ function step() {
     play.rings.forEach(r => {
       const hot = play.hover === r || r.userData.move === play.hintMove || (play.hover && play.byMesh.get(play.hover) && play.byMesh.get(play.hover).includes(r.userData.move));
       r.material.opacity = hot ? 1 : (r.userData.op || 0.85) + 0.12 * Math.sin(t * 5);
+      const show = hot || all; // with hints off the ring is still there to click, just not drawn
+      if (r.material.visible !== show) { r.material.visible = show; r.children.forEach(c => { if (c.material !== MAT.hit) c.visible = show; }); }
       r.scale.setScalar(r.userData.base * (hot ? 1.25 : 1));
     });
   }

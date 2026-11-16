@@ -239,7 +239,7 @@ function renderRules(g) {
   const h = document.createElement('h3'); h.textContent = 'How to play ' + g.name; r.appendChild(h);
   const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); r.appendChild(ul);
   const p = document.createElement('p'); p.className = 'src'; p.textContent = g.source; r.appendChild(p);
-  const k = document.createElement('p'); k.className = 'src'; k.textContent = 'Keyboard: the arrow keys step through the pieces you can move, then the places they can go; Enter plays, Escape steps back.'; r.appendChild(k);
+  const k = document.createElement('p'); k.className = 'src'; k.textContent = 'Keyboard: the arrow keys step through the pieces you can move, then the places they can go; Enter plays, Escape steps back, and M turns the hints on or off.'; r.appendChild(k);
   if (COACH[g.id] && !play.hotseat) {
     const on = coachOn(g), gb = document.createElement('button'); gb.className = 'hudbtn'; gb.textContent = on ? 'Guide: on' : 'Guide: off'; gb.setAttribute('aria-pressed', String(on));
     gb.addEventListener('click', () => { store.guide = Object.assign(store.guide || {}, { [g.id]: !on }); save(); if (on) $('#lm-coach').hidden = true; else coachCheck(); renderRules(g); });
@@ -613,9 +613,26 @@ function select(mesh) {
   play.selected = mesh;
   play.byMesh.get(mesh).forEach(addRing);
 }
+// Hints on (the default): every piece you can move glows and has a ring at its foot, and every place it can go is
+// ringed. Hints off: the board stays bare, and only the ring under the pointer, the keyboard's choice or the Hint
+// button's pick lights up. Rings stay in place either way, so a click on a bare square still plays.
+const marksOn = () => store.marks !== false;
+function showMarks() {
+  const on = marksOn(), b = $('#lm-marksBtn');
+  b.textContent = on ? 'Hints: on' : 'Hints: off'; b.setAttribute('aria-pressed', String(on));
+}
+function setMarks(on) {
+  store.marks = on; save(); showMarks();
+  if (mode !== 'play') return;
+  if (on) play.byMesh.forEach((_, ms) => addHalo(ms));
+  else { play.halos.forEach(h => { h.parent && h.parent.remove(h); h.material.dispose(); }); play.halos.clear(); }
+  srBox.textContent = on ? 'Hints on: the moves you can make are ringed.' : 'Hints off: the arrow keys still step through your moves, and Hint still suggests one.';
+}
+$('#lm-marksBtn').addEventListener('click', () => setMarks(!marksOn()));
+showMarks();
 // A ring at the foot of every piece you can move: the warm glow alone hardly shows on a pale piece.
 function addHalo(ms) {
-  if (!play.ex || play.halos.has(ms)) return;
+  if (!play.ex || play.halos.has(ms) || !marksOn()) return;
   const box = new THREE.Box3().setFromObject(ms); if (box.isEmpty()) return;
   const size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
   if (size.y > Math.max(size.x, size.z) * 1.6 && size.y > 0.08) return; // a card or tile held upright: its glow and lift say enough

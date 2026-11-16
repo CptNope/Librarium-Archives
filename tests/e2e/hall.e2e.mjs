@@ -90,6 +90,12 @@ test('chess: the Scribe answers from its worker; Undo, the move list, and a resu
   for (let k = 0; k < 2; k++) { await playAny(); await sleep(400); await yourTurn(); }
   assert.equal(await page.evaluate(() => window.__archives.scribe.on), true, 'the Scribe is not thinking in a worker');
   assert.ok(await page.evaluate(() => window.__archives.play.halos.size > 0), 'no ring marks the pieces you can move');
+  // Hints off: no halos and no rings drawn, though the rings are still there to click; on again brings them back.
+  await page.keyboard.press('KeyM'); await sleep(300);
+  const off = await page.evaluate(() => { const P = window.__archives.play; return { halos: P.halos.size, drawn: P.rings.filter(r => r.material.visible).length, label: document.getElementById('lm-marksBtn').textContent }; });
+  assert.deepEqual(off, { halos: 0, drawn: 0, label: 'Hints: off' });
+  await page.evaluate(() => document.getElementById('lm-marksBtn').click()); await sleep(300);
+  assert.ok(await page.evaluate(() => window.__archives.play.halos.size > 0), 'hints did not come back on');
   const listed = await page.evaluate(() => { document.getElementById('lm-movesBtn').click(); return [...document.querySelectorAll('#lm-moveList li')].map(li => li.textContent); });
   assert.equal(listed.length, 4, listed.join(' / '));
   assert.match(listed[0], /^1\.You[a-h][1-8][–×][a-h][1-8]/);
@@ -136,7 +142,8 @@ test('ur: pass-and-play, each player throwing for themselves', { timeout: LONG *
   await leave();
 });
 
-test('bao: the guide opens a first game', { timeout: LONG }, async () => {
+// A software-rendered frame of Bao's sixty-four seeds takes a minute or more to capture, so this test gets room for its screenshot.
+test('bao: the guide opens a first game', { timeout: LONG * 2 }, async () => {
   await sit('bao'); await yourTurn();
   const note = await page.evaluate(() => document.getElementById('lm-coach').hidden ? '' : document.getElementById('lm-coachText').textContent);
   assert.match(note, /seed/);
