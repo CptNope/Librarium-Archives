@@ -142,7 +142,8 @@ test('ur: pass-and-play, each player throwing for themselves', { timeout: LONG *
   await leave();
 });
 
-test('bao: the guide opens a first game', { timeout: LONG }, async () => {
+// A software-rendered frame of Bao's sixty-four seeds takes a minute or more to capture, so this test gets room for its screenshot.
+test('bao: the guide opens a first game', { timeout: LONG * 2 }, async () => {
   await sit('bao'); await yourTurn();
   const note = await page.evaluate(() => document.getElementById('lm-coach').hidden ? '' : document.getElementById('lm-coachText').textContent);
   assert.match(note, /seed/);
