@@ -6,6 +6,7 @@
 //   css/, js/                   the Archives, copied to assets/
 //   index.html                  its <!-- artifact:body --> markup, minus scripts, becomes templates/archives.html
 //   vendor/three.min.js         bundled if present (CI downloads it); otherwise the plugin falls back to the CDN
+//   vendor/fonts/               bundled if present (tools/fetch-fonts.mjs); otherwise the fonts come from Google
 import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,6 +38,15 @@ if (existsSync(three)) {
   console.log('three.js bundled');
 } else {
   console.warn('vendor/three.min.js not found: this build loads three.js from cdnjs');
+}
+
+const fonts = join(root, 'vendor', 'fonts');
+if (existsSync(join(fonts, 'fonts.css'))) {
+  mkdirSync(join(out, 'assets', 'vendor'), { recursive: true });
+  cpSync(fonts, join(out, 'assets', 'vendor', 'fonts'), { recursive: true });
+  console.log('fonts bundled');
+} else {
+  console.warn('vendor/fonts not found (node tools/fetch-fonts.mjs): this build loads the fonts from Google');
 }
 
 // Keep the plugin version in step with package.json.
