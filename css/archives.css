@@ -304,3 +304,11 @@
 #lm-app.lm-compact .msg{flex:1 1 170px}
 #lm-app.lm-compact .hudbottom>.btn{padding:0 14px;font-size:16px}
 #lm-app.lm-compact .choices{max-width:100%}
+/* What the second round of the audit found. The end-of-game card sits above everything and scrolls on a short
+ * screen; the walking pad goes while the index or passport is open; the guide waits while a panel or the Options
+ * sheet is open; the sheet stops above the bottom bar. */
+#lm-app .win{z-index:6}
+#lm-app .win .card{max-height:100%;overflow:auto;overscroll-behavior:contain}
+#lm-app.lm-dialog .joy{display:none}
+#lm-app .coach.aside{display:none}
+#lm-app.lm-compact .hudmore{max-height:var(--hud-free,70vh)}

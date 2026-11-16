@@ -76,6 +76,7 @@ function renderMoves(now) {
   else ol.parentElement.scrollTop = ol.parentElement.scrollHeight;
 }
 $('#lm-movesBtn').addEventListener('click', () => {
+  hudMenu(false);
   const box = $('#lm-moves'), on = box.hidden;
   box.hidden = !on; $('#lm-movesBtn').setAttribute('aria-expanded', String(on));
   if (on) { $('#lm-rules').hidden = true; renderMoves(play.phase === 'replay' ? play.replayAt : undefined); }
@@ -269,7 +270,7 @@ $('#lm-winLeave').addEventListener('click', leaveGame);
 $('#lm-againBtn').addEventListener('click', restartTable);
 $('#lm-rulesBtn').addEventListener('click', () => { hudMenu(false); $('#lm-rules').hidden = !$('#lm-rules').hidden; if (!$('#lm-rules').hidden) { $('#lm-moves').hidden = true; $('#lm-movesBtn').setAttribute('aria-expanded', 'false'); } });
 // The Rules button shows whether the panel is open, however it was opened (the first visit, the help button, Escape).
-new MutationObserver(() => $('#lm-rulesBtn').setAttribute('aria-expanded', String(!$('#lm-rules').hidden))).observe($('#lm-rules'), { attributes: true, attributeFilter: ['hidden'] });
+new MutationObserver(() => { $('#lm-rulesBtn').setAttribute('aria-expanded', String(!$('#lm-rules').hidden)); if (typeof coachAside === 'function') coachAside(); }).observe($('#lm-rules'), { attributes: true, attributeFilter: ['hidden'] });
 $('#lm-movesClose').addEventListener('click', () => { $('#lm-moves').hidden = true; $('#lm-movesBtn').setAttribute('aria-expanded', 'false'); $('#lm-movesBtn').focus({ preventScroll: true }); });
 
 /* The play screen's layout. Compact (a phone, or a window too short for the full bar) folds the secondary
@@ -279,7 +280,14 @@ function hudMenu(on) {
   if (hudMore.classList.contains('open') === on) return;
   hudMore.classList.toggle('open', on); hudMenuBtn.setAttribute('aria-expanded', String(on));
   if (on) { $('#lm-rules').hidden = true; $('#lm-moves').hidden = true; $('#lm-movesBtn').setAttribute('aria-expanded', 'false'); }
+  coachAside();
 }
+// While the rules, the moves or the Options sheet are open, the guide's card waits out of the way.
+function coachAside() {
+  const busy = hudMore.classList.contains('open') || !$('#lm-rules').hidden || !$('#lm-moves').hidden;
+  $('#lm-coach').classList.toggle('aside', busy);
+}
+new MutationObserver(coachAside).observe($('#lm-moves'), { attributes: true, attributeFilter: ['hidden'] });
 hudMenuBtn.addEventListener('click', () => hudMenu(!hudMore.classList.contains('open')));
 hudMore.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); hudMenu(false); hudMenuBtn.focus({ preventScroll: true }); } });
 $('#lm-scene').addEventListener('pointerdown', () => hudMenu(false)); // a touch on the board puts the sheet away
@@ -292,6 +300,7 @@ function layoutHud() {
   const app = root.getBoundingClientRect(), top = $('#lm-hud .hudtop').getBoundingClientRect(), bot = $('#lm-hud .hudbottom').getBoundingClientRect();
   root.style.setProperty('--hud-top', Math.round(top.bottom - app.top) + 'px');
   root.style.setProperty('--hud-bot', Math.round(app.bottom - bot.top) + 'px');
+  root.style.setProperty('--hud-free', Math.max(120, Math.round(bot.top - top.bottom - 24)) + 'px'); // room for the Options sheet
   placeCoach();
 }
 if (window.ResizeObserver) { const ro = new ResizeObserver(() => layoutHud()); ro.observe(root); ro.observe(rail); ro.observe($('#lm-hud .hudtop')); ro.observe($('#lm-hud .hudbottom')); }
@@ -593,7 +602,7 @@ function finish(res) {
     save();
   }
   $('#lm-winRecord').textContent = play.hotseat ? 'A game between two visitors: it does not count toward your record against the Scribe.' : recordText(g.id).replace('Your record against the Scribe here', 'Your record at this table') + ` The Scribe was playing ${R.level()}.`;
-  setTimeout(() => { if (play.phase === 'over') { $('#lm-win').hidden = false; $('#lm-againBtn').focus({ preventScroll: true }); } }, res.sweep ? 900 : 300);
+  setTimeout(() => { if (play.phase === 'over') { hudMenu(false); $('#lm-win').hidden = false; $('#lm-againBtn').focus({ preventScroll: true }); } }, res.sweep ? 900 : 300);
 }
 // Ember marks show where the Scribe's last move went from and to.
 const lastMarks = [];
