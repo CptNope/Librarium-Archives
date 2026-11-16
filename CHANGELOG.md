@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.32.0: The card room
+
+New in Wing IV, from a study of the World of Playing Cards archive (wopc.co.uk):
+
+- **Scopa**, the Italian fishing game, to 11 or 21. Take a card of the same value, or cards that add up to it, and sweep the table for a scopa. Played with a 40-card Italian pack.
+- **Bézique**, two-handed with two packs: tricks, melds (bézique, marriages, the sequence, fours), the seven of trumps, brisques, and a strict last eight tricks. To 1,000, or one deal.
+- **The Pack switch** at every card table (Piquet, Whist, Cribbage, Scopa, Bézique) redraws the cards in French, German, Swiss or Latin suits, with court figures, and the messages name the cards to match. Nothing restarts.
+- **Court Cards**, an easel of kings, an Ober and a double-ended queen: how the English courts came from Rouen around 1565, the French court names, and the packs that have no queen.
+- **Cards Not for Playing**, a case of cards put to other uses: New France's card money (1685), Grace's Card, a Philadelphia admission card (1765), Voltaire's note and an invitation.
+- Every card face is now drawn by one painter in any of the four suit systems, with court figures instead of bare letters.
+- 70 exhibits, 64 of them playable. Rules tests cover the new captures, sweeps, melds and the strict close.
+
 ## 0.31.0: Hints you can turn off
 
 - **Hints on or off.** A Hints button beside Rules, or the M key, turns the move marks off for a bare board. The ring under your pointer, the one the arrow keys reach and the Hint button's pick still light up, and clicking a square still plays. The setting is remembered for every table.

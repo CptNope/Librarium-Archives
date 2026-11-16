@@ -32,6 +32,8 @@ build-four-seasons-chess.js
 build-shatranj-board-and-pieces.js
 build-the-lewis-chessmen-simplified.js
 build-cards.js
+card-packs.js
+build-card-room.js
 build-tarocchi-cards-for-the.js
 build-fox-and-geese.js
 build-draughts.js
@@ -122,6 +124,8 @@ table-go.js
 table-halma.js
 table-reversi.js
 table-dots.js
+table-scopa.js
+table-bezique.js
 table-registry.js
 13-camera.js
 14-visitor-progress.js

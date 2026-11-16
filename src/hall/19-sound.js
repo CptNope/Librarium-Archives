@@ -124,13 +124,29 @@ const friendOn = g => HOTSEAT.has(g.id) && ((store.opponent || {})[g.id] === 'fr
 function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex); }
 function renderVariants(g) {
   const box = $('#lm-variant'); box.innerHTML = '';
-  box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !play.resumed;
+  box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !play.resumed && !PACK_TABLES[g.id];
   $('#lm-level').hidden = friendOn(g);
   if (HOTSEAT.has(g.id)) {
     const label = document.createElement('span'); label.textContent = 'Opponent'; box.appendChild(label);
     for (const [id, text] of [['scribe', 'The Scribe'], ['friend', 'A friend']]) {
       const b = document.createElement('button'); b.textContent = text; b.setAttribute('aria-pressed', String((friendOn(g) ? 'friend' : 'scribe') === id));
       b.addEventListener('click', () => { if ((friendOn(g) ? 'friend' : 'scribe') === id) return; store.opponent = Object.assign(store.opponent || {}, { [g.id]: id }); save(); restartTable(); });
+      box.appendChild(b);
+    }
+  }
+  if (PACK_TABLES[g.id]) { // the same game in another country's cards: redrawn in place, nothing restarts
+    box.hidden = false;
+    const label = document.createElement('span'); label.textContent = 'Pack'; box.appendChild(label);
+    for (const st of PACK_STYLES) {
+      const b = document.createElement('button'); b.textContent = PACK_LABEL[st]; b.setAttribute('aria-pressed', String(packNow === st));
+      b.title = { french: 'Spades, hearts, diamonds, clubs', german: 'Leaves, hearts, bells, acorns', swiss: 'Shields, roses, bells, acorns', latin: 'Swords, cups, coins, batons' }[st];
+      b.addEventListener('click', () => {
+        if (packNow === st) return;
+        store.packs = Object.assign(store.packs || {}, { [g.id]: st }); save();
+        packNow = st; reskinCards(play.ex.group, st); renderVariants(g); updateScore();
+        renderRules(g); // open or not, so it names the cards as they are now
+        if (play.phase === 'choose') { renderChoices(play.moves); setMsg(turnName(), (play.P.prompt ? play.P.prompt() : '')); }
+      });
       box.appendChild(b);
     }
   }

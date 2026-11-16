@@ -52,7 +52,8 @@ function recordMove(pl, m, text, res) {
   const g = play.game; if (!play.history || !play.history.length) return;
   const caps = res && res.caps && res.caps.length;
   if (caps && text && !text.includes('×')) text += ` (takes ${caps})`;
-  try { play.history.push({ pl, m, text, note: (res && res.note) || '', state: copyState(g) }); } catch (e) { return; }
+  text = asPack(text);
+  try { play.history.push({ pl, m, text, note: asPack((res && res.note) || ''), state: copyState(g) }); } catch (e) { return; }
   if (!$('#lm-moves').hidden) renderMoves();
 }
 function renderMoves(now) {
@@ -237,7 +238,8 @@ $('#lm-coachOff').addEventListener('click', () => {
 function renderRules(g) {
   const r = $('#lm-rules'); r.innerHTML = '';
   const h = document.createElement('h3'); h.textContent = 'How to play ' + g.name; r.appendChild(h);
-  const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); r.appendChild(ul);
+  const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = asPack(t); ul.appendChild(li); }); r.appendChild(ul);
+  if (PACK_TABLES[g.id]) { const pk = document.createElement('p'); pk.className = 'src'; pk.textContent = `Pack: ${PACK_LABEL[packNow]}. The Pack switch redraws the cards in another country's suits and court figures; the game itself does not change.`; r.appendChild(pk); }
   const p = document.createElement('p'); p.className = 'src'; p.textContent = g.source; r.appendChild(p);
   const k = document.createElement('p'); k.className = 'src'; k.textContent = 'Keyboard: the arrow keys step through the pieces you can move, then the places they can go; Enter plays, Escape steps back, and M turns the hints on or off.'; r.appendChild(k);
   if (COACH[g.id] && !play.hotseat) {
@@ -253,7 +255,7 @@ function leaveGame() {
   play.token++; clearHighlights(); clearLastMove(); $('#lm-choices').hidden = true;
   if (play.P && play.P.leave) play.P.leave(play.ex);
   $('#lm-coach').hidden = true; $('#lm-moves').hidden = true; $('#lm-choices').classList.remove('replaybar');
-  mode = 'gallery';
+  mode = 'gallery'; packNow = 'french';
   $('#lm-hud').hidden = true; rail.hidden = false; $('#lm-hint').style.opacity = 1;
   root.classList.remove('playing');
   resetView(false); updateJoy();
@@ -272,7 +274,7 @@ $('#lm-passBtn').addEventListener('click', () => {
 
 const asFriend = t => (play.hotseat && mode === 'play' && t ? String(t).replace(/The Scribe/g, 'Your friend').replace(/the Scribe/g, 'your friend').replace(/\bScribe\b/g, 'Friend') : t);
 function setMsg(who, text) {
-  who = asFriend(who); text = asFriend(text);
+  who = asFriend(who); text = asPack(asFriend(text));
   const m = $('#lm-msg'); m.innerHTML = '';
   const w = document.createElement('span'); w.className = 'who'; w.textContent = who; m.appendChild(w);
   m.appendChild(document.createTextNode(text));
@@ -377,7 +379,7 @@ function renderChoices(moves) {
   const box = $('#lm-choices'); box.innerHTML = '';
   const list = moves.filter(m => m.label && !(play.P.meshesFor(m) || []).some(Boolean));
   box.hidden = !list.length;
-  for (const m of list) { const b = document.createElement('button'); b.className = 'btn' + (/^Mahjong/.test(m.label) ? ' primary' : ''); b.textContent = m.label; b.addEventListener('click', () => choose(m)); box.appendChild(b); }
+  for (const m of list) { const b = document.createElement('button'); b.className = 'btn' + (/^Mahjong/.test(m.label) ? ' primary' : ''); b.textContent = asPack(m.label); b.addEventListener('click', () => choose(m)); box.appendChild(b); }
 }
 // Whose turn the message names: you, or in pass-and-play the friend in the Scribe's seat.
 const turnName = () => (play.cur === 1 ? 'Your friend\'s turn' : 'Your turn');
@@ -637,11 +639,28 @@ function addHalo(ms) {
   const size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
   if (size.y > Math.max(size.x, size.z) * 1.6 && size.y > 0.08) return; // a card or tile held upright: its glow and lift say enough
   const foot = play.ex.group.worldToLocal(new THREE.Vector3(mid.x, box.min.y, mid.z));
+  if (size.y < 0.012 && ms.geometry && ms.parent === play.ex.group) { // a card or tile lying flat: a frame round its edge, not a ring over its face
+    if (!ms.geometry.boundingBox) ms.geometry.computeBoundingBox();
+    const bb = ms.geometry.boundingBox, w = (bb.max.x - bb.min.x) * ms.scale.x, d = (bb.max.z - bb.min.z) * ms.scale.z;
+    const frame = cardFrame(w, d);
+    frame.position.copy(foot); frame.position.y = ms.position.y + 0.0012; frame.rotation.y = ms.rotation.y;
+    frame.userData.base = 1; play.ex.group.add(frame); play.halos.set(ms, frame); return;
+  }
   const halo = markMesh(ringGeo, new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.9, depthWrite: false }));
   halo.position.copy(foot); halo.position.y += 0.002;
   const r = Math.min(0.09, Math.max(0.022, Math.max(size.x, size.z) / 2 * 1.12));
   halo.userData.base = r / 0.05; halo.scale.setScalar(halo.userData.base);
   play.ex.group.add(halo); play.halos.set(ms, halo);
+}
+// A gold frame with a dark edge, lying flat round a card: it reads on pale and dark cloth alike.
+function cardFrame(w, d) {
+  const rect = (x, z) => { const s = new THREE.Shape(); s.moveTo(-x / 2, -z / 2); s.lineTo(x / 2, -z / 2); s.lineTo(x / 2, z / 2); s.lineTo(-x / 2, z / 2); s.closePath(); return s; };
+  const band = (out, inn) => { const s = rect(w + out, d + out); s.holes.push(rect(w + inn, d + inn)); return new THREE.ShapeGeometry(s); };
+  const gold = new THREE.Mesh(band(0.013, 0.004), new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.9, depthWrite: false }));
+  gold.rotation.x = -Math.PI / 2;
+  const edge = new THREE.Mesh(band(0.018, 0.0), RING_EDGE); edge.position.z = -0.0004; edge.renderOrder = -1; gold.add(edge);
+  const holder = new THREE.Group(); holder.add(gold); holder.material = gold.material; // the loop pulses holder.material like a ring's
+  return holder;
 }
 function clearHighlights() {
   dropRings(() => false);

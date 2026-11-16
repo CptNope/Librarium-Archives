@@ -27,6 +27,7 @@ async function startGame(ex) {
   mode = 'play';
   const g = GAMES[ex.game], P = PRES[ex.game];
   play.ex = ex; play.game = g; play.P = P; play.token++;
+  packNow = packFor(g); // the cards are drawn in the pack chosen for this table
   play.phase = 'idle'; play.moves = []; play.selected = null; // nothing from the last table carries over during the glide
   $('#lm-choices').hidden = true;
   g.surface = ex.surface;

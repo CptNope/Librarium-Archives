@@ -218,6 +218,8 @@ Saved games store the engine's plain data fields as JSON. Typed-array boards, Se
 | Medieval chess | `lewischess` | Chess family (modern reconstruction) | Search | shatranj's engine; only checkmate wins |
 | Courier chess | `courier` | Chess family, 12 × 8 | Search | opening leaps made before play |
 | Piquet | `piquet` | Cards: exchange, declarations, tricks | Sampled exchange (Sharp), card-play heuristic | `followUp` to mark discards, `passTurn`, `variants`, a labelled Next deal move |
+| Bézique | `bezique` | Cards: tricks, melds, a strict close | Card-keeping heuristic; Sharp chases bigger melds | `passTurn`, `variants`, a `meld` stage of labelled choices, `face(id)` for two packs |
+| Scopa | `scopa` | Cards: fishing (captures by value or sum) | Sweep-risk estimate; Sharp counts the cards taken | `passTurn`, `variants`, rings for the set a card takes |
 | Xiangqi | `xiangqi` | Chess family | Search | |
 | Rithmomachia | `rithmo` | Number captures (modern reconstruction) | Search | captures made for the mover after each move |
 | Tarocchi | `tarocchi` | Trick-taking | Sampling over hidden cards | `followUp` to lead |

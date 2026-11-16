@@ -331,6 +331,16 @@ const STOPS = [
     ],
     facts: [['Board', 'A cross of four arms'], ['Throws', 'Cowrie shells'], ['Pieces', '4 each, in four colours'], ['Descendants', 'Ludo, Parcheesi']],
     build: buildPachisi },
+  { id: 'courtcards', wing: 4, title: 'Court Cards', date: 'c. 1565 CE', rail: 'Court Cards',
+    eyebrow: 'Rouen, Paris and London', status: ['known', 'Packs survive'],
+    note: 'The figures on the easel are our own drawings after the old patterns, not copies of any pack.',
+    body: [
+      'The kings, queens and knaves of the English pack descend from a Rouen pack of about 1565 by Pierre Marechal, which survives in the museum at Rouen. Its kings wear a crown over a flat cap and long fur-lined cloaks, and its queens Tudor headdresses. Copyists and woodcutters repeated the figures for centuries, and hands, sceptres and symbols drifted or lost their meaning on the way: the king of hearts, nicknamed the suicide king, seems to hold his sword behind his head.',
+      'From the late 1500s French makers named their court cards after heroes of epic, chronicle and legend, and by the 1600s the names were fixed: the kings became David, Charles, Caesar and Alexander. English makers never took the names up.',
+      'Not every pack has a queen. German and Swiss packs have a king, an Ober and an Unter; Italian and Spanish packs a king, a mounted knight and a knave. Double-ended courts, which read the same either way up, came in the mid-1800s, at the cost of cutting each figure off at the waist.'
+    ],
+    facts: [['English courts', 'From Rouen, c. 1565'], ['French names', 'Fixed by the 1600s'], ['Double-ended', 'From the mid-1800s'], ['Other packs', 'Ober and Unter; knight and knave']],
+    build: buildCourtCards },
   { id: 'goose', wing: 4, title: 'The Game of the Goose', short: 'Game of the Goose', date: 'c. 1575 CE', rail: 'The Goose',
     eyebrow: 'Italy and Europe · 16th century', status: ['known', 'Rules survive in print'], game: 'goose',
     body: [
@@ -347,6 +357,16 @@ const STOPS = [
     ],
     facts: [['Inventor', 'Sir John Suckling, 1630s, by tradition'], ['From', 'Noddy, an older card game'], ['Score', 'Pegged on a board, to 121']],
     build: buildCribbage },
+  { id: 'notforplay', wing: 4, title: 'Cards Not for Playing', date: '1685 – 1805 CE', rail: 'Not for Playing',
+    eyebrow: 'Money, letters and tickets', status: ['known', 'Examples survive'],
+    note: 'These are our own reproductions, made to show the kinds of use; the wording follows the stories, not any one surviving card.',
+    body: [
+      'For centuries a playing card was the handiest piece of stiff paper in the house, and most packs had plain backs until the 1800s. Cards took notes, IOUs, addresses and love letters, and spoiled sheets from the card-makers stiffened book covers.',
+      'In 1685 the intendant of New France, Jacques de Meulles, had no coin to pay the soldiers, so he wrote values on playing cards, had them signed and sealed, and issued them as money. Playing-card money was withdrawn in 1717.',
+      'When William of Orange offered Baron Grace of Courtstown, in Kilkenny, high honours to change sides, Grace wrote his refusal on a six of hearts, remembered as Grace\'s Card: "Tell your master I despise his offer." In 1765 the University of Pennsylvania admitted students to classes on cards. Voltaire, finding a friend out, left a dirty card saying he had called four times, and invitations to balls went out on the backs of cards into the 1800s.'
+    ],
+    facts: [['Card money', 'New France, 1685–1717'], ['Grace\'s Card', 'Ireland, c. 1689'], ['Admission cards', 'Philadelphia, 1765'], ['Why cards', 'Stiff, plain-backed, in every house']],
+    build: buildNotForPlay },
   { id: 'dominoes', wing: 4, title: 'Dominoes', date: '18th century CE', rail: 'Dominoes',
     eyebrow: 'China, then Italy and France', status: ['known', 'Still played'], game: 'dominoes',
     body: [
@@ -355,6 +375,16 @@ const STOPS = [
     ],
     facts: [['Set', '28 tiles, double-six'], ['First record', 'Song China, 13th century'], ['Europe', 'Italy, 18th century']],
     build: buildDominoes },
+  { id: 'scopa', wing: 4, title: 'Scopa', date: '18th century CE', rail: 'Scopa',
+    eyebrow: 'Naples and all Italy', status: ['known', 'Still played across Italy'], game: 'scopa',
+    note: 'The cards are our own, drawn in the Italian style. The Pack switch at the table redraws them in French, German or Swiss suits.',
+    body: [
+      'Scopa means broom: the best play sweeps the table clean. It is a fishing game, where cards are won by matching them rather than in tricks, and it was especially popular in Naples in the 1700s, though it was played all over Italy.',
+      'It uses a 40-card Italian pack of coins, cups, swords and batons, the Latin suits that came into Europe with the first cards in the 1370s. They descend from the coins, cups, swords and polo sticks of the Mamluk packs, the polo sticks turned into batons by European makers.',
+      'Scopa travelled with Italian emigrants: in Tunisia it is played as chkobba. Scopone, its four-player form, is played in two partnerships.'
+    ],
+    facts: [['Pack', '40 Italian cards'], ['Players', 'Two, or four as scopone'], ['Game', 'First to 11 points'], ['Scopa', 'A point for each sweep']],
+    build: buildScopa },
   { id: 'tablut', wing: 4, title: 'Tablut', date: '1732 CE', rail: 'Tablut',
     eyebrow: 'Lapland · recorded by Linnaeus', status: ['recon', 'Rules partly read'], game: 'tablut',
     body: [
@@ -380,6 +410,16 @@ const STOPS = [
     ],
     facts: [['Squares', '100'], ['Moves', 'One die'], ['Goal', 'Square 100: liberation']],
     build: buildSnakesBoard },
+  { id: 'bezique', wing: 4, title: 'Bézique', date: '1847 CE', rail: 'Bézique',
+    eyebrow: 'Paris and London · 19th century', status: ['known', 'Still played'], game: 'bezique',
+    note: 'The cards are our own, in the French style. The little box on the display is a bézique marker, which kept the score on two dials.',
+    body: [
+      'Bézique is a French game of tricks and melds for two, descended from piquet. The word bésigue is older, but the first printed rules, for a single 32-card pack, appeared in Paris in 1847, and the game was at its most fashionable there around 1860.',
+      'It reached England in 1861, played with two packs shuffled together, which made room for double bézique and large scores: a game ran to 1,000 points. Winston Churchill was its most famous player, an expert at the six-pack form.',
+      'The melds reached America by another road. The German game binokel, played with German-suited cards, became pinochle, and two-handed pinochle is nearly the same game as two-handed bézique.'
+    ],
+    facts: [['Pack', 'Two piquet packs, 64 cards'], ['Players', 'Two'], ['Bézique', 'Queen of spades and jack of diamonds'], ['Game', '1,000 points']],
+    build: buildBezique },
   { id: 'ludo', wing: 4, title: 'Ludo', date: '1896 CE', rail: 'Ludo',
     eyebrow: 'England, from India', status: ['known', 'Still played'], game: 'ludo',
     body: [
