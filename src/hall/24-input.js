@@ -46,7 +46,7 @@ function kbPlay(code) {
   if (play.kb < 0) play.kb = list.length - 1;
   play.hover = list[play.kb];
   const isRing = play.rings.includes(play.hover), card = play.hover.userData.c;
-  const what = card !== undefined && play.game.cardName ? play.game.cardName(card) : isRing ? 'Move' : 'Piece';
+  const what = card !== undefined && play.game.cardName ? asPack(play.game.cardName(card)) : isRing ? 'Move' : 'Piece';
   srBox.textContent = `${what} ${play.kb + 1} of ${list.length}. Enter to ${isRing || !play.twoStep ? 'play it' : 'pick it'}.`;
   return true;
 }

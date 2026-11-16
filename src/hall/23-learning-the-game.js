@@ -52,7 +52,8 @@ function recordMove(pl, m, text, res) {
   const g = play.game; if (!play.history || !play.history.length) return;
   const caps = res && res.caps && res.caps.length;
   if (caps && text && !text.includes('×')) text += ` (takes ${caps})`;
-  try { play.history.push({ pl, m, text, note: (res && res.note) || '', state: copyState(g) }); } catch (e) { return; }
+  text = asPack(text);
+  try { play.history.push({ pl, m, text, note: asPack((res && res.note) || ''), state: copyState(g) }); } catch (e) { return; }
   if (!$('#lm-moves').hidden) renderMoves();
 }
 function renderMoves(now) {
@@ -237,7 +238,8 @@ $('#lm-coachOff').addEventListener('click', () => {
 function renderRules(g) {
   const r = $('#lm-rules'); r.innerHTML = '';
   const h = document.createElement('h3'); h.textContent = 'How to play ' + g.name; r.appendChild(h);
-  const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); r.appendChild(ul);
+  const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = asPack(t); ul.appendChild(li); }); r.appendChild(ul);
+  if (PACK_TABLES[g.id]) { const pk = document.createElement('p'); pk.className = 'src'; pk.textContent = `Pack: ${PACK_LABEL[packNow]}. The Pack switch redraws the cards in another country's suits and court figures; the game itself does not change.`; r.appendChild(pk); }
   const p = document.createElement('p'); p.className = 'src'; p.textContent = g.source; r.appendChild(p);
   const k = document.createElement('p'); k.className = 'src'; k.textContent = 'Keyboard: the arrow keys step through the pieces you can move, then the places they can go; Enter plays, Escape steps back, and M turns the hints on or off.'; r.appendChild(k);
   if (COACH[g.id] && !play.hotseat) {
@@ -253,7 +255,7 @@ function leaveGame() {
   play.token++; clearHighlights(); clearLastMove(); $('#lm-choices').hidden = true;
   if (play.P && play.P.leave) play.P.leave(play.ex);
   $('#lm-coach').hidden = true; $('#lm-moves').hidden = true; $('#lm-choices').classList.remove('replaybar');
-  mode = 'gallery';
+  mode = 'gallery'; packNow = 'french';
   $('#lm-hud').hidden = true; rail.hidden = false; $('#lm-hint').style.opacity = 1;
   root.classList.remove('playing');
   resetView(false); updateJoy();
@@ -272,7 +274,7 @@ $('#lm-passBtn').addEventListener('click', () => {
 
 const asFriend = t => (play.hotseat && mode === 'play' && t ? String(t).replace(/The Scribe/g, 'Your friend').replace(/the Scribe/g, 'your friend').replace(/\bScribe\b/g, 'Friend') : t);
 function setMsg(who, text) {
-  who = asFriend(who); text = asFriend(text);
+  who = asFriend(who); text = asPack(asFriend(text));
   const m = $('#lm-msg'); m.innerHTML = '';
   const w = document.createElement('span'); w.className = 'who'; w.textContent = who; m.appendChild(w);
   m.appendChild(document.createTextNode(text));
@@ -377,7 +379,7 @@ function renderChoices(moves) {
   const box = $('#lm-choices'); box.innerHTML = '';
   const list = moves.filter(m => m.label && !(play.P.meshesFor(m) || []).some(Boolean));
   box.hidden = !list.length;
-  for (const m of list) { const b = document.createElement('button'); b.className = 'btn' + (/^Mahjong/.test(m.label) ? ' primary' : ''); b.textContent = m.label; b.addEventListener('click', () => choose(m)); box.appendChild(b); }
+  for (const m of list) { const b = document.createElement('button'); b.className = 'btn' + (/^Mahjong/.test(m.label) ? ' primary' : ''); b.textContent = asPack(m.label); b.addEventListener('click', () => choose(m)); box.appendChild(b); }
 }
 // Whose turn the message names: you, or in pass-and-play the friend in the Scribe's seat.
 const turnName = () => (play.cur === 1 ? 'Your friend\'s turn' : 'Your turn');

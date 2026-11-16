@@ -1560,6 +1560,260 @@ function buildTarot(group) {
   baize.visible = false; group.userData.baize = baize;
   return TOP + 0.041;
 }
+/* --- Pack styles. Every card table numbers its cards the same way (suit * 13 + rank, rank 0 the ace), so one
+ * painter can draw any card in any of the four suit systems that spread across Europe: French (spades, hearts,
+ * diamonds, clubs), German (leaves, hearts, bells, acorns), Swiss (shields, roses, bells, acorns) and Latin
+ * (swords, cups, coins, batons). Suit k of one system stands for suit k of every other, as players matched them.
+ * All the faces are our own drawings in the old styles. */
+const PACK_STYLES = ['french', 'german', 'swiss', 'latin'];
+const PACK_LABEL = { french: 'French', german: 'German', swiss: 'Swiss', latin: 'Latin' };
+const PACK_SUITS = { french: ['spade', 'heart', 'diamond', 'club'], german: ['leaf', 'gheart', 'bell', 'acorn'], swiss: ['shield', 'rose', 'bell', 'acorn'], latin: ['sword', 'cup', 'coin', 'baton'] };
+// The court cards' letters: French jack, queen, king; German and Swiss Unter, Ober, king; Italian fante, cavallo, re.
+const PACK_COURT = { french: ['J', 'Q', 'K'], german: ['U', 'O', 'K'], swiss: ['U', 'O', 'K'], latin: ['F', 'C', 'R'] };
+// The words a game's messages use, so a change of pack changes the names too.
+const PACK_WORDS = {
+  french: { suits: ['spades', 'hearts', 'diamonds', 'clubs'], courts: [['jack', 'jacks'], ['queen', 'queens'], ['king', 'kings']] },
+  german: { suits: ['leaves', 'hearts', 'bells', 'acorns'], courts: [['Unter', 'Unters'], ['Ober', 'Obers'], ['king', 'kings']] },
+  swiss: { suits: ['shields', 'roses', 'bells', 'acorns'], courts: [['Under', 'Unders'], ['Ober', 'Obers'], ['king', 'kings']] },
+  latin: { suits: ['swords', 'cups', 'coins', 'batons'], courts: [['knave', 'knaves'], ['knight', 'knights'], ['king', 'kings']] },
+};
+// The tables that offer the switch, and the pack each game is played with by default.
+const PACK_TABLES = { piquet: 'french', whist: 'french', cribbage: 'french', bezique: 'french', scopa: 'latin' };
+let packNow = 'french';
+const packFor = g => (PACK_TABLES[g.id] ? ((store.packs || {})[g.id] || PACK_TABLES[g.id]) : 'french');
+function packText(text, from, to) {
+  if (!text || from === to) return text;
+  const A = PACK_WORDS[from], B = PACK_WORDS[to], map = new Map();
+  A.suits.forEach((w, k) => map.set(w, B.suits[k]));
+  A.courts.forEach((pair, k) => pair.forEach((w, j) => map.set(w.toLowerCase(), B.courts[k][j])));
+  const re = new RegExp('\\b(' + [...map.keys()].join('|') + ')\\b', 'gi');
+  return text.replace(re, w => { const out = map.get(w.toLowerCase()); return /^[A-Z]/.test(w) && /^[a-z]/.test(out) ? out[0].toUpperCase() + out.slice(1) : out; });
+}
+// A message from the game in hand, in the words of the pack on the table.
+const asPack = t => (mode === 'play' && play.game && PACK_TABLES[play.game.id] ? packText(t, PACK_TABLES[play.game.id], packNow) : t);
+
+const PACK_COL = { spade: '#1c1c1c', club: '#1c1c1c', heart: '#b3261e', diamond: '#b3261e', leaf: '#2f6b2a', gheart: '#b3261e', bell: '#c8901e', acorn: '#7a4a1e', shield: '#b3261e', rose: '#b3261e', sword: '#2a4a7a', cup: '#a3301e', coin: '#c48a1e', baton: '#3a6a2a' };
+function packMark(g, kind, x, y, s) {
+  const col = PACK_COL[kind], ink = 'rgba(30,18,8,.85)';
+  g.save(); g.translate(x, y); g.fillStyle = col; g.strokeStyle = ink; g.lineWidth = Math.max(1, s * 0.06); g.lineJoin = 'round';
+  const heart = () => { g.beginPath(); g.moveTo(0, s * 0.42); g.bezierCurveTo(-s * 0.62, -s * 0.02, -s * 0.36, -s * 0.52, 0, -s * 0.2); g.bezierCurveTo(s * 0.36, -s * 0.52, s * 0.62, -s * 0.02, 0, s * 0.42); g.closePath(); };
+  switch (kind) {
+    case 'spade': case 'heart': case 'diamond': case 'club':
+      g.font = `${Math.round(s * 1.1)}px serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText({ spade: '♠', heart: '♥', diamond: '♦', club: '♣' }[kind], 0, s * 0.05); break;
+    case 'leaf': // a linden leaf, stalk down
+      g.beginPath(); g.moveTo(0, s * 0.3); g.bezierCurveTo(-s * 0.62, s * 0.05, -s * 0.4, -s * 0.5, 0, -s * 0.5); g.bezierCurveTo(s * 0.4, -s * 0.5, s * 0.62, s * 0.05, 0, s * 0.3); g.closePath(); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(0, s * 0.3); g.lineTo(0, s * 0.52); g.moveTo(0, s * 0.2); g.lineTo(0, -s * 0.36); g.stroke(); break;
+    case 'gheart': heart(); g.fill(); g.stroke(); break; // the German heart, drawn rather than printed
+    case 'bell': // a sleigh bell: a ball with a slot and a loop
+      g.beginPath(); g.arc(0, s * 0.04, s * 0.38, 0, TAU); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(-s * 0.3, s * 0.06); g.lineTo(s * 0.3, s * 0.06); g.stroke();
+      g.beginPath(); g.arc(0, s * 0.24, s * 0.06, 0, TAU); g.fillStyle = ink; g.fill();
+      g.beginPath(); g.arc(0, -s * 0.4, s * 0.09, 0, TAU); g.stroke(); break;
+    case 'acorn':
+      g.beginPath(); g.ellipse(0, s * 0.1, s * 0.24, s * 0.34, 0, 0, TAU); g.fill(); g.stroke();
+      g.fillStyle = '#4a2a10'; g.beginPath(); g.ellipse(0, -s * 0.16, s * 0.3, s * 0.16, 0, Math.PI, TAU); g.lineTo(s * 0.3, -s * 0.12); g.lineTo(-s * 0.3, -s * 0.12); g.closePath(); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(0, -s * 0.3); g.lineTo(s * 0.06, -s * 0.48); g.stroke(); break;
+    case 'shield': // a heater shield, quartered
+      g.beginPath(); g.moveTo(-s * 0.36, -s * 0.42); g.lineTo(s * 0.36, -s * 0.42); g.lineTo(s * 0.36, 0); g.quadraticCurveTo(s * 0.32, s * 0.36, 0, s * 0.5); g.quadraticCurveTo(-s * 0.32, s * 0.36, -s * 0.36, 0); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = '#e8c45a'; g.fillRect(-s * 0.36, -s * 0.12, s * 0.72, s * 0.14); g.strokeRect(-s * 0.36, -s * 0.12, s * 0.72, s * 0.14); break;
+    case 'rose':
+      for (let k = 0; k < 5; k++) { const a = k / 5 * TAU - Math.PI / 2; g.beginPath(); g.arc(Math.cos(a) * s * 0.22, Math.sin(a) * s * 0.22, s * 0.2, 0, TAU); g.fill(); g.stroke(); }
+      g.fillStyle = '#e8c45a'; g.beginPath(); g.arc(0, 0, s * 0.13, 0, TAU); g.fill(); g.stroke(); break;
+    case 'sword':
+      g.strokeStyle = col; g.lineWidth = s * 0.1; g.beginPath(); g.moveTo(0, -s * 0.52); g.lineTo(0, s * 0.3); g.stroke();
+      g.strokeStyle = '#c8901e'; g.lineWidth = s * 0.08; g.beginPath(); g.moveTo(-s * 0.24, s * 0.26); g.lineTo(s * 0.24, s * 0.26); g.moveTo(0, s * 0.3); g.lineTo(0, s * 0.48); g.stroke(); break;
+    case 'cup':
+      g.beginPath(); g.moveTo(-s * 0.34, -s * 0.4); g.quadraticCurveTo(-s * 0.3, s * 0.06, 0, s * 0.08); g.quadraticCurveTo(s * 0.3, s * 0.06, s * 0.34, -s * 0.4); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = '#c8901e'; g.fillRect(-s * 0.05, s * 0.08, s * 0.1, s * 0.28); g.beginPath(); g.ellipse(0, s * 0.4, s * 0.24, s * 0.07, 0, 0, TAU); g.fill(); g.stroke(); break;
+    case 'coin':
+      g.beginPath(); g.arc(0, 0, s * 0.42, 0, TAU); g.fill(); g.stroke();
+      g.strokeStyle = 'rgba(90,50,10,.8)'; g.beginPath(); g.arc(0, 0, s * 0.26, 0, TAU); g.stroke();
+      for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; g.beginPath(); g.moveTo(Math.cos(a) * s * 0.1, Math.sin(a) * s * 0.1); g.lineTo(Math.cos(a) * s * 0.24, Math.sin(a) * s * 0.24); g.stroke(); } break;
+    case 'baton':
+      g.rotate(-0.5); g.beginPath(); g.moveTo(-s * 0.08, s * 0.5); g.lineTo(s * 0.08, s * 0.5); g.lineTo(s * 0.13, -s * 0.5); g.lineTo(-s * 0.13, -s * 0.5); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = '#c8901e'; for (const t of [-0.25, 0.05, 0.32]) { g.beginPath(); g.ellipse(0, s * t, s * 0.12, s * 0.04, 0, 0, TAU); g.fill(); } break;
+  }
+  g.restore();
+}
+// A court figure, shoulders up: the crown, hat or cap tells king, queen or Ober, and jack, Unter or fante apart.
+function packCourt(g, w, h, kind, k, style) {
+  const col = PACK_COL[kind], cx = w / 2, cy = h * 0.54;
+  g.save();
+  g.fillStyle = col; g.strokeStyle = 'rgba(30,18,8,.85)'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(cx - 40, cy + 62); g.quadraticCurveTo(cx - 38, cy + 6, cx, cy + 4); g.quadraticCurveTo(cx + 38, cy + 6, cx + 40, cy + 62); g.closePath(); g.fill(); g.stroke(); // robe
+  g.fillStyle = '#e8c45a'; g.fillRect(cx - 4, cy + 8, 8, 52); // its border
+  g.fillStyle = '#ecd2ae'; g.beginPath(); g.arc(cx, cy - 16, 18, 0, TAU); g.fill(); g.stroke(); // face
+  g.fillStyle = '#1c1c1c'; g.beginPath(); g.arc(cx - 6, cy - 18, 1.8, 0, TAU); g.arc(cx + 6, cy - 18, 1.8, 0, TAU); g.fill();
+  if (k === 2 || (k === 1 && style === 'latin')) { g.fillStyle = '#5a3a1a'; g.beginPath(); g.moveTo(cx - 12, cy - 4); g.quadraticCurveTo(cx, cy + 14, cx + 12, cy - 4); g.fill(); } // a beard for kings and the cavallo
+  if (k === 2) { // a crown
+    g.fillStyle = '#e8b83a'; g.beginPath(); g.moveTo(cx - 19, cy - 30); for (let i = 0; i <= 4; i++) { g.lineTo(cx - 19 + i * 9.5, cy - (i % 2 ? 40 : 52)); } g.lineTo(cx + 19, cy - 30); g.closePath(); g.fill(); g.stroke();
+  } else if (k === 1 && style === 'french') { // a queen's veil and circlet
+    g.fillStyle = 'rgba(240,232,214,.95)'; g.beginPath(); g.moveTo(cx - 22, cy - 22); g.quadraticCurveTo(cx, cy - 50, cx + 22, cy - 22); g.lineTo(cx + 26, cy + 8); g.lineTo(cx + 18, cy - 14); g.quadraticCurveTo(cx, cy - 38, cx - 18, cy - 14); g.lineTo(cx - 26, cy + 8); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#e8b83a'; g.fillRect(cx - 14, cy - 36, 28, 5);
+  } else if (k === 1) { // the Ober or the cavallo: a broad hat with a feather
+    g.fillStyle = col; g.beginPath(); g.ellipse(cx, cy - 32, 28, 7, 0, 0, TAU); g.fill(); g.stroke(); g.fillRect(cx - 14, cy - 46, 28, 14);
+    g.strokeStyle = '#e8e0c8'; g.lineWidth = 4; g.beginPath(); g.moveTo(cx + 10, cy - 44); g.quadraticCurveTo(cx + 30, cy - 66, cx + 40, cy - 46); g.stroke();
+  } else { // the jack, Unter or fante: a soft cap
+    g.fillStyle = col; g.beginPath(); g.moveTo(cx - 20, cy - 26); g.quadraticCurveTo(cx - 6, cy - 54, cx + 24, cy - 36); g.lineTo(cx + 18, cy - 26); g.closePath(); g.fill(); g.stroke();
+  }
+  g.restore();
+  packMark(g, kind, cx + 30, cy + 24, 26); // the suit sign held at the shoulder
+}
+const crFaceCache = new Map();
+function crFace(c, style = packNow) {
+  const key = style + c;
+  if (crFaceCache.has(key)) return crFaceCache.get(key);
+  const rk = c % 13, su = (c / 13) | 0, kind = PACK_SUITS[style][su], court = rk >= 10 ? rk - 10 : -1;
+  const french = style === 'french', col = french ? (su === 1 || su === 2 ? '#b3261e' : '#1c1c1c') : '#2a1a0c';
+  const label = court >= 0 ? PACK_COURT[style][court] : rk === 0 ? 'A' : String(rk + 1);
+  const map = cardTex((g, w, h) => {
+    g.fillStyle = french ? '#f7f2e6' : '#f2e8cf'; g.fillRect(0, 0, w, h);
+    if (!french) speckle(g, w, h, 160, ['#d9c89e'], 1);
+    g.strokeStyle = '#3a2a1a'; g.lineWidth = 4; g.strokeRect(5, 5, w - 10, h - 10);
+    const corner = () => { g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '700 30px "Montserrat",sans-serif'; g.fillText(label, 24, 26); packMark(g, kind, 24, 56, 24); };
+    corner(); g.save(); g.translate(w, h); g.rotate(Math.PI); corner(); g.restore();
+    if (court >= 0) packCourt(g, w, h, kind, court, style);
+    else if (rk === 0) packMark(g, kind, w / 2, h / 2, french ? 84 : 70);
+    else if (french) packMark(g, kind, w / 2, h / 2, 58);
+    else { // the old pip cards: the suit sign repeated, in two columns
+      const n = rk + 1, cols = n > 3 ? 2 : 1, rows = Math.ceil(n / cols), s = n > 8 ? 26 : n > 5 ? 30 : 36;
+      for (let i = 0; i < n; i++) {
+        const lastOdd = cols === 2 && n % 2 && i === n - 1, x = cols === 1 || lastOdd ? w / 2 : w / 2 + (i % 2 ? 24 : -24);
+        const r = cols === 1 ? i : Math.floor(i / 2), y = 48 + (h - 96) * (rows === 1 ? 0.5 : r / (rows - 1));
+        packMark(g, kind, x, y, s);
+      }
+    }
+  }, 140, 210);
+  crFaceCache.set(key, map); return map;
+}
+// Redraw every card on a table in another pack, in place.
+function reskinCards(group, style) {
+  group.traverse(o => { if (o.userData.face !== undefined && o.userData.mats && o.userData.mats[0]) { o.userData.mats[0].map = crFace(o.userData.face, style); o.userData.mats[0].needsUpdate = true; } });
+}
+/* --- Wing IV: the card room. Two tables (Scopa and Bézique) and two displays (court cards, and cards put to
+ * other uses). Every face is our own drawing in an old style, not a copy of a real pack. */
+function cardTable(group, cloth, W = 1.2, D = 0.86) {
+  const table = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, D), new THREE.MeshStandardMaterial({ color: 0x4a2a16, roughness: 0.5 }));
+  table.position.y = TOP + 0.015; group.add(table);
+  topPlane(group, W - 0.06, D - 0.06, TOP + 0.0305, tex(512, 384, (g, w, h) => {
+    g.fillStyle = cloth[0]; g.fillRect(0, 0, w, h); speckle(g, w, h, 4500, cloth.slice(1), 1.2);
+    g.strokeStyle = 'rgba(220,200,140,.35)'; g.lineWidth = 3; g.strokeRect(14, 14, w - 28, h - 28);
+  }), { roughness: 0.95 });
+  return TOP + 0.031;
+}
+function buildScopa(group) {
+  const y = cardTable(group, ['#24426a', '#1d3858', '#2c4c78', '#1a3352']), shown = [];
+  const put = (c, x, z, ry, down) => { const m = crCard(c, c, 'latin'); m.position.set(x, y + 0.001 + shown.length * 0.0002, z); m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  // Four open cards, with the settebello among them; three cards to each hand; the stock; a scopa across a pile.
+  [2 * 13 + 6, 0 * 13 + 3, 1 * 13 + 11, 3 * 13 + 1].forEach((c, i) => put(c, (i - 1.5) * 0.08, 0, (i - 1.5) * 0.04));
+  for (let i = 0; i < 3; i++) { put(1 * 13 + i, (i - 1) * 0.075, 0.29, 0); put(0, (i - 1) * 0.05, -0.29, Math.PI, true); }
+  for (let k = 0; k < 8; k++) put(3 * 13 + 2, -0.5, 0, Math.PI / 2, true);
+  for (let k = 0; k < 5; k++) put(0 * 13 + 2, 0.46, 0.16, Math.PI / 2, true);
+  put(1 * 13 + 4, 0.49, 0.18, Math.PI / 2 + 0.1);
+  group.userData.display = shown;
+  return y;
+}
+// A bézique marker: a little box with two dials, the way scores were kept.
+function bzMarker(group, x, z, y) {
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.025, 0.09), MAT.woodDark); box.position.set(x, y + 0.0125, z); group.add(box);
+  const face = topPlane(group, 0.15, 0.08, y + 0.0255, tex(300, 160, (g, w, h) => {
+    g.fillStyle = '#efe3c5'; g.fillRect(0, 0, w, h); g.strokeStyle = '#3a2a1a'; g.lineWidth = 3;
+    for (const cx of [w * 0.27, w * 0.73]) {
+      g.beginPath(); g.arc(cx, h / 2, 58, 0, TAU); g.stroke();
+      g.fillStyle = '#3a2a1a'; g.font = '16px "Amethysta",Georgia,serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      for (let k = 0; k < 10; k++) { const a = k / 10 * TAU - Math.PI / 2; g.fillText(String(k), cx + Math.cos(a) * 44, h / 2 + Math.sin(a) * 44); }
+      g.strokeStyle = '#8a1e14'; g.beginPath(); g.moveTo(cx, h / 2); g.lineTo(cx + Math.cos(k0(cx)) * 34, h / 2 + Math.sin(k0(cx)) * 34); g.stroke(); g.strokeStyle = '#3a2a1a';
+    }
+    function k0(cx) { return cx < w / 2 ? -1.1 : 0.7; }
+  }), { roughness: 0.6 });
+  return [box, face];
+}
+const BEZIQUE_FACE = b => window.LibrariumRules.bezique.face(b);
+function buildBezique(group) {
+  const y = cardTable(group, ['#6a1e1a', '#5a1814', '#7a2620', '#4e1410']), shown = [];
+  const put = (b, x, z, ry, down) => { const m = crCard(BEZIQUE_FACE(b), b, 'french'); m.position.set(x, y + 0.001 + shown.length * 0.0002, z); m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  // On display: bézique (queen of spades, jack of diamonds) and a royal marriage laid down, the stock with hearts turned up.
+  [0 * 8 + 4, 2 * 8 + 3].forEach((b, i) => put(b, -0.1 + i * 0.062, 0.14, 0));
+  [1 * 8 + 5, 1 * 8 + 4].forEach((b, i) => put(b, 0.1 + i * 0.062, 0.14, 0));
+  for (let i = 0; i < 6; i++) put(3 * 8 + i, (i - 2.5) * 0.065, 0.3, 0);
+  for (let i = 0; i < 8; i++) put(0, (i - 3.5) * 0.045, -0.3, Math.PI, true);
+  for (let k = 0; k < 10; k++) put(0, -0.52, -0.02, Math.PI / 2, true);
+  put(1 * 8 + 6, -0.47, 0.02, Math.PI / 2);
+  shown.push(...bzMarker(group, 0.4, -0.15, y));
+  group.userData.display = shown;
+  return y;
+}
+// The court card easel: one figure from each tradition, and how they changed.
+function buildCourtCards(group) {
+  const stand = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.04, 0.62), new THREE.MeshLambertMaterial({ color: 0x2a1a10 }));
+  stand.position.y = TOP + 0.02; group.add(stand);
+  const easel = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.26, 0.02), MAT.woodDark); easel.position.set(0, TOP + 0.15, -0.1); easel.rotation.x = -0.25; group.add(easel);
+  const big = (draw, under) => cardTex((g, w, h) => {
+    g.fillStyle = '#f4ecd8'; g.fillRect(0, 0, w, h); speckle(g, w, h, 300, ['#dccca4'], 1.2);
+    g.strokeStyle = '#3a2a1a'; g.lineWidth = 6; g.strokeRect(8, 8, w - 16, h - 16);
+    draw(g, w, h);
+    if (under) { g.fillStyle = '#2a1a0c'; g.font = '600 22px "Almendra SC",Georgia,serif'; g.textAlign = 'center'; g.fillText(under, w / 2, h - 24); }
+  }, 200, 320);
+  const figure = (g, w, h, kind, k, style, dy = 0) => { g.save(); g.translate(w / 2, h / 2 + dy); g.scale(1.45, 1.45); g.translate(-70, -105); packCourt(g, 140, 210, kind, k, style); g.restore(); };
+  const cards = [
+    big((g, w, h) => { figure(g, w, h, 'spade', 2, 'french', 6); g.fillStyle = '#1c1c1c'; g.font = '600 24px "Almendra SC",Georgia,serif'; g.textAlign = 'center'; g.fillText('DAVID', w / 2, 40); }, 'Rouen, c. 1565'),
+    big((g, w, h) => { // the king of hearts with his sword behind his head
+      g.save(); g.strokeStyle = '#8a8a90'; g.lineWidth = 7; g.beginPath(); g.moveTo(w * 0.22, h * 0.68); g.lineTo(w * 0.72, h * 0.16); g.stroke();
+      g.strokeStyle = '#c8901e'; g.lineWidth = 6; g.beginPath(); g.moveTo(w * 0.18, h * 0.6); g.lineTo(w * 0.3, h * 0.74); g.stroke(); g.restore();
+      figure(g, w, h, 'heart', 2, 'french', 10);
+    }, 'English, 18th c.'),
+    big((g, w, h) => figure(g, w, h, 'acorn', 1, 'german', 4), 'German Ober'),
+    big((g, w, h) => figure(g, w, h, 'coin', 2, 'latin', 4), 'Italian re'),
+    big((g, w, h) => { // a double-ended queen: the figure cut at the waist and mirrored
+      g.save(); g.beginPath(); g.rect(0, 0, w, h / 2); g.clip(); figure(g, w, h, 'diamond', 1, 'french', -46); g.restore();
+      g.save(); g.translate(w, h); g.rotate(Math.PI); g.beginPath(); g.rect(0, 0, w, h / 2); g.clip(); figure(g, w, h, 'diamond', 1, 'french', -46); g.restore();
+      g.strokeStyle = 'rgba(58,42,26,.5)'; g.lineWidth = 2; g.beginPath(); g.moveTo(30, h / 2); g.lineTo(w - 30, h / 2); g.stroke();
+    }, ''),
+  ];
+  cards.forEach((map, k) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.208, 0.003), [MAT.woodDark, MAT.woodDark, MAT.woodDark, MAT.woodDark, new THREE.MeshStandardMaterial({ map, roughness: 0.55 }), MAT.woodDark]);
+    m.position.set(-0.46 + k * 0.23, TOP + 0.17, -0.08); m.rotation.x = -0.25; m.rotation.z = rand(-0.03, 0.03); group.add(m);
+  });
+  // A small fan of ordinary courts in front, in all four packs.
+  ['french', 'german', 'swiss', 'latin'].forEach((st, k) => { const m = crCard(12 + k * 13 - 1, 0, st); m.position.set(-0.27 + k * 0.18, TOP + 0.042, 0.17); m.rotation.y = (k - 1.5) * 0.08; group.add(m); });
+  glassCase(group, 1.3, 0.42, 0.72);
+  return TOP + 0.041;
+}
+// Cards that were never played with: money, a reply, an admission ticket, a note, an invitation.
+function buildNotForPlay(group) {
+  const velvet = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.04, 0.78), new THREE.MeshLambertMaterial({ color: 0x1e2a3a }));
+  velvet.position.y = TOP + 0.02; group.add(velvet);
+  const y0 = TOP + 0.042;
+  const back = new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.8 });
+  const lay = (map, x, z, rot, s = 1) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.11 * s, 0.002, 0.17 * s), [back, back, new THREE.MeshStandardMaterial({ map, roughness: 0.75 }), back, back, back]); m.position.set(x, y0 + Math.random() * 0.002, z); m.rotation.y = rot; group.add(m); return m; };
+  const paper = (g, w, h, tint = '#efe3c5', dirt = 0) => { g.fillStyle = tint; g.fillRect(0, 0, w, h); speckle(g, w, h, 500 + dirt * 1500, ['#cdb98c', '#bba67a'], 1.4); if (dirt) { g.fillStyle = 'rgba(90,70,40,.18)'; g.beginPath(); g.ellipse(w * 0.7, h * 0.3, 60, 40, 0.5, 0, TAU); g.fill(); } };
+  const hand = (g, lines, x, y, size = 20, rot = 0) => { g.save(); g.translate(x, y); g.rotate(rot); g.fillStyle = '#2a1e14'; g.font = `italic ${size}px Georgia,serif`; g.textAlign = 'center'; lines.forEach((t, i) => g.fillText(t, 0, i * size * 1.3)); g.restore(); };
+  // Card money, New France: the blank back of a playing card, a value, a stamp and three signatures.
+  lay(cardTex((g, w, h) => {
+    paper(g, w, h);
+    hand(g, ['Quatre', 'Livres'], w / 2, 90, 28);
+    g.strokeStyle = '#3a2a1a'; g.lineWidth = 3; g.beginPath(); g.arc(w / 2, 190, 26, 0, TAU); g.stroke();
+    g.fillStyle = '#3a2a1a'; g.font = '34px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('⚜', w / 2, 192);
+    hand(g, ['de Meulles'], w / 2, 260, 18, -0.08); hand(g, ['~ ~ ~'], w * 0.3, 290, 16); hand(g, ['~ ~'], w * 0.72, 292, 16);
+    g.fillStyle = '#1e2a3a'; g.beginPath(); g.moveTo(0, 0); g.lineTo(26, 0); g.lineTo(0, 26); g.fill(); g.beginPath(); g.moveTo(w, h); g.lineTo(w - 26, h); g.lineTo(w, h - 26); g.fill(); // clipped corners
+  }), -0.44, -0.1, 0.12, 1.05);
+  // Grace's card: a six of hearts carrying the reply to an ultimatum.
+  lay(cardTex((g, w, h) => {
+    paper(g, w, h, '#f4ecd8', 1);
+    g.fillStyle = '#b3261e'; g.font = '44px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (let i = 0; i < 6; i++) g.fillText('♥', w / 2 + (i % 2 ? 40 : -40), 70 + Math.floor(i / 2) * 90);
+    hand(g, ['Tell your master', 'I despise', 'his offer'], w / 2, 130, 19, -0.12);
+  }), -0.2, 0.14, -0.1);
+  // A ticket to lectures in Philadelphia, written on the back of a card.
+  lay(cardTex((g, w, h) => { paper(g, w, h); hand(g, ['Admit', 'Mr. ——', 'to the', 'Lectures', '1765'], w / 2, 70, 21); }), 0.04, -0.12, 0.06);
+  // Voltaire's calling note on a soiled card.
+  lay(cardTex((g, w, h) => { paper(g, w, h, '#e9dcbc', 2); hand(g, ['M. de Voltaire', 'est venu', 'quatre fois'], w / 2, 120, 21, -0.05); }), 0.27, 0.13, -0.16);
+  // An invitation to a ball, on the plain back of another.
+  lay(cardTex((g, w, h) => { paper(g, w, h, '#f2e8d2'); g.strokeStyle = '#8a6a2a'; g.lineWidth = 3; g.strokeRect(20, 20, w - 40, h - 40); hand(g, ['The favour of', 'your Company', 'is desired', 'at a Ball'], w / 2, 100, 20); }), 0.47, -0.1, 0.18);
+  glassCase(group, 1.3, 0.3, 0.85);
+  return y0;
+}
 /* --- Tarocchi cards for the table: original faces in an old Italian manner */
 const TC_W = 0.07, TC_H = 0.11;
 const tcGeo = new THREE.BoxGeometry(TC_W, 0.0016, TC_H);
@@ -2587,22 +2841,9 @@ const crBackMat = new THREE.MeshStandardMaterial({ roughness: 0.6, map: cardTex(
   g.lineWidth = 2; g.strokeStyle = 'rgba(232,220,192,.5)';
   for (let k = -h; k < w + h; k += 18) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k + h, h); g.stroke(); g.beginPath(); g.moveTo(k + h, 0); g.lineTo(k, h); g.stroke(); }
 }, 140, 210) });
-const crFaceCache = new Map();
-function crFace(c) {
-  if (crFaceCache.has(c)) return crFaceCache.get(c);
-  const R = window.LibrariumRules.cribbage, rk = R.rank(c), su = R.suit(c), red = su === 1 || su === 2, col = red ? '#b3261e' : '#1c1c1c';
-  const label = 'A 2 3 4 5 6 7 8 9 10 J Q K'.split(' ')[rk], sym = ['♠', '♥', '♦', '♣'][su];
-  const map = cardTex((g, w, h) => {
-    g.fillStyle = '#f7f2e6'; g.fillRect(0, 0, w, h); g.strokeStyle = '#3a2a1a'; g.lineWidth = 4; g.strokeRect(5, 5, w - 10, h - 10);
-    g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = '700 34px "Montserrat",sans-serif'; g.fillText(label, 26, 30); g.font = '30px serif'; g.fillText(sym, 26, 62);
-    g.save(); g.translate(w, h); g.rotate(Math.PI); g.font = '700 34px "Montserrat",sans-serif'; g.fillText(label, 26, 30); g.font = '30px serif'; g.fillText(sym, 26, 62); g.restore();
-    if (rk >= 10) { g.font = '600 64px "Amethysta",Georgia,serif'; g.fillText(label, w / 2, h / 2 - 8); g.font = '40px serif'; g.fillText(sym, w / 2, h / 2 + 46); }
-    else { g.font = (rk === 0 ? '96px' : '64px') + ' serif'; g.fillText(sym, w / 2, h / 2 + 4); }
-  }, 140, 210);
-  crFaceCache.set(c, map); return map;
-}
-function crCard(c) { const face = new THREE.MeshStandardMaterial({ map: crFace(c), roughness: 0.55 }); const m = new THREE.Mesh(crGeo, [tcEdgeMat, tcEdgeMat, face, crBackMat, tcEdgeMat, tcEdgeMat]); m.userData.mats = [face]; m.userData.c = c; return m; }
+// A card: c is its face (suit * 13 + rank, see card-packs.js), id what the game calls it if that differs (Bézique's
+// two packs), and style the pack it is drawn in, the table's own unless said.
+function crCard(c, id = c, style = packNow) { const face = new THREE.MeshStandardMaterial({ map: crFace(c, style), roughness: 0.55 }); const m = new THREE.Mesh(crGeo, [tcEdgeMat, tcEdgeMat, face, crBackMat, tcEdgeMat, tcEdgeMat]); m.userData.mats = [face]; m.userData.c = id; m.userData.face = c; return m; }
 // Pegging holes: each player has a lane of sixty, thirty up the board and thirty back.
 const CRB_X0 = -0.5, CRB_Z0 = 0.3, CRB_DZ = 0.0205;
 function crHole(pl, s) {
@@ -3556,6 +3797,16 @@ const STOPS = [
     ],
     facts: [['Board', 'A cross of four arms'], ['Throws', 'Cowrie shells'], ['Pieces', '4 each, in four colours'], ['Descendants', 'Ludo, Parcheesi']],
     build: buildPachisi },
+  { id: 'courtcards', wing: 4, title: 'Court Cards', date: 'c. 1565 CE', rail: 'Court Cards',
+    eyebrow: 'Rouen, Paris and London', status: ['known', 'Packs survive'],
+    note: 'The figures on the easel are our own drawings after the old patterns, not copies of any pack.',
+    body: [
+      'The kings, queens and knaves of the English pack descend from a Rouen pack of about 1565 by Pierre Marechal, which survives in the museum at Rouen. Its kings wear a crown over a flat cap and long fur-lined cloaks, and its queens Tudor headdresses. Copyists and woodcutters repeated the figures for centuries, and hands, sceptres and symbols drifted or lost their meaning on the way: the king of hearts, nicknamed the suicide king, seems to hold his sword behind his head.',
+      'From the late 1500s French makers named their court cards after heroes of epic, chronicle and legend, and by the 1600s the names were fixed: the kings became David, Charles, Caesar and Alexander. English makers never took the names up.',
+      'Not every pack has a queen. German and Swiss packs have a king, an Ober and an Unter; Italian and Spanish packs a king, a mounted knight and a knave. Double-ended courts, which read the same either way up, came in the mid-1800s, at the cost of cutting each figure off at the waist.'
+    ],
+    facts: [['English courts', 'From Rouen, c. 1565'], ['French names', 'Fixed by the 1600s'], ['Double-ended', 'From the mid-1800s'], ['Other packs', 'Ober and Unter; knight and knave']],
+    build: buildCourtCards },
   { id: 'goose', wing: 4, title: 'The Game of the Goose', short: 'Game of the Goose', date: 'c. 1575 CE', rail: 'The Goose',
     eyebrow: 'Italy and Europe · 16th century', status: ['known', 'Rules survive in print'], game: 'goose',
     body: [
@@ -3572,6 +3823,16 @@ const STOPS = [
     ],
     facts: [['Inventor', 'Sir John Suckling, 1630s, by tradition'], ['From', 'Noddy, an older card game'], ['Score', 'Pegged on a board, to 121']],
     build: buildCribbage },
+  { id: 'notforplay', wing: 4, title: 'Cards Not for Playing', date: '1685 – 1805 CE', rail: 'Not for Playing',
+    eyebrow: 'New France, Ireland, Philadelphia, Paris', status: ['known', 'Examples survive'],
+    note: 'These are our own reproductions, made to show the kinds of use; the wording follows the stories, not any one surviving card.',
+    body: [
+      'For centuries a playing card was the handiest piece of stiff paper in the house, and most packs had plain backs until the 1800s. Cards took notes, IOUs, addresses and love letters, and spoiled sheets from the card-makers stiffened book covers.',
+      'In 1685 the intendant of New France, Jacques de Meulles, had no coin to pay the soldiers, so he wrote values on playing cards, had them signed and sealed, and issued them as money. Playing-card money was withdrawn in 1717.',
+      'When William of Orange offered Baron Grace of Courtstown, in Kilkenny, high honours to change sides, Grace wrote his refusal on a six of hearts, remembered as Grace\'s Card: "Tell your master I despise his offer." In 1765 the University of Pennsylvania admitted students to classes on cards. Voltaire, finding a friend out, left a dirty card saying he had called four times, and invitations to balls went out on the backs of cards into the 1800s.'
+    ],
+    facts: [['Card money', 'New France, 1685–1717'], ['Grace\'s Card', 'Ireland, c. 1689'], ['Admission cards', 'Philadelphia, 1765'], ['Why cards', 'Stiff, plain-backed, in every house']],
+    build: buildNotForPlay },
   { id: 'dominoes', wing: 4, title: 'Dominoes', date: '18th century CE', rail: 'Dominoes',
     eyebrow: 'China, then Italy and France', status: ['known', 'Still played'], game: 'dominoes',
     body: [
@@ -3580,6 +3841,16 @@ const STOPS = [
     ],
     facts: [['Set', '28 tiles, double-six'], ['First record', 'Song China, 13th century'], ['Europe', 'Italy, 18th century']],
     build: buildDominoes },
+  { id: 'scopa', wing: 4, title: 'Scopa', date: '18th century CE', rail: 'Scopa',
+    eyebrow: 'Naples and all Italy', status: ['known', 'Still played across Italy'], game: 'scopa',
+    note: 'The cards are our own, drawn in the Italian style. The Pack switch at the table redraws them in French, German or Swiss suits.',
+    body: [
+      'Scopa means broom: the best play sweeps the table clean. It is a fishing game, where cards are won by matching them rather than in tricks, and it was especially popular in Naples in the 1700s, though it was played all over Italy.',
+      'It uses a 40-card Italian pack of coins, cups, swords and batons, the Latin suits that came into Europe with the first cards in the 1370s. They descend from the coins, cups, swords and polo sticks of the Mamluk packs, the polo sticks turned into batons by European makers.',
+      'Scopa travelled with Italian emigrants: in Tunisia it is played as chkobba. Scopone, its four-player form, is played in two partnerships.'
+    ],
+    facts: [['Pack', '40 Italian cards'], ['Players', 'Two, or four as scopone'], ['Game', 'First to 11 points'], ['Scopa', 'A point for each sweep']],
+    build: buildScopa },
   { id: 'tablut', wing: 4, title: 'Tablut', date: '1732 CE', rail: 'Tablut',
     eyebrow: 'Lapland · recorded by Linnaeus', status: ['recon', 'Rules partly read'], game: 'tablut',
     body: [
@@ -3605,6 +3876,16 @@ const STOPS = [
     ],
     facts: [['Squares', '100'], ['Moves', 'One die'], ['Goal', 'Square 100: liberation']],
     build: buildSnakesBoard },
+  { id: 'bezique', wing: 4, title: 'Bézique', date: '1847 CE', rail: 'Bézique',
+    eyebrow: 'Paris and London · 19th century', status: ['known', 'Still played'], game: 'bezique',
+    note: 'The cards are our own, in the French style. The little box on the display is a bézique marker, which kept the score on two dials.',
+    body: [
+      'Bézique is a French game of tricks and melds for two, descended from piquet. The word bésigue is older, but the first printed rules, for a single 32-card pack, appeared in Paris in 1847, and the game was at its most fashionable there around 1860.',
+      'It reached England in 1861, played with two packs shuffled together, which made room for double bézique and large scores: a game ran to 1,000 points. Winston Churchill was its most famous player, an expert at the six-pack form.',
+      'The melds reached America by another road. The German game binokel, played with German-suited cards, became pinochle, and two-handed pinochle is nearly the same game as two-handed bézique.'
+    ],
+    facts: [['Pack', 'Two piquet packs, 64 cards'], ['Players', 'Two'], ['Bézique', 'Queen of spades and jack of diamonds'], ['Game', '1,000 points']],
+    build: buildBezique },
   { id: 'ludo', wing: 4, title: 'Ludo', date: '1896 CE', rail: 'Ludo',
     eyebrow: 'England, from India', status: ['known', 'Still played'], game: 'ludo',
     body: [
@@ -3911,7 +4192,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet, nard: R.nard, xii: R.xii, koikoi: R.koikoi, idraughts: R.idraughts, hnefatafl: R.hnefatafl };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet, bezique: R.bezique, scopa: R.scopa, nard: R.nard, xii: R.xii, koikoi: R.koikoi, idraughts: R.idraughts, hnefatafl: R.hnefatafl };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -6581,7 +6862,175 @@ const DOTS_P = {
   },
   score: () => { const G = GAMES.dotsboxes; return [['You', G.score[0]], ['Scribe', G.score[1]], `boxes of ${G.N * G.N}`]; },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P, nard: NARD_P, xii: XII_P, koikoi: KOIKOI_P, idraughts: IDRAUGHTS_P, hnefatafl: HNEFATAFL_P };
+// Scopa is played at its own table, with a 40-card Italian pack: three cards in each hand, the open cards
+// between, the stock at the side, and each player's takings in a pile on their right, any scope turned across it.
+const SCOPA_P = {
+  camW: 1.15,
+  intro() { const G = GAMES.scopa; return (G.toMove === 0 ? 'The Scribe deals. You play first. ' : 'You deal. ') + this.prompt(); },
+  prompt() { return GAMES.scopa.prompt0(); },
+  setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.scopa.surface + 0.001,
+  card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } m.visible = true; return m; },
+  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.05 : 0.075), this.y() + i * 0.0004, pl ? -0.29 : 0.29); },
+  tableSpot(i, n) { // up to six in a row, then a second row
+    const row = n > 6 ? (i < Math.ceil(n / 2) ? 0 : 1) : 0, per = n > 6 ? Math.ceil(n / 2) : n, k = row ? i - per : i, cnt = row ? n - per : per;
+    return V3((k - (cnt - 1) / 2) * 0.075, this.y(), n > 6 ? (row ? 0.06 : -0.06) : 0);
+  },
+  stockSpot: k => V3(-0.5, GAMES.scopa.surface + 0.001 + k * 0.0016, 0),
+  pileSpot(pl, k) { return V3(0.46, this.y() + k * 0.0016, pl ? -0.16 : 0.16); },
+  faceDown(m) { m.rotation.set(0, Math.PI / 2, Math.PI); },
+  redeal() {
+    const G = GAMES.scopa;
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map(); this.piled = [0, 0];
+    G.stock.forEach((c, k) => { const m = this.card(c); this.faceDown(m); m.position.copy(this.stockSpot(k)); });
+    for (const pl of [0, 1]) G.piles[pl].forEach(c => this.toPile(pl, c, true));
+    this.layTable(true); this.layHand(0, true); this.layHand(1, true);
+  },
+  toPile(pl, c, instant) {
+    const G = GAMES.scopa, m = this.card(c), to = this.pileSpot(pl, this.piled[pl]++);
+    const sweep = G.sweeps.includes(c) && G.piles[pl].includes(c);
+    if (sweep) { to.x += 0.03; to.y += 0.02; } // a scopa is kept face up, across the pile
+    const rot = sweep ? [0, Math.PI / 2 + 0.1, 0] : [0, Math.PI / 2, Math.PI];
+    if (instant) { m.position.copy(to); m.rotation.set(...rot); return null; }
+    return hop(m, to, 0.3, 0.03).then(() => m.rotation.set(...rot));
+  },
+  layTable(instant) {
+    const G = GAMES.scopa, n = G.table.length;
+    return Promise.all(G.table.map((c, i) => { const m = this.card(c), to = this.tableSpot(i, n); m.rotation.set(0, 0, 0); if (instant) { m.position.copy(to); return null; } return hop(m, to, 0.25, 0.01); }));
+  },
+  layHand(pl, instant) {
+    const G = GAMES.scopa, h = G.hands[pl];
+    return Promise.all(h.map((c, i) => { const m = this.card(c), to = this.handSpot(pl, i, h.length); m.rotation.set(0, pl ? Math.PI : 0, pl ? Math.PI : 0); if (instant) { m.position.copy(to); return null; } return hop(m, to, 0.25, 0.01); }));
+  },
+  meshesFor(m) { return m.kind === 'play' && m.pl === 0 ? [this.mesh.get(m.c)] : []; },
+  // When one card can take in more than one way, a ring sits over the middle of each set it could take.
+  ringFor(m) {
+    if (m.kind !== 'play') return null;
+    if (!m.take.length) { const n = GAMES.scopa.table.length, at = this.tableSpot(n, n + 1); at.y += 0.004; return at; } // laid on the table
+    const at = V3(0, 0, 0); m.take.forEach(c => at.add(this.card(c).position)); at.divideScalar(m.take.length);
+    at.y = this.y() + 0.004; return at;
+  },
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.scopa, tok = play.token;
+    const res = G.apply(m);
+    for (const e of res.events || []) {
+      if (tok !== play.token) return res;
+      if (e.type === 'deal') { this.redeal(); continue; }
+      if (e.type === 'take' || e.type === 'lay') {
+        const mc = this.card(e.c); sfx.card();
+        if (e.pl === 1) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        if (e.type === 'lay') { await this.layTable(); await this.layHand(e.pl); continue; }
+        const over = this.card(e.take[0]).position.clone(); over.y += 0.004;
+        await hop(mc, over, 0.3, 0.04); mc.rotation.set(0, 0, 0);
+        await wait(e.sweep ? 700 : 350); if (tok !== play.token) return res;
+        await Promise.all([e.c, ...e.take].map(c => this.toPile(e.pl, c)));
+        await this.layTable(); await this.layHand(e.pl);
+        continue;
+      }
+      if (e.type === 'deal3') {
+        sfx.card();
+        for (const pl of [1 - G.dealer, G.dealer]) await this.layHand(pl);
+        G.stock.forEach((c, k) => this.card(c).position.copy(this.stockSpot(k)));
+        continue;
+      }
+      if (e.type === 'sweepUp') { await wait(400); await Promise.all(e.cards.map(c => this.toPile(e.pl, c))); }
+    }
+    return res;
+  },
+  score() {
+    const G = GAMES.scopa;
+    return [['You', G.total[0]], ['Scribe', G.total[1]], `to ${G.target} · hand ${G.hands0} · cards ${G.piles[0].length}–${G.piles[1].length} · scope ${G.scope[0]}–${G.scope[1]}`];
+  },
+};
+// Bézique: two packs on one table. Each hand of eight, the melds laid face up in front of it, the stock with the
+// trump card turned across it at the side, the trick in the middle and each player's tricks in a pile on the right.
+const BEZIQUE_P = {
+  camW: 1.25, camElev: 62,
+  intro() { const G = GAMES.bezique; return (G.toMove === 0 ? 'The Scribe deals. You lead. ' : 'You deal. ') + (G.dixNote ? G.dixNote + ' ' : '') + this.prompt(); },
+  prompt() { return GAMES.bezique.prompt0(); },
+  choosePrompt() { return GAMES.bezique.prompt0(); },
+  setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.bezique.surface + 0.001,
+  card(b) { let m = this.mesh.get(b); if (!m) { m = crCard(GAMES.bezique.face(b), b); this.ex.group.add(m); this.cards.push(m); this.mesh.set(b, m); } return m; },
+  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.045 : 0.066), this.y() + i * 0.0004, pl ? -0.31 : 0.31); },
+  meldSpot(pl, i, n) { return V3((i - (n - 1) / 2) * 0.058 + 0.02, this.y() + i * 0.0004, pl ? -0.17 : 0.17); },
+  stockSpot: k => V3(-0.52, GAMES.bezique.surface + 0.001 + k * 0.0012, -0.02),
+  turnSpot() { return V3(-0.47, this.y() - 0.0005, 0.02); },
+  pileSpot(pl, k) { return V3(0.5, this.y() + k * 0.0012, pl ? -0.08 : 0.08); },
+  down(m) { m.rotation.set(0, Math.PI / 2, Math.PI); },
+  redeal() {
+    const G = GAMES.bezique;
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map(); this.piled = [0, 0];
+    G.stock.forEach((b, k) => { const m = this.card(b); this.down(m); m.position.copy(this.stockSpot(k)); });
+    this.layTurnUp();
+    for (const pl of [0, 1]) G.won[pl].forEach(b => { const m = this.card(b); this.down(m); m.position.copy(this.pileSpot(pl, this.piled[pl]++)); });
+    G.trick.forEach((t, j) => { const m = this.card(t.c); m.rotation.set(0, 0, 0); m.position.copy(this.trickSpot(t.pl, j)); });
+    this.layAll(true);
+  },
+  layTurnUp() {
+    const G = GAMES.bezique; if (G.turnUp === null) return;
+    const m = this.card(G.turnUp); m.rotation.set(0, Math.PI / 2, 0); m.position.copy(this.turnSpot());
+  },
+  trickSpot(pl, j) { return V3(j ? 0.04 : -0.04, this.y() + 0.003 + j * 0.0006, pl ? -0.04 : 0.06); },
+  layAll(instant) { return Promise.all([this.layHand(0, instant), this.layHand(1, instant), this.layMelds(0, instant), this.layMelds(1, instant)]); },
+  layHand(pl, instant) {
+    const G = GAMES.bezique, h = G.hands[pl];
+    return Promise.all(h.map((b, i) => { const m = this.card(b), to = this.handSpot(pl, i, h.length); m.rotation.set(0, pl ? Math.PI : 0, pl ? Math.PI : 0); if (instant) { m.position.copy(to); return null; } return hop(m, to, 0.22, 0.008); }));
+  },
+  layMelds(pl, instant) {
+    const G = GAMES.bezique, h = G.melds[pl];
+    return Promise.all(h.map((b, i) => { const m = this.card(b), to = this.meldSpot(pl, i, h.length); m.rotation.set(0, pl ? Math.PI : 0, 0); if (instant) { m.position.copy(to); return null; } return hop(m, to, 0.25, 0.02); }));
+  },
+  meshesFor(m) { return m.kind === 'play' && m.pl === 0 ? [this.mesh.get(m.c)] : []; },
+  ringFor: () => null,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.bezique, tok = play.token, before = G.trick.length;
+    const res = G.apply(m);
+    for (const e of res.events || []) {
+      if (tok !== play.token) return res;
+      if (e.type === 'deal') { this.redeal(); continue; }
+      if (e.type === 'play') {
+        const mc = this.card(e.c); sfx.card();
+        if (e.pl === 1 && !e.fromMeld) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        await hop(mc, this.trickSpot(e.pl, before), 0.3, 0.05);
+        mc.rotation.set(0, (Math.random() - 0.5) * 0.2, 0);
+        await (e.fromMeld ? this.layMelds(e.pl) : this.layHand(e.pl));
+        continue;
+      }
+      if (e.type === 'trick') {
+        await wait(700); if (tok !== play.token) return res;
+        await Promise.all(G.lastTrick.cards.map(b => { const mc = this.card(b); tween(0.3, t => { mc.rotation.z = Math.PI * t; }); return hop(mc, this.pileSpot(e.winner, this.piled[e.winner]++), 0.3, 0.03); }));
+        G.lastTrick.cards.forEach(b => this.down(this.card(b)));
+        continue;
+      }
+      if (e.type === 'meld') { sfx.card(); await this.layMelds(e.pl); await this.layHand(e.pl); continue; }
+      if (e.type === 'swap') { // the seven of trumps goes under the stock; the old turn-up comes into the hand
+        const seven = this.card(e.gave); seven.rotation.set(0, Math.PI / 2, 0); await hop(seven, this.turnSpot(), 0.3, 0.03);
+        await this.layHand(e.pl); continue;
+      }
+      if (e.type === 'draw') {
+        sfx.card();
+        for (const [pl] of e.cards) await this.layHand(pl);
+        G.stock.forEach((b, k) => this.card(b).position.copy(this.stockSpot(k)));
+        continue;
+      }
+      if (e.type === 'close') { await this.layAll(); }
+    }
+    return res;
+  },
+  score() {
+    const G = GAMES.bezique, live = G.stage === 'next' || G.over ? 0 : 1;
+    const trumps = asPack(['spades', 'hearts', 'diamonds', 'clubs'][G.trump]);
+    return [['You', G.total[0] + live * G.score[0]], ['Scribe', G.total[1] + live * G.score[1]], `${G.variant === 'deal' ? 'one deal' : 'to 1,000'} · trumps ${trumps} · stock ${G.stock.length + (G.turnUp === null ? 0 : 1)}`];
+  },
+};
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P, bezique: BEZIQUE_P, scopa: SCOPA_P, nard: NARD_P, xii: XII_P, koikoi: KOIKOI_P, idraughts: IDRAUGHTS_P, hnefatafl: HNEFATAFL_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -7056,13 +7505,29 @@ const friendOn = g => HOTSEAT.has(g.id) && ((store.opponent || {})[g.id] === 'fr
 function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex); }
 function renderVariants(g) {
   const box = $('#lm-variant'); box.innerHTML = '';
-  box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !play.resumed;
+  box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !play.resumed && !PACK_TABLES[g.id];
   $('#lm-level').hidden = friendOn(g);
   if (HOTSEAT.has(g.id)) {
     const label = document.createElement('span'); label.textContent = 'Opponent'; box.appendChild(label);
     for (const [id, text] of [['scribe', 'The Scribe'], ['friend', 'A friend']]) {
       const b = document.createElement('button'); b.textContent = text; b.setAttribute('aria-pressed', String((friendOn(g) ? 'friend' : 'scribe') === id));
       b.addEventListener('click', () => { if ((friendOn(g) ? 'friend' : 'scribe') === id) return; store.opponent = Object.assign(store.opponent || {}, { [g.id]: id }); save(); restartTable(); });
+      box.appendChild(b);
+    }
+  }
+  if (PACK_TABLES[g.id]) { // the same game in another country's cards: redrawn in place, nothing restarts
+    box.hidden = false;
+    const label = document.createElement('span'); label.textContent = 'Pack'; box.appendChild(label);
+    for (const st of PACK_STYLES) {
+      const b = document.createElement('button'); b.textContent = PACK_LABEL[st]; b.setAttribute('aria-pressed', String(packNow === st));
+      b.title = { french: 'Spades, hearts, diamonds, clubs', german: 'Leaves, hearts, bells, acorns', swiss: 'Shields, roses, bells, acorns', latin: 'Swords, cups, coins, batons' }[st];
+      b.addEventListener('click', () => {
+        if (packNow === st) return;
+        store.packs = Object.assign(store.packs || {}, { [g.id]: st }); save();
+        packNow = st; reskinCards(play.ex.group, st); renderVariants(g); updateScore();
+        if (!$('#lm-rules').hidden) renderRules(g);
+        if (play.phase === 'choose') { renderChoices(play.moves); setMsg(turnName(), (play.P.prompt ? play.P.prompt() : '')); }
+      });
       box.appendChild(b);
     }
   }
@@ -7120,6 +7585,7 @@ async function startGame(ex) {
   mode = 'play';
   const g = GAMES[ex.game], P = PRES[ex.game];
   play.ex = ex; play.game = g; play.P = P; play.token++;
+  packNow = packFor(g); // the cards are drawn in the pack chosen for this table
   play.phase = 'idle'; play.moves = []; play.selected = null; // nothing from the last table carries over during the glide
   $('#lm-choices').hidden = true;
   g.surface = ex.surface;
@@ -7164,7 +7630,7 @@ const UNDO_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'ch
 // At dice tables the Hint weighs the moves this throw allows; where the moves are fixed (the Goose, Snakes and
 // Ladders, the Mansion, Hazard's bets) there is nothing to weigh.
 const DICE_HINT = new Set(['ur', 'senet', 'tables', 'nard', 'xii', 'yut', 'pachisi', 'ludo', 'patolli', 'tab', 'hounds', 'lifegame']);
-const canHint = g => !!g.aiPlan && (g.dice ? DICE_HINT.has(g.id) : !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'fourseasons', 'chaturaji'].includes(g.id));
+const canHint = g => !!g.aiPlan && (g.dice ? DICE_HINT.has(g.id) : !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'bezique', 'scopa', 'fourseasons', 'chaturaji'].includes(g.id));
 function copyState(g) {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
   for (const k of Object.keys(d)) if ('value' in d[k] && typeof d[k].value !== 'function' && k !== 'rules' && k !== 'source' && k !== 'surface') out[k] = d[k].value;
@@ -7228,7 +7694,7 @@ $('#lm-hintBtn').addEventListener('click', async () => {
  * A long game against the Scribe is kept in this browser at the start of each of
  * your turns (between tricks, at card tables), and comes back when you sit down
  * again. Only the engine's own state is kept; the table is rebuilt from it. */
-const SAVE_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl', 'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong']);
+const SAVE_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl', 'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong']);
 const SAVE_VERSION = 1;
 // Mahjong is kept only when it is your turn to discard: the table is laid out again from the hands, melds and discards.
 GAMES.mahjong.saveable = function () { return this.need.type === 'discard' && this.need.seat === 0 && this.winner === null; };
@@ -7309,7 +7775,8 @@ function recordMove(pl, m, text, res) {
   const g = play.game; if (!play.history || !play.history.length) return;
   const caps = res && res.caps && res.caps.length;
   if (caps && text && !text.includes('×')) text += ` (takes ${caps})`;
-  try { play.history.push({ pl, m, text, note: (res && res.note) || '', state: copyState(g) }); } catch (e) { return; }
+  text = asPack(text);
+  try { play.history.push({ pl, m, text, note: asPack((res && res.note) || ''), state: copyState(g) }); } catch (e) { return; }
   if (!$('#lm-moves').hidden) renderMoves();
 }
 function renderMoves(now) {
@@ -7494,7 +7961,8 @@ $('#lm-coachOff').addEventListener('click', () => {
 function renderRules(g) {
   const r = $('#lm-rules'); r.innerHTML = '';
   const h = document.createElement('h3'); h.textContent = 'How to play ' + g.name; r.appendChild(h);
-  const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); r.appendChild(ul);
+  const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = asPack(t); ul.appendChild(li); }); r.appendChild(ul);
+  if (PACK_TABLES[g.id]) { const pk = document.createElement('p'); pk.className = 'src'; pk.textContent = `Pack: ${PACK_LABEL[packNow]}. The Pack switch redraws the cards in another country's suits and court figures; the game itself does not change.`; r.appendChild(pk); }
   const p = document.createElement('p'); p.className = 'src'; p.textContent = g.source; r.appendChild(p);
   const k = document.createElement('p'); k.className = 'src'; k.textContent = 'Keyboard: the arrow keys step through the pieces you can move, then the places they can go; Enter plays, Escape steps back, and M turns the hints on or off.'; r.appendChild(k);
   if (COACH[g.id] && !play.hotseat) {
@@ -7510,7 +7978,7 @@ function leaveGame() {
   play.token++; clearHighlights(); clearLastMove(); $('#lm-choices').hidden = true;
   if (play.P && play.P.leave) play.P.leave(play.ex);
   $('#lm-coach').hidden = true; $('#lm-moves').hidden = true; $('#lm-choices').classList.remove('replaybar');
-  mode = 'gallery';
+  mode = 'gallery'; packNow = 'french';
   $('#lm-hud').hidden = true; rail.hidden = false; $('#lm-hint').style.opacity = 1;
   root.classList.remove('playing');
   resetView(false); updateJoy();
@@ -7529,7 +7997,7 @@ $('#lm-passBtn').addEventListener('click', () => {
 
 const asFriend = t => (play.hotseat && mode === 'play' && t ? String(t).replace(/The Scribe/g, 'Your friend').replace(/the Scribe/g, 'your friend').replace(/\bScribe\b/g, 'Friend') : t);
 function setMsg(who, text) {
-  who = asFriend(who); text = asFriend(text);
+  who = asFriend(who); text = asPack(asFriend(text));
   const m = $('#lm-msg'); m.innerHTML = '';
   const w = document.createElement('span'); w.className = 'who'; w.textContent = who; m.appendChild(w);
   m.appendChild(document.createTextNode(text));
@@ -7634,7 +8102,7 @@ function renderChoices(moves) {
   const box = $('#lm-choices'); box.innerHTML = '';
   const list = moves.filter(m => m.label && !(play.P.meshesFor(m) || []).some(Boolean));
   box.hidden = !list.length;
-  for (const m of list) { const b = document.createElement('button'); b.className = 'btn' + (/^Mahjong/.test(m.label) ? ' primary' : ''); b.textContent = m.label; b.addEventListener('click', () => choose(m)); box.appendChild(b); }
+  for (const m of list) { const b = document.createElement('button'); b.className = 'btn' + (/^Mahjong/.test(m.label) ? ' primary' : ''); b.textContent = asPack(m.label); b.addEventListener('click', () => choose(m)); box.appendChild(b); }
 }
 // Whose turn the message names: you, or in pass-and-play the friend in the Scribe's seat.
 const turnName = () => (play.cur === 1 ? 'Your friend\'s turn' : 'Your turn');
@@ -7955,7 +8423,7 @@ function kbPlay(code) {
   if (play.kb < 0) play.kb = list.length - 1;
   play.hover = list[play.kb];
   const isRing = play.rings.includes(play.hover), card = play.hover.userData.c;
-  const what = card !== undefined && play.game.cardName ? play.game.cardName(card) : isRing ? 'Move' : 'Piece';
+  const what = card !== undefined && play.game.cardName ? asPack(play.game.cardName(card)) : isRing ? 'Move' : 'Piece';
   srBox.textContent = `${what} ${play.kb + 1} of ${list.length}. Enter to ${isRing || !play.twoStep ? 'play it' : 'pick it'}.`;
   return true;
 }

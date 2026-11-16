@@ -94,22 +94,9 @@ const crBackMat = new THREE.MeshStandardMaterial({ roughness: 0.6, map: cardTex(
   g.lineWidth = 2; g.strokeStyle = 'rgba(232,220,192,.5)';
   for (let k = -h; k < w + h; k += 18) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k + h, h); g.stroke(); g.beginPath(); g.moveTo(k + h, 0); g.lineTo(k, h); g.stroke(); }
 }, 140, 210) });
-const crFaceCache = new Map();
-function crFace(c) {
-  if (crFaceCache.has(c)) return crFaceCache.get(c);
-  const R = window.LibrariumRules.cribbage, rk = R.rank(c), su = R.suit(c), red = su === 1 || su === 2, col = red ? '#b3261e' : '#1c1c1c';
-  const label = 'A 2 3 4 5 6 7 8 9 10 J Q K'.split(' ')[rk], sym = ['♠', '♥', '♦', '♣'][su];
-  const map = cardTex((g, w, h) => {
-    g.fillStyle = '#f7f2e6'; g.fillRect(0, 0, w, h); g.strokeStyle = '#3a2a1a'; g.lineWidth = 4; g.strokeRect(5, 5, w - 10, h - 10);
-    g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = '700 34px "Montserrat",sans-serif'; g.fillText(label, 26, 30); g.font = '30px serif'; g.fillText(sym, 26, 62);
-    g.save(); g.translate(w, h); g.rotate(Math.PI); g.font = '700 34px "Montserrat",sans-serif'; g.fillText(label, 26, 30); g.font = '30px serif'; g.fillText(sym, 26, 62); g.restore();
-    if (rk >= 10) { g.font = '600 64px "Amethysta",Georgia,serif'; g.fillText(label, w / 2, h / 2 - 8); g.font = '40px serif'; g.fillText(sym, w / 2, h / 2 + 46); }
-    else { g.font = (rk === 0 ? '96px' : '64px') + ' serif'; g.fillText(sym, w / 2, h / 2 + 4); }
-  }, 140, 210);
-  crFaceCache.set(c, map); return map;
-}
-function crCard(c) { const face = new THREE.MeshStandardMaterial({ map: crFace(c), roughness: 0.55 }); const m = new THREE.Mesh(crGeo, [tcEdgeMat, tcEdgeMat, face, crBackMat, tcEdgeMat, tcEdgeMat]); m.userData.mats = [face]; m.userData.c = c; return m; }
+// A card: c is its face (suit * 13 + rank, see card-packs.js), id what the game calls it if that differs (Bézique's
+// two packs), and style the pack it is drawn in, the table's own unless said.
+function crCard(c, id = c, style = packNow) { const face = new THREE.MeshStandardMaterial({ map: crFace(c, style), roughness: 0.55 }); const m = new THREE.Mesh(crGeo, [tcEdgeMat, tcEdgeMat, face, crBackMat, tcEdgeMat, tcEdgeMat]); m.userData.mats = [face]; m.userData.c = id; m.userData.face = c; return m; }
 // Pegging holes: each player has a lane of sixty, thirty up the board and thirty back.
 const CRB_X0 = -0.5, CRB_Z0 = 0.3, CRB_DZ = 0.0205;
 function crHole(pl, s) {

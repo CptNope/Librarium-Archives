@@ -2397,11 +2397,87 @@ test('Piquet: exchange, scoring the deal, and a full partie between Scribes', ()
   PQ.setVariant('6');
 });
 
+/* ---------------------------------------------------------- Scopa */
+
+const SC = rules.scopa;
+const sc = (r, su) => su * 13 + r; // ace to seven are 0-6, fante 10, cavallo 11, re 12
+test('Scopa: a single card of the same value must be taken before any sum', () => {
+  SC.init(); SC.stage = 'play'; SC.toMove = 0;
+  SC.table = [sc(4, 0), sc(1, 1), sc(2, 3)]; SC.hands[0] = [sc(4, 2)]; // five on the table; the five of coins, or two plus three
+  assert.deepEqual(SC.legal(0).map(m => m.take), [[sc(4, 0)]]);
+  SC.table = [sc(1, 1), sc(2, 3), sc(0, 0), sc(3, 3)]; // no five: two plus three, or ace plus four
+  assert.equal(SC.legal(0).length, 2);
+  SC.hands[0] = [sc(12, 2)]; assert.deepEqual(SC.legal(0)[0].take, [sc(1, 1), sc(2, 3), sc(0, 0), sc(3, 3)]); // the re (10) takes all four
+});
+test('Scopa: a sweep scores, except on the very last play', () => {
+  SC.init(); SC.stage = 'play'; SC.toMove = 0; SC.stock = [];
+  SC.table = [sc(6, 0)]; SC.hands = [[sc(6, 1), sc(1, 1)], [sc(2, 2)]];
+  SC.apply({ pl: 0, kind: 'play', c: sc(6, 1), take: [sc(6, 0)] }); assert.equal(SC.scope[0], 1);
+  SC.apply({ pl: 1, kind: 'play', c: sc(2, 2), take: [] });
+  SC.apply({ pl: 0, kind: 'play', c: sc(1, 1), take: [sc(2, 2)] }); // the last card of the hand clears the table: no scopa
+  assert.equal(SC.scope[0], 1); assert.equal(SC.stage, 'next');
+});
+test('Scopa: primiera needs all four suits, and full games between Scribes add up', () => {
+  rules.setLevel('fair');
+  for (let k = 0; k < 20; k++) {
+    SC.init(); let n = 0;
+    while (!SC.over && n++ < 2000) {
+      const pl = SC.passTurn();
+      if (SC.stage === 'play') { const cards = SC.hands[0].length + SC.hands[1].length + SC.table.length + SC.stock.length + SC.piles[0].length + SC.piles[1].length; assert.equal(cards, 40); }
+      for (const m of SC.aiPlan(pl)) SC.apply(m);
+    }
+    assert.ok(SC.over); assert.ok(Math.max(...SC.total) >= 11); assert.notEqual(SC.total[0], SC.total[1]);
+  }
+});
+
+/* ---------------------------------------------------------- Bézique */
+
+const BZ = rules.bezique;
+const bz = (pow, su, pack = 0) => pack * 32 + su * 8 + pow; // pow: seven 0 … jack 3, queen 4, king 5, ten 6, ace 7
+test('Bézique: a trick goes to the higher card of the suit led or a trump, and identical cards to the first', () => {
+  BZ.init(); BZ.trump = 1; BZ.stage = 'play'; BZ.toMove = 0; BZ.hands = [[bz(6, 0)], [bz(7, 0), bz(0, 1), bz(6, 0, 1)]]; BZ.melds = [[], []];
+  const trick = c1 => { BZ.trick = []; BZ.toMove = 0; BZ.hands[0] = [bz(6, 0)]; BZ.apply({ pl: 0, kind: 'play', c: bz(6, 0) }); BZ.hands[1].push(c1); BZ.apply({ pl: 1, kind: 'play', c: c1 }); return BZ.lastTrick.winner; };
+  assert.equal(trick(bz(7, 0)), 1); // the ace beats the ten
+  assert.equal(trick(bz(0, 1)), 1); // a trump seven beats it
+  assert.equal(trick(bz(6, 0, 1)), 0); // the other pack's ten of spades: the first played wins
+});
+test('Bézique: melds score once per kind, and a king married once cannot marry again', () => {
+  BZ.init(); BZ.trump = 3; BZ.closed = false; BZ.stage = 'meld'; BZ.toMove = 0; BZ.melds = [[], []]; BZ.used = {}; BZ.score = [0, 0]; // (a seven turned up would have scored the dealer 10)
+  BZ.hands[0] = [bz(5, 1), bz(4, 1), bz(4, 1, 1), bz(4, 0), bz(3, 2), bz(5, 0), bz(5, 2), bz(5, 3)];
+  const types = () => BZ.meldOptions(0).map(o => o.type + ':' + o.pts);
+  assert.ok(types().includes('marriage:20')); assert.ok(types().includes('bezique:40')); assert.ok(types().includes('four:80'));
+  const mar = BZ.meldOptions(0).find(o => o.type === 'marriage' && o.cards.some(b => (b & 31) >> 3 === 1));
+  BZ.apply(Object.assign({ pl: 0 }, mar)); assert.equal(BZ.score[0], 20); assert.equal(BZ.melds[0].length, 2);
+  BZ.stage = 'meld'; BZ.toMove = 0;
+  assert.ok(!BZ.meldOptions(0).some(o => o.type === 'marriage' && o.cards.some(b => (b & 31) >> 3 === 1))); // the heart king is spent for marriages
+  assert.ok(BZ.meldOptions(0).some(o => o.type === 'four' && o.pts === 80)); // but may still count in four kings
+});
+test('Bézique: after the close you must follow suit and win if you can', () => {
+  BZ.init(); BZ.trump = 2; BZ.closed = true; BZ.stage = 'play'; BZ.melds = [[], []];
+  BZ.trick = [{ pl: 1, c: bz(3, 0) }]; BZ.toMove = 0;
+  BZ.hands[0] = [bz(1, 0), bz(5, 0), bz(7, 2)]; assert.deepEqual(BZ.legalCards(0), [bz(5, 0)]);
+  BZ.hands[0] = [bz(1, 0), bz(7, 2)]; assert.deepEqual(BZ.legalCards(0), [bz(1, 0)]);
+  BZ.hands[0] = [bz(1, 1), bz(7, 2)]; assert.deepEqual(BZ.legalCards(0), [bz(7, 2)]);
+});
+test('Bézique: full deals between Scribes keep all 64 cards and end with brisques and the last trick', () => {
+  rules.setLevel('fair'); BZ.setVariant('deal');
+  for (let k = 0; k < 6; k++) {
+    BZ.init(); let n = 0;
+    while (!BZ.over && n++ < 3000) {
+      const pl = BZ.passTurn();
+      if (BZ.stage !== 'next') assert.equal(BZ.hands[0].length + BZ.hands[1].length + BZ.melds[0].length + BZ.melds[1].length + BZ.stock.length + (BZ.turnUp === null ? 0 : 1) + BZ.won[0].length + BZ.won[1].length + BZ.trick.length, 64);
+      for (const m of BZ.aiPlan(pl)) { if (m.kind === 'play') assert.ok(BZ.legalCards(pl).includes(m.c)); BZ.apply(m); }
+    }
+    assert.ok(BZ.over); assert.equal(BZ.won[0].length + BZ.won[1].length, 64);
+  }
+  BZ.setVariant('1000');
+});
+
 /* ---------------------------------------------------------- Saved games
  * The hall saves an engine's plain data fields as JSON and restores them over a
  * fresh init(). Every game that offers saving must come back exactly. */
 
-const SAVED = ['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl',
+const SAVED = ['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl',
   'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong'];
 const dataFields = g => {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);

@@ -7316,6 +7316,414 @@
     },
   };
 
+  /* --------------------------------------------------------------- Bézique
+   * Two piquet packs, 64 cards, each with its own id 0-63: id & 31 is the card (suit * 8 + power), id >> 5 the
+   * pack it came from. Power runs seven, eight, nine, jack, queen, king, ten, ace (0-7). Suits are spades,
+   * hearts, diamonds, clubs. bzFace turns an id into the number the other card tables use (suit * 13 + rank,
+   * rank 0 the ace), so the same faces are drawn. Player 0 is the visitor; the non-dealer leads first. */
+  const BZ_POW = ['seven', 'eight', 'nine', 'jack', 'queen', 'king', 'ten', 'ace'];
+  const BZ_POWS = ['sevens', 'eights', 'nines', 'jacks', 'queens', 'kings', 'tens', 'aces'];
+  const BZ_SUIT = ['spades', 'hearts', 'diamonds', 'clubs'];
+  const BZ_FACE_RANK = [6, 7, 8, 10, 11, 12, 9, 0];
+  const bzSuit = b => (b & 31) >> 3, bzPow = b => b & 7;
+  const bzFace = b => bzSuit(b) * 13 + BZ_FACE_RANK[bzPow(b)];
+  const bzName = b => `${BZ_POW[bzPow(b)]} of ${BZ_SUIT[bzSuit(b)]}`;
+  const BZ_J = 3, BZ_Q = 4, BZ_K = 5, BZ_T = 6, BZ_A = 7, BZ_7 = 0;
+  const bzBrisque = b => bzPow(b) >= BZ_T;
+  const isBzQS = b => bzSuit(b) === 0 && bzPow(b) === BZ_Q, isBzJD = b => bzSuit(b) === 2 && bzPow(b) === BZ_J;
+  const BZ_FOUR = { [BZ_A]: 100, [BZ_K]: 80, [BZ_Q]: 60, [BZ_J]: 40 };
+  const BEZIQUE = {
+    id: 'bezique', name: 'Bézique', dice: false, first: 1, cardName: bzName, face: bzFace,
+    variants: [{ id: '1000', label: 'To 1,000' }, { id: 'deal', label: 'One deal' }], variant: '1000', variantLabel: 'Game',
+    setVariant(id) { this.variant = id === 'deal' ? 'deal' : '1000'; },
+    get followPrompt() { return this.prompt0(); },
+    rules: [
+      'Two 32-card packs shuffled together, 64 cards. Cards rank ace, ten, king, queen, jack, nine, eight, seven. Each of you gets eight; the next card is turned up for trumps and the rest are the stock. If the turn-up is a seven, the dealer scores 10.',
+      'While the stock lasts you need not follow suit. The higher card of the suit led wins, a trump beats any other suit, and of two identical cards the first played wins. The winner may then meld once, and draws first; the loser draws next.',
+      'Melds are laid face up and can still be played to tricks. Bézique (queen of spades and jack of diamonds) 40, double bézique 500. Marriage (king and queen of a suit) 20, in trumps 40. Sequence (ace, ten, king, queen, jack of trumps) 250. Four aces 100, four kings 80, four queens 60, four jacks 40. A card may be used again in another kind of meld but not the same kind, and every meld needs at least one card from your hand. The seven of trumps can be swapped for the turn-up, or shown, for 10.',
+      'When the stock is gone (the loser of that trick takes the turn-up), melds return to the hand and the last eight tricks are played strictly: follow suit and win the trick if you can; if you cannot follow, trump if you can.',
+      'At the end of the deal each ace and ten you took in tricks (a brisque) scores 10, and the last trick 10. The first to 1,000 at the end of a deal wins.'
+    ],
+    source: 'Two-handed Bézique as played in England from the 1860s, after pagat.com. One meld after each trick won; melds are chosen from a list rather than laid out by hand.',
+    init() { this.total = [0, 0]; this.deals = 0; this.dealer = 0; this.over = null; this.decided = null; this.deal(); },
+    deal() {
+      const d = Array.from({ length: 64 }, (_, i) => i);
+      for (let i = d.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+      const leader = 1 - this.dealer;
+      this.hands = [[], []]; this.hands[leader] = d.slice(0, 8); this.hands[this.dealer] = d.slice(8, 16);
+      this.turnUp = d[16]; this.trump = bzSuit(this.turnUp); this.stock = d.slice(17);
+      this.melds = [[], []]; this.used = {}; this.won = [[], []]; this.score = [0, 0]; this.trick = []; this.lastTrick = null;
+      this.closed = false; this.stage = 'play'; this.toMove = leader; this.played = []; this.notes = []; this.deals++; this.log = [];
+      if (bzPow(this.turnUp) === BZ_7) { this.score[this.dealer] += 10; this.dixNote = `The turn-up is the seven of ${BZ_SUIT[this.trump]}: 10 to ${this.dealer ? 'the Scribe' : 'you'}.`; }
+      else this.dixNote = '';
+    },
+    sortHand(pl) { const t = this.trump; this.hands[pl].sort((a, b) => ((bzSuit(a) === t) - (bzSuit(b) === t)) || bzSuit(a) - bzSuit(b) || bzPow(a) - bzPow(b) || a - b); },
+    who(pl) { return pl === 0 ? 'You' : 'The Scribe'; },
+    get limit() { return this.variant === 'deal' ? 0 : 1000; },
+    prompt0() {
+      if (this.stage === 'next') return this.notes.join(' ') + (this.decided ? ' Press See the result.' : ' Press Next deal when you are ready.');
+      if (this.stage === 'meld') return 'You won the trick. Choose a meld to score, or none.';
+      const t = BZ_SUIT[this.trump];
+      if (this.closed) return this.trick.length ? `Follow suit and beat the card if you can; if you have none of its suit, trump (${t}) if you can.` : `The stock is gone: lead a card. Trumps are ${t}.`;
+      return this.trick.length ? `Play any card: the higher of its suit wins, or a trump. Trumps are ${t}.` : `Lead a card. Trumps are ${t}.`;
+    },
+    // Every card a player can play from: the hand and, while the stock lasts, the melds on the table.
+    holding(pl) { return this.hands[pl].concat(this.melds[pl]); },
+    legalCards(pl) {
+      const all = this.holding(pl);
+      if (!this.closed || !this.trick.length) return all;
+      const lead = this.trick[0].c, su = bzSuit(lead), follow = all.filter(b => bzSuit(b) === su);
+      if (follow.length) { const beat = follow.filter(b => bzPow(b) > bzPow(lead)); return beat.length ? beat : follow; }
+      const trumps = all.filter(b => bzSuit(b) === this.trump);
+      return trumps.length ? trumps : all;
+    },
+    usedIn(b, kind) { return (this.used[b] || []).includes(kind); },
+    // The melds a player could make now, each with the cards it uses: one of every kind and suit that is open.
+    meldOptions(pl) {
+      if (this.closed) return [];
+      const hand = this.hands[pl], table = this.melds[pl], all = hand.concat(table), out = [], t = this.trump;
+      // Pick one card for each need, preferring cards already on the table, so long as one comes from the hand.
+      const choose = (needs, kind, extra) => {
+        const opts = needs.map(f => all.filter(b => f(b) && !this.usedIn(b, kind) && (!extra || extra(b))));
+        if (opts.some(o => !o.length)) return null;
+        const pickT = opts.map(o => o.find(b => table.includes(b)) ?? o[0]);
+        if (new Set(pickT).size < pickT.length) { // two needs met by one card: only the doubles (four of a kind, double bézique) can do that
+          const seen = new Set(), res = [];
+          for (const o of opts) { const b = o.find(x => !seen.has(x)); if (b === undefined) return null; seen.add(b); res.push(b); }
+          return res.some(b => hand.includes(b)) ? res : null;
+        }
+        if (pickT.some(b => hand.includes(b))) return pickT;
+        for (let i = 0; i < opts.length; i++) { const h = opts[i].find(b => hand.includes(b) && !pickT.includes(b)); if (h !== undefined) { const r = pickT.slice(); r[i] = h; return r; } }
+        return null;
+      };
+      const is = (su, pw) => b => bzSuit(b) === su && bzPow(b) === pw;
+      const seq = choose([BZ_A, BZ_T, BZ_K, BZ_Q, BZ_J].map(pw => is(t, pw)), 'sequence');
+      if (seq) out.push({ kind: 'meld', type: 'sequence', cards: seq, pts: 250, label: `Sequence in ${BZ_SUIT[t]} (250)` });
+      for (let su = 0; su < 4; su++) {
+        const mar = choose([is(su, BZ_K), is(su, BZ_Q)], 'marriage', b => !this.usedIn(b, 'sequence'));
+        if (mar) out.push({ kind: 'meld', type: 'marriage', cards: mar, pts: su === t ? 40 : 20, label: `${su === t ? 'Royal marriage' : 'Marriage'} in ${BZ_SUIT[su]} (${su === t ? 40 : 20})` });
+      }
+      for (const pw of [BZ_A, BZ_K, BZ_Q, BZ_J]) {
+        const pool = all.filter(b => bzPow(b) === pw && !this.usedIn(b, 'four'));
+        if (pool.length < 4) continue;
+        const pickF = pool.filter(b => table.includes(b)).concat(pool.filter(b => hand.includes(b))).slice(0, 4);
+        const four = pickF.some(b => hand.includes(b)) ? pickF : pickF.slice(0, 3).concat(pool.find(b => hand.includes(b)) ?? []);
+        if (four.length === 4 && four.some(b => hand.includes(b))) out.push({ kind: 'meld', type: 'four', cards: four, pts: BZ_FOUR[pw], label: `Four ${BZ_POWS[pw]} (${BZ_FOUR[pw]})` });
+      }
+      const qs = all.filter(b => isBzQS(b)), jd = all.filter(b => isBzJD(b));
+      if (qs.length === 2 && jd.length === 2 && ![...qs, ...jd].some(b => this.usedIn(b, 'double')) && [...qs, ...jd].some(b => hand.includes(b))) out.push({ kind: 'meld', type: 'double', cards: [...qs, ...jd], pts: 500, label: 'Double bézique (500)' });
+      const bez = choose([isBzQS, isBzJD], 'bezique');
+      if (bez) out.push({ kind: 'meld', type: 'bezique', cards: bez, pts: 40, label: 'Bézique (40)' });
+      const dix = hand.find(b => bzSuit(b) === t && bzPow(b) === BZ_7 && !this.usedIn(b, 'dix'));
+      if (dix !== undefined) {
+        const swap = this.stock.length && this.turnUp !== null && bzPow(this.turnUp) !== BZ_7;
+        out.push({ kind: 'meld', type: 'dix', cards: [dix], pts: 10, swap: !!swap, label: swap ? `Swap the seven of trumps for the ${bzName(this.turnUp)} (10)` : 'Show the seven of trumps (10)' });
+      }
+      return out.sort((a, b) => b.pts - a.pts);
+    },
+    legal(pl) {
+      if (this.over || pl !== this.toMove) return [];
+      if (this.stage === 'next') return [{ pl, kind: 'next', label: this.decided ? 'See the result' : 'Next deal' }];
+      if (this.stage === 'meld') return this.meldOptions(pl).map(m => Object.assign({ pl }, m)).concat([{ pl, kind: 'meld', type: 'none', cards: [], pts: 0, label: 'No meld' }]);
+      return this.legalCards(pl).map(c => ({ pl, kind: 'play', c }));
+    },
+    // Drawing after a trick: the winner first. The last card of the stock goes to the winner and the turn-up to the loser.
+    draw(w, events) {
+      if (this.closed || !this.stock.length) return '';
+      const a = this.stock.shift(); let b;
+      if (this.stock.length) b = this.stock.shift(); else { b = this.turnUp; this.turnUp = null; }
+      this.hands[w].push(a); this.hands[1 - w].push(b);
+      events.push({ type: 'draw', cards: [[w, a], [1 - w, b]] });
+      if (!this.stock.length && this.turnUp === null) { // the close: melds go back to the hand, and play turns strict
+        this.closed = true;
+        for (const pl of [0, 1]) { this.hands[pl].push(...this.melds[pl]); this.melds[pl] = []; }
+        events.push({ type: 'close' });
+        this.sortHand(0); this.sortHand(1);
+        return ' The stock is gone: melds go back to the hand, and now you must follow suit and win if you can.';
+      }
+      this.sortHand(0); this.sortHand(1);
+      return '';
+    },
+    apply(m) {
+      const pl = m.pl, Y = pl === 0;
+      if (m.kind === 'next') {
+        if (this.decided) { this.over = this.decided; return { note: '' }; }
+        this.dealer = 1 - this.dealer; this.deal(); this.sortHand(0); this.sortHand(1);
+        return { note: (this.toMove === 0 ? 'The Scribe deals. You lead.' : 'You deal. The Scribe leads.') + (this.dixNote ? ' ' + this.dixNote : ''), events: [{ type: 'deal' }] };
+      }
+      if (m.kind === 'meld') {
+        const events = []; let note = '';
+        if (m.type !== 'none') {
+          for (const b of m.cards) {
+            (this.used[b] = this.used[b] || []).push(m.type);
+            if (m.type !== 'dix' && this.hands[pl].includes(b)) { this.hands[pl].splice(this.hands[pl].indexOf(b), 1); this.melds[pl].push(b); }
+          }
+          if (m.type === 'dix' && m.swap) { const h = this.hands[pl], i = h.indexOf(m.cards[0]); h[i] = this.turnUp; this.turnUp = m.cards[0]; events.push({ type: 'swap', pl, got: h[i], gave: m.cards[0] }); }
+          this.score[pl] += m.pts;
+          events.push({ type: 'meld', pl, cards: m.cards.slice(), meld: m.type });
+          const what = { sequence: `a sequence in ${BZ_SUIT[this.trump]}`, double: 'double bézique', bezique: 'bézique', four: m.label.replace(/ \(\d+\)$/, '').toLowerCase(), marriage: 'a ' + m.label.replace(/ \(\d+\)$/, '').toLowerCase() }[m.type];
+          note = m.type === 'dix' ? `${this.who(pl)} ${m.swap ? (Y ? 'swap' : 'swaps') + ' the seven of trumps for the turn-up' : (Y ? 'show' : 'shows') + ' the seven of trumps'}: 10.` : `${this.who(pl)} ${Y ? 'meld' : 'melds'} ${what}: ${m.pts}.`;
+          this.log.push([pl, m.label]);
+        }
+        this.sortHand(pl);
+        note += this.draw(pl, events);
+        this.stage = 'play'; this.toMove = pl;
+        return { note: note.trim(), events };
+      }
+      // A card played to a trick, from the hand or from the melds on the table.
+      const fromMeld = this.melds[pl].includes(m.c), src = fromMeld ? this.melds[pl] : this.hands[pl];
+      src.splice(src.indexOf(m.c), 1); this.played.push(m.c);
+      const events = [{ type: 'play', pl, c: m.c, fromMeld }];
+      if (!this.trick.length) { this.trick.push({ pl, c: m.c }); this.toMove = 1 - pl; return { note: '', events }; }
+      const lead = this.trick[0]; this.trick.push({ pl, c: m.c });
+      const beats = (bzSuit(m.c) === bzSuit(lead.c) && bzPow(m.c) > bzPow(lead.c)) || (bzSuit(m.c) === this.trump && bzSuit(lead.c) !== this.trump);
+      const w = beats ? pl : lead.pl;
+      const cards = this.trick.map(t => t.c);
+      this.won[w].push(...cards); this.lastTrick = { cards, winner: w }; this.trick = []; this.toMove = w;
+      events.push({ type: 'trick', winner: w });
+      const br = cards.filter(bzBrisque).length;
+      let note = `${this.who(w)} ${w ? 'takes' : 'take'} the trick${br ? ` (${br === 1 ? 'a brisque' : 'two brisques'})` : ''}.`;
+      if (!this.holding(0).length && !this.holding(1).length) { note += ' ' + this.endDeal(w); return { note, events }; }
+      if (!this.closed && this.meldOptions(w).length) { this.stage = 'meld'; return { note, events }; }
+      note += this.draw(w, events);
+      return { note, events };
+    },
+    endDeal(last) {
+      const notes = [];
+      this.score[last] += 10; notes.push(`10 to ${last ? 'the Scribe' : 'you'} for the last trick.`);
+      const b = this.won.map(cs => cs.filter(bzBrisque).length);
+      this.score[0] += b[0] * 10; this.score[1] += b[1] * 10;
+      notes.push(`Brisques: you ${b[0]}, the Scribe ${b[1]}.`);
+      this.total[0] += this.score[0]; this.total[1] += this.score[1];
+      notes.push(`This deal: you ${this.score[0]}, the Scribe ${this.score[1]}.` + (this.variant === 'deal' ? '' : ` Game: you ${this.total[0]}, the Scribe ${this.total[1]}.`));
+      const [x, y] = this.total, done = this.variant === 'deal' || Math.max(x, y) >= this.limit;
+      if (done && x !== y) {
+        const w = x > y ? 0 : 1;
+        this.decided = { winner: w, title: w ? 'The Scribe wins at Bézique' : 'You win at Bézique', text: `${Math.max(x, y)} points to ${Math.min(x, y)}${this.deals > 1 ? ` after ${this.deals} deals` : ''}.` };
+      } else if (done) {
+        if (this.variant === 'deal') this.decided = { winner: -1, title: 'A drawn game', text: `${x} points each.` };
+        else notes.push('Level past 1,000: another deal.');
+      }
+      this.notes = notes; this.stage = 'next'; this.toMove = 0;
+      return notes.join(' ');
+    },
+    passTurn() { return this.over ? 0 : this.toMove; },
+    ended() { return !!this.over; },
+    final() { return this.over; },
+    result() { return null; },
+    /* The Scribe keeps what scores: aces and tens are brisques, trumps win tricks, and kings, queens, the
+     * queen of spades and the jack of diamonds make melds. It plays from what it can see: its own hand,
+     * both players' melds and the cards already played. */
+    keep(pl, b) {
+      const all = this.holding(pl), pw = bzPow(b), su = bzSuit(b), tr = su === this.trump;
+      let v = pw * 0.6 + (bzBrisque(b) ? 6 : 0) + (tr ? 4 : 0);
+      if (!this.closed) {
+        if (pw === BZ_K || pw === BZ_Q) { const mate = all.some(x => bzSuit(x) === su && bzPow(x) === (pw === BZ_K ? BZ_Q : BZ_K) && !this.usedIn(x, 'marriage')); v += !this.usedIn(b, 'marriage') ? (mate ? 7 : 3) * (tr ? 1.6 : 1) : 0; }
+        if (isBzQS(b) || isBzJD(b)) v += this.usedIn(b, 'bezique') && this.usedIn(b, 'double') ? 0 : 6;
+        if (pw >= BZ_J && pw !== BZ_T) { const n = all.filter(x => bzPow(x) === pw).length; if (n >= 2 && !this.usedIn(b, 'four')) v += n * 1.5; }
+        if (tr && pw >= BZ_J && !this.usedIn(b, 'sequence')) v += 2;
+        if (tr && pw === BZ_7 && !this.usedIn(b, 'dix')) v += 5;
+      }
+      return v;
+    },
+    aiPlan(pl) {
+      if (this.stage === 'next') return [{ pl, kind: 'next' }];
+      if (this.stage === 'meld') {
+        const opts = this.meldOptions(pl);
+        if (!opts.length || (LEVEL.name === 'gentle' && Math.random() < 0.25)) return [{ pl, kind: 'meld', type: 'none', cards: [], pts: 0, label: 'No meld' }];
+        return [Object.assign({ pl }, opts[0])];
+      }
+      const ms = this.legalCards(pl);
+      if (ms.length === 1) return [{ pl, kind: 'play', c: ms[0] }];
+      if (LEVEL.name === 'gentle' && Math.random() < 0.4) return [{ pl, kind: 'play', c: ms[(Math.random() * ms.length) | 0] }];
+      const noise = pick(3, 1.5, 0.3), kv = b => this.keep(pl, b) + Math.random() * noise;
+      const low = cs => cs.reduce((x, y) => (kv(y) < kv(x) ? y : x));
+      const lead = this.trick.length ? this.trick[0].c : null;
+      const wins = b => lead !== null && ((bzSuit(b) === bzSuit(lead) && bzPow(b) > bzPow(lead)) || (bzSuit(b) === this.trump && bzSuit(lead) !== this.trump));
+      if (this.closed) {
+        if (lead === null) { // lead a card nothing left unseen can beat, else a low one
+          const gone = new Set(this.played.concat(this.holding(pl)));
+          const master = b => { for (let p = bzPow(b) + 1; p < 8; p++) for (const cp of [0, 32]) { const x = cp + bzSuit(b) * 8 + p; if (!gone.has(x)) return false; } return true; };
+          const cash = ms.filter(master); if (cash.length) return [{ pl, kind: 'play', c: cash[0] }];
+          return [{ pl, kind: 'play', c: ms.reduce((x, y) => (bzPow(y) < bzPow(x) ? y : x)) }];
+        }
+        return [{ pl, kind: 'play', c: ms.reduce((x, y) => (bzPow(y) < bzPow(x) ? y : x)) }]; // the rules already demand a winner if there is one
+      }
+      if (lead === null) return [{ pl, kind: 'play', c: low(ms) }];
+      // Following: take a brisque, or win the trick to meld, when it can be done cheaply; otherwise throw the least useful card.
+      const winners = ms.filter(wins);
+      const meldNow = this.meldOptions(pl).reduce((t, o) => Math.max(t, o.pts), 0);
+      const prize = (bzBrisque(lead) ? 10 : 0) + Math.min(meldNow, LEVEL.name === 'sharp' ? 250 : 60) * 0.5;
+      if (winners.length && prize) { const w = low(winners); if (this.keep(pl, w) < prize + 4) return [{ pl, kind: 'play', c: w }]; }
+      const losers = ms.filter(b => !wins(b) && !bzBrisque(b));
+      return [{ pl, kind: 'play', c: low(losers.length ? losers : ms) }];
+    },
+  };
+
+  /* ---------------------------------------------------------------- Scopa
+   * A 40-card Italian pack, numbered as the other card tables number theirs (suit * 13 + rank, rank 0 the ace):
+   * ace to seven are ranks 0-6, the fante (knave) 10, the cavallo (knight) 11 and the re (king) 12. The suits,
+   * in pack order, are swords, cups, coins and batons, which line up with spades, hearts, diamonds and clubs.
+   * Player 0 is the visitor. The player who does not deal plays first; the deal alternates. */
+  const SC_RANKS = [0, 1, 2, 3, 4, 5, 6, 10, 11, 12];
+  const SC_DECK = []; for (let su = 0; su < 4; su++) for (const rk of SC_RANKS) SC_DECK.push(su * 13 + rk);
+  const scSuit = c => (c / 13) | 0, scRank = c => c % 13;
+  const scVal = c => (scRank(c) <= 6 ? scRank(c) + 1 : scRank(c) - 2); // fante 8, cavallo 9, re 10
+  const SC_PRIME = [16, 12, 13, 14, 15, 18, 21]; // ace to seven; every court card counts 10
+  const scPrime = c => (scRank(c) <= 6 ? SC_PRIME[scRank(c)] : 10);
+  const SC_SUIT = ['swords', 'cups', 'coins', 'batons'];
+  const SC_RANK = ['ace', 'two', 'three', 'four', 'five', 'six', 'seven', '', '', '', 'knave', 'knight', 'king'];
+  const SC_COIN = 2, SC_SETTEBELLO = SC_COIN * 13 + 6;
+  const scName = c => `${SC_RANK[scRank(c)]} of ${SC_SUIT[scSuit(c)]}`;
+  const scList = cs => (cs.length === 1 ? 'the ' + scName(cs[0]) : cs.slice(0, -1).map(c => 'the ' + scName(c)).join(', ') + ' and the ' + scName(cs[cs.length - 1]));
+  function scSubsets(table, v) { // every set of two or more table cards adding up to v
+    const out = [], n = table.length;
+    for (let mask = 1; mask < 1 << n; mask++) {
+      if ((mask & (mask - 1)) === 0) continue; // a single card is a match, not a sum
+      let s = 0; const pick = [];
+      for (let i = 0; i < n; i++) if (mask & (1 << i)) { s += scVal(table[i]); pick.push(table[i]); if (s > v) break; }
+      if (s === v) out.push(pick);
+    }
+    return out;
+  }
+  function scCaptures(table, c) { // what the card must take: a single card of its value if there is one, otherwise any set that adds up to it
+    const v = scVal(c), single = table.filter(x => scVal(x) === v);
+    return single.length ? single.map(x => [x]) : scSubsets(table, v);
+  }
+  function scPrimiera(pile) { // the best card of each suit, added up; nothing unless all four suits are there
+    let t = 0;
+    for (let su = 0; su < 4; su++) { const best = Math.max(0, ...pile.filter(c => scSuit(c) === su).map(scPrime)); if (!best) return 0; t += best; }
+    return t;
+  }
+  const SCOPA = {
+    id: 'scopa', name: 'Scopa', dice: false, first: 1, cardName: scName,
+    variants: [{ id: '11', label: 'To 11' }, { id: '21', label: 'To 21' }], variant: '11', variantLabel: 'Game',
+    setVariant(id) { this.variant = id === '21' ? '21' : '11'; },
+    get target() { return +this.variant; },
+    get followPrompt() { return this.prompt0(); },
+    rules: [
+      'A 40-card Italian pack: ace to seven in four suits (coins, cups, swords and batons), with the fante (knave) worth 8, the cavallo (knight) 9 and the re (king) 10. Each of you gets three cards and four go face up on the table.',
+      'Play one card. If a table card has the same value, you must take it. If none does but two or more add up to your card\'s value, you take them instead (a single card always comes first). If you take nothing, your card stays on the table. You may always choose which card to play.',
+      'Clearing the table is a scopa, a point at once. The last play of the hand never counts as a scopa. When both hands are empty, three more cards each are dealt until the pack runs out; then whatever is left on the table goes to whoever took last.',
+      'After each hand: a point for most cards, a point for most coins, a point for the settebello (the seven of coins), and a point for the primiera, the better set of one card from each suit (sevens 21, sixes 18, aces 16, fives 15, fours 14, threes 13, twos 12, court cards 10). Ties score nothing. The first to 11 wins; if both get there in the same hand, the higher score wins.'
+    ],
+    source: 'Scopa for two players, after the rules at pagat.com. A deal with three or four kings on the table is dealt again, as there.',
+    init() { this.total = [0, 0]; this.hands0 = 0; this.dealer = 0; this.over = null; this.decided = null; this.deal(); },
+    shuffle() { const d = SC_DECK.slice(); for (let i = d.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; } return d; },
+    deal() {
+      let d;
+      do { d = this.shuffle(); } while (d.slice(6, 10).filter(c => scRank(c) === 12).length >= 3); // a table no sweep could ever clear is dealt again
+      this.hands = [d.slice(0, 3), d.slice(3, 6)]; this.table = d.slice(6, 10); this.stock = d.slice(10);
+      this.piles = [[], []]; this.scope = [0, 0]; this.sweeps = []; this.lastTaker = -1; this.hands0++;
+      this.toMove = 1 - this.dealer; this.stage = 'play'; this.notes = []; this.score = [0, 0];
+    },
+    who(pl) { return pl === 0 ? 'You' : 'The Scribe'; },
+    prompt0() {
+      if (this.stage === 'next') return this.notes.join(' ') + (this.decided ? ' Press See the result.' : ' Press Next hand when you are ready.');
+      return this.table.length ? 'Play a card: it takes a table card of the same value, or cards that add up to it.' : 'The table is empty: play a card to start it again.';
+    },
+    legal(pl) {
+      if (this.over || pl !== this.toMove) return [];
+      if (this.stage === 'next') return [{ pl, kind: 'next', label: this.decided ? 'See the result' : 'Next hand' }];
+      const out = [];
+      for (const c of this.hands[pl]) {
+        const caps = scCaptures(this.table, c);
+        if (caps.length) for (const take of caps) out.push({ pl, kind: 'play', c, take });
+        else out.push({ pl, kind: 'play', c, take: [] });
+      }
+      return out;
+    },
+    apply(m) {
+      const pl = m.pl;
+      if (m.kind === 'next') {
+        if (this.decided) { this.over = this.decided; return { note: '' }; }
+        this.dealer = 1 - this.dealer; this.deal();
+        return { note: this.toMove === 0 ? 'The Scribe deals. You play first.' : 'You deal. The Scribe plays first.', events: [{ type: 'deal' }] };
+      }
+      const h = this.hands[pl]; h.splice(h.indexOf(m.c), 1);
+      const events = [], Y = pl === 0; let note;
+      if (m.take.length) {
+        for (const x of m.take) this.table.splice(this.table.indexOf(x), 1);
+        this.piles[pl].push(m.c, ...m.take); this.lastTaker = pl;
+        const last = !this.stock.length && !this.hands[0].length && !this.hands[1].length;
+        const sweep = !this.table.length && !last;
+        if (sweep) { this.scope[pl]++; this.sweeps.push(m.c); }
+        events.push({ type: 'take', pl, c: m.c, take: m.take.slice(), sweep });
+        note = `${this.who(pl)} ${Y ? 'take' : 'takes'} ${scList(m.take)} with the ${scName(m.c)}.${sweep ? ' Scopa!' : ''}`;
+      } else {
+        this.table.push(m.c); events.push({ type: 'lay', pl, c: m.c });
+        note = `${this.who(pl)} ${Y ? 'lay' : 'lays'} the ${scName(m.c)} on the table.`;
+      }
+      this.toMove = 1 - pl;
+      if (!this.hands[0].length && !this.hands[1].length) {
+        if (this.stock.length) {
+          const first = 1 - this.dealer; // the non-dealer is dealt first and plays first again
+          this.hands[first] = this.stock.splice(0, 3); this.hands[1 - first] = this.stock.splice(0, 3); this.toMove = first;
+          events.push({ type: 'deal3' });
+        } else note += ' ' + this.endHand(events);
+      }
+      return { note, events };
+    },
+    endHand(events) {
+      const notes = [];
+      if (this.table.length && this.lastTaker >= 0) {
+        notes.push(`The last ${this.table.length === 1 ? 'card goes' : this.table.length + ' cards go'} to ${this.lastTaker ? 'the Scribe' : 'you'}, who took last.`);
+        events.push({ type: 'sweepUp', pl: this.lastTaker, cards: this.table.slice() });
+        this.piles[this.lastTaker].push(...this.table); this.table = [];
+      }
+      const pts = [this.scope[0], this.scope[1]], p = this.piles, best = (a, b, what) => { if (a === b) { notes.push(`${what}: tied, no point.`); return; } const w = a > b ? 0 : 1; pts[w]++; notes.push(`${what}: ${w ? 'the Scribe' : 'you'}, ${Math.max(a, b)} to ${Math.min(a, b)}.`); };
+      if (this.scope[0] || this.scope[1]) notes.push(`Scope: you ${this.scope[0]}, the Scribe ${this.scope[1]}.`);
+      best(p[0].length, p[1].length, 'Most cards');
+      best(p[0].filter(c => scSuit(c) === SC_COIN).length, p[1].filter(c => scSuit(c) === SC_COIN).length, 'Most coins');
+      const sb = p[0].includes(SC_SETTEBELLO) ? 0 : 1; pts[sb]++; notes.push(`The settebello: ${sb ? 'the Scribe' : 'you'}.`);
+      best(scPrimiera(p[0]), scPrimiera(p[1]), 'Primiera');
+      this.score = pts; this.total[0] += pts[0]; this.total[1] += pts[1];
+      notes.push(`This hand: you ${pts[0]}, the Scribe ${pts[1]}. Game: you ${this.total[0]}, the Scribe ${this.total[1]}.`);
+      const [a, b] = this.total;
+      if (Math.max(a, b) >= this.target && a !== b) {
+        const w = a > b ? 0 : 1;
+        this.decided = { winner: w, title: w ? 'The Scribe wins at Scopa' : 'You win at Scopa', text: `${Math.max(a, b)} points to ${Math.min(a, b)} after ${this.hands0} hand${this.hands0 > 1 ? 's' : ''}.` };
+      } else if (a === b && a >= this.target) notes.push('Level at the target: another hand.');
+      this.notes = notes; this.stage = 'next'; this.toMove = 0;
+      return notes.join(' ');
+    },
+    passTurn() { return this.over ? 0 : this.toMove; },
+    ended() { return !!this.over; },
+    final() { return this.over; },
+    result() { return null; },
+    // The Scribe weighs what a play takes against what it leaves the other player: a table it could sweep, or a seven.
+    worth(cs) { return cs.length + cs.filter(c => scSuit(c) === SC_COIN).length * 1.2 + (cs.includes(SC_SETTEBELLO) ? 12 : 0) + cs.filter(c => scRank(c) === 6).length * 3 + cs.filter(c => scRank(c) === 5).length * 1.5 + cs.filter(c => scRank(c) === 0).length; },
+    aiPlan(pl) {
+      if (this.stage === 'next') return [{ pl, kind: 'next' }];
+      const moves = this.legal(pl);
+      if (moves.length === 1) return moves;
+      if (LEVEL.name === 'gentle' && Math.random() < 0.4) { const takes = moves.filter(m => m.take.length); const pool = takes.length && Math.random() < 0.7 ? takes : moves; return [pool[(Math.random() * pool.length) | 0]]; }
+      const opp = 1 - pl, oppN = this.hands[opp].length;
+      // Cards the Scribe cannot see. Fair forgets what has been taken; Sharp counts every card gone.
+      const seen = new Set(this.hands[pl].concat(this.table, LEVEL.name === 'sharp' ? this.piles[0].concat(this.piles[1]) : []));
+      const unseen = SC_DECK.filter(c => !seen.has(c)), U = Math.max(1, unseen.length);
+      const chance = v => { const k = unseen.filter(c => scVal(c) === v).length; return 1 - Math.pow(1 - k / U, Math.max(1, oppN)); };
+      const last = !this.stock.length && this.hands[0].length + this.hands[1].length <= 2;
+      const noise = pick(3, 1.2, 0.2);
+      let best = moves[0], bv = -Infinity;
+      for (const m of moves) {
+        let v = 0;
+        const left = m.take.length ? this.table.filter(x => !m.take.includes(x)) : this.table.concat(m.c);
+        if (m.take.length) { v += this.worth([m.c, ...m.take]); if (!left.length && !last) v += 10; }
+        else v -= this.worth([m.c]) * 0.8;
+        if (left.length && oppN > 0) {
+          const sum = left.reduce((t, c) => t + scVal(c), 0);
+          if (sum <= 10) v -= chance(sum) * 10; // the other player could sweep it
+          const seven = left.filter(c => scRank(c) === 6);
+          for (const s of seven) v -= chance(7) * (s === SC_SETTEBELLO ? 12 : 3);
+        }
+        v += Math.random() * noise;
+        if (v > bv) { bv = v; best = m; }
+      }
+      return [best];
+    },
+  };
+
   /* ----------------------------------------------------------------- Whist
    * Four seats round the table, clockwise: 0 you (South), 1 West, 2 North, your
    * partner, 3 East. Cards use the cribbage numbering, suit * 13 + rank with
@@ -7737,7 +8145,7 @@
     const out = {}; for (const k of Object.keys(v)) out[k] = unpackState(v[k]); return out;
   }
 
-  const api = { DICE_P, LEVELS, setLevel, packState, unpackState, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, rithmo: RITHMO, lewischess: LEWISCHESS, courier: COURIER, hazard: HAZARD, piquet: PIQUET, nard: NARD, xii: XII, koikoi: KOIKOI, idraughts: IDRAUGHTS, hnefatafl: HNEFATAFL };
+  const api = { DICE_P, LEVELS, setLevel, packState, unpackState, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, rithmo: RITHMO, lewischess: LEWISCHESS, courier: COURIER, hazard: HAZARD, piquet: PIQUET, bezique: BEZIQUE, scopa: SCOPA, nard: NARD, xii: XII, koikoi: KOIKOI, idraughts: IDRAUGHTS, hnefatafl: HNEFATAFL };
   // Where this file came from, so the hall can start a worker that loads the very same rules:
   // its address when it is a file of its own, its text when it is written into the page.
   const here = typeof document !== 'undefined' && document.currentScript;
