@@ -71,20 +71,24 @@
     <div class="hudtop">
       <div class="hudtitle" id="lm-hudTitle"></div>
       <div class="score" id="lm-score"></div>
-      <div class="level" id="lm-level" role="group" aria-label="How hard the Scribe plays">
-        <span>Scribe</span>
-        <button data-level="gentle" aria-pressed="false">Gentle</button>
-        <button data-level="fair" aria-pressed="true">Fair</button>
-        <button data-level="sharp" aria-pressed="false">Sharp</button>
+      <button class="hudbtn hudmenu" id="lm-hudMenuBtn" aria-expanded="false" aria-controls="lm-hudMore"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Options</button>
+      <div class="hudmore" id="lm-hudMore">
+        <div class="level" id="lm-level" role="group" aria-label="How hard the Scribe plays">
+          <span>Scribe</span>
+          <button data-level="gentle" aria-pressed="false">Gentle</button>
+          <button data-level="fair" aria-pressed="true">Fair</button>
+          <button data-level="sharp" aria-pressed="false">Sharp</button>
+        </div>
+        <div class="level" id="lm-variant" role="group" aria-label="Game variant" hidden></div>
+        <button class="hudbtn" id="lm-movesBtn" hidden aria-expanded="false" aria-controls="lm-moves">Moves</button>
+        <button class="hudbtn" id="lm-marksBtn" aria-pressed="true" title="Ring the pieces you can move and the places they can go (M)">Hints: on</button>
+        <button class="hudbtn" id="lm-rulesBtn" aria-expanded="false" aria-controls="lm-rules">Rules</button>
       </div>
-      <div class="level" id="lm-variant" role="group" aria-label="Game variant" hidden></div>
-      <button class="hudbtn" id="lm-movesBtn" hidden aria-expanded="false" aria-controls="lm-moves">Moves</button>
-      <button class="hudbtn" id="lm-marksBtn" aria-pressed="true" title="Ring the pieces you can move and the places they can go (M)">Hints: on</button>
-      <button class="hudbtn" id="lm-rulesBtn">Rules</button>
-      <button class="hudbtn" id="lm-leaveBtn">Leave the table</button>
+      <button class="hudbtn" id="lm-leaveBtn">Leave<span class="long"> the table</span></button>
     </div>
     <div class="rules" id="lm-rules" role="region" aria-label="Rules of this game" hidden></div>
     <div class="rules moves" id="lm-moves" role="region" aria-label="Moves so far" hidden>
+      <button class="panelclose" id="lm-movesClose" aria-label="Close the moves">×</button>
       <h3>Moves</h3>
       <p class="src" id="lm-movesKey">Squares are named from your side: files a, b, c… from your left, ranks 1, 2, 3… from the row nearest you.</p>
       <ol id="lm-moveList"></ol>

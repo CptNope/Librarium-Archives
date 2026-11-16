@@ -76,10 +76,10 @@ function measure(open) {
     if ((r.width < 24 || r.height < 24) && !el.closest('.stops')) issues.push({ kind: 'small', what: name(el), size: [Math.round(r.width), Math.round(r.height)] });
   }
   // Panels that should not sit on one another.
-  const PANELS = ['.brand', '#lm-helpBtn', '#lm-soundBtn', '#lm-fsBtn', '#lm-placard:not(.away)', '#lm-rail', '#lm-index', '#lm-passport', '.hudtop', '#lm-rules', '#lm-moves', '#lm-coach', '.hudbottom', '#lm-joy', '#lm-win .card'];
+  const PANELS = ['.brand', '#lm-helpBtn', '#lm-soundBtn', '#lm-fsBtn', '#lm-placard:not(.away)', '#lm-rail', '#lm-index', '#lm-passport', '.hudtop', '#lm-rules', '#lm-moves', '#lm-coach', '.hudbottom', '#lm-joy', '#lm-win .card', '#lm-hudMore.open'];
   const boxes = PANELS.map(sel => { const el = app.querySelector(sel); return vis(el) ? { sel, r: el.getBoundingClientRect() } : null; }).filter(Boolean);
   // A few pairs are meant to overlap: the brand under the HUD while playing (it fades), the rail's fade, the dialogs over the rail's fade.
-  const fine = new Set(['.brand|.hudtop', '#lm-rail|#lm-index', '#lm-rail|#lm-passport', '.hudbottom|#lm-coach']);
+  const fine = new Set(['.hudtop|#lm-hudMore.open', '.brand|.hudtop', '#lm-rail|#lm-index', '#lm-rail|#lm-passport', '.hudbottom|#lm-coach']);
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
     const a = boxes[i], b = boxes[j];
     if (fine.has(a.sel + '|' + b.sel) || fine.has(b.sel + '|' + a.sel)) continue;
@@ -88,7 +88,7 @@ function measure(open) {
     if (x > 4 && y > 4) issues.push({ kind: 'overlap', what: a.sel + ' + ' + b.sel, area: [Math.round(x), Math.round(y)] });
   }
   // Every open panel needs a way out that is on screen and tappable.
-  const EXITS = { '#lm-placard': ['#lm-closeP'], '#lm-index': ['#lm-indexClose'], '#lm-passport': ['#lm-passClose'], '#lm-rules': ['#lm-rulesBtn', '#lm-rulesClose'], '#lm-moves': ['#lm-movesBtn', '#lm-movesClose'], '#lm-coach': ['#lm-coachOk'], '#lm-win': ['#lm-winLeave', '#lm-againBtn'] };
+  const EXITS = { '#lm-placard': ['#lm-closeP'], '#lm-index': ['#lm-indexClose'], '#lm-passport': ['#lm-passClose'], '#lm-rules': ['#lm-rulesBtn', '#lm-rulesClose'], '#lm-moves': ['#lm-movesBtn', '#lm-movesClose'], '#lm-coach': ['#lm-coachOk'], '#lm-hudMore': ['#lm-hudMenuBtn'], '#lm-win': ['#lm-winLeave', '#lm-againBtn'] };
   for (const p of open) {
     const panel = app.querySelector(p); if (!vis(panel)) continue;
     const ok = (EXITS[p] || []).some(sel => {
@@ -147,17 +147,20 @@ async function run() {
     await A(() => document.getElementById('lm-passClose').click());
     const sit = id => A(`(() => { const M = window.__archives; M.jump(${JSON.stringify(id)}); M.startGame(M.STOPS.find(x => x.id === ${JSON.stringify(id)})); })()`);
     const myTurn = async () => { for (let k = 0; k < 240; k++) { if (await A(() => { const P = window.__archives.play; return P.phase === 'choose' && P.cur === 0; })) return; await sleep(500); } };
-    await check('table-chess', [], async () => { await sit('newqueen'); await myTurn(); });
-    await check('table-chess-rules', ['#lm-rules'], () => click('#lm-rulesBtn'));
-    await check('table-chess-moves', ['#lm-moves'], async () => { await A(() => { const P = window.__archives.play; window.__archives.choose(P.moves[0]); }); await myTurn(); await A(() => { const b = document.getElementById('lm-movesBtn'); if (!b.hidden) b.click(); }); });
+    const rulesShut = () => A(() => { document.getElementById('lm-rules').hidden = true; });
+    const rulesOpen = () => A(() => { const m = document.getElementById('lm-hudMenuBtn'); if (getComputedStyle(m).display !== 'none' && m.getAttribute('aria-expanded') !== 'true') m.click(); if (document.getElementById('lm-rules').hidden) document.getElementById('lm-rulesBtn').click(); });
+    await check('table-chess', [], async () => { await sit('newqueen'); await myTurn(); await rulesShut(); });
+    await check('table-chess-rules', ['#lm-rules'], rulesOpen);
+    await check('table-chess-moves', ['#lm-moves'], async () => { await A(() => { const P = window.__archives.play; window.__archives.choose(P.moves[0]); }); await myTurn(); await A(() => { const m = document.getElementById('lm-hudMenuBtn'); if (getComputedStyle(m).display !== 'none') m.click(); const b = document.getElementById('lm-movesBtn'); if (!b.hidden) b.click(); }); });
     await check('table-chess-win', ['#lm-win'], () => A(() => { document.getElementById('lm-winTitle').textContent = 'You win at the New Queen'; document.getElementById('lm-winText').textContent = 'Checkmate in 31 moves, at Sharp.'; document.getElementById('lm-winRecord').textContent = 'Your record here: 3 wins, 2 losses.'; document.getElementById('lm-win').hidden = false; }));
     await A(() => { document.getElementById('lm-win').hidden = true; window.__archives.leaveGame(); }); await sleep(600);
-    await check('table-piquet', [], async () => { await sit('cards'); await myTurn(); });
-    await check('table-piquet-rules', ['#lm-rules'], () => click('#lm-rulesBtn'));
+    await check('table-piquet', [], async () => { await sit('cards'); await myTurn(); await rulesShut(); });
+    await check('table-piquet-options', ['#lm-hudMore'], () => A(() => { const b = document.getElementById('lm-hudMenuBtn'); if (getComputedStyle(b).display !== 'none') b.click(); }));
+    await check('table-piquet-rules', ['#lm-rules'], rulesOpen);
     await A(() => window.__archives.leaveGame()); await sleep(600);
-    await check('table-bao-guide', ['#lm-coach'], async () => { await A(() => { localStorage.setItem('librarium.archives.v1', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('librarium.archives.v1') || '{}'), { guide: {} }))); }); await sit('bao'); await myTurn(); });
+    await check('table-bao-guide', ['#lm-coach'], async () => { await A(() => { localStorage.setItem('librarium.archives.v1', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('librarium.archives.v1') || '{}'), { guide: {} }))); }); await sit('bao'); await myTurn(); await rulesShut(); });
     await A(() => window.__archives.leaveGame()); await sleep(600);
-    await check('table-ur', [], async () => { await sit('ur'); await sleep(1500); });
+    await check('table-ur', [], async () => { await sit('ur'); await sleep(1500); await rulesShut(); });
     await A(() => window.__archives.leaveGame()); await sleep(600);
     report.push({ size: S, states, errors });
     const n = states.reduce((t, s) => t + (s.issues ? s.issues.filter(i => i.kind !== 'small').length : 0), 0);

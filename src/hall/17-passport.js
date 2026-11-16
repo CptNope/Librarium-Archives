@@ -33,10 +33,18 @@ function renderPassport() {
     col.appendChild(ul); cols.appendChild(col);
   }
 }
+// On a compact screen the index and the passport would sit on top of the placard, so it steps aside while they are open.
+let placardAside = false;
+function asideFor(on) {
+  if (on && placardOpen && root.classList.contains('lm-compact')) { placardAside = true; showPlacard(false); }
+  else if (!on && placardAside && index.hidden && passport.hidden) { placardAside = false; showPlacard(true); }
+}
 function openPassport(on) {
   if (on && mode !== 'gallery') return;
   if (on) openIndex(false);
+  if (on) asideFor(true);
   passport.hidden = !on; passBtn.setAttribute('aria-expanded', String(on));
+  if (!on) asideFor(false);
   if (on) { renderPassport(); $('#lm-passClose').focus({ preventScroll: true }); } else if (document.activeElement && passport.contains(document.activeElement)) passBtn.focus({ preventScroll: true });
 }
 passBtn.addEventListener('click', () => openPassport(passport.hidden));
@@ -45,7 +53,9 @@ passport.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventD
 function openIndex(on) {
   if (on) openPassport(false);
   if (on && mode !== 'gallery') return;
+  if (on) asideFor(true);
   index.hidden = !on; indexBtn.setAttribute('aria-expanded', String(on));
+  if (!on) asideFor(false);
   rail.classList.toggle('indexing', on);
   if (on) { renderIndex(); indexSearch.focus({ preventScroll: true }); } else indexBtn.focus({ preventScroll: true });
 }
