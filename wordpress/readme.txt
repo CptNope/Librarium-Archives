@@ -56,6 +56,9 @@ None. The released plugin bundles three.js and its fonts, sends nothing anywhere
 
 == Changelog ==
 
+= 0.31.0 =
+* Hints can be turned off (the Hints button or the M key) for a bare board; the ring under the pointer still shows.
+
 = 0.30.0 =
 * The Scribe thinks in a background worker, so the hall keeps moving while it plays.
 * Faster start: exhibits near you are built first.

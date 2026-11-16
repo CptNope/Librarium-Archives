@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.31.0: Hints you can turn off
+
+- **Hints on or off.** A Hints button beside Rules, or the M key, turns the move marks off for a bare board. The ring under your pointer, the one the arrow keys reach and the Hint button's pick still light up, and clicking a square still plays. The setting is remembered for every table.
+- **Browser tests:** the Bao test has time for its screenshot, which ran past the five-minute limit in CI.
+
 ## 0.30.0: Foundations, clearer marks, fewer gaps
 
 - **Clearer marks at every table.**
