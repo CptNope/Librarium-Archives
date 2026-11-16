@@ -7525,7 +7525,7 @@ function renderVariants(g) {
         if (packNow === st) return;
         store.packs = Object.assign(store.packs || {}, { [g.id]: st }); save();
         packNow = st; reskinCards(play.ex.group, st); renderVariants(g); updateScore();
-        if (!$('#lm-rules').hidden) renderRules(g);
+        renderRules(g); // open or not, so it names the cards as they are now
         if (play.phase === 'choose') { renderChoices(play.moves); setMsg(turnName(), (play.P.prompt ? play.P.prompt() : '')); }
       });
       box.appendChild(b);

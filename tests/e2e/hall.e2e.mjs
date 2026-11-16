@@ -25,7 +25,7 @@ let server, browser, page, base;
 const errors = [];
 
 // Every table a test touches is marked as seen, so its rules panel stays shut; the Scribe plays Gentle to keep it quick.
-const SEEN = ['newqueen', 'chess', 'dotsboxes', 'ur', 'bao'];
+const SEEN = ['newqueen', 'chess', 'dotsboxes', 'ur', 'bao', 'scopa'];
 async function open(path = 'index.html') {
   page = await browser.newPage({ viewport: { width: 900, height: 560 } });
   page.on('pageerror', e => errors.push(String(e).slice(0, 300)));
@@ -150,6 +150,21 @@ test('bao: the guide opens a first game', { timeout: LONG * 2 }, async () => {
   await shot('bao-guide');
   await page.evaluate(() => document.getElementById('lm-coachOff').click());
   assert.equal(await page.evaluate(() => document.getElementById('lm-coach').hidden), true);
+  await leave();
+});
+
+test('scopa: the Pack switch redraws the cards in place, and a hand goes on', { timeout: LONG * 2 }, async () => {
+  await sit('scopa'); await yourTurn();
+  const faces = () => page.evaluate(() => window.__archives.PRES.scopa.cards.map(m => m.userData.mats[0].map.uuid).join());
+  const before = await faces(), moves = await page.evaluate(() => window.__archives.play.moves.length);
+  const pack = await page.evaluate(() => [...document.querySelectorAll('#lm-variant button')].filter(b => ['French', 'German', 'Swiss', 'Latin'].includes(b.textContent)).map(b => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')));
+  assert.deepEqual(pack, ['French', 'German', 'Swiss', 'Latin*']);
+  await page.evaluate(() => [...document.querySelectorAll('#lm-variant button')].find(b => b.textContent === 'French').click()); await sleep(500);
+  assert.notEqual(await faces(), before, 'the cards were not redrawn');
+  assert.equal(await page.evaluate(() => window.__archives.play.moves.length), moves, 'switching the pack restarted the hand');
+  assert.doesNotMatch(await page.evaluate(() => document.getElementById('lm-rules').textContent + document.getElementById('lm-msg').textContent), /\b(swords|batons)\b/);
+  await playAny(); await sleep(400); await yourTurn();
+  await page.evaluate(() => [...document.querySelectorAll('#lm-variant button')].find(b => b.textContent === 'Latin').click());
   await leave();
 });
 
