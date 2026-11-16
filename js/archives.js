@@ -3824,7 +3824,7 @@ const STOPS = [
     facts: [['Inventor', 'Sir John Suckling, 1630s, by tradition'], ['From', 'Noddy, an older card game'], ['Score', 'Pegged on a board, to 121']],
     build: buildCribbage },
   { id: 'notforplay', wing: 4, title: 'Cards Not for Playing', date: '1685 – 1805 CE', rail: 'Not for Playing',
-    eyebrow: 'New France, Ireland, Philadelphia, Paris', status: ['known', 'Examples survive'],
+    eyebrow: 'Money, letters and tickets', status: ['known', 'Examples survive'],
     note: 'These are our own reproductions, made to show the kinds of use; the wording follows the stories, not any one surviving card.',
     body: [
       'For centuries a playing card was the handiest piece of stiff paper in the house, and most packs had plain backs until the 1800s. Cards took notes, IOUs, addresses and love letters, and spoiled sheets from the card-makers stiffened book covers.',
