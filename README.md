@@ -2,7 +2,7 @@
 
 A walkable 3D archive of the oldest board and card games, built for [Librarium Games](https://librarium.games). Visitors stroll a candlelit library hall, read the history of each game on its placard, and sit down to play the ones whose rules are known against an AI opponent, the Scribe.
 
-| 70 exhibits | 64 playable tables | 6 wings | 3 Scribe levels | 282 rule tests |
+| 73 exhibits | 66 playable tables | 6 wings | 3 Scribe levels | 288 rule tests |
 | :---: | :---: | :---: | :---: | :---: |
 | from Senet (c. 3100 BCE) to Hex (1942) | every one with its own board and pieces | walked in date order | Gentle · Fair · Sharp | plus simulated games and AI timing |
 
@@ -40,7 +40,7 @@ Every exhibit, its date, how sure we are of its rules, and the rule choices made
 
 ```mermaid
 flowchart LR
-    rules["js/rules.js<br/>64 rule engines<br/>and the Scribes"] --> hall["js/archives.js<br/>3D hall, tables,<br/>navigation, sound"]
+    rules["js/rules.js<br/>66 rule engines<br/>and the Scribes"] --> hall["js/archives.js<br/>3D hall, tables,<br/>navigation, sound"]
     three["three.js r128"] --> hall
     css["css/archives.css"] --> hall
     hall --> site["GitHub Pages"]
@@ -56,10 +56,10 @@ No bundler, no framework, no audio files: a static page on three.js, with every 
 | Guide | What's in it |
 | --- | --- |
 | [Visiting the Archives](docs/visiting.md) | Controls on touch and keyboard, getting around, the guided tour and passport, playing at a table (keyboard play included), playing a friend, saved games, options, sound |
-| [The exhibits](docs/exhibits.md) | All 70 exhibits by wing, with timelines, rule status and the rule choices at each table |
+| [The exhibits](docs/exhibits.md) | All 73 exhibits by wing, with timelines, rule status and the rule choices at each table |
 | [The Scribe](docs/scribe.md) | How the AI plays each game, its three levels, and measured strength |
 | [Architecture](docs/architecture.md) | Files, modules, the turn loop, table phases, conventions, stored progress |
-| [Rule engines and presenters](docs/engines.md) | The contract every game implements, a feature matrix of all 64, and how to add a game |
+| [Rule engines and presenters](docs/engines.md) | The contract every game implements, a feature matrix of all 66, and how to add a game |
 | [WordPress plugin](docs/wordpress.md) | Install, shortcode attributes, how it loads, security, every exhibit id |
 | [Development](docs/development.md) | Scripts, debug mode, tests, CI and deployment, workflow |
 | [Sources](docs/sources.md) | Historical notes and the sources behind the placards |

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.34.0: The card room, part two
+
+- **Euchre** (Wing V), and how the Joker came into the pack. Four seats in two partnerships, with the Scribe as your partner and both opponents. You order up the turned card or name a suit, and may go alone. The bowers count as trumps, euchred makers lose 2, and the game is to 10. With the Joker it is played as the Best Bower, the top trump, or without it at 24 cards. The Joker gets a face of its own.
+- **Patience** (Wing IV): Klondike, draw one or three, and the hall's first table with no Scribe. Undo and Hint are there, Give up ends the game, and a card with only one place to go goes there in one click. The placard runs from the first printed patience (1788) to Windows (1990).
+- **Ganjifa** (Wing VI), on display: round lacquered cards in all eight Mughal suits, with the mir and the wazir, and two Dashavatara cards. Its rules of play aren't recorded well enough to set out a table, and the placard says so.
+- 73 exhibits, 66 of them playable. Six new rules tests (Euchre's trump order, ordering up and scoring; Patience's building, turning over and recycling, and whole games), plus a Hint player that wins about a third of draw-one deals.
+
 ## 0.33.0: Every screen size
 
 A layout audit at 16 screen sizes, from a 320 px phone to a 1920 px desktop in both orientations (`tools/audit-layout.mjs`), and fixes for what it found:
