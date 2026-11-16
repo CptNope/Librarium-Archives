@@ -106,6 +106,26 @@ To run it locally: `npm install --no-save playwright@1.63.0 && npx playwright in
 
 For one-off checks (a new table's first turns, a screenshot of a layout), write a small script in the same way: `?debug`, `jump`, `startGame`, `choose`.
 
+### Layout audit
+
+`node tools/audit-layout.mjs [out-dir] [--shots] [--only=phone-se,ipad-land]` opens the hall at 16 common screen sizes, from a 320 px phone to a 1920 px desktop, in portrait and landscape. At each size it steps through the hall, a placard, the index, the passport, and several tables with their rules, moves, Options sheet, guide and end card. In each of these states it measures:
+
+| Check | What it catches |
+| --- | --- |
+| offscreen | a control not wholly inside the window |
+| covered | a control with something else on top of it, so a tap lands elsewhere |
+| overlap | two panels on top of each other |
+| noexit | an open panel with no visible, tappable way to close it |
+| small | a control under 24 × 24 px |
+| overflow | a panel taller than the window that cannot scroll, or text cut off sideways |
+
+It writes `report.md` and `report.json`, plus screenshots with `--shots`. It slows the 3D loop to two frames a second, which leaves the layout unchanged. A run takes about two hours in the software renderer, so it isn't part of CI. Run it after any change to the stylesheet or to the HUD markup.
+
+Its measurements drive the layout rules in the stylesheet:
+
+- `layoutHud()` measures the play screen's bars and the bottom bar into `--hud-top`, `--hud-bot` and `--rail-h`. Panels are fitted between them.
+- `lm-compact` (a window 720 px wide or less, or 500 px tall or less) folds the play screen's secondary controls into the Options sheet.
+
 ## CI and deployment
 
 ```mermaid

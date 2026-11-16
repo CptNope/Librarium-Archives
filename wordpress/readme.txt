@@ -56,6 +56,9 @@ None. The released plugin bundles three.js and its fonts, sends nothing anywhere
 
 == Changelog ==
 
+= 0.33.0 =
+* Works at every screen size: panels can always be closed, a compact play screen with an Options sheet on phones, and nothing runs under the bottom bar.
+
 = 0.32.0 =
 * The card room: Scopa and Bézique tables, a Pack switch (French, German, Swiss, Latin suits) at every card table, and two new displays, Court Cards and Cards Not for Playing.
 
