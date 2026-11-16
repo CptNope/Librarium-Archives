@@ -34,8 +34,9 @@
 #lm-app .brand .mark{font-family:var(--f-display);color:var(--gold);font-size:26px;letter-spacing:.02em;text-shadow:0 2px 18px rgba(0,0,0,.8)}
 #lm-app .brand .sub{font-family:var(--f-ui);font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--dust);margin-top:6px}
 
-#lm-app.playing .brand{opacity:0}
-#lm-app .brand{transition:opacity .3s}
+#lm-app.playing .brand{opacity:0;visibility:hidden}
+#lm-app .brand{transition:opacity .3s,visibility 0s}
+#lm-app.playing .brand{transition:opacity .3s,visibility 0s .3s}
 #lm-app .iconbtn{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-family:var(--f-display);font-size:18px;color:var(--gold)}
 #lm-app .fsbtn{right:calc(62px + env(safe-area-inset-right,0px));display:grid;place-items:center}
 #lm-app .soundbtn{right:calc(108px + env(safe-area-inset-right,0px));display:grid;place-items:center}
