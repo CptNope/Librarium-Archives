@@ -37,7 +37,7 @@ The four new placards were written from these sources. Each claim was checked ag
 | Placard | Claims | Source |
 | --- | --- | --- |
 | Court Cards | The English courts descend from Pierre Marechal's Rouen pack of c. 1565, which survives at Rouen; Tudor headdresses; the "suicide king"; French court names fixed by the 1600s (David, Charles, Caesar, Alexander), never adopted in England; double-ended courts from the mid-1800s | WOPC, History of Court Cards |
-| Cards Not for Playing | Card money in New France under Jacques de Meulles, 1685; withdrawn 1717 | Wikipedia, Card money |
+| Cards Not for Playing | Card money in New France under Jacques de Meulles, 1685, to pay the troops; values on the plain backs, corners cut to tell the values apart, signed by officials; withdrawn 1717 | Bank of Canada Museum; Wikipedia, Card money |
 | | Grace's Card: the six of hearts, "Tell your master I despise his offer", Baron Grace of Courtstown, Kilkenny | Brewer's *Dictionary of Phrase and Fable*; WOPC, Secondary Uses (which dates it 1689) |
 | | University of Pennsylvania admission cards, 1765; Voltaire's note "est venu quatre fois"; invitations on card backs | WOPC, Secondary Uses |
 | Scopa | "Broom"; especially popular in Naples in the 1700s; Latin suits from the Mamluk coins, cups, swords and polo sticks; chkobba; scopone in partnerships | Wikipedia, Scopa; pagat.com; WOPC, History of Playing Cards |
@@ -48,7 +48,7 @@ The rules of both new tables follow pagat.com. Not checked, so left out: the cla
 - [WOPC: History of Court Cards](https://www.wopc.co.uk/playing-cards/history-of-court-cards)
 - [WOPC: Secondary Uses of Playing Cards](https://www.wopc.co.uk/playing-cards/secondary-uses-of-playing-cards)
 - [WOPC: History of Playing Cards](https://www.wopc.co.uk/the-history-of-playing-cards/)
-- [Card money](https://en.wikipedia.org/wiki/Card_money), Wikipedia
+- [Playing cards as money](https://bankofcanadamuseum.ca/?p=8362), Bank of Canada Museum, and [Card money](https://en.wikipedia.org/wiki/Card_money), Wikipedia
 - [Grace's Card](https://words.fromoldbooks.org/Brewer-DictionaryOfPhraseAndFable/g/graces-card-or-grace-card.html), Brewer's Dictionary of Phrase and Fable
 - [Scopa](https://en.wikipedia.org/wiki/Scopa), Wikipedia, and [Scopa](https://www.pagat.com/fishing/scopa.html), pagat.com
 - [Bezique](https://en.wikipedia.org/wiki/Bezique), Wikipedia, and [Bezique and variations](https://www.pagat.com/marriage/Bezique_and_Variations.html), pagat.com
