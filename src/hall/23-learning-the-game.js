@@ -641,7 +641,7 @@ function addHalo(ms) {
   const foot = play.ex.group.worldToLocal(new THREE.Vector3(mid.x, box.min.y, mid.z));
   if (size.y < 0.012 && ms.geometry && ms.parent === play.ex.group) { // a card or tile lying flat: a frame round its edge, not a ring over its face
     if (!ms.geometry.boundingBox) ms.geometry.computeBoundingBox();
-    const bb = ms.geometry.boundingBox, w = bb.max.x - bb.min.x, d = bb.max.z - bb.min.z;
+    const bb = ms.geometry.boundingBox, w = (bb.max.x - bb.min.x) * ms.scale.x, d = (bb.max.z - bb.min.z) * ms.scale.z;
     const frame = cardFrame(w, d);
     frame.position.copy(foot); frame.position.y = ms.position.y + 0.0012; frame.rotation.y = ms.rotation.y;
     frame.userData.base = 1; play.ex.group.add(frame); play.halos.set(ms, frame); return;

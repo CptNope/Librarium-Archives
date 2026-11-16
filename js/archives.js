@@ -6875,11 +6875,12 @@ const SCOPA_P = {
   setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
   y: () => GAMES.scopa.surface + 0.001,
-  card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } m.visible = true; return m; },
-  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.05 : 0.075), this.y() + i * 0.0004, pl ? -0.29 : 0.29); },
+  // Scopa never has many cards out, so they are drawn a size larger than at the other tables.
+  card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); m.scale.set(1.3, 1, 1.3); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } m.visible = true; return m; },
+  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.06 : 0.11), this.y() + i * 0.0004, pl ? -0.28 : 0.27); },
   tableSpot(i, n) { // up to six in a row, then a second row
     const row = n > 6 ? (i < Math.ceil(n / 2) ? 0 : 1) : 0, per = n > 6 ? Math.ceil(n / 2) : n, k = row ? i - per : i, cnt = row ? n - per : per;
-    return V3((k - (cnt - 1) / 2) * 0.075, this.y(), n > 6 ? (row ? 0.06 : -0.06) : 0);
+    return V3((k - (cnt - 1) / 2) * 0.1, this.y(), n > 6 ? (row ? 0.075 : -0.075) : 0);
   },
   stockSpot: k => V3(-0.5, GAMES.scopa.surface + 0.001 + k * 0.0016, 0),
   pileSpot(pl, k) { return V3(0.46, this.y() + k * 0.0016, pl ? -0.16 : 0.16); },
@@ -8364,7 +8365,7 @@ function addHalo(ms) {
   const foot = play.ex.group.worldToLocal(new THREE.Vector3(mid.x, box.min.y, mid.z));
   if (size.y < 0.012 && ms.geometry && ms.parent === play.ex.group) { // a card or tile lying flat: a frame round its edge, not a ring over its face
     if (!ms.geometry.boundingBox) ms.geometry.computeBoundingBox();
-    const bb = ms.geometry.boundingBox, w = bb.max.x - bb.min.x, d = bb.max.z - bb.min.z;
+    const bb = ms.geometry.boundingBox, w = (bb.max.x - bb.min.x) * ms.scale.x, d = (bb.max.z - bb.min.z) * ms.scale.z;
     const frame = cardFrame(w, d);
     frame.position.copy(foot); frame.position.y = ms.position.y + 0.0012; frame.rotation.y = ms.rotation.y;
     frame.userData.base = 1; play.ex.group.add(frame); play.halos.set(ms, frame); return;
