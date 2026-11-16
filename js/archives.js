@@ -7214,10 +7214,10 @@ function renderPassport() {
     col.appendChild(ul); cols.appendChild(col);
   }
 }
-// On a compact screen the index and the passport would sit on top of the placard, so it steps aside while they are open.
+// The index and the passport would sit on top of the placard, so it steps aside while they are open.
 let placardAside = false;
 function asideFor(on) {
-  if (on && placardOpen && root.classList.contains('lm-compact')) { placardAside = true; showPlacard(false); }
+  if (on && placardOpen) { placardAside = true; showPlacard(false); }
   else if (!on && placardAside && index.hidden && passport.hidden) { placardAside = false; showPlacard(true); }
 }
 function openPassport(on) {
@@ -8020,13 +8020,15 @@ $('#lm-scene').addEventListener('pointerdown', () => hudMenu(false)); // a touch
 function layoutHud() {
   const w = root.clientWidth || innerWidth, h = root.clientHeight || innerHeight, compact = w <= 720 || h <= 500;
   if (root.classList.contains('lm-compact') !== compact) { root.classList.toggle('lm-compact', compact); if (!compact) hudMenu(false); }
+  // The bar of wings and exhibits along the bottom: the placard, the index, the passport and the walking pad sit above it.
+  if (!rail.hidden) { const app = root.getBoundingClientRect(); root.style.setProperty('--rail-h', Math.round(app.bottom - rail.getBoundingClientRect().top) + 'px'); }
   if (mode !== 'play') return;
   const app = root.getBoundingClientRect(), top = $('#lm-hud .hudtop').getBoundingClientRect(), bot = $('#lm-hud .hudbottom').getBoundingClientRect();
   root.style.setProperty('--hud-top', Math.round(top.bottom - app.top) + 'px');
   root.style.setProperty('--hud-bot', Math.round(app.bottom - bot.top) + 'px');
   placeCoach();
 }
-if (window.ResizeObserver) { const ro = new ResizeObserver(() => layoutHud()); ro.observe(root); ro.observe($('#lm-hud .hudtop')); ro.observe($('#lm-hud .hudbottom')); }
+if (window.ResizeObserver) { const ro = new ResizeObserver(() => layoutHud()); ro.observe(root); ro.observe(rail); ro.observe($('#lm-hud .hudtop')); ro.observe($('#lm-hud .hudbottom')); }
 addEventListener('resize', layoutHud);
 layoutHud();
 $('#lm-throwBtn').addEventListener('click', humanThrow);
