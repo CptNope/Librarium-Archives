@@ -291,3 +291,10 @@
 #lm-app.lm-compact .hudmore .hudbtn{flex:1 1 auto;min-height:44px}
 #lm-app.lm-compact .rules{left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));width:auto;padding:14px 16px}
 #lm-app.lm-compact .hudbottom{bottom:calc(8px + env(safe-area-inset-bottom,0px));width:calc(100% - 16px)}
+/* The placard's Read aloud and close buttons sit over the top of its text: the first line keeps clear of them,
+ * and on narrow placards the text starts below them. */
+#lm-app .placard .eyebrow{display:block;padding-right:150px}
+@container archives (max-width:720px){
+  #lm-app .placard .scroll{padding-top:52px}
+  #lm-app .placard .eyebrow{padding-right:0}
+}
