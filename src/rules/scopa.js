@@ -66,7 +66,9 @@
       const out = [];
       for (const c of this.hands[pl]) {
         const caps = scCaptures(this.table, c);
-        if (caps.length) for (const take of caps) out.push({ pl, kind: 'play', c, take });
+        // A card that can take in more than one way is offered as a choice for each way, by name.
+        if (caps.length > 1) for (const take of caps) out.push({ pl, kind: 'play', c, take, label: `Take ${scList(take)} with the ${scName(c)}` });
+        else if (caps.length) out.push({ pl, kind: 'play', c, take: caps[0] });
         else out.push({ pl, kind: 'play', c, take: [] });
       }
       return out;

@@ -639,11 +639,28 @@ function addHalo(ms) {
   const size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
   if (size.y > Math.max(size.x, size.z) * 1.6 && size.y > 0.08) return; // a card or tile held upright: its glow and lift say enough
   const foot = play.ex.group.worldToLocal(new THREE.Vector3(mid.x, box.min.y, mid.z));
+  if (size.y < 0.012 && ms.geometry && ms.parent === play.ex.group) { // a card or tile lying flat: a frame round its edge, not a ring over its face
+    if (!ms.geometry.boundingBox) ms.geometry.computeBoundingBox();
+    const bb = ms.geometry.boundingBox, w = bb.max.x - bb.min.x, d = bb.max.z - bb.min.z;
+    const frame = cardFrame(w, d);
+    frame.position.copy(foot); frame.position.y = ms.position.y + 0.0012; frame.rotation.y = ms.rotation.y;
+    frame.userData.base = 1; play.ex.group.add(frame); play.halos.set(ms, frame); return;
+  }
   const halo = markMesh(ringGeo, new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.9, depthWrite: false }));
   halo.position.copy(foot); halo.position.y += 0.002;
   const r = Math.min(0.09, Math.max(0.022, Math.max(size.x, size.z) / 2 * 1.12));
   halo.userData.base = r / 0.05; halo.scale.setScalar(halo.userData.base);
   play.ex.group.add(halo); play.halos.set(ms, halo);
+}
+// A gold frame with a dark edge, lying flat round a card: it reads on pale and dark cloth alike.
+function cardFrame(w, d) {
+  const rect = (x, z) => { const s = new THREE.Shape(); s.moveTo(-x / 2, -z / 2); s.lineTo(x / 2, -z / 2); s.lineTo(x / 2, z / 2); s.lineTo(-x / 2, z / 2); s.closePath(); return s; };
+  const band = (out, inn) => { const s = rect(w + out, d + out); s.holes.push(rect(w + inn, d + inn)); return new THREE.ShapeGeometry(s); };
+  const gold = new THREE.Mesh(band(0.013, 0.004), new THREE.MeshBasicMaterial({ color: RING_COLOR.gold, transparent: true, opacity: 0.9, depthWrite: false }));
+  gold.rotation.x = -Math.PI / 2;
+  const edge = new THREE.Mesh(band(0.018, 0.0), RING_EDGE); edge.position.z = -0.0004; edge.renderOrder = -1; gold.add(edge);
+  const holder = new THREE.Group(); holder.add(gold); holder.material = gold.material; // the loop pulses holder.material like a ring's
+  return holder;
 }
 function clearHighlights() {
   dropRings(() => false);

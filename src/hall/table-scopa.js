@@ -40,14 +40,10 @@ const SCOPA_P = {
     const G = GAMES.scopa, h = G.hands[pl];
     return Promise.all(h.map((c, i) => { const m = this.card(c), to = this.handSpot(pl, i, h.length); m.rotation.set(0, pl ? Math.PI : 0, pl ? Math.PI : 0); if (instant) { m.position.copy(to); return null; } return hop(m, to, 0.25, 0.01); }));
   },
-  meshesFor(m) { return m.kind === 'play' && m.pl === 0 ? [this.mesh.get(m.c)] : []; },
-  // When one card can take in more than one way, a ring sits over the middle of each set it could take.
-  ringFor(m) {
-    if (m.kind !== 'play') return null;
-    if (!m.take.length) { const n = GAMES.scopa.table.length, at = this.tableSpot(n, n + 1); at.y += 0.004; return at; } // laid on the table
-    const at = V3(0, 0, 0); m.take.forEach(c => at.add(this.card(c).position)); at.divideScalar(m.take.length);
-    at.y = this.y() + 0.004; return at;
-  },
+  // A card with one way to play is played by clicking it; a card that could take in more than one way is
+  // offered as buttons, one for each set it could take.
+  meshesFor(m) { return m.kind === 'play' && m.pl === 0 && !m.label ? [this.mesh.get(m.c)] : []; },
+  ringFor: () => null,
   fromFor: () => null,
   async play(m) {
     const G = GAMES.scopa, tok = play.token;
