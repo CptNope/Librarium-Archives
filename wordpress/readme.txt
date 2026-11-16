@@ -14,12 +14,12 @@ A walkable 3D archive of the oldest board and card games, with tables visitors c
 
 Visitors walk a candlelit library hall in six wings, read the history of each game on its placard, and sit down to play:
 
-66 exhibits, 62 of them playable:
+70 exhibits, 64 of them playable:
 
 * Wing I, The Dawn of Play: Senet, the Royal Game of Ur, Hazard at the first dice, and Hounds and Jackals (playable, Senet and Hounds and Jackals as modern reconstructions); Mehen, the Başur Höyük pieces.
 * Wing II, Strategy Takes the Table: Go, Ludus latrunculorum, Duodecim scripta, Patolli, Nine Men's Morris, Oware, Alquerque, Brandubh and Hnefatafl (playable; latrunculi, duodecim scripta, patolli and hnefatafl as modern reconstructions); Petteia, Liubo.
 * Wing III, Kings, Cards and Courts: Tables (backgammon), Chaturanga, Shatranj, Xiangqi, Chaturaji, Rithmomachia, medieval chess on the Lewis Chessmen, Courier chess, Four Seasons chess, Piquet at the playing cards, and tarocchi (all playable; Chaturanga, Rithmomachia and medieval chess as modern reconstructions).
-* Wing IV, Printed Boards and Parlour Tables: Fox and Geese, chess, Draughts, International draughts, Pachisi, the Game of the Goose, Cribbage, Dominoes, Tablut, Whist, Snakes and Ladders, Ludo and Mahjong (all playable).
+* Wing IV, Printed Boards and Parlour Tables: Fox and Geese, chess, Draughts, International draughts, Pachisi, the Game of the Goose, Cribbage, Dominoes, Scopa, Tablut, Whist, Snakes and Ladders, Bézique, Ludo and Mahjong (playable); Court Cards and Cards Not for Playing (on display).
 * Wing V, The Modern Board Game: the Mansion of Happiness, the Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord's Game, Kalah and Hex (all playable).
 * Wing VI, Games of the World: Mū tōrere, Shogi, Gomoku, Hanafuda (koi-koi), Jungle, Nard, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega and Tâb (all playable).
 
@@ -55,6 +55,9 @@ None. The released plugin bundles three.js and its fonts, sends nothing anywhere
 (A development build made without the bundled files falls back to three.js from cdnjs.cloudflare.com and the fonts from fonts.googleapis.com.)
 
 == Changelog ==
+
+= 0.32.0 =
+* The card room: Scopa and Bézique tables, a Pack switch (French, German, Swiss, Latin suits) at every card table, and two new displays, Court Cards and Cards Not for Playing.
 
 = 0.31.0 =
 * Hints can be turned off (the Hints button or the M key) for a bare board; the ring under the pointer still shows.

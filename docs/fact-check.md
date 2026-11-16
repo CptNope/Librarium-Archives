@@ -29,3 +29,26 @@ The placards' dates, numbers and attributions were checked for 0.30.0. This page
 - [Polis (board game)](https://wiki.krisyotam.com/content/wikipedia_en_all_nopic_2026-03/Petteia), Wikipedia mirror
 - [Senet](https://encycloreader.org/r/wikipedia.php?q=Senet), Wikipedia via EncycloReader
 - [Jungle (board game)](https://en.wikipedia.org/wiki/Jungle_(board_game)) and the [V&A's Jungle King](https://collections.vam.ac.uk/item/O26146/jungle-king-board-game-john-waddington-ltd)
+
+## The card room (0.32.0)
+
+The four new placards were written from these sources. Each claim was checked against at least one of them.
+
+| Placard | Claims | Source |
+| --- | --- | --- |
+| Court Cards | The English courts descend from Pierre Marechal's Rouen pack of c. 1565, which survives at Rouen; Tudor headdresses; the "suicide king"; French court names fixed by the 1600s (David, Charles, Caesar, Alexander), never adopted in England; double-ended courts from the mid-1800s | WOPC, History of Court Cards |
+| Cards Not for Playing | Card money in New France under Jacques de Meulles, 1685; withdrawn 1717 | Wikipedia, Card money |
+| | Grace's Card: the six of hearts, "Tell your master I despise his offer", Baron Grace of Courtstown, Kilkenny | Brewer's *Dictionary of Phrase and Fable*; WOPC, Secondary Uses (which dates it 1689) |
+| | University of Pennsylvania admission cards, 1765; Voltaire's note "est venu quatre fois"; invitations on card backs | WOPC, Secondary Uses |
+| Scopa | "Broom"; especially popular in Naples in the 1700s; Latin suits from the Mamluk coins, cups, swords and polo sticks; chkobba; scopone in partnerships | Wikipedia, Scopa; pagat.com; WOPC, History of Playing Cards |
+| Bézique | First printed rules in Paris, 1847; most fashionable around 1860; reached England 1861; Churchill and six-pack bézique; binokel and pinochle | Wikipedia, Bezique; pagat.com |
+
+The rules of both new tables follow pagat.com. Not checked, so left out: the claim that Scopa came from Spanish games played by pirates in Naples' port, and Wilkie Collins as a bézique player.
+
+- [WOPC: History of Court Cards](https://www.wopc.co.uk/playing-cards/history-of-court-cards)
+- [WOPC: Secondary Uses of Playing Cards](https://www.wopc.co.uk/playing-cards/secondary-uses-of-playing-cards)
+- [WOPC: History of Playing Cards](https://www.wopc.co.uk/the-history-of-playing-cards/)
+- [Card money](https://en.wikipedia.org/wiki/Card_money), Wikipedia
+- [Grace's Card](https://words.fromoldbooks.org/Brewer-DictionaryOfPhraseAndFable/g/graces-card-or-grace-card.html), Brewer's Dictionary of Phrase and Fable
+- [Scopa](https://en.wikipedia.org/wiki/Scopa), Wikipedia, and [Scopa](https://www.pagat.com/fishing/scopa.html), pagat.com
+- [Bezique](https://en.wikipedia.org/wiki/Bezique), Wikipedia, and [Bezique and variations](https://www.pagat.com/marriage/Bezique_and_Variations.html), pagat.com

@@ -2,7 +2,7 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**66 exhibits, 62 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**70 exhibits, 64 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
@@ -10,7 +10,7 @@ pie showData
     "Wing I · 4 of 6" : 6
     "Wing II · 9 of 11" : 11
     "Wing III · 11 of 11" : 11
-    "Wing IV · 13 of 13" : 13
+    "Wing IV · 15 of 17" : 17
     "Wing V · 9 of 9" : 9
     "Wing VI · 16 of 16" : 16
 ```
@@ -150,11 +150,14 @@ timeline
     c. 1550–1700 CE : International draughts
     c. 1475 CE : The New Queen (chess)
     16th century CE : Pachisi
+    c. 1565 CE : Court Cards
     c. 1575 CE : The Game of the Goose
     1630s CE : Cribbage
-    18th century CE : Dominoes : Snakes and Ladders
+    1685–1805 CE : Cards Not for Playing
+    18th century CE : Dominoes : Scopa : Snakes and Ladders
     1732 CE : Tablut
     1742 CE : Whist (Hoyle)
+    1847 CE : Bézique
     mid-1800s CE : Mahjong
     1896 CE : Ludo
 ```
@@ -166,12 +169,16 @@ timeline
 | Draughts | c. 1100s–1500s CE | English draughts (checkers) | Playable |
 | International draughts | c. 1550–1700 CE (the Netherlands) | Survive in writing (FMJD) | Playable, as white |
 | Pachisi (chaupar) | 16th century CE | Still played; ancestor of Ludo | Playable for two (you play two partner colours), short or full game |
+| Court Cards | c. 1565 CE (Rouen) | Packs survive | Display: an easel of court figures from French, English, German and Italian packs, and a double-ended queen |
 | The Game of the Goose | c. 1575 CE | Survive in print | Playable |
 | Cribbage | 1630s CE | Still played | Playable: two-player six-card cribbage, to 61 or 121, pegged on a board |
+| Cards Not for Playing | 1685–1805 CE | Examples survive | Display: card money, Grace's Card, an admission card, Voltaire's note, an invitation |
 | Dominoes | 18th century CE (Europe) | Still played | Playable: the two-player Draw game |
+| Scopa | 18th century CE (Naples) | Still played | Playable: two-player Scopa to 11 or 21, with Italian cards |
 | Tablut | recorded 1732 CE (Linnaeus) | Partly reconstructed | Playable, as the king's side |
 | Whist | 1742 CE (Hoyle) | Survive in print; short whist still played | Playable: you and a Scribe partner against two Scribes |
 | Snakes and Ladders (gyan chaupar) | 18th–19th century CE | Still played | Playable, with virtues and vices from an old Indian board |
+| Bézique | 1847 CE (Paris); England 1861 | Still played | Playable: two-handed Bézique with two packs, to 1,000 or one deal |
 | Ludo | 1896 CE | Still played | Playable: red against yellow, one die |
 | Mahjong | mid-1800s CE | Still played | Playable at a table of four: you and three Scribes |
 
@@ -186,6 +193,9 @@ Rule choices:
 - **Dominoes:** the Draw game for two from pagat.com: seven tiles each, draw from the boneyard until you can play but never the last two, and the lower pip count wins when the hand ends. One hand is played rather than a game to 100.
 - **Tablut:** Linnaeus's 9 × 9 game read as most players read it today: the Muscovites move first, the king escapes to any edge square, he is armed, and he is captured by two except on or beside the throne (four, or three and the throne). Only the king may stop on the throne. House rule: a hundred moves each without a result is a draw.
 - **Whist:** short whist as on pagat.com: thirteen cards each, the dealer's last card turned for trumps, a point for every trick over six, honours (4 for all four, 2 for three; not for a side at four), tricks before honours, and one game to 5 points rather than a rubber. Gentle and Fair Scribes play some cards carelessly; Sharp plays every card by the book (cash winners, second hand low, third hand high, ruff when an opponent is winning).
+- **Scopa:** two players with the 40-card Italian pack, as on pagat.com. A card must take a single card of its value if there is one, otherwise any set adding up to it; clearing the table is a scopa except on the last play. A table dealt with three or four kings is dealt again. Hands score cards, coins, the settebello and the primiera; the first to 11 (or 21) wins, and a tie at the target plays another hand.
+- **Bézique:** two-handed Bézique with 64 cards, as on pagat.com: one meld after each trick won while the stock lasts, chosen from a list; a card may count again in another kind of meld but never the same kind, a marriage cannot be taken out of a sequence, and every meld needs a card from the hand. The seven of trumps scores 10 when turned up, swapped or shown. After the stock, melds return to the hand and you must follow suit, win if you can, and trump if void. Brisques and the last trick score 10 each; a game is to 1,000, or one deal.
+- **The Pack switch** at Piquet, Whist, Cribbage, Scopa and Bézique redraws the cards in French, German, Swiss or Latin suits, and the messages name them to match (leaves, bells and acorns; Ober and Unter; cups, coins and swords). The suits are matched as players matched them: spades with leaves, shields and swords; hearts with hearts, roses and cups; diamonds with bells and coins; clubs with acorns and batons. The game does not change.
 - **Ludo:** two players, red and yellow, from opposite corners. A six brings a token out or moves one, and earns another throw; landing on an enemy token sends it to its yard; your home column is safe; the finish needs the exact throw. There are no blocks or safe squares on the track.
 - **Mahjong:** a basic Chinese game with the 136 tiles (no flowers or seasons). Go out with four sets and a pair, seven pairs or the thirteen orphans. You may claim a discard for a pung or kong from anyone, a chow only from the player on your left, and a win from anyone; a win beats a pung or kong, which beats a chow. A kong draws a replacement tile. There is no scoring: whoever goes out first wins the hand, and an empty wall is a draw.
 
