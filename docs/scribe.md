@@ -22,11 +22,15 @@ mindmap
     Hidden information
       plays only from what it can see
       Tarocchi · Dominoes · Cribbage · Mahjong
+      Whist · Piquet · Euchre · Bézique · Scopa · Hanafuda
     Rules of thumb
       scored moves for dice games
-      Senet · Ur · Tables · Goose
+      Senet · Ur · Tables
       Yut Nori · Pachisi · Ludo · Landlord's Game · Tâb
       Hounds and Jackals · Patolli
+    Nothing to choose
+      the throw moves your one counter
+      Game of the Goose · Snakes and Ladders · Mansion of Happiness
     Every way to use the throw
       both dice tried in both orders, scored by danger and threats
       Chaturaji, three Scribes at once
@@ -95,6 +99,9 @@ The Scribe never looks at the visitor's hand or the deck. Each game's Scribe wor
 | Cribbage | Sharp averages every possible four-card keep over all 46 possible starters, weighs what it gives the crib, and in the play avoids leaving counts of 5 or 21 |
 | Whist | Each Scribe plays by the book from what its seat can see: cash sure winners, draw trumps when long in them, lead a suit its partner can ruff, second hand low, third hand high, win as cheaply as possible, and discard its least useful card. Gentle and Fair play some cards at random. (A sampling search over the unseen cards was tried and played no better.) |
 | Piquet | Exchange: keeps aces, long suits, sets and runs in the making; Sharp tries every discard among its weakest cards against many random draws and keeps the best on average. Play: cashes sure winners, leads low from its longest suit, wins cheaply, and throws cards that cannot win |
+| Euchre | Bids by the worth of its hand in each suit (bowers, the Joker, aces, length) against a bar that Gentle sets high and Sharp low, and is a little bolder without the Joker. Goes alone only with a strong hand holding two sure tricks (never at Gentle). In play it draws trumps when it holds the best one, cashes sure winners, throws its least card when its partner has the trick, and otherwise wins as cheaply as it can. Gentle plays some cards at random |
+| Bézique | Values each card for what it can still meld (marriages, bézique, fours, the sequence, the seven of trumps) and for brisques. While the stock lasts it leads its least useful card, and wins a trick cheaply when there is a brisque to take or a meld to show; Sharp plays for the big melds. In the last eight it leads cards nothing unseen can beat. Gentle sometimes skips a meld or plays at random |
+| Scopa | Scores each play for the cards taken (coins, sevens, the settebello) and a sweep, less the chance the other player can sweep what is left or take a seven, from the cards it has not seen. Sharp counts every card already taken; Fair remembers only the table. Gentle often plays at random |
 | Hazard | Always calls a main of 7, the caster's best. Fair stakes 2; Sharp stakes 1, since the caster has the worse of every bet, unless it is behind near the end |
 | Nard, Duodecim scripta | Every legal full turn, scored for the race, points held ahead of the enemy (Nard), lone pieces the enemy can reach weighed by what a hit would cost, and, in Duodecim scripta, pieces spread over the last six spaces so exact throws can bear them off |
 | Hanafuda (koi-koi) | Takes the most valuable cards and yaku in the making; a card that will not match goes to the table only if its month is spent. Sharp also weighs each card a play leaves on the field by the chance you hold one of its month (counted from the cards it cannot see) and the yaku it would build for you. It stops at 7 points or with few cards left; Sharp calls koi-koi when it is ahead and the visitor is far from a yaku |
@@ -136,6 +143,7 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Medieval chess (Lewis chessmen) | 6–0 | 1–0, 5 draws | 6 each; with only checkmate winning, many games are drawn |
 | Courier chess | 5–0, 1 draw | 5–0, 1 draw | 6 each |
 | Piquet | 74% | 55% | 400 parties of six deals each |
+| Euchre (both seats of a side at one level) | 109–41 | 80–70 | 150 games each |
 | Hazard | about 50% | 56% | 4,000 each; the dice decide almost everything |
 | Nard | 58% | 59% | 100 each |
 | Duodecim scripta | 59% | 56% | 100 each |

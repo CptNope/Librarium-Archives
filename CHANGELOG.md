@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased: game by game
+
+- **A page for every exhibit** in `docs/games/`, 73 in all, with an index, each linked from the README. A page carries:
+  - the placard and its facts, drawn as a mind map;
+  - a diagram of a turn, written by hand for the 31 games whose turns are not a plain dice race or a plain move;
+  - the rules as the table plays them, and the source they follow;
+  - the rule choices, the options, and what the table offers (the Scribe, a friend, Undo, Hint, saved games, the Pack switch);
+  - how the Scribe plays and how strong it measured;
+  - its fact-check notes, and the files that make it.
+- **The index** has the games by family as a mind map, how sure we are of the rules, what the tables offer, and a walk through each wing.
+- **Generated from the code** by `npm run build:docs` (`tools/build-docs.mjs`). CI fails if a page falls out of date.
+- **The other guides:**
+  - The README's wing list was missing Scopa, Patience, Bézique and Euchre; it now names all 66 tables and links each to its page.
+  - The Scribe guide covers Euchre, Bézique and Scopa, with Euchre's measured strength.
+  - New diagrams in the fact-check, the sources and the development guide.
+
 ## 0.34.0: The card room, part two
 
 - **Euchre** (Wing V), and how the Joker came into the pack. Four seats in two partnerships, with the Scribe as your partner and both opponents. You order up the turned card or name a suit, and may go alone. The bowers count as trumps, euchred makers lose 2, and the game is to 10. With the Joker it is played as the Best Bower, the top trump, or without it at 24 cards. The Joker gets a face of its own.
