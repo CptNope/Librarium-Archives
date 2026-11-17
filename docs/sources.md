@@ -68,3 +68,6 @@ Each exhibit's page in [games/](games/README.md) repeats its placard, the rules 
 - Wikipedia: Ombre; pagat.com: L'Hombre (the Danish game); Alexander Pope, *The Rape of the Lock* (1714)
 - Wikipedia: Cassino (card game), after Robert Long, *Short Rules for Playing the Game of Casino* (1792)
 - pagat.com: Conquian, after R. F. Foster, *Foster's Complete Hoyle* (1897)
+- David Parlett, history of Skat (parlettgames.uk); pagat.com: Skat (the international rules of 1999)
+- Wikipedia: Pinochle; pagat.com: Two-player Pinochle
+- Wikipedia: Hearts (card game), after *The Standard Hoyle* (1887)

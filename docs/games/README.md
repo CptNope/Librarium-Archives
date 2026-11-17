@@ -2,7 +2,7 @@
 
 # Game by game
 
-One page for each of the hall's **77 exhibits**, 70 of them playable, in the order you walk them. Each page has the placard's history, a diagram of a turn, the rules as the table plays them and where they come from, what the table offers (the Scribe, a friend, Undo, Hint, saved games), how the Scribe plays and how strong it is, and the files that make it.
+One page for each of the hall's **80 exhibits**, 73 of them playable, in the order you walk them. Each page has the placard's history, a diagram of a turn, the rules as the table plays them and where they come from, what the table offers (the Scribe, a friend, Undo, Hint, saved games), how the Scribe plays and how strong it is, and the files that make it.
 
 The pages are written from the code and the other guides by `tools/build-docs.mjs`, so they change when the games do. For the reasoning behind the rule choices see [the exhibits guide](../exhibits.md); for the AI, [the Scribe](../scribe.md).
 
@@ -92,9 +92,12 @@ mindmap
       whist["Whist"]
       patience["Patience"]
       cassino["Cassino"]
+      skat["Skat"]
       bezique["Bézique"]
       euchre["Euchre"]
       conquian["Conquian"]
+      pinochle["Pinochle"]
+      hearts["Hearts"]
       koikoi["Hanafuda (Koi-koi)"]
       ganjifa["Ganjifa (display)"]
     f11["Tiles"]
@@ -166,7 +169,7 @@ Sow seeds round a row of pits and capture by count.
 
 Tricks, bidding, melds, rummy, fishing, combinations and patience, and cards made for other uses.
 
-[Playing Cards](cards.md) · [Karnöffel](karnoffel.md) · [Tarot (Tarocchi)](tarot.md) · [Court Cards](courtcards.md) (display) · [Ombre](ombre.md) · [Cribbage](cribbage.md) · [Cards Not for Playing](notforplay.md) (display) · [Scopa](scopa.md) · [Whist](whist.md) · [Patience](patience.md) · [Cassino](cassino.md) · [Bézique](bezique.md) · [Euchre](euchre.md) · [Conquian](conquian.md) · [Hanafuda](koikoi.md) · [Ganjifa](ganjifa.md) (display)
+[Playing Cards](cards.md) · [Karnöffel](karnoffel.md) · [Tarot (Tarocchi)](tarot.md) · [Court Cards](courtcards.md) (display) · [Ombre](ombre.md) · [Cribbage](cribbage.md) · [Cards Not for Playing](notforplay.md) (display) · [Scopa](scopa.md) · [Whist](whist.md) · [Patience](patience.md) · [Cassino](cassino.md) · [Skat](skat.md) · [Bézique](bezique.md) · [Euchre](euchre.md) · [Conquian](conquian.md) · [Pinochle](pinochle.md) · [Hearts](hearts.md) · [Hanafuda](koikoi.md) · [Ganjifa](ganjifa.md) (display)
 
 ### Tiles
 
@@ -179,7 +182,7 @@ Dominoes and mahjong.
 ```mermaid
 pie showData
     title Rules status of the 73 exhibits
-    "Still played" : 20
+    "Still played" : 23
     "Rules survive in print" : 11
     "Modern reconstruction" : 7
     "Rules survive in writing" : 6
@@ -213,8 +216,8 @@ pie showData
 xychart-beta
     title "Playable tables with each feature"
     x-axis ["Scribe", "Friend", "Undo", "Hint", "Saved", "Pack"]
-    y-axis "Tables" 0 --> 70
-    bar [69, 51, 37, 51, 47, 10]
+    y-axis "Tables" 0 --> 73
+    bar [72, 51, 37, 51, 50, 13]
 ```
 
 ## Wing I: The Dawn of Play
@@ -336,11 +339,11 @@ flowchart TB
     end
     subgraph r3[" "]
         direction LR
-        patience["Patience<br/>1788 CE"] --> cassino["Cassino<br/>1792 CE"] --> snakes["Snakes and Ladders<br/>18th–19th century CE"] --> bezique["Bézique<br/>1847 CE"] --> ludo["Ludo<br/>1896 CE"]
+        patience["Patience<br/>1788 CE"] --> cassino["Cassino<br/>1792 CE"] --> skat["Skat<br/>c. 1810 CE"] --> snakes["Snakes and Ladders<br/>18th–19th century CE"] --> bezique["Bézique<br/>1847 CE"]
     end
     subgraph r4[" "]
         direction LR
-        mahjong["Mahjong<br/>mid-1800s CE"] --> out(["On to Wing V"])
+        ludo["Ludo<br/>1896 CE"] --> mahjong["Mahjong<br/>mid-1800s CE"] --> out(["On to Wing V"])
     end
     r0 --> r1
     r1 --> r2
@@ -366,6 +369,7 @@ flowchart TB
 | [Whist](whist.md) | 1742 CE | Rules in print since 1742 | ✓ | · | · | ✓ | ✓ |
 | [Patience](patience.md) | 1788 CE | Still played | · | · | ✓ | ✓ | ✓ |
 | [Cassino](cassino.md) | 1792 CE | Rules survive in print | ✓ | · | · | · | ✓ |
+| [Skat](skat.md) | c. 1810 CE | Still played | ✓ | · | · | · | ✓ |
 | [Snakes and Ladders](snakes.md) | 18th–19th century CE | Still played today | ✓ | ✓ | · | · | · |
 | [Bézique](bezique.md) | 1847 CE | Still played | ✓ | · | · | · | ✓ |
 | [Ludo](ludo.md) | 1896 CE | Still played | ✓ | ✓ | · | ✓ | · |
@@ -383,11 +387,11 @@ flowchart TB
     end
     subgraph r1[" "]
         direction LR
-        reversi["Reversi<br/>1883 CE"] --> halma["Halma<br/>1883–84 CE"] --> dotsboxes["Dots and Boxes<br/>late 19th century CE"] --> chinese["Chinese Checkers<br/>1892 CE"] --> landlord["The Landlord's Game<br/>1904 CE"]
+        pinochle["Pinochle<br/>late 1800s CE"] --> reversi["Reversi<br/>1883 CE"] --> halma["Halma<br/>1883–84 CE"] --> hearts["Hearts<br/>1880s CE"] --> dotsboxes["Dots and Boxes<br/>late 19th century CE"]
     end
     subgraph r2[" "]
         direction LR
-        kalah["Kalah<br/>1940 CE"] --> hex["Hex<br/>1942 CE"] --> out(["On to Wing VI"])
+        chinese["Chinese Checkers<br/>1892 CE"] --> landlord["The Landlord's Game<br/>1904 CE"] --> kalah["Kalah<br/>1940 CE"] --> hex["Hex<br/>1942 CE"] --> out(["On to Wing VI"])
     end
     r0 --> r1
     r1 --> r2
@@ -399,8 +403,10 @@ flowchart TB
 | [Euchre](euchre.md) | 1850s–60s CE | Still played | ✓ | · | · | · | ✓ |
 | [Conquian](conquian.md) | 1857 CE | Rules survive in print | ✓ | · | · | · | ✓ |
 | [The Checkered Game of Life](lifegame.md) | 1860 CE | Rules survive in print | ✓ | ✓ | · | ✓ | · |
+| [Pinochle](pinochle.md) | late 1800s CE | Still played | ✓ | · | · | · | ✓ |
 | [Reversi](reversi.md) | 1883 CE | Rules survive in print | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Halma](halma.md) | 1883–84 CE | Still played, as Chinese checkers | ✓ | ✓ | ✓ | ✓ | ✓ |
+| [Hearts](hearts.md) | 1880s CE | Still played | ✓ | · | · | · | ✓ |
 | [Dots and Boxes](dotsboxes.md) | late 19th century CE | Rules survive in print | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Chinese Checkers](chinese.md) | 1892 CE | Rules survive in print | ✓ | · | ✓ | ✓ | ✓ |
 | [The Landlord's Game](landlord.md) | 1904 CE | Rules survive in the patent | ✓ | ✓ | · | · | · |

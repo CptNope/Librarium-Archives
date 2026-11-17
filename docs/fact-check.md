@@ -104,3 +104,17 @@ Karnöffel's rules are a reconstruction: the descriptions agree on the chosen su
 - [Cassino (card game)](https://ipfs.ssi.eecc.de/ipns/en.wikipedia-on-ipfs.org/wiki/Cassino_(card_game)), Wikipedia mirror
 - [Conquian](https://www.pagat.com/rummy/conquian.html), pagat.com
 
+## The card room, part four (0.36.0)
+
+| Placard | Claims | Source |
+| --- | --- | --- |
+| Skat | Invented around 1810 by the Brommesche Tarock club in Altenburg, led by Friedrich Ferdinand Hempel; from Schafkopf, with bidding from l'Hombre and Tarock; the name means the discard; grand and null from 1848; the first Skat congress at Altenburg in 1886 and its general rules; the fountain of the four jacks, 1903, melted down 1942 and recast 1954; the American Skat League, 1898; the agreed rules of 1999 | David Parlett, history of Skat; pagat.com, Skat |
+| Pinochle | From bézique by way of Binokel; brought to America by German immigrants in the last quarter of the 1800s; the name misheard; a St. Louis paper on its popularity in New York, 1889; made-up packs before boxed pinochle packs in the early 1900s; favoured by Jewish and Irish immigrants while most Germans kept to Skat; banned in Syracuse in the First World War; perhaps from French *binocle*; partnership auction pinochle the standard game today | Wikipedia, Pinochle |
+| Hearts | Reversis, popular in Spain around 1750, the likely ancestor; Hearts in the United States in the 1880s, the Standard Hoyle of 1887 saying "the last five years"; Black Lady, 1909, with the queen of spades and passing; shooting the moon first recorded in Britain in 1939, with Black Maria; Windows shipped Hearts (Black Lady) from 3.1 to 7 | Wikipedia, Hearts (card game) |
+
+Not used: the popular claims that pinochle was once America's most popular card game, and that the Skat Court in Altenburg settles disputes, neither of which the sources checked here state.
+
+- [Skat history](https://parlettgames.uk/skat/skathist.html), David Parlett, and [Skat](https://pagat.com/schafk/skat.html), pagat.com
+- [Pinochle](https://en.wikipedia.org/wiki/Pinochle), Wikipedia, and [Two-player Pinochle](https://pagat.com/marriage/pin2hand.html), pagat.com
+- [Hearts (card game)](https://en.wikipedia.org/wiki/Hearts_(card_game)), Wikipedia
+

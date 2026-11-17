@@ -23,10 +23,10 @@ mindmap
       plays only from what it can see
       Tarocchi · Dominoes · Cribbage · Mahjong
       Whist · Piquet · Euchre · Bézique · Scopa · Hanafuda
-      Conquian · Cassino
+      Conquian · Cassino · Pinochle
     Sampling the unseen cards
       deals what it cannot see at random and plays each deal out, as Tarocchi's Sharp does
-      Karnöffel · Ombre
+      Karnöffel · Ombre · Skat · Hearts
     Rules of thumb
       scored moves for dice games
       Senet · Ur · Tables
@@ -108,6 +108,9 @@ The Scribe never looks at the visitor's hand or the deck. Each game's Scribe wor
 | Ombre | Bids by the worth of its hand in its best suit (the matadors, high trumps, side kings and empty suits) against a bar by level; keeps trumps and kings in the exchange; as Ombre leads trumps from strength, as a defender lets the other defender's winning card stand. Sharp prices each bid and suit by dealing the unseen cards many times and playing the hand out, and in play samples the hidden hands to choose each card |
 | Conquian | Values each hand card by the sets and runs it could still make. Takes the centre card when that brings the most cards down while leaving the rest of the hand useful, lays off whatever fits, and discards the card it can least use; Fair and Sharp avoid discarding a card that fits the other player's melds |
 | Cassino | Weighs every play: a take for its cards, spades, aces, the two cassinos and a sweep; a build for what it should bring next turn, less the chance the other player holds the card to take it; a trail for what it leaves. Sharp counts every card already taken when it judges those chances |
+| Skat | Judges each game by its strength (jacks, high trumps, side aces, tens with their aces, empty suits) and bids up to the value of the best game strong enough to play. Picks up the skat unless strong enough for a hand game, lays away the pair that leaves the strongest game, and names the strongest game that reaches the bid. Declares by drawing trumps with sure winners; defends by letting the other defender's tricks stand and throwing points on them. Sharp samples the hidden hands in play |
+| Pinochle | Bézique's Scribe with pinochle's melds and card points: keeps aces, tens, trumps and the cards of melds it can still make, wins a trick cheaply for points or a meld, and plays the last twelve by the strict rules |
+| Hearts | Passes the queen of spades (unless it holds enough spades to hide her), high spades and hearts, and the high cards of short suits. Ducks under the winning card when a trick carries points, wins clean tricks to shed high cards, and when void throws the queen, then hearts. Sharp deals the unseen cards many times, keeping known voids, and plays the card that costs it least |
 | Bézique | Values each card for what it can still meld (marriages, bézique, fours, the sequence, the seven of trumps) and for brisques. While the stock lasts it leads its least useful card, and wins a trick cheaply when there is a brisque to take or a meld to show; Sharp plays for the big melds. In the last eight it leads cards nothing unseen can beat. Gentle sometimes skips a meld or plays at random |
 | Scopa | Scores each play for the cards taken (coins, sevens, the settebello) and a sweep, less the chance the other player can sweep what is left or take a seven, from the cards it has not seen. Sharp counts every card already taken; Fair remembers only the table. Gentle often plays at random |
 | Hazard | Always calls a main of 7, the caster's best. Fair stakes 2; Sharp stakes 1, since the caster has the worse of every bet, unless it is behind near the end |
@@ -156,6 +159,9 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Ombre (one seat at the level, two at the level below) | +1.4 counters a game | +1.4 counters a game | 150 and 120 games of 6 deals |
 | Conquian | 127–23 | 85–65 | 150 games each, first to 3 |
 | Cassino | 118–32 | 78–72 | 150 games each, to 21 |
+| Skat (one seat at the level, two at the level below) | wins 49 of 100 games | wins 36 of 60 games | a third is level for three players |
+| Pinochle | 136–14 | 90–60 | 150 games each, to 1,000 |
+| Hearts (one seat at the level, three at the level below) | wins 53 of 100 games | wins 36 of 60 games | a quarter is level for four players |
 | Hazard | about 50% | 56% | 4,000 each; the dice decide almost everything |
 | Nard | 58% | 59% | 100 each |
 | Duodecim scripta | 59% | 56% | 100 each |

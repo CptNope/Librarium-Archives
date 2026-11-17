@@ -2,7 +2,7 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**77 exhibits, 70 of them playable.** Each one also has [a page of its own](games/README.md), with a turn diagram, the rules as played and the Scribe's notes. The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**80 exhibits, 73 of them playable.** Each one also has [a page of its own](games/README.md), with a turn diagram, the rules as played and the Scribe's notes. The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
@@ -10,8 +10,8 @@ pie showData
     "Wing I · 4 of 6" : 6
     "Wing II · 9 of 11" : 11
     "Wing III · 12 of 12" : 12
-    "Wing IV · 18 of 20" : 20
-    "Wing V · 11 of 11" : 11
+    "Wing IV · 19 of 21" : 21
+    "Wing V · 13 of 13" : 13
     "Wing VI · 16 of 17" : 17
 ```
 
@@ -163,6 +163,7 @@ timeline
     1742 CE : Whist (Hoyle)
     1788 CE : Patience
     1792 CE : Cassino
+    c. 1810 CE : Skat
     1847 CE : Bézique
     mid-1800s CE : Mahjong
     1896 CE : Ludo
@@ -185,6 +186,7 @@ timeline
 | Whist | 1742 CE (Hoyle) | Survive in print; short whist still played | Playable: you and a Scribe partner against two Scribes |
 | Ombre | early 1600s CE (Spain); English rules 1660 | Survive in print; still played as l'Hombre | Playable: three-handed at a three-cornered table, Entrada and Solo |
 | Cassino | 1792 CE (Robert Long) | Survive in print | Playable: two-handed, to 21, sweeps optional |
+| Skat | c. 1810 CE (Altenburg) | Still played; international rules of 1999 | Playable: three-handed, bidding, the skat, suit, grand and null |
 | Patience | 1788 CE (first in print, Germany) | Still played | Playable: Klondike, draw one or three, the hall's one table without the Scribe |
 | Snakes and Ladders (gyan chaupar) | 18th–19th century CE | Still played | Playable, with virtues and vices from an old Indian board |
 | Bézique | 1847 CE (Paris); England 1861 | Still played | Playable: two-handed Bézique with two packs, to 1,000 or one deal |
@@ -204,11 +206,12 @@ Rule choices:
 - **Whist:** short whist as on pagat.com: thirteen cards each, the dealer's last card turned for trumps, a point for every trick over six, honours (4 for all four, 2 for three; not for a side at four), tricks before honours, and one game to 5 points rather than a rubber. Gentle and Fair Scribes play some cards carelessly; Sharp plays every card by the book (cash winners, second hand low, third hand high, ruff when an opponent is winning).
 - **Scopa:** two players with the 40-card Italian pack, as on pagat.com. A card must take a single card of its value if there is one, otherwise any set adding up to it; clearing the table is a scopa except on the last play. A table dealt with three or four kings is dealt again. Hands score cards, coins, the settebello and the primiera; the first to 11 (or 21) wins, and a tie at the target plays another hand.
 - **Bézique:** two-handed Bézique with 64 cards, as on pagat.com: one meld after each trick won while the stock lasts, chosen from a list; a card may count again in another kind of meld but never the same kind, a marriage cannot be taken out of a sequence, and every meld needs a card from the hand. The seven of trumps scores 10 when turned up, swapped or shown. After the stock, melds return to the hand and you must follow suit, win if you can, and trump if void. Brisques and the last trick score 10 each; a game is to 1,000, or one deal.
-- **The Pack switch** at Piquet, Karnöffel, Whist, Cribbage, Scopa, Bézique, Euchre, Ombre, Cassino and Conquian redraws the cards in French, German, Swiss or Latin suits, and the messages name them to match (leaves, bells and acorns; Ober and Unter; cups, coins and swords). The suits are matched as players matched them: spades with leaves, shields and swords; hearts with hearts, roses and cups; diamonds with bells and coins; clubs with acorns and batons. The game does not change.
+- **The Pack switch** at Piquet, Karnöffel, Whist, Cribbage, Scopa, Bézique, Euchre, Ombre, Cassino, Conquian, Skat, Pinochle and Hearts redraws the cards in French, German, Swiss or Latin suits, and the messages name them to match (leaves, bells and acorns; Ober and Unter; cups, coins and swords). The suits are matched as players matched them: spades with leaves, shields and swords; hearts with hearts, roses and cups; diamonds with bells and coins; clubs with acorns and batons. The game does not change.
 - **Patience:** Klondike, after the usual rules: build down in alternating colours, kings to empty columns, foundations up by suit, unlimited passes through the stock (draw one or three). Cards may come back down from a foundation. Once every card is face up and the stock is spent, the rest go up by themselves. There is no Scribe; Undo and Hint are open, and Give up ends the game.
 - **Euchre:** four-handed, after pagat.com, with American scoring to 10: one round of ordering up the turned card, then a round of naming another suit; everyone passing twice throws the deal in (no "stick the dealer"). Going alone is declared once trumps are made rather than with the bid. With the Joker (the Best Bower, top trump), a Joker turned up makes the dealer's side the makers and the dealer names trumps.
 - **Ombre:** three-handed, after pagat.com and Wikipedia. A 40-card pack; nine cards each and a talon of thirteen. Bids, low to high: Entrada (name trumps, exchange) and Solo (name trumps, no exchange); a pass is final, and if all three pass the deal moves on. The Ombre exchanges first at Entrada, then each defender in turn from what is left. Matadors (spadille, manille, basta) are forced only by a higher matador. Sacada: each defender pays the stake (1, or 3 at Solo); puesta: the Ombre pays each; codille: the Ombre pays each, and the defender with most twice. Vuelta, the lower bids, the vole and the surrender are left out. Six or twelve deals.
 - **Cassino:** two-handed, after Wikipedia and pagat.com: four cards each and four to the table, then four each until the pack is spent; pairing (court cards one at a time), combining, single builds that anyone may raise while holding the new total, and multiple builds that cannot be raised. As Hoyle recommends, the owner of a build may not trail. Combining a build with loose cards is left out. Scoring 11 a deal; sweeps are an option. Game to 21.
+- **Skat:** the international rules of 1999 after pagat.com: the auction (middlehand to forehand, then rearhand to the survivor; forehand may play at 18 if nobody bids), picking up the skat or playing hand, suit games, grand and null with their values, matadors with or without, schneider and schwarz, and the overbid rule. Announced schneider and schwarz, the open games and null ouvert are left out, and so is the extra 50 a won game earns in tournament scoring. Six or twelve deals; the highest score wins.
 - **Ludo:** two players, red and yellow, from opposite corners. A six brings a token out or moves one, and earns another throw; landing on an enemy token sends it to its yard; your home column is safe; the finish needs the exact throw. There are no blocks or safe squares on the track.
 - **Mahjong:** a basic Chinese game with the 136 tiles (no flowers or seasons). Go out with four sets and a pair, seven pairs or the thirteen orphans. You may claim a discard for a pung or kong from anyone, a chow only from the player on your left, and a win from anyone; a win beats a pung or kong, which beats a chow. A kong draws a replacement tile. There is no scoring: whoever goes out first wins the hand, and an empty wall is a draw.
 
@@ -221,7 +224,9 @@ timeline
     1850s–60s CE : Euchre and the Joker
     1857 CE : Conquian
     1860 CE : The Checkered Game of Life
+    late 1800s CE : Pinochle
     1883–84 CE : Reversi : Halma
+    1880s CE : Hearts
     late 19th century CE : Dots and Boxes
     1892 CE : Chinese checkers
     1904 CE : The Landlord's Game
@@ -235,8 +240,10 @@ timeline
 | Euchre | 1850s–60s CE (the Joker) | Still played | Playable: four seats in partnerships, with the Joker as Best Bower or with 24 cards |
 | Conquian | 1857 CE (Mexico City) | Survive in print (Foster, 1897) | Playable: two-handed, the Anglo-American game |
 | The Checkered Game of Life | 1860 CE | Survive in print (Bradley's patent, 1866) | Playable on the board of about 1911 |
+| Pinochle | late 1800s CE (America) | Still played | Playable: two-handed, to 1,000 or one deal |
 | Reversi | 1883 CE | Survive in print; played today as Othello | Playable, from the Othello opening |
 | Halma | 1883–84 CE | Still played, as Chinese checkers | Playable, two players with 19 men each |
+| Hearts | 1880s CE (Black Lady, 1909) | Still played | Playable: four players, passing, the queen of spades, shooting the moon |
 | Dots and Boxes | late 19th century CE | Survive in print (Lucas's *pipopipette*) | Playable, on a 4 × 4 or 5 × 5 grid of boxes |
 | Chinese checkers (Stern-Halma) | 1892 CE | Still played | Playable, two players with ten marbles each |
 | The Landlord's Game | 1904 CE | Survive in the patent | Playable, on a board read from the patent drawing |
@@ -249,6 +256,8 @@ timeline
 Rule choices:
 
 - **Conquian:** the Anglo-American two-handed game after pagat.com and Foster (1897): 40 cards, ten each; the centre card must be used or turned down (or, if you turned it up yourself, passed); melds only with the centre card; lay off on your own melds; runs from the ace up with the seven next to the jack, up to eight long. A card that fits one of your melds by itself is forced on you (in the old game the opponent chooses whether to force it). Go out by melding all eleven. A hand is drawn if the stock runs out. One hand, or first to three.
+- **Pinochle:** two-handed, after pagat.com: twelve cards each, one meld after each trick won while the stock lasts (a run 150, or 110 on a royal marriage already down; marriages 20 and 40; aces, kings, queens and jacks around; the pinochle 40, double 300; the dix 10, the first exchanged for the turned-up trump), then twelve strict tricks. Cards count 11, 10, 4, 3 and 2, and 10 for the last trick. To 1,000 or one deal.
+- **Hearts:** the Black Lady form as usually played today: pass three cards left, right, across, then none; the two of clubs leads; no hearts or queen of spades on the first trick; hearts may not be led until broken; hearts 1 each and the queen 13; shooting the moon gives 26 to every other player. Game to 100 or 50, lowest wins.
 - **Reversi** starts from the four centre discs of Othello rather than the empty board of the 1880s. A player with no legal move passes; the game ends when neither can move.
 - **Halma:** a man in the far camp may not leave it, and a full far camp with at least one of your men in it wins, so neither side can block by staying home. A house rule ends the game after two hundred moves each.
 - **Dots and Boxes:** closing a box scores it and you must draw again. The Scribe plays the whole of its turn, so it may take several boxes in a row.

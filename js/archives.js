@@ -1579,7 +1579,7 @@ const PACK_WORDS = {
   latin: { suits: ['swords', 'cups', 'coins', 'batons'], courts: [['knave', 'knaves'], ['knight', 'knights'], ['king', 'kings']] },
 };
 // The tables that offer the switch, and the pack each game is played with by default.
-const PACK_TABLES = { piquet: 'french', whist: 'french', cribbage: 'french', bezique: 'french', scopa: 'latin', euchre: 'french', karnoffel: 'german', ombre: 'french', conquian: 'french', cassino: 'french' };
+const PACK_TABLES = { piquet: 'french', whist: 'french', cribbage: 'french', bezique: 'french', scopa: 'latin', euchre: 'french', karnoffel: 'german', ombre: 'french', conquian: 'french', cassino: 'french', hearts: 'french', pinochle: 'french', skat: 'french' };
 let packNow = 'french';
 const packFor = g => (PACK_TABLES[g.id] ? ((store.packs || {})[g.id] || PACK_TABLES[g.id]) : 'french');
 function packText(text, from, to) {
@@ -1995,6 +1995,39 @@ function buildCassino(group) {
   put(26 + 11, 0.14, 0, 0, false);
   for (let i = 0; i < 4; i++) { put(0, (i - 1.5) * 0.06, -0.3, Math.PI, true); put(0, (i - 1.5) * 0.1, 0.3, 0, true); }
   for (let k = 0; k < 10; k++) put(0, -0.5, 0, Math.PI / 2, true);
+  group.userData.display = shown;
+  return y;
+}
+// Skat: three hands of ten round a card table, the two cards of the skat face down, and the four jacks, the top
+// trumps, face up in their order: clubs, spades, hearts, diamonds.
+function buildSkat(group) {
+  const y = cardTable(group, ['#2c4a3a', '#264232', '#325444', '#203a2c']), shown = [];
+  const put = (c, at, ry, down) => { const m = crCard(c, c, 'french'); m.position.copy(at); m.position.y += shown.length * 0.0002; m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  [3 * 13 + 10, 10, 13 + 10, 2 * 13 + 10].forEach((c, i) => put(c, V3((i - 1.5) * 0.085, y + 0.001, 0.04), (i - 1.5) * -0.06, false));
+  for (const [seat, side] of [[0, 0], [1, 2], [2, 1]]) for (let i = 0; i < 10; i++) put(0, omHandSpot(side, i, 10, y + 0.001), OM_YAW[side], true);
+  for (let k = 0; k < 2; k++) put(0, V3(k * 0.006, y + 0.001 + k * 0.0014, -0.2), Math.PI / 2 + k * 0.2, true);
+  group.userData.display = shown;
+  return y;
+}
+// Pinochle: a two-handed game in progress, a pinochle (queen of spades, jack of diamonds) and a royal marriage
+// melded, the dix exchanged for the turned-up trump.
+function buildPinochle(group) {
+  const y = cardTable(group, ['#3a2a48', '#33243f', '#433052', '#2c1f38']), shown = [];
+  const put = (c, x, z, ry, down) => { const m = crCard(c, c, 'french'); m.position.set(x, y + 0.001 + shown.length * 0.0002, z); m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  [11, 2 * 13 + 10].forEach((c, i) => put(c, -0.2 + i * 0.06, 0.15, 0, false)); // the pinochle
+  [13 + 12, 13 + 11].forEach((c, i) => put(c, 0.05 + i * 0.06, 0.15, 0, false)); // a royal marriage, hearts trumps
+  put(13 + 8, -0.47, 0.02, Math.PI / 2, false); // the dix, under the stock
+  for (let k = 0; k < 14; k++) put(0, -0.52, -0.02 + k * 0.0002, 0, true);
+  for (let i = 0; i < 10; i++) { put(0, (i - 4.5) * 0.04, -0.31, Math.PI, true); put(0, (i - 4.5) * 0.058, 0.31, 0, true); }
+  group.userData.display = shown;
+  return y;
+}
+// Hearts: four hands round a whist table, the queen of spades taken in a trick of hearts.
+function buildHearts(group) {
+  const y = cardTable(group, ['#5a1e2a', '#4c1824', '#662632', '#42141e'], 1.1, 0.96), shown = [];
+  const put = (c, at, ry, down) => { const m = crCard(c, c, 'french'); m.position.copy(at); m.position.y += shown.length * 0.0002; m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  for (let s = 0; s < 4; s++) for (let i = 0; i < 9; i++) put(0, wsHandSpot(s, i, 9, y + 0.001), WS_YAW[s], true);
+  [13 + 9, 11, 13 + 4, 13 + 12].forEach((c, s) => put(c, wsTrickSpot(s, y + 0.001 + s * 0.0004), WS_YAW[s] + (s - 1.5) * 0.12, false));
   group.userData.display = shown;
   return y;
 }
@@ -3942,9 +3975,9 @@ const STOPS = [
     eyebrow: 'Wing IV · Librarium Archives', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
-      'Eighteen tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts, and International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Ombre, at its three-cornered table; Cribbage; Dominoes; Scopa; Tablut; Whist, with a Scribe as your partner; Patience, played alone; Cassino; Snakes and Ladders; Bézique; Ludo; and Mahjong, with three Scribes.'
+      'Nineteen tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts, and International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Ombre, at its three-cornered table; Cribbage; Dominoes; Scopa; Tablut; Whist, with a Scribe as your partner; Patience, played alone; Cassino; Skat; Snakes and Ladders; Bézique; Ludo; and Mahjong, with three Scribes.'
     ],
-    facts: [['Tables', 'Fox and Geese, Chess, Draughts, International draughts, Pachisi, the Goose, Ombre, Cribbage, Dominoes, Scopa, Tablut, Whist, Patience, Cassino, Snakes and Ladders, Bézique, Ludo, Mahjong']],
+    facts: [['Tables', 'Fox and Geese, Chess, Draughts, International draughts, Pachisi, the Goose, Ombre, Cribbage, Dominoes, Scopa, Tablut, Whist, Patience, Cassino, Skat, Snakes and Ladders, Bézique, Ludo, Mahjong']],
   },
   { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
@@ -4092,6 +4125,16 @@ const STOPS = [
     ],
     facts: [['First in print', 'London, 1792'], ['Pack', '52 cards'], ['Each deal', '11 points'], ['Game', '21']],
     build: buildCassino },
+  { id: 'skat', wing: 4, title: 'Skat', date: 'c. 1810 CE', rail: 'Skat',
+    eyebrow: 'Altenburg, Saxony', status: ['known', 'Still played'], game: 'skat',
+    note: 'The table plays the international rules of 1999, without the announced and open games.',
+    body: [
+      'Skat was invented around 1810 by the members of a card club in Altenburg, south of Leipzig, led by the lawyer Friedrich Ferdinand Hempel. It grew out of Schafkopf, with bidding from l\'Hombre and Tarock; its name means the discard, the two cards laid away.',
+      'Grand and null joined it in 1848. The first national Skat congress met at Altenburg in 1886 and set out the first general rules, and a fountain topped by the four jacks was put up in the town in 1903. Melted down in 1942, it was recast in 1954.',
+      'German emigrants took the game to America, where an American Skat League was founded in 1898. In 1999 the German and international associations agreed one set of rules, which this table follows.'
+    ],
+    facts: [['Pack', '32 cards'], ['Players', 'Three: a declarer against two'], ['Trumps', 'The four jacks, then the suit'], ['To win', '61 of 120 card points']],
+    build: buildSkat },
   { id: 'snakes', wing: 4, title: 'Snakes and Ladders', date: '18th–19th century CE', rail: 'Snakes and Ladders',
     eyebrow: 'India, then England', status: ['known', 'Still played today'], game: 'snakes',
     body: [
@@ -4131,9 +4174,9 @@ const STOPS = [
     eyebrow: 'Wing V · Librarium Archives', status: null, begin: 'mansion',
     body: [
       'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
-      'All eleven tables are open: the Mansion of Happiness, Euchre, Conquian, the Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
+      'All thirteen tables are open: the Mansion of Happiness, Euchre, Conquian, the Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
     ],
-    facts: [['Tables', 'Mansion of Happiness, Euchre, Conquian, Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex']],
+    facts: [['Tables', 'Mansion of Happiness, Euchre, Conquian, Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex']],
   },
   { id: 'mansion', wing: 5, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
     eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'], game: 'mansion',
@@ -4175,6 +4218,15 @@ const STOPS = [
     ],
     facts: [['Maker', 'Milton Bradley'], ['Board', '8 × 8, 32 squares in play'], ['Moves', 'A teetotum: up, across or diagonally'], ['Goal', 'First to 100 points'], ['Sold', 'Over 45,000 by 1861']],
     build: buildCheckeredLife },
+  { id: 'pinochle', wing: 5, title: 'Pinochle', date: 'late 1800s CE', rail: 'Pinochle',
+    eyebrow: 'America, from Binokel', status: ['known', 'Still played'], game: 'pinochle',
+    body: [
+      'Pinochle is bézique\'s American branch. German immigrants brought the Swiss and Swabian game of Binokel to America in the last quarter of the 1800s, and the name was misheard and misspelled into pinochle. By 1889 a St. Louis paper was reporting its popularity in New York.',
+      'Early players made up their 48-card packs from other packs; boxed pinochle packs were sold once the game was popular in the early 1900s. It was a favourite of Jewish and Irish immigrants, while most Germans in America kept to Skat. During the First World War Syracuse, New York, banned it as German.',
+      'The name may come from the French binocle, eyeglasses. Today the standard form is partnership auction pinochle for four, played in clubs and tournaments. This table plays the two-handed game.'
+    ],
+    facts: [['Pack', '48 cards: two of each, nine to ace'], ['Players', 'Two here'], ['Melds', 'Pinochle: Q♠ and J♦'], ['Game', '1,000 points']],
+    build: buildPinochle },
   { id: 'reversi', wing: 5, title: 'Reversi', date: '1883 CE', rail: 'Reversi',
     eyebrow: 'Victorian England', status: ['known', 'Rules survive in print'], game: 'reversi',
     body: [
@@ -4192,6 +4244,15 @@ const STOPS = [
     ],
     facts: [['Board', '16 × 16'], ['Players', 'Two or four'], ['Moves', 'A step, or chains of leaps'], ['Descendant', 'Chinese checkers']],
     build: buildHalma },
+  { id: 'hearts', wing: 5, title: 'Hearts', date: '1880s CE', rail: 'Hearts',
+    eyebrow: 'America, and the Black Lady', status: ['known', 'Still played'], game: 'hearts',
+    body: [
+      'Hearts turned the trick-taking game inside out: you try not to win the cards that count. Its likely ancestor is Reversis, popular in Spain around 1750. Hearts itself appears in the United States in the 1880s: the Standard Hoyle of 1887 says it had been played there for "the last five years".',
+      'Black Lady, from 1909, added the queen of spades as a penalty of thirteen and the passing of cards before each hand, and became the American favourite. Shooting the moon, taking every penalty card to turn them on the others, is first recorded in Britain in 1939, where the game is also called Black Maria.',
+      'Microsoft Windows shipped a game of Hearts, in fact Black Lady, with every version from Windows 3.1 to Windows 7.'
+    ],
+    facts: [['Players', 'Four, each for themselves'], ['Pass', 'Three cards: left, right, across, none'], ['Penalties', 'Hearts 1, queen of spades 13'], ['Game', '100: lowest wins']],
+    build: buildHearts },
   { id: 'dotsboxes', wing: 5, title: 'Dots and Boxes', date: 'late 19th century CE', rail: 'Dots and Boxes',
     eyebrow: 'France', status: ['known', 'Rules survive in print'], game: 'dotsboxes',
     body: [
@@ -4446,7 +4507,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet, bezique: R.bezique, scopa: R.scopa, euchre: R.euchre, patience: R.patience, karnoffel: R.karnoffel, ombre: R.ombre, conquian: R.conquian, cassino: R.cassino, nard: R.nard, xii: R.xii, koikoi: R.koikoi, idraughts: R.idraughts, hnefatafl: R.hnefatafl };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet, bezique: R.bezique, scopa: R.scopa, euchre: R.euchre, patience: R.patience, karnoffel: R.karnoffel, ombre: R.ombre, conquian: R.conquian, cassino: R.cassino, hearts: R.hearts, pinochle: R.pinochle, skat: R.skat, nard: R.nard, xii: R.xii, koikoi: R.koikoi, idraughts: R.idraughts, hnefatafl: R.hnefatafl };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -7669,6 +7730,237 @@ const CASSINO_P = {
     return [['You', G.total[0]], ['Scribe', G.total[1]], `to 21 · deal ${G.deals} · taken ${G.piles[0].length}–${G.piles[1].length} · pack ${G.pack.length}`];
   },
 };
+// Hearts sits like Whist, four hands round the table, but every player keeps their own tricks, in a pile at
+// their right hand. Before a hand, the three cards you mark to pass are lifted out of the hand.
+const HEARTS_P = {
+  camW: 1.15,
+  intro() { return 'Four players, each for themselves: you, West, North and East. ' + this.prompt(); },
+  prompt() { return GAMES.hearts.prompt0(); },
+  choosePrompt() { return GAMES.hearts.prompt0(); },
+  setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.hearts.surface + 0.001,
+  card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
+  pileSpot(seat, k) { const a = WS_YAW[seat], r = 0.27, t = 0.3; return V3(r * Math.sin(a) + t * Math.cos(a), this.y() + 0.001 + k * 0.0018, r * Math.cos(a) - t * Math.sin(a)); },
+  down(m) { m.rotation.set(0, Math.PI / 2, Math.PI); },
+  redeal() {
+    const G = GAMES.hearts;
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map(); this.piles = [0, 0, 0, 0];
+    for (let s = 0; s < 4; s++) this.layHand(s, true);
+    // A resumed game: each player's taken cards go back on their pile.
+    G.taken.forEach((cs, s) => cs.forEach(c => { const m = this.card(c), to = this.pileSpot(s, this.piles[s]++ / 4); m.position.copy(to); this.down(m); }));
+    G.trick.forEach((t, j) => { const m = this.card(t.card); m.position.copy(wsTrickSpot(t.seat, this.y() + 0.002 + j * 0.0005)); m.rotation.set(0, WS_YAW[t.seat], 0); });
+  },
+  layHand(seat, instant) {
+    const G = GAMES.hearts, h = G.hands[seat], jobs = [];
+    h.forEach((c, i) => {
+      const m = this.card(c), to = wsHandSpot(seat, i, h.length, this.y());
+      if (seat === 0 && G.need === 'pass' && G.marked.includes(c)) { to.z -= 0.035; to.y += 0.006; } // marked to pass
+      m.rotation.set(0, WS_YAW[seat], seat === 0 ? 0 : Math.PI);
+      if (instant) m.position.copy(to); else jobs.push(hop(m, to, 0.2, 0.008));
+    });
+    return Promise.all(jobs);
+  },
+  meshesFor(m) { return (m.kind === 'play' || m.kind === 'mark') && m.seat === 0 ? [this.mesh.get(m.card)] : []; },
+  ringFor: () => null,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.hearts, tok = play.token, before = G.trick.length;
+    const res = G.apply(m);
+    for (const e of res.events || []) {
+      if (tok !== play.token) return res;
+      if (e.type === 'deal') { this.redeal(); continue; }
+      if (e.type === 'mark') { await this.layHand(0); continue; }
+      if (e.type === 'passed') { sfx.card(); await Promise.all([0, 1, 2, 3].map(s => this.layHand(s))); continue; }
+      if (e.type === 'play') {
+        const mc = this.card(e.card), flip = mc.rotation.z !== 0, at = wsTrickSpot(e.seat, this.y() + 0.002 + before * 0.0005);
+        sfx.card();
+        if (flip) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        await hop(mc, at, 0.3, 0.05);
+        mc.rotation.set(0, WS_YAW[e.seat] + (Math.random() - 0.5) * 0.2, 0);
+        await this.layHand(e.seat);
+      }
+      if (e.type === 'trick') {
+        await wait(750); if (tok !== play.token) return res;
+        const k = this.piles[e.winner]++, to = this.pileSpot(e.winner, k);
+        const cards = G.lastTrick.cards.map(c => this.card(c));
+        await Promise.all(cards.map((mc, j) => { tween(0.3, t => { mc.rotation.z = Math.PI * t; }); return hop(mc, V3(to.x, to.y + j * 0.0004, to.z), 0.35, 0.03); }));
+        cards.forEach(mc => this.down(mc));
+      }
+    }
+    return res;
+  },
+  score() {
+    const G = GAMES.hearts, pts = G.taken.map(cs => cs.reduce((t, c) => t + (c === 11 ? 13 : ((c / 13) | 0) === 1 ? 1 : 0), 0));
+    return [['You', G.score[0]], ['West', G.score[1]], ['North', G.score[2]], ['East', G.score[3]], `to ${G.limit}, lowest wins · this hand ${pts.join('–')}${G.broken ? ' · hearts broken' : ''}`];
+  },
+};
+// Pinochle: laid out as Bézique, its parent. Each hand of twelve, the melds laid face up in front of it, the stock with the
+// trump card turned across it at the side, the trick in the middle and each player's tricks in a pile on the right.
+const PINOCHLE_P = {
+  camW: 1.25, camElev: 62,
+  intro() { const G = GAMES.pinochle; return (G.toMove === 0 ? 'The Scribe deals. You lead. ' : 'You deal. ') + (G.dixNote ? G.dixNote + ' ' : '') + this.prompt(); },
+  prompt() { return GAMES.pinochle.prompt0(); },
+  choosePrompt() { return GAMES.pinochle.prompt0(); },
+  setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.pinochle.surface + 0.001,
+  card(b) { let m = this.mesh.get(b); if (!m) { m = crCard(GAMES.pinochle.face(b), b); this.ex.group.add(m); this.cards.push(m); this.mesh.set(b, m); } return m; },
+  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.04 : 0.058), this.y() + i * 0.0004, pl ? -0.31 : 0.31); },
+  meldSpot(pl, i, n) { return V3((i - (n - 1) / 2) * Math.min(0.058, 0.62 / Math.max(1, n)) + 0.02, this.y() + i * 0.0004, pl ? -0.17 : 0.17); },
+  stockSpot: k => V3(-0.52, GAMES.pinochle.surface + 0.001 + k * 0.0012, -0.02),
+  turnSpot() { return V3(-0.47, this.y() - 0.0005, 0.02); },
+  pileSpot(pl, k) { return V3(0.5, this.y() + k * 0.0012, pl ? -0.08 : 0.08); },
+  down(m) { m.rotation.set(0, Math.PI / 2, Math.PI); },
+  redeal() {
+    const G = GAMES.pinochle;
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map(); this.piled = [0, 0];
+    G.stock.forEach((b, k) => { const m = this.card(b); this.down(m); m.position.copy(this.stockSpot(k)); });
+    this.layTurnUp();
+    for (const pl of [0, 1]) G.won[pl].forEach(b => { const m = this.card(b); this.down(m); m.position.copy(this.pileSpot(pl, this.piled[pl]++)); });
+    G.trick.forEach((t, j) => { const m = this.card(t.c); m.rotation.set(0, 0, 0); m.position.copy(this.trickSpot(t.pl, j)); });
+    this.layAll(true);
+  },
+  layTurnUp() {
+    const G = GAMES.pinochle; if (G.turnUp === null) return;
+    const m = this.card(G.turnUp); m.rotation.set(0, Math.PI / 2, 0); m.position.copy(this.turnSpot());
+  },
+  trickSpot(pl, j) { return V3(j ? 0.04 : -0.04, this.y() + 0.003 + j * 0.0006, pl ? -0.04 : 0.06); },
+  layAll(instant) { return Promise.all([this.layHand(0, instant), this.layHand(1, instant), this.layMelds(0, instant), this.layMelds(1, instant)]); },
+  layHand(pl, instant) {
+    const G = GAMES.pinochle, h = G.hands[pl];
+    return Promise.all(h.map((b, i) => { const m = this.card(b), to = this.handSpot(pl, i, h.length); m.rotation.set(0, pl ? Math.PI : 0, pl ? Math.PI : 0); if (instant) { m.position.copy(to); return null; } return hop(m, to, 0.22, 0.008); }));
+  },
+  layMelds(pl, instant) {
+    const G = GAMES.pinochle, h = G.melds[pl];
+    return Promise.all(h.map((b, i) => { const m = this.card(b), to = this.meldSpot(pl, i, h.length); m.rotation.set(0, pl ? Math.PI : 0, 0); if (instant) { m.position.copy(to); return null; } return hop(m, to, 0.25, 0.02); }));
+  },
+  meshesFor(m) { return m.kind === 'play' && m.pl === 0 ? [this.mesh.get(m.c)] : []; },
+  ringFor: () => null,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.pinochle, tok = play.token, before = G.trick.length;
+    const res = G.apply(m);
+    for (const e of res.events || []) {
+      if (tok !== play.token) return res;
+      if (e.type === 'deal') { this.redeal(); continue; }
+      if (e.type === 'play') {
+        const mc = this.card(e.c); sfx.card();
+        if (e.pl === 1 && !e.fromMeld) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        await hop(mc, this.trickSpot(e.pl, before), 0.3, 0.05);
+        mc.rotation.set(0, (Math.random() - 0.5) * 0.2, 0);
+        await (e.fromMeld ? this.layMelds(e.pl) : this.layHand(e.pl));
+        continue;
+      }
+      if (e.type === 'trick') {
+        await wait(700); if (tok !== play.token) return res;
+        await Promise.all(G.lastTrick.cards.map(b => { const mc = this.card(b); tween(0.3, t => { mc.rotation.z = Math.PI * t; }); return hop(mc, this.pileSpot(e.winner, this.piled[e.winner]++), 0.3, 0.03); }));
+        G.lastTrick.cards.forEach(b => this.down(this.card(b)));
+        continue;
+      }
+      if (e.type === 'meld') { sfx.card(); await this.layMelds(e.pl); await this.layHand(e.pl); continue; }
+      if (e.type === 'swap') { // the dix (the nine of trumps) goes under the stock; the old turn-up comes into the hand
+        const nine = this.card(e.gave); nine.rotation.set(0, Math.PI / 2, 0); await hop(nine, this.turnSpot(), 0.3, 0.03);
+        await this.layHand(e.pl); continue;
+      }
+      if (e.type === 'draw') {
+        sfx.card();
+        for (const [pl] of e.cards) await this.layHand(pl);
+        G.stock.forEach((b, k) => this.card(b).position.copy(this.stockSpot(k)));
+        continue;
+      }
+      if (e.type === 'close') { await this.layAll(); }
+    }
+    return res;
+  },
+  score() {
+    const G = GAMES.pinochle, live = G.stage === 'next' || G.over ? 0 : 1;
+    const trumps = asPack(['spades', 'hearts', 'diamonds', 'clubs'][G.trump]);
+    return [['You', G.total[0] + live * G.score[0]], ['Scribe', G.total[1] + live * G.score[1]], `${G.variant === 'deal' ? 'one deal' : 'to 1,000'} · trumps ${trumps} · stock ${G.stock.length + (G.turnUp === null ? 0 : 1)}`];
+  },
+};
+// Skat is played three-handed too, at the same kind of three-cornered table, but play goes to the left: West, on
+// your left, sits at the side Ombre gives its West. The skat lies face down toward the far corner.
+const SK_AT = [0, 2, 1]; // Skat's seat to the side of the table it sits at
+const SKAT_P = {
+  camW: 1.4,
+  intro() { const G = GAMES.skat; return `You sit South; West is on your left and East on your right, and play goes to the left. ${G.who(G.dealer)} ${G.dealer ? 'deals' : 'deal'}. ` + this.prompt(); },
+  prompt() { return GAMES.skat.prompt0(); },
+  choosePrompt() { return GAMES.skat.prompt0(); },
+  setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.skat.surface + 0.001,
+  card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
+  talonSpot(k) { return V3((k % 2) * 0.004, this.y() + k * 0.0016, -0.24); },
+  discardSpot(s, k) { return omSpot(SK_AT[s], -0.26, 0.27, this.y() + k * 0.0016); },
+  pileSpot(s, k) { return omSpot(SK_AT[s], 0.26, 0.27, this.y() + k * 0.0016); },
+  down(m) { m.rotation.set(0, Math.PI / 2, Math.PI); },
+  redeal() {
+    const G = GAMES.skat;
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map(); this.piles = [0, 0, 0]; this.dis = [0, 0, 0];
+    G.skat.forEach((c, k) => { const m = this.card(c); this.down(m); m.position.copy(this.talonSpot(k)); });
+    if (G.declarer >= 0) G.discards.forEach(c => { const m = this.card(c); this.down(m); m.position.copy(this.discardSpot(G.declarer, this.dis[G.declarer]++)); });
+    for (let s = 0; s < 3; s++) this.layHand(s, true);
+    // A resumed game: each player's taken cards go back on their pile.
+    G.taken.forEach((cs, s) => cs.forEach(c => { const m = this.card(c), to = this.pileSpot(s, this.piles[s]++ / 3); m.position.copy(to); this.down(m); }));
+    G.trick.forEach((t, j) => { const m = this.card(t.card); m.position.copy(omTrickSpot(SK_AT[t.seat], this.y() + 0.002 + j * 0.0005)); m.rotation.set(0, OM_YAW[SK_AT[t.seat]], 0); });
+  },
+  layHand(seat, instant) {
+    const G = GAMES.skat, h = G.hands[seat], jobs = [];
+    h.forEach((c, i) => {
+      const m = this.card(c), to = omHandSpot(SK_AT[seat], i, h.length, this.y());
+      if (seat === 0 && G.need === 'discard' && G.toMove === 0 && G.marked.includes(c)) { to.z -= 0.035; to.y += 0.006; } // marked to lay away
+      m.rotation.set(0, OM_YAW[SK_AT[seat]], seat === 0 ? 0 : Math.PI);
+      if (instant) m.position.copy(to); else jobs.push(hop(m, to, 0.2, 0.008));
+    });
+    return Promise.all(jobs);
+  },
+  meshesFor(m) { return (m.kind === 'play' || m.kind === 'mark') && m.seat === 0 ? [this.mesh.get(m.card)] : []; },
+  ringFor: () => null,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.skat, tok = play.token, before = G.trick.length;
+    const res = G.apply(m);
+    for (const e of res.events || []) {
+      if (tok !== play.token) return res;
+      if (e.type === 'deal') { this.redeal(); continue; }
+      if (e.type === 'mark') { if (e.seat === 0) await this.layHand(0); continue; }
+      if (e.type === 'game') { await Promise.all([0, 1, 2].map(s => this.layHand(s))); continue; }
+      if (e.type === 'pickup') { sfx.card(); await this.layHand(e.seat); continue; }
+      if (e.type === 'discard') {
+        sfx.card();
+        await Promise.all(e.cards.map(c => { const mc = this.card(c); this.down(mc); return hop(mc, this.discardSpot(e.seat, this.dis[e.seat]++), 0.3, 0.03); }));
+        await this.layHand(e.seat);
+        continue;
+      }
+      if (e.type === 'play') {
+        const mc = this.card(e.card), flip = mc.rotation.z !== 0, at = omTrickSpot(SK_AT[e.seat], this.y() + 0.002 + before * 0.0005);
+        sfx.card();
+        if (flip) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        await hop(mc, at, 0.3, 0.05);
+        mc.rotation.set(0, OM_YAW[SK_AT[e.seat]] + (Math.random() - 0.5) * 0.2, 0);
+        await this.layHand(e.seat);
+      }
+      if (e.type === 'trick') {
+        await wait(700); if (tok !== play.token) return res;
+        const k = this.piles[e.winner]++, to = this.pileSpot(e.winner, k);
+        const cards = G.lastTrick.cards.map(c => this.card(c));
+        await Promise.all(cards.map((mc, j) => { tween(0.3, t => { mc.rotation.z = Math.PI * t; }); return hop(mc, V3(to.x, to.y + j * 0.0004, to.z), 0.35, 0.03); }));
+        cards.forEach(mc => this.down(mc));
+      }
+    }
+    return res;
+  },
+  score() {
+    const G = GAMES.skat, game = G.game === null ? (G.bid ? `bid ${G.bid}` : 'bidding') : asPack(G.gameName(G.game)) + (G.hand ? ' hand' : '');
+    const who = G.declarer < 0 ? '' : ` · declarer: ${G.declarer ? G.SEATS[G.declarer] : 'you'}`;
+    const pts = G.declarer < 0 || G.game === 'null' ? '' : ` · ${G.taken[G.declarer].reduce((t, c) => t + ({ 0: 11, 9: 10, 12: 4, 11: 3, 10: 2 }[c % 13] || 0), 0)} taken`;
+    return [['You', G.score[0]], ['West', G.score[1]], ['East', G.score[2]], `deal ${Math.min(G.deals + 1, G.limit)} of ${G.limit} · ${game}${who}${pts}`];
+  },
+};
 // Bézique: two packs on one table. Each hand of eight, the melds laid face up in front of it, the stock with the
 // trump card turned across it at the side, the trick in the middle and each player's tricks in a pile on the right.
 const BEZIQUE_P = {
@@ -7754,7 +8046,7 @@ const BEZIQUE_P = {
     return [['You', G.total[0] + live * G.score[0]], ['Scribe', G.total[1] + live * G.score[1]], `${G.variant === 'deal' ? 'one deal' : 'to 1,000'} · trumps ${trumps} · stock ${G.stock.length + (G.turnUp === null ? 0 : 1)}`];
   },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P, bezique: BEZIQUE_P, scopa: SCOPA_P, euchre: EUCHRE_P, patience: PATIENCE_P, karnoffel: KARNOFFEL_P, ombre: OMBRE_P, conquian: CONQUIAN_P, cassino: CASSINO_P, nard: NARD_P, xii: XII_P, koikoi: KOIKOI_P, idraughts: IDRAUGHTS_P, hnefatafl: HNEFATAFL_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P, bezique: BEZIQUE_P, scopa: SCOPA_P, euchre: EUCHRE_P, patience: PATIENCE_P, karnoffel: KARNOFFEL_P, ombre: OMBRE_P, conquian: CONQUIAN_P, cassino: CASSINO_P, hearts: HEARTS_P, pinochle: PINOCHLE_P, skat: SKAT_P, nard: NARD_P, xii: XII_P, koikoi: KOIKOI_P, idraughts: IDRAUGHTS_P, hnefatafl: HNEFATAFL_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -8365,7 +8657,7 @@ const UNDO_OK = new Set(['patience', 'chess', 'xiangqi', 'janggi', 'makruk', 'sh
 // At dice tables the Hint weighs the moves this throw allows; where the moves are fixed (the Goose, Snakes and
 // Ladders, the Mansion, Hazard's bets) there is nothing to weigh.
 const DICE_HINT = new Set(['ur', 'senet', 'tables', 'nard', 'xii', 'yut', 'pachisi', 'ludo', 'patolli', 'tab', 'hounds', 'lifegame']);
-const canHint = g => !!g.aiPlan && (g.dice ? DICE_HINT.has(g.id) : !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'bezique', 'scopa', 'euchre', 'karnoffel', 'ombre', 'conquian', 'cassino', 'fourseasons', 'chaturaji'].includes(g.id));
+const canHint = g => !!g.aiPlan && (g.dice ? DICE_HINT.has(g.id) : !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'bezique', 'scopa', 'euchre', 'karnoffel', 'ombre', 'conquian', 'cassino', 'hearts', 'pinochle', 'skat', 'fourseasons', 'chaturaji'].includes(g.id));
 function copyState(g) {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
   for (const k of Object.keys(d)) if ('value' in d[k] && typeof d[k].value !== 'function' && k !== 'rules' && k !== 'source' && k !== 'surface') out[k] = d[k].value;
@@ -8429,7 +8721,7 @@ $('#lm-hintBtn').addEventListener('click', async () => {
  * A long game against the Scribe is kept in this browser at the start of each of
  * your turns (between tricks, at card tables), and comes back when you sit down
  * again. Only the engine's own state is kept; the table is rebuilt from it. */
-const SAVE_OK = new Set(['karnoffel', 'ombre', 'conquian', 'cassino', 'chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'euchre', 'patience', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl', 'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong']);
+const SAVE_OK = new Set(['hearts', 'pinochle', 'skat', 'karnoffel', 'ombre', 'conquian', 'cassino', 'chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'euchre', 'patience', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl', 'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong']);
 const SAVE_VERSION = 1;
 // Mahjong is kept only when it is your turn to discard: the table is laid out again from the hands, melds and discards.
 GAMES.mahjong.saveable = function () { return this.need.type === 'discard' && this.need.seat === 0 && this.winner === null; };

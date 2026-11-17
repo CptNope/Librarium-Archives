@@ -283,3 +283,36 @@ function buildCassino(group) {
   group.userData.display = shown;
   return y;
 }
+// Skat: three hands of ten round a card table, the two cards of the skat face down, and the four jacks, the top
+// trumps, face up in their order: clubs, spades, hearts, diamonds.
+function buildSkat(group) {
+  const y = cardTable(group, ['#2c4a3a', '#264232', '#325444', '#203a2c']), shown = [];
+  const put = (c, at, ry, down) => { const m = crCard(c, c, 'french'); m.position.copy(at); m.position.y += shown.length * 0.0002; m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  [3 * 13 + 10, 10, 13 + 10, 2 * 13 + 10].forEach((c, i) => put(c, V3((i - 1.5) * 0.085, y + 0.001, 0.04), (i - 1.5) * -0.06, false));
+  for (const [seat, side] of [[0, 0], [1, 2], [2, 1]]) for (let i = 0; i < 10; i++) put(0, omHandSpot(side, i, 10, y + 0.001), OM_YAW[side], true);
+  for (let k = 0; k < 2; k++) put(0, V3(k * 0.006, y + 0.001 + k * 0.0014, -0.2), Math.PI / 2 + k * 0.2, true);
+  group.userData.display = shown;
+  return y;
+}
+// Pinochle: a two-handed game in progress, a pinochle (queen of spades, jack of diamonds) and a royal marriage
+// melded, the dix exchanged for the turned-up trump.
+function buildPinochle(group) {
+  const y = cardTable(group, ['#3a2a48', '#33243f', '#433052', '#2c1f38']), shown = [];
+  const put = (c, x, z, ry, down) => { const m = crCard(c, c, 'french'); m.position.set(x, y + 0.001 + shown.length * 0.0002, z); m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  [11, 2 * 13 + 10].forEach((c, i) => put(c, -0.2 + i * 0.06, 0.15, 0, false)); // the pinochle
+  [13 + 12, 13 + 11].forEach((c, i) => put(c, 0.05 + i * 0.06, 0.15, 0, false)); // a royal marriage, hearts trumps
+  put(13 + 8, -0.47, 0.02, Math.PI / 2, false); // the dix, under the stock
+  for (let k = 0; k < 14; k++) put(0, -0.52, -0.02 + k * 0.0002, 0, true);
+  for (let i = 0; i < 10; i++) { put(0, (i - 4.5) * 0.04, -0.31, Math.PI, true); put(0, (i - 4.5) * 0.058, 0.31, 0, true); }
+  group.userData.display = shown;
+  return y;
+}
+// Hearts: four hands round a whist table, the queen of spades taken in a trick of hearts.
+function buildHearts(group) {
+  const y = cardTable(group, ['#5a1e2a', '#4c1824', '#662632', '#42141e'], 1.1, 0.96), shown = [];
+  const put = (c, at, ry, down) => { const m = crCard(c, c, 'french'); m.position.copy(at); m.position.y += shown.length * 0.0002; m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  for (let s = 0; s < 4; s++) for (let i = 0; i < 9; i++) put(0, wsHandSpot(s, i, 9, y + 0.001), WS_YAW[s], true);
+  [13 + 9, 11, 13 + 4, 13 + 12].forEach((c, s) => put(c, wsTrickSpot(s, y + 0.001 + s * 0.0004), WS_YAW[s] + (s - 1.5) * 0.12, false));
+  group.userData.display = shown;
+  return y;
+}

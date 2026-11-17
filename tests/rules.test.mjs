@@ -2670,6 +2670,120 @@ test('Cassino: each deal scores 11 without sweeps; whole games reach 21', () => 
   CA.setVariant('plain');
 });
 
+/* ---------------------------------------------------------- Hearts */
+
+const HT = rules.hearts;
+const ht = (r, su) => su * 13 + r; // ace 0 (high), two 1 ... king 12; spades, hearts, diamonds, clubs
+test('Hearts: the two of clubs leads; no points on the first trick; hearts wait until broken', () => {
+  HT.init(); HT.need = 'play'; HT.pass = 'none';
+  HT.hands = [[ht(1, 3), ht(5, 1), ht(11, 0)], [ht(4, 3), ht(9, 1)], [ht(12, 2), ht(3, 1)], [ht(2, 0)]];
+  HT.startPlay(); assert.equal(HT.toMove, 0); assert.deepEqual(HT.legal(0).map(m => m.card), [ht(1, 3)]);
+  HT.apply({ pl: 0, seat: 0, kind: 'play', card: ht(1, 3) });
+  HT.hands[1] = [ht(9, 1), ht(11, 0), ht(4, 2)]; // no clubs: on the first trick, only the diamond
+  assert.deepEqual(HT.legal(1).map(m => m.card), [ht(4, 2)]);
+  HT.trick = []; HT.nTricks = 1; HT.toMove = 0; HT.broken = false; HT.hands[0] = [ht(5, 1), ht(3, 2)];
+  assert.deepEqual(HT.legal(0).map(m => m.card), [ht(3, 2)]); // a heart may not be led yet
+  HT.hands[0] = [ht(5, 1), ht(7, 1)]; assert.equal(HT.legal(0).length, 2); // unless there is nothing else
+});
+test('Hearts: hearts score 1 and the queen 13; shooting the moon gives everyone else 26', () => {
+  HT.init(); HT.score = [0, 0, 0, 0];
+  HT.taken = [[ht(11, 0), ht(0, 1), ht(2, 1)], [ht(3, 1)], [], [ht(1, 2)]]; HT.endHand([]);
+  assert.deepEqual(HT.score, [15, 1, 0, 0]);
+  HT.score = [0, 0, 0, 0]; HT.decided = null;
+  HT.taken = [[ht(11, 0), ...Array.from({ length: 13 }, (_, r) => ht(r, 1))], [], [], []]; HT.endHand([]);
+  assert.deepEqual(HT.score, [0, 26, 26, 26]);
+});
+test('Hearts: passes go left, right, across and not at all; whole games reach the limit', () => {
+  HT.init(); assert.equal(HT.pass, 'left'); assert.equal(HT.target(0), 1);
+  const before = HT.hands.map(h => h.slice()), mine = before[0].slice(0, 3);
+  mine.forEach(c => HT.apply({ pl: 0, seat: 0, kind: 'mark', card: c }));
+  HT.apply({ pl: 0, seat: 0, kind: 'pass', cards: mine });
+  assert.ok(mine.every(c => HT.hands[1].includes(c))); assert.equal(HT.hands.flat().length, 52);
+  rules.setLevel('fair');
+  for (let g = 0; g < 4; g++) {
+    HT.init(); let n = 0;
+    while (!HT.over && n++ < 9000) { const pl = HT.passTurn(); for (const m0 of HT.aiPlan()) { const m = Object.assign({}, m0, { pl }); assert.ok(HT.legal(pl).some(x => x.kind === m.kind && x.card === m.card), JSON.stringify(m)); HT.apply(m); } }
+    assert.ok(HT.over); assert.ok(Math.max(...HT.score) >= 100);
+  }
+});
+
+/* ---------------------------------------------------------- Pinochle */
+
+const PN = rules.pinochle;
+const pn = (pw, su, copy = 0) => copy * 24 + su * 6 + pw; // nine 0, jack 1, queen 2, king 3, ten 4, ace 5
+test('Pinochle: aces around need one ace of each suit; the run on a royal marriage adds 110', () => {
+  PN.init(); PN.trump = 1; PN.stage = 'meld'; PN.toMove = 0; PN.melds = [[], []]; PN.used = {}; PN.closed = false;
+  PN.hands[0] = [pn(5, 0), pn(5, 1), pn(5, 2), pn(5, 0, 1), pn(3, 1), pn(2, 1)];
+  const labels = () => PN.meldOptions(0).map(o => o.label);
+  assert.ok(!labels().some(l => /Aces around/.test(l)), 'two aces of spades are not aces around');
+  PN.hands[0].push(pn(5, 3)); assert.ok(labels().includes('Aces around (100)'));
+  assert.ok(labels().includes('Royal marriage in hearts (40)'));
+  PN.apply(Object.assign({ pl: 0 }, PN.meldOptions(0).find(o => o.type === 'marriage' && o.pts === 40)));
+  PN.hands[0].push(pn(4, 1), pn(1, 1)); PN.stage = 'meld'; PN.toMove = 0;
+  assert.ok(labels().includes('Run in hearts (110)'), labels().join(' / '));
+});
+test('Pinochle: the pinochle is the queen of spades and jack of diamonds; cards count 250 with the last trick', () => {
+  PN.init(); PN.trump = 3; PN.melds = [[], []]; PN.used = {}; PN.closed = false;
+  PN.hands[0] = [pn(2, 0), pn(1, 2), pn(2, 0, 1), pn(1, 2, 1)];
+  const opts = PN.meldOptions(0);
+  assert.ok(opts.some(o => o.label === 'Double pinochle (300)')); assert.ok(opts.some(o => o.label === 'Pinochle (40)'));
+  let total = 0; for (let id = 0; id < 48; id++) total += [0, 2, 3, 4, 10, 11][id % 6];
+  assert.equal(total + 10, 250);
+});
+test('Pinochle: whole games between Scribes, with every card accounted for', () => {
+  rules.setLevel('fair');
+  for (let g = 0; g < 4; g++) {
+    PN.init(); let n = 0;
+    while (!PN.over && n++ < 4000) {
+      const pl = PN.passTurn(), m = Object.assign({}, PN.aiPlan(pl)[0], { pl });
+      assert.ok(PN.legal(pl).some(x => x.kind === m.kind && x.c === m.c && x.type === m.type), JSON.stringify(m)); PN.apply(m);
+      if (PN.stage !== 'next') assert.equal(PN.hands.flat().length + PN.melds.flat().length + PN.stock.length + (PN.turnUp === null ? 0 : 1) + PN.won.flat().length + PN.trick.length, 48);
+    }
+    assert.ok(PN.over);
+  }
+});
+
+/* ---------------------------------------------------------- Skat */
+
+const SKG = rules.skat;
+const sk = (r, su) => su * 13 + r; // ace 0, seven 6 ... ten 9, jack 10, queen 11, king 12; spades, hearts, diamonds, clubs
+test('Skat: the jacks are the top trumps and belong to the trump suit; null has its own order', () => {
+  SKG.init(); SKG.game = 1; // hearts
+  const order = [sk(10, 3), sk(10, 0), sk(10, 1), sk(10, 2), sk(0, 1), sk(9, 1), sk(12, 1), sk(11, 1), sk(8, 1), sk(6, 1)];
+  for (let i = 1; i < order.length; i++) assert.ok(SKG.power(order[i - 1]) > SKG.power(order[i]), SKG.cardName(order[i - 1]) + ' over ' + SKG.cardName(order[i]));
+  SKG.need = 'play'; SKG.toMove = 0; SKG.trick = [{ seat: 2, card: sk(0, 3) }]; // the ace of clubs led
+  SKG.hands[0] = [sk(10, 3), sk(7, 1), sk(6, 2)]; // the jack of clubs is a trump, not a club
+  assert.equal(SKG.legal(0).length, 3);
+  SKG.game = 'null'; assert.ok(SKG.power(sk(12, 0)) > SKG.power(sk(10, 0)) && SKG.power(sk(10, 0)) > SKG.power(sk(9, 0)));
+});
+test('Skat: game values count matadors with or without, game, hand and schneider; an overbid loses', () => {
+  SKG.init();
+  const w2 = [sk(10, 3), sk(10, 0), sk(0, 2), sk(9, 2)]; // with two, diamonds
+  assert.deepEqual(SKG.matadors(w2, 2), { has: true, n: 2 });
+  assert.equal(SKG.value(2, w2, false), 27); // with 2, game 3, times 9
+  const without3 = [sk(10, 2), sk(0, 0)]; // the three top jacks missing, spades
+  assert.equal(SKG.value(0, without3, false), 44); // without 3, game 4, times 11
+  assert.equal(SKG.value('grand', [sk(10, 3)], true), 72); // with 1, game, hand: 3 times 24
+  assert.equal(SKG.value('null', [], true), 35);
+  // An overbid: diamonds with one is worth 18; bid 20, the declarer loses 2 x 27.
+  SKG.declarer = 0; SKG.game = 2; SKG.hand = false; SKG.bid = 20; SKG.score = [0, 0, 0]; SKG.dcards = [sk(10, 3), sk(9, 1)];
+  SKG.taken = [SK_PACK_ALL().slice(0, 21), [], []]; SKG.discards = []; SKG.skat = [];
+  SKG.endDeal([]); assert.equal(SKG.score[0], -54);
+});
+const SK_PACK_ALL = () => { const p = []; for (let su = 0; su < 4; su++) for (const r of [0, 6, 7, 8, 9, 10, 11, 12]) p.push(su * 13 + r); return p; };
+test('Skat: the auction, the skat and whole games between Scribes', () => {
+  rules.setLevel('fair');
+  for (let g = 0; g < 4; g++) {
+    SKG.init(); let n = 0;
+    while (!SKG.over && n++ < 6000) {
+      const pl = SKG.passTurn();
+      for (const m0 of SKG.aiPlan()) { const m = Object.assign({}, m0, { pl }); assert.ok(SKG.legal(pl).some(x => x.kind === m.kind && x.card === m.card && x.value === m.value && x.game === m.game), JSON.stringify(m)); SKG.apply(m); }
+      if (SKG.need === 'play') assert.equal(SKG.hands.flat().length + SKG.skat.length + SKG.discards.length + SKG.played.length, 32);
+    }
+    assert.ok(SKG.over);
+  }
+});
+
 /* ---------------------------------------------------------- Patience */
 
 const KL = rules.patience;
@@ -2713,7 +2827,7 @@ test('Patience: the Hint player keeps all 52 cards in play and sometimes wins', 
  * The hall saves an engine's plain data fields as JSON and restores them over a
  * fresh init(). Every game that offers saving must come back exactly. */
 
-const SAVED = ['karnoffel', 'ombre', 'conquian', 'cassino', 'chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'euchre', 'patience', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl',
+const SAVED = ['hearts', 'pinochle', 'skat', 'karnoffel', 'ombre', 'conquian', 'cassino', 'chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'euchre', 'patience', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl',
   'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong'];
 const dataFields = g => {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
