@@ -87,3 +87,20 @@ Ganjifa is on display only. Its rules survive from about 1600, but the details o
 - [The Joker](https://www.wopc.co.uk/playing-cards/the-joker-card), WOPC
 - [Patience (game)](https://ipfs.ssi.eecc.de/ipns/en.wikipedia-on-ipfs.org/wiki/Patience_(game)), Wikipedia mirror
 - [Ganjifa](https://en.wikipedia.org/wiki/Ganjifa), Wikipedia, and [Ganjifa](https://www.wopc.co.uk/explore/suit/ganjifa/), WOPC
+
+## The card room, part three (0.35.0)
+
+| Placard | Claims | Source |
+| --- | --- | --- |
+| Karnöffel | First named in a Nördlingen ordinance of 1426 among the games allowed at the annual fair; Meissner's poem of about 1450; the chosen Unter beats everything, the Devil, Pope and Emperor next; a sermon of 1496 attacked the game for its upside-down order; a satirical dialogue of 1546 between the Pope and the Devil; played in Switzerland by about 1500, then Berlin and Lübeck; the Kaiserspiel found again in the 1970s; Bräus on Gotland and Brús in Iceland | Wikipedia, Karnöffel; David Parlett, The oldest card game |
+| Ombre | From Spain around 1600; *hombre*, "the man"; the first game with trumps set by bidding; English rules printed in 1660; said to have come with Catherine of Braganza; a three-sided table by 1700; Belinda's game in Pope's *The Rape of the Lock* (1714), detailed enough to reconstruct the deal; overtaken by quadrille and whist; l'Hombre in Denmark, the Faroes and Iceland, Tresillo, Rocambor | Wikipedia, Ombre; pagat.com, L'Hombre |
+| Cassino | First recorded in 1792 in Robert Long's *Short Rules for Playing the Game of Casino*; no evidence of play in Italy, and scopa and scopone are mentioned later; Austrian rules of 1795 with English terms; revived in America in the later 1800s and eclipsed by gin rummy; Cassino in the US, casino in Europe; big cassino the ten of diamonds, little cassino the two of spades | Wikipedia, Cassino (card game) |
+| Conquian | First known mention in Mexico City, 1857, with a 40-card Spanish pack; in Texas by the 1860s, popular in neighbouring states by 1900; the first full English description in Foster's *Complete Hoyle* (1897); Foster's 1913 book subtitled "also called Rum"; the ancestor of the western rummies | pagat.com, Conquian |
+
+Karnöffel's rules are a reconstruction: the descriptions agree on the chosen suit's powers but differ in detail (whether the Devil is barred from the first trick or only from leading to it, and how the stake was raised), and the table follows Wikipedia's account and a point a deal. Not used: the name of the preacher of 1496, which only one source gives.
+
+- [Karnöffel](https://en.wikipedia.org/wiki/Karn%C3%B6ffel), Wikipedia, and [The oldest card game](https://parlettgames.uk/histocs/karnoeffel.html), David Parlett
+- [Ombre](https://en.wikipedia.org/wiki/Ombre), Wikipedia, and [L'Hombre](https://pagat.com/lhombre/lhombre.html), pagat.com
+- [Cassino (card game)](https://ipfs.ssi.eecc.de/ipns/en.wikipedia-on-ipfs.org/wiki/Cassino_(card_game)), Wikipedia mirror
+- [Conquian](https://www.pagat.com/rummy/conquian.html), pagat.com
+

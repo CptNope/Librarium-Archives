@@ -220,3 +220,66 @@ function buildGanjifa(group) {
   glassCase(group, 1.3, 0.44, 0.85);
   return y0;
 }
+
+/* --- Card batch three. Karnöffel (Wing III), Ombre and Cassino (Wing IV), Conquian (Wing V). */
+// Karnöffel: on display, the chosen suit's powers in a German pack (hearts chosen): the Karnöffel (Unter), the
+// Devil (seven), the Pope (six) and the Emperor (two), with four hands of five dealt round.
+function buildKarnoffel(group) {
+  const y = cardTable(group, ['#3a2a1c', '#33241a', '#43301f', '#2c2016']), shown = [];
+  const put = (c, x, z, ry, down) => { const m = crCard(c, c, 'german'); m.position.set(x, y + 0.001 + shown.length * 0.0002, z); m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  [13 + 10, 13 + 6, 13 + 5, 13 + 1].forEach((c, i) => put(c, (i - 1.5) * 0.11, 0.02, (i - 1.5) * -0.06));
+  for (let s = 0; s < 4; s++) for (let i = 0; i < 5; i++) { const at = wsHandSpot(s, i, 5, y); put(s === 0 && i === 0 ? 26 + 2 : 0, at.x, at.z, WS_YAW[s], !(s === 0 && i === 0)); }
+  group.userData.display = shown;
+  return y;
+}
+// Ombre: three players round a three-cornered table, one at each side. Seat 0 is the visitor's side, nearest;
+// seats 1 and 2 follow to the right, a third of a turn apart.
+const OM_YAW = [0, (2 * Math.PI) / 3, -(2 * Math.PI) / 3];
+function omHandSpot(seat, i, n, y) {
+  const a = OM_YAW[seat], r = seat ? 0.4 : 0.38, t = (i - (n - 1) / 2) * (seat ? 0.036 : 0.056);
+  return V3(r * Math.sin(a) + t * Math.cos(a), y + i * 0.0004, r * Math.cos(a) - t * Math.sin(a));
+}
+function omTrickSpot(seat, y) { const a = OM_YAW[seat]; return V3(0.1 * Math.sin(a), y, 0.1 * Math.cos(a)); }
+function omSpot(seat, along, out, y) { const a = OM_YAW[seat]; return V3(out * Math.sin(a) + along * Math.cos(a), y, out * Math.cos(a) - along * Math.sin(a)); }
+function buildOmbre(group) {
+  const R = 0.92, top = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.03, 3), new THREE.MeshStandardMaterial({ color: 0x4a2a16, roughness: 0.5 }));
+  top.rotation.y = Math.PI; top.position.y = TOP + 0.015; group.add(top); // a corner away from you, a side toward you
+  const cloth = new THREE.Mesh(new THREE.CylinderGeometry(R - 0.07, R - 0.07, 0.002, 3), new THREE.MeshStandardMaterial({ map: tex(256, 256, (g, w, h) => { g.fillStyle = '#5a1e22'; g.fillRect(0, 0, w, h); speckle(g, w, h, 2500, ['#4c181c', '#66262a', '#43151a'], 1.2); }), roughness: 0.95 }));
+  cloth.rotation.y = Math.PI; cloth.position.y = TOP + 0.0305; group.add(cloth);
+  const y = TOP + 0.032, shown = [];
+  const put = (c, at, ry, down) => { const m = crCard(c, c, 'french'); m.position.copy(at); m.position.y += shown.length * 0.0002; m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  // The three matadors with spades trumps, spadille, manille and basta, face up in the middle; nine cards to each player; the talon.
+  [0, 1, 39].forEach((c, i) => put(c, V3((i - 1) * 0.085, y + 0.001, 0.02), (i - 1) * -0.1, false));
+  for (let s = 0; s < 3; s++) for (let i = 0; i < 9; i++) put(0, omHandSpot(s, i, 9, y + 0.001), OM_YAW[s], true);
+  for (let k = 0; k < 13; k++) put(0, V3(0, y + 0.001 + k * 0.0014, -0.22), Math.PI / 2, true);
+  // Counters in a dish at each side.
+  const disc = new THREE.CylinderGeometry(0.011, 0.011, 0.003, 14), cols = [0xe8dcc0, 0xb84a2a, 0x2a4a7a];
+  for (let s = 0; s < 3; s++) for (let k = 0; k < 7; k++) { const m = new THREE.Mesh(disc, new THREE.MeshStandardMaterial({ color: cols[k % 3], roughness: 0.4 })); m.position.copy(omSpot(s, 0.24 + (k % 3) * 0.024, 0.3, y + 0.0016 + ((k / 3) | 0) * 0.003)); group.add(m); shown.push(m); }
+  group.userData.display = shown;
+  return y;
+}
+// Conquian: a hand in progress, three melds down for each player (one a run from six over the gap to the jack)
+// and the centre card.
+function buildConquian(group) {
+  const y = cardTable(group, ['#2a5a3a', '#244e32', '#326642', '#1f4a2c']), shown = [];
+  const put = (c, x, z, ry, down) => { const m = crCard(c, c, 'french'); m.scale.set(1.1, 1, 1.1); m.position.set(x, y + 0.001 + shown.length * 0.0002, z); m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  const melds = [[[13 + 5, 13 + 6, 13 + 10], [3, 16, 42]], [[2 * 13 + 0, 2 * 13 + 1, 2 * 13 + 2, 2 * 13 + 3], [11, 24, 50]]];
+  melds.forEach((ms, pl) => ms.forEach((m, mi) => m.forEach((c, j) => put(c, (mi ? 0.06 : -0.26) + j * 0.03, pl ? -0.14 : 0.14, 0, false))));
+  put(26 + 12, 0.02, 0, 0.08, false);
+  for (let k = 0; k < 8; k++) put(0, 0.5, 0, Math.PI / 2, true);
+  for (let i = 0; i < 4; i++) { put(0, (i - 1.5) * 0.042, -0.34, Math.PI, true); put(0, (i - 1.5) * 0.064, 0.34, 0, true); }
+  group.userData.display = shown;
+  return y;
+}
+// Cassino: the table during a deal, with a build of seven owned by somebody, and the two cassinos face up.
+function buildCassino(group) {
+  const y = cardTable(group, ['#3a3a5a', '#33334f', '#424268', '#2c2c46']), shown = [];
+  const put = (c, x, z, ry, down) => { const m = crCard(c, c, 'french'); m.scale.set(1.15, 1, 1.15); m.position.set(x, y + 0.001 + shown.length * 0.0002, z); m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  put(2 * 13 + 9, -0.2, 0, 0, false); put(1, -0.1, 0, 0, false); // big and little cassino
+  put(13 + 3, 0.02, -0.01, 0, false); put(3 * 13 + 2, 0.034, 0.006, -0.06, false); // a build of seven: the four and the three
+  put(26 + 11, 0.14, 0, 0, false);
+  for (let i = 0; i < 4; i++) { put(0, (i - 1.5) * 0.06, -0.3, Math.PI, true); put(0, (i - 1.5) * 0.1, 0.3, 0, true); }
+  for (let k = 0; k < 10; k++) put(0, -0.5, 0, Math.PI / 2, true);
+  group.userData.display = shown;
+  return y;
+}

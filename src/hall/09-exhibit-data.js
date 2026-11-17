@@ -175,9 +175,9 @@ const STOPS = [
     eyebrow: 'Wing III · Librarium Archives', status: null, begin: 'tables',
     body: [
       'Board games became courtly pastimes. In this wing chess travels from India through Persia to the far North, the dice games of Rome and Persia settle into tables, and paper cards arrive from the East and change how Europe plays.',
-      'All eleven tables are open: Tables, the family of games that became backgammon; Chaturanga, in a modern reconstruction; Shatranj, the chess of the caliphs\' courts; Xiangqi, the chess of China; Chaturaji, chess for four with dice; Rithmomachia, the scholars\' battle of numbers, also reconstructed; medieval chess on the Lewis chessmen; Courier chess, on twelve files; Four Seasons chess, from Alfonso X\'s Book of Games; Piquet, at the playing cards; and a game of tarocchi, the card game that tarot was made for.'
+      'All twelve tables are open: Tables, the family of games that became backgammon; Chaturanga, in a modern reconstruction; Shatranj, the chess of the caliphs\' courts; Xiangqi, the chess of China; Chaturaji, chess for four with dice; Rithmomachia, the scholars\' battle of numbers, also reconstructed; medieval chess on the Lewis chessmen; Courier chess, on twelve files; Four Seasons chess, from Alfonso X\'s Book of Games; Piquet, at the playing cards; Karnöffel, the oldest card game whose rules we can piece together; and a game of tarocchi, the card game that tarot was made for.'
     ],
-    facts: [['Tables', 'Tables, Chaturanga, Shatranj, Xiangqi, Chaturaji, Rithmomachia, medieval chess, Courier chess, Four Seasons chess, Piquet, Tarocchi']],
+    facts: [['Tables', 'Tables, Chaturanga, Shatranj, Xiangqi, Chaturaji, Rithmomachia, medieval chess, Courier chess, Four Seasons chess, Piquet, Karnöffel, Tarocchi']],
   },
   { id: 'tables', wing: 3, title: 'Tables', short: 'Tables (Backgammon)', date: 'c. 480 CE onward', rail: 'Tables',
     eyebrow: 'Rome, Persia and medieval Europe', status: ['known', 'Rules survive in modern backgammon'], game: 'tables',
@@ -269,6 +269,16 @@ const STOPS = [
     ],
     facts: [['China', 'Recorded by 969 CE'], ['Egypt', 'Mamluk packs, 15th century'], ['Europe', 'From the 1370s'], ['Suits', 'Coins, cups, swords, batons']],
     build: buildCards },
+  { id: 'karnoffel', wing: 3, title: 'Karnöffel', date: '1426 CE', rail: 'Karnöffel',
+    eyebrow: 'Southern Germany · The oldest card game with rules', status: ['recon', 'Rules partly reconstructed'], game: 'karnoffel',
+    note: 'No full account survives from the 1400s. The table follows the Swiss Kaiserspiel and the old descriptions, and every deal is worth a point.',
+    body: [
+      'Karnöffel is the oldest European card game whose rules can be pieced together. It first appears in 1426, in an ordinance of Nördlingen in Bavaria listing the games allowed at the town\'s annual fair, and a poem by Meissner from around 1450 praises it.',
+      'Its cards turn the order of the world upside down. In the chosen suit a lowly Unter, the Karnöffel, beats everything, and the Devil, the Pope and the Emperor come next, above every king. A sermon of 1496 attacked the game for it, and a satire of 1546 set the Pope and the Devil arguing over their places in the pack.',
+      'It was played in Switzerland by about 1500 and spread north to Berlin and Lübeck. Its descendants include the Swiss Kaiserspiel, found again in the 1970s, Bräus on Gotland and Brús in Iceland. Partners were free to talk and signal, so at this table you see your partner\'s cards.'
+    ],
+    facts: [['First record', 'Nördlingen, 1426'], ['Pack', '48 German-suited cards, no aces'], ['Top card', 'The chosen suit\'s Unter'], ['Win', 'Three tricks of five']],
+    build: buildKarnoffel },
   { id: 'tarot', wing: 3, title: 'Tarot (Tarocchi)', date: 'c. 1440 CE', rail: 'Tarot',
     eyebrow: 'Northern Italy · 15th century', status: ['known', 'Still played as a card game'], game: 'tarocchi',
     note: 'The trumps on the easel are new paintings in the style of the gilded Milan decks. At the table you can play a simplified game of tarocchi for two: the first rules were never written down.',
@@ -282,9 +292,9 @@ const STOPS = [
     eyebrow: 'Wing IV · Librarium Archives', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
-      'Thirteen tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts, and International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Cribbage; Dominoes; Tablut; Whist, with a Scribe as your partner; Snakes and Ladders; Ludo; and Mahjong, with three Scribes.'
+      'Eighteen tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts, and International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Ombre, at its three-cornered table; Cribbage; Dominoes; Scopa; Tablut; Whist, with a Scribe as your partner; Patience, played alone; Cassino; Snakes and Ladders; Bézique; Ludo; and Mahjong, with three Scribes.'
     ],
-    facts: [['Tables', 'Fox and Geese, Chess, Draughts, International draughts, Pachisi, the Goose, Cribbage, Dominoes, Tablut, Whist, Snakes and Ladders, Ludo, Mahjong']],
+    facts: [['Tables', 'Fox and Geese, Chess, Draughts, International draughts, Pachisi, the Goose, Ombre, Cribbage, Dominoes, Scopa, Tablut, Whist, Patience, Cassino, Snakes and Ladders, Bézique, Ludo, Mahjong']],
   },
   { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
@@ -349,6 +359,16 @@ const STOPS = [
     ],
     facts: [['Board', '63 squares in a spiral'], ['Dice', 'Two'], ['Skill', 'None at all'], ['Win', 'Land exactly on 63']],
     build: buildGooseBoard },
+  { id: 'ombre', wing: 4, title: 'Ombre', date: 'early 1600s CE', rail: 'Ombre',
+    eyebrow: 'Spain, then every court in Europe', status: ['known', 'Rules survive in print'], game: 'ombre',
+    note: 'The table plays two of the old bids, Entrada and Solo, and keeps score in counters.',
+    body: [
+      'Ombre began in Spain around 1600. Its name is the Spanish hombre, the man: the player who took on the other two said "I am the man". It was the first card game in which trumps were bid for instead of turned up, an idea that passed on to Skat, the tarot games and in the end to bridge.',
+      'English rules were printed in 1660, and the game was said to have come over with Catherine of Braganza, Charles II\'s queen. By 1700 it was so fashionable that it had a three-cornered card table of its own, and in Alexander Pope\'s The Rape of the Lock (1714) Belinda plays a hand of ombre in such detail that the deal can be worked out.',
+      'Quadrille and then whist overtook it in the 1700s, but its descendants are still played: l\'Hombre in Denmark, the Faroes and Iceland, Tresillo in Spain, and Rocambor in South America.'
+    ],
+    facts: [['Pack', '40 cards'], ['Players', 'Three: the Ombre against two'], ['Matadors', 'Spadille, manille, basta'], ['Bids', 'Entrada and Solo here']],
+    build: buildOmbre },
   { id: 'cribbage', wing: 4, title: 'Cribbage', date: '1630s CE', rail: 'Cribbage',
     eyebrow: 'England · the Stuart court', status: ['known', 'Still played'], game: 'cribbage',
     body: [
@@ -412,6 +432,16 @@ const STOPS = [
     ],
     facts: [['First in print', 'Germany, 1788'], ['First in English', 'Lady Cadogan, c. 1870'], ['Players', 'One'], ['This table', 'Klondike']],
     build: buildPatience },
+  { id: 'cassino', wing: 4, title: 'Cassino', date: '1792 CE', rail: 'Cassino',
+    eyebrow: 'England', status: ['known', 'Rules survive in print'], game: 'cassino',
+    note: 'Sweeps, a later addition, can be switched on at the table.',
+    body: [
+      'Cassino is first recorded in England in 1792, in Robert Long\'s Short Rules for Playing the Game of Casino. It is often called Italian, but no sign has been found of it being played in Italy, and its Italian cousins, scopa and scopone, are first mentioned later.',
+      'Rules were printed in Austria in 1795, keeping English words such as sweep and lurch. In America the game was taken up again in the later 1800s, and gin rummy eclipsed it in the 1900s. Americans spell it with two s\'s; in Britain it is casino.',
+      'Like scopa it is a fishing game: a card from your hand takes cards from the table. Cassino adds building, laying a card on another to make a total you mean to take next turn, and the two cards it is named for, big cassino, the ten of diamonds, and little cassino, the two of spades.'
+    ],
+    facts: [['First in print', 'London, 1792'], ['Pack', '52 cards'], ['Each deal', '11 points'], ['Game', '21']],
+    build: buildCassino },
   { id: 'snakes', wing: 4, title: 'Snakes and Ladders', date: '18th–19th century CE', rail: 'Snakes and Ladders',
     eyebrow: 'India, then England', status: ['known', 'Still played today'], game: 'snakes',
     body: [
@@ -451,9 +481,9 @@ const STOPS = [
     eyebrow: 'Wing V · Librarium Archives', status: null, begin: 'mansion',
     body: [
       'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
-      'All nine tables are open: the Mansion of Happiness, the Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
+      'All eleven tables are open: the Mansion of Happiness, Euchre, Conquian, the Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
     ],
-    facts: [['Tables', 'Mansion of Happiness, Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex']],
+    facts: [['Tables', 'Mansion of Happiness, Euchre, Conquian, Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex']],
   },
   { id: 'mansion', wing: 5, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
     eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'], game: 'mansion',
@@ -475,6 +505,16 @@ const STOPS = [
     ],
     facts: [['Pack', '24 cards, or 25 with the Joker'], ['Players', 'Four, in two partnerships'], ['Trumps', 'Joker, right bower, left bower'], ['Game', '10 points']],
     build: buildEuchre },
+  { id: 'conquian', wing: 5, title: 'Conquian', date: '1857 CE', rail: 'Conquian',
+    eyebrow: 'Mexico, and the first rummy', status: ['known', 'Rules survive in print'], game: 'conquian',
+    note: 'The cards are French-suited here. The Pack switch at the table can redraw them in Latin suits, like the Spanish packs played in Mexico.',
+    body: [
+      'Conquian is the oldest game of the rummy family, in which players collect sets of a rank and runs in a suit. Its first known mention comes from Mexico City in 1857, where it was played with a 40-card Spanish pack.',
+      'It reached Texas by the 1860s and was popular across the neighbouring states by the end of the century. English speakers made the name coon-can. R. F. Foster gave the first full description in English in his Complete Hoyle of 1897, and his 1913 book on the game is subtitled "also called Rum".',
+      'The western rummies, gin rummy among them, grew from it. Conquian is stricter than they are: you can meld only with the single card face up in the centre, and must use it or turn it down, and you go out by melding eleven cards, all ten of yours and the last centre card.'
+    ],
+    facts: [['First record', 'Mexico City, 1857'], ['Pack', '40 cards'], ['Hand', '10 cards'], ['Win', 'Meld all eleven']],
+    build: buildConquian },
   { id: 'lifegame', wing: 5, title: 'The Checkered Game of Life', short: 'Checkered Game of Life', date: '1860 CE', rail: 'Game of Life',
     eyebrow: 'Springfield, Massachusetts', status: ['known', 'Rules survive in print'], game: 'lifegame',
     note: 'The table follows Bradley\'s rules; what each spin allows comes from a modern reproduction.',

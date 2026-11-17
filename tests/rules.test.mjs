@@ -2508,6 +2508,168 @@ test('Euchre: whole games between Scribes reach 10, with or without the Joker', 
   EU.setVariant('joker');
 });
 
+/* ---------------------------------------------------------- Karnöffel */
+
+const KF = rules.karnoffel;
+const kf = (r, su) => su * 13 + r; // two 1 ... ten 9, Unter 10, Ober 11, king 12; leaves, hearts, bells, acorns
+// Play a trick from scratch: the cards in seat order from seat 0; returns the seat that wins it.
+const kfTrick = (cards, chosen = 1) => { KF.init(); KF.chosen = chosen; KF.nTricks = 1; KF.trick = cards.map((card, seat) => ({ seat, card })); return KF.best().seat; };
+test('Karnöffel: the chosen Unter beats everything; the Devil wins only when led, and the Pope and Emperor beat kings', () => {
+  assert.equal(kfTrick([kf(12, 0), kf(10, 1), kf(5, 1), kf(1, 1)]), 1); // the Karnöffel over the Pope and Emperor
+  assert.equal(kfTrick([kf(6, 1), kf(5, 1), kf(1, 1), kf(12, 0)]), 0); // the Devil led beats the Pope
+  assert.equal(kfTrick([kf(6, 1), kf(10, 1), kf(5, 1), kf(12, 1)]), 1); // but not the Karnöffel
+  assert.equal(kfTrick([kf(12, 0), kf(6, 1), kf(3, 0), kf(9, 0)]), 0); // the Devil not led is a plain seven
+  assert.equal(kfTrick([kf(12, 2), kf(1, 1), kf(11, 2), kf(2, 1)]), 1); // the Emperor beats a king
+});
+test('Karnöffel: the three, four and five beat all but kings, Obers and Unters in turn; no one need follow suit', () => {
+  assert.equal(kfTrick([kf(12, 0), kf(2, 1)]), 0); // the three cannot beat a king
+  assert.equal(kfTrick([kf(11, 0), kf(2, 1)]), 1); // but beats an Ober
+  assert.equal(kfTrick([kf(11, 0), kf(3, 1)]), 0); // the four cannot beat an Ober
+  assert.equal(kfTrick([kf(10, 0), kf(3, 1)]), 1); // but beats an Unter
+  assert.equal(kfTrick([kf(10, 0), kf(4, 1)]), 0); // the five cannot beat an Unter
+  assert.equal(kfTrick([kf(9, 0), kf(4, 1), kf(12, 3)]), 1); // but beats a ten; an off-suit king wins nothing
+  KF.init(); KF.chosen = 1; KF.nTricks = 0; KF.toMove = 0; KF.trick = [];
+  KF.hands[0] = [kf(6, 1), kf(12, 0), kf(2, 3)];
+  assert.ok(!KF.legal(0).some(m => m.card === kf(6, 1)), 'the Devil may not be played to the first trick');
+  KF.nTricks = 1; KF.trick = [{ seat: 3, card: kf(9, 0) }];
+  assert.equal(KF.legal(0).length, 3); // any card, whatever was led
+});
+test('Karnöffel: the lowest card turned up chooses the suit, and three tricks win the deal', () => {
+  for (let k = 0; k < 20; k++) { KF.init(); const low = Math.min(...KF.shown.map(c => c % 13)); assert.equal(KF.lowCard % 13, low); assert.equal(KF.chosen, (KF.lowCard / 13) | 0); assert.equal(KF.hands.flat().length, 20); }
+  rules.setLevel('fair');
+  for (let g = 0; g < 6; g++) {
+    KF.init(); let n = 0;
+    while (!KF.over && n++ < 3000) { const pl = KF.passTurn(); const m = Object.assign(KF.aiPlan()[0], { pl }); assert.ok(KF.legal(pl).some(x => x.kind === m.kind && x.card === m.card), JSON.stringify(m)); KF.apply(m); if (KF.need === 'next' && !KF.decided) assert.ok(KF.tricks.includes(3)); }
+    assert.ok(KF.over); assert.ok(Math.max(...KF.score) >= 5);
+  }
+});
+
+/* ---------------------------------------------------------- Ombre */
+
+const OMB = rules.ombre;
+const om = (r, su) => su * 13 + r; // ace 0, two 1 ... seven 6, jack 10, queen 11, king 12; spades, hearts, diamonds, clubs
+test('Ombre: spadille, manille and basta lead the trumps, black and red; punto in red; plain suits in their old orders', () => {
+  OMB.init();
+  OMB.trump = 0; // spades: spadille, the two, basta, king ...
+  const black = [om(0, 0), om(1, 0), om(0, 3), om(12, 0), om(11, 0), om(10, 0), om(6, 0), om(2, 0)];
+  for (let i = 1; i < black.length; i++) assert.ok(OMB.power(black[i - 1]) > OMB.power(black[i]), OMB.cardName(black[i - 1]) + ' over ' + OMB.cardName(black[i]));
+  OMB.trump = 1; // hearts: spadille, the seven, basta, the ace (punto), king, queen, jack, two ... six
+  const red = [om(0, 0), om(6, 1), om(0, 3), om(0, 1), om(12, 1), om(10, 1), om(1, 1), om(5, 1)];
+  for (let i = 1; i < red.length; i++) assert.ok(OMB.power(red[i - 1]) > OMB.power(red[i]), OMB.cardName(red[i - 1]) + ' over ' + OMB.cardName(red[i]));
+  assert.ok(OMB.isTrump(om(0, 3)) && OMB.isTrump(om(0, 0))); // the black aces are always trumps
+  assert.ok(OMB.power(om(0, 2)) > OMB.power(om(1, 2))); // a red plain ace is above the two
+  assert.ok(OMB.power(om(2, 3)) > OMB.power(om(1, 3))); // a black plain three is above the two
+});
+test('Ombre: a matador need only be played to a higher matador; plain suits must be followed', () => {
+  OMB.init(); OMB.trump = 0; OMB.need = 'play'; OMB.toMove = 0;
+  OMB.hands[0] = [om(0, 3), om(12, 1), om(5, 2)]; // basta, and no other trump
+  OMB.trick = [{ seat: 2, card: om(11, 0) }]; // the queen of trumps led
+  assert.equal(OMB.legal(0).length, 3); // basta need not be played
+  OMB.trick = [{ seat: 2, card: om(1, 0) }]; // manille led: basta is forced
+  assert.deepEqual(OMB.legal(0).map(m => m.card), [om(0, 3)]);
+  OMB.hands[0] = [om(0, 0), om(12, 1)]; OMB.trick = [{ seat: 2, card: om(1, 0) }];
+  assert.equal(OMB.legal(0).length, 2); // spadille is never forced
+  OMB.hands[0] = [om(0, 3), om(4, 0), om(12, 1)]; OMB.trick = [{ seat: 2, card: om(11, 0) }];
+  assert.deepEqual(OMB.legal(0).map(m => m.card).sort((a, b) => a - b), [om(4, 0), om(0, 3)].sort((a, b) => a - b)); // a plain trump held: a trump must go
+  OMB.hands[0] = [om(12, 1), om(3, 1), om(5, 2)]; OMB.trick = [{ seat: 2, card: om(2, 1) }];
+  assert.deepEqual(OMB.legal(0).map(m => m.card).sort((a, b) => a - b), [om(3, 1), om(12, 1)]);
+});
+test('Ombre: sacada, puesta and codille pay as they should; whole games between Scribes finish', () => {
+  OMB.init(); OMB.ombre = 1; OMB.bid = 1; OMB.bank = [0, 0, 0];
+  OMB.tricks = [2, 5, 2]; OMB.endDeal([]); assert.deepEqual(OMB.bank, [-1, 2, -1]);
+  OMB.bank = [0, 0, 0]; OMB.tricks = [4, 4, 1]; OMB.endDeal([]); assert.deepEqual(OMB.bank, [1, -2, 1]);
+  OMB.bank = [0, 0, 0]; OMB.bid = 2; OMB.tricks = [5, 3, 1]; OMB.endDeal([]); assert.deepEqual(OMB.bank, [6, -9, 3]); // codille at Solo
+  rules.setLevel('fair');
+  for (let g = 0; g < 6; g++) {
+    OMB.init(); let n = 0;
+    while (!OMB.over && n++ < 4000) {
+      const pl = OMB.passTurn();
+      for (const m0 of OMB.aiPlan()) { const m = Object.assign({}, m0, { pl }); assert.ok(OMB.legal(pl).some(x => x.kind === m.kind && x.card === m.card && x.bid === m.bid && x.suit === m.suit), JSON.stringify(m)); OMB.apply(m); }
+      assert.equal(OMB.hands.flat().length + OMB.talon.length + OMB.played.length + OMB.discards.flat().length, 40);
+    }
+    assert.ok(OMB.over); assert.equal(OMB.bank.reduce((a, b) => a + b, 0), 0); // counters only change hands
+  }
+});
+
+/* ---------------------------------------------------------- Conquian */
+
+const CQ = rules.conquian;
+const cq = (r, su) => su * 13 + r; // ace 0 ... seven 6, jack 10, queen 11, king 12
+test('Conquian: runs have the ace low and the seven next to the jack; the centre card makes the meld', () => {
+  CQ.init(); CQ.melds = [[], []];
+  CQ.hands[0] = [cq(5, 1), cq(6, 1), cq(11, 0), cq(12, 0), cq(1, 3), cq(2, 3)]; CQ.centre = cq(10, 1); CQ.fresh = true; CQ.toMove = 0; CQ.stage = 'centre';
+  const labels = CQ.legal(0).map(m => m.label);
+  assert.ok(labels.includes('Meld the 6-7-jack of hearts'), labels.join(' / '));
+  CQ.centre = cq(0, 0); // the ace of spades will not go after the king
+  assert.ok(!CQ.legal(0).some(m => m.kind === 'meld'));
+  CQ.centre = cq(0, 3); // but goes before the two and three of clubs
+  assert.ok(CQ.legal(0).some(m => m.label === 'Meld the ace-2-3 of clubs'));
+});
+test('Conquian: a card that fits a meld by itself is forced, and melding everything goes out', () => {
+  CQ.init(); CQ.melds = [[[cq(3, 0), cq(3, 1), cq(3, 2)]], []];
+  CQ.hands[0] = [cq(5, 1), cq(6, 1), cq(10, 1)]; CQ.centre = cq(3, 3); CQ.fresh = false; CQ.toMove = 0; CQ.stage = 'centre';
+  const ms = CQ.legal(0); assert.ok(!ms.some(m => m.kind === 'turn'), 'a forced card cannot be turned down');
+  CQ.melds = [[[cq(3, 0), cq(3, 1), cq(3, 2)], [cq(0, 2), cq(1, 2), cq(2, 2)], [cq(10, 3), cq(11, 3), cq(12, 3)], [cq(4, 0), cq(5, 0)]], []];
+  CQ.hands[0] = [cq(5, 1), cq(6, 1)]; CQ.centre = cq(10, 1); CQ.fresh = true; CQ.wins = [0, 0];
+  CQ.apply(CQ.legal(0).find(m => m.kind === 'meld' && m.into < 0));
+  assert.equal(CQ.wins[0], 1); assert.equal(CQ.stage, 'next');
+});
+test('Conquian: whole games between Scribes end, and every card is accounted for', () => {
+  rules.setLevel('fair');
+  for (let g = 0; g < 8; g++) {
+    CQ.setVariant('3'); CQ.init(); let n = 0;
+    while (!CQ.over && n++ < 6000) {
+      const pl = CQ.passTurn(), m = Object.assign({}, CQ.aiPlan(pl)[0], { pl });
+      assert.ok(CQ.legal(pl).some(x => x.kind === m.kind && x.card === m.card && x.into === m.into && String(x.cards) === String(m.cards)), JSON.stringify(m));
+      CQ.apply(m);
+      if (CQ.stage !== 'next') assert.equal(CQ.hands.flat().length + CQ.melds.flat(2).length + CQ.stock.length + CQ.dead.length + (CQ.centre === null ? 0 : 1), 40);
+      for (const pl2 of [0, 1]) for (const md of CQ.melds[pl2]) assert.ok(md.length >= 3, 'a meld of fewer than three');
+    }
+    assert.ok(CQ.over);
+  }
+});
+
+/* ---------------------------------------------------------- Cassino */
+
+const CA = rules.cassino;
+const ca = (r, su) => su * 13 + r; // ace 0, two 1 ... ten 9, jack 10, queen 11, king 12
+const caItem = c => ({ id: 900 + c, cards: [c], kind: 'card', value: c % 13 >= 10 ? 0 : c % 13 + 1, owner: -1 });
+test('Cassino: a card takes its pairs and every set of number cards adding up to it; court cards only pair', () => {
+  CA.init(); CA.table = [caItem(ca(6, 1)), caItem(ca(2, 0)), caItem(ca(3, 2)), caItem(ca(1, 3)), caItem(ca(4, 3)), caItem(ca(11, 1))];
+  const got = CA.capture(ca(6, 0)).flatMap(t => t.cards).sort((a, b) => a - b); // the seven of spades: the other seven, 3+4, and 2+5
+  assert.deepEqual(got, [ca(6, 1), ca(2, 0), ca(3, 2), ca(1, 3), ca(4, 3)].sort((a, b) => a - b));
+  assert.deepEqual(CA.capture(ca(11, 2)).flatMap(t => t.cards), [ca(11, 1)]);
+});
+test('Cassino: a build needs the card to take it; its owner may not trail', () => {
+  CA.init(); CA.table = [caItem(ca(4, 1))]; CA.hands[0] = [ca(2, 0), ca(7, 3), ca(9, 2)]; CA.toMove = 0; CA.stage = 'pick';
+  const plays = CA.plays(0, ca(2, 0)).map(m => m.kind + (m.value || ''));
+  assert.ok(plays.includes('build8'), plays.join(' ')); // a three on the five, holding the eight
+  assert.ok(!CA.plays(0, ca(9, 2)).some(m => m.kind === 'build')); // fifteen is too many
+  CA.apply(CA.plays(0, ca(2, 0)).find(m => m.kind === 'build'));
+  CA.toMove = 0; assert.ok(CA.owns(0));
+  assert.ok(!CA.plays(0, ca(9, 2)).some(m => m.kind === 'trail'), 'the owner of a build may not trail');
+  assert.ok(CA.plays(0, ca(7, 3)).some(m => m.kind === 'take'));
+});
+test('Cassino: each deal scores 11 without sweeps; whole games reach 21', () => {
+  rules.setLevel('fair');
+  for (const v of ['plain', 'sweeps']) for (let g = 0; g < 5; g++) {
+    CA.setVariant(v); CA.init(); let n = 0, before = [0, 0];
+    while (!CA.over && n++ < 6000) {
+      const pl = CA.passTurn();
+      for (const m0 of CA.aiPlan(pl)) { const m = Object.assign({}, m0, { pl }); assert.ok(CA.legal(pl).some(x => x.kind === m.kind && x.card === m.card && x.item === m.item && x.value === m.value), JSON.stringify(m)); CA.apply(m); }
+      if (CA.stage === 'next') {
+        const gained = CA.total[0] + CA.total[1] - before[0] - before[1];
+        if (v === 'plain') assert.ok(gained <= 11 && gained >= 7, 'a deal scored ' + gained); // ties for cards or spades score nothing
+        assert.equal(CA.piles.flat().length, 52);
+        before = CA.total.slice();
+        if (!CA.decided) CA.apply({ pl: 0, kind: 'next' }); else CA.apply({ pl: 0, kind: 'next' });
+      }
+    }
+    assert.ok(CA.over); assert.ok(Math.max(...CA.total) >= 21);
+  }
+  CA.setVariant('plain');
+});
+
 /* ---------------------------------------------------------- Patience */
 
 const KL = rules.patience;
@@ -2551,7 +2713,7 @@ test('Patience: the Hint player keeps all 52 cards in play and sometimes wins', 
  * The hall saves an engine's plain data fields as JSON and restores them over a
  * fresh init(). Every game that offers saving must come back exactly. */
 
-const SAVED = ['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'euchre', 'patience', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl',
+const SAVED = ['karnoffel', 'ombre', 'conquian', 'cassino', 'chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'euchre', 'patience', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl',
   'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong'];
 const dataFields = g => {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);

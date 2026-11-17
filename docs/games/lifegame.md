@@ -4,7 +4,7 @@
 
 **Wing V · The Modern Board Game** · 1860 CE · Springfield, Massachusetts
 
-[← Euchre](euchre.md) · [All games](README.md) · [Reversi →](reversi.md)
+[← Conquian](conquian.md) · [All games](README.md) · [Reversi →](reversi.md)
 
 | | |
 | --- | --- |

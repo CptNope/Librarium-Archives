@@ -23,6 +23,10 @@ mindmap
       plays only from what it can see
       Tarocchi · Dominoes · Cribbage · Mahjong
       Whist · Piquet · Euchre · Bézique · Scopa · Hanafuda
+      Conquian · Cassino
+    Sampling the unseen cards
+      deals what it cannot see at random and plays each deal out, as Tarocchi's Sharp does
+      Karnöffel · Ombre
     Rules of thumb
       scored moves for dice games
       Senet · Ur · Tables
@@ -100,6 +104,10 @@ The Scribe never looks at the visitor's hand or the deck. Each game's Scribe wor
 | Whist | Each Scribe plays by the book from what its seat can see: cash sure winners, draw trumps when long in them, lead a suit its partner can ruff, second hand low, third hand high, win as cheaply as possible, and discard its least useful card. Gentle and Fair play some cards at random. (A sampling search over the unseen cards was tried and played no better.) |
 | Piquet | Exchange: keeps aces, long suits, sets and runs in the making; Sharp tries every discard among its weakest cards against many random draws and keeps the best on average. Play: cashes sure winners, leads low from its longest suit, wins cheaply, and throws cards that cannot win |
 | Euchre | Bids by the worth of its hand in each suit (bowers, the Joker, aces, length) against a bar that Gentle sets high and Sharp low, and is a little bolder without the Joker. Goes alone only with a strong hand holding two sure tricks (never at Gentle). In play it draws trumps when it holds the best one, cashes sure winners, throws its least card when its partner has the trick, and otherwise wins as cheaply as it can. Gentle plays some cards at random |
+| Karnöffel | Partners see each other's hands, so each Scribe knows its side's ten cards. Fair leads the Devil once it may, lets its partner's sure trick stand, and otherwise wins as cheaply as it can or throws its least useful card. Sharp deals the unseen cards between the other side many times, plays each deal out with Fair's judgement, and plays the card that wins the deal most often. Gentle often plays at random |
+| Ombre | Bids by the worth of its hand in its best suit (the matadors, high trumps, side kings and empty suits) against a bar by level; keeps trumps and kings in the exchange; as Ombre leads trumps from strength, as a defender lets the other defender's winning card stand. Sharp prices each bid and suit by dealing the unseen cards many times and playing the hand out, and in play samples the hidden hands to choose each card |
+| Conquian | Values each hand card by the sets and runs it could still make. Takes the centre card when that brings the most cards down while leaving the rest of the hand useful, lays off whatever fits, and discards the card it can least use; Fair and Sharp avoid discarding a card that fits the other player's melds |
+| Cassino | Weighs every play: a take for its cards, spades, aces, the two cassinos and a sweep; a build for what it should bring next turn, less the chance the other player holds the card to take it; a trail for what it leaves. Sharp counts every card already taken when it judges those chances |
 | Bézique | Values each card for what it can still meld (marriages, bézique, fours, the sequence, the seven of trumps) and for brisques. While the stock lasts it leads its least useful card, and wins a trick cheaply when there is a brisque to take or a meld to show; Sharp plays for the big melds. In the last eight it leads cards nothing unseen can beat. Gentle sometimes skips a meld or plays at random |
 | Scopa | Scores each play for the cards taken (coins, sevens, the settebello) and a sweep, less the chance the other player can sweep what is left or take a seven, from the cards it has not seen. Sharp counts every card already taken; Fair remembers only the table. Gentle often plays at random |
 | Hazard | Always calls a main of 7, the caster's best. Fair stakes 2; Sharp stakes 1, since the caster has the worse of every bet, unless it is behind near the end |
@@ -144,6 +152,10 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Courier chess | 5–0, 1 draw | 5–0, 1 draw | 6 each |
 | Piquet | 74% | 55% | 400 parties of six deals each |
 | Euchre (both seats of a side at one level) | 109–41 | 80–70 | 150 games each |
+| Karnöffel (both seats of a side at one level) | 110–40 | 127–23 | 150 games each, to 5 |
+| Ombre (one seat at the level, two at the level below) | +1.4 counters a game | +1.4 counters a game | 150 and 120 games of 6 deals |
+| Conquian | 127–23 | 85–65 | 150 games each, first to 3 |
+| Cassino | 118–32 | 78–72 | 150 games each, to 21 |
 | Hazard | about 50% | 56% | 4,000 each; the dice decide almost everything |
 | Nard | 58% | 59% | 100 each |
 | Duodecim scripta | 59% | 56% | 100 each |

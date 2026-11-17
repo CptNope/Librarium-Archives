@@ -25,7 +25,7 @@ let server, browser, page, base;
 const errors = [];
 
 // Every table a test touches is marked as seen, so its rules panel stays shut; the Scribe plays Gentle to keep it quick.
-const SEEN = ['newqueen', 'chess', 'dotsboxes', 'ur', 'bao', 'scopa', 'patience'];
+const SEEN = ['newqueen', 'chess', 'dotsboxes', 'ur', 'bao', 'scopa', 'patience', 'cassino'];
 async function open(path = 'index.html') {
   page = await browser.newPage({ viewport: { width: 900, height: 560 } });
   page.on('pageerror', e => errors.push(String(e).slice(0, 300)));
@@ -179,6 +179,21 @@ test('patience: a table with no Scribe, where a move can be taken back', { timeo
   assert.notEqual(await page.evaluate(() => JSON.stringify([window.__archives.play.game.tab, window.__archives.play.game.waste])), before);
   await page.evaluate(() => document.getElementById('lm-undoBtn').click()); await sleep(600); await yourTurn();
   assert.equal(await page.evaluate(() => JSON.stringify([window.__archives.play.game.tab, window.__archives.play.game.waste])), before, 'Undo did not take the move back');
+  await leave();
+});
+
+test('cassino: a card with several plays offers them as buttons, and Another card puts it back', { timeout: LONG * 2 }, async () => {
+  await sit('cassino'); await yourTurn();
+  const picked = await page.evaluate(() => { const P = window.__archives.play, m = P.moves.find(x => x.kind === 'pick'); if (m) window.__archives.choose(m); return !!m; });
+  if (picked) {
+    await sleep(500); await yourTurn();
+    const labels = await page.evaluate(() => [...document.querySelectorAll('#lm-choices button')].map(b => b.textContent));
+    assert.ok(labels.includes('Another card'), labels.join(' / '));
+    assert.ok(labels.some(l => /^(Trail|Take|Build)/.test(l)), labels.join(' / '));
+    await page.evaluate(() => [...document.querySelectorAll('#lm-choices button')].find(b => b.textContent === 'Another card').click());
+    await sleep(500); await yourTurn();
+    assert.equal(await page.evaluate(() => window.__archives.play.game.stage), 'pick');
+  }
   await leave();
 });
 

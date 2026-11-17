@@ -14,13 +14,13 @@ export const FAMILIES = [
   ['Territory and enclosure', 'Surround, close in or flip to own the most of the board.', ['go', 'dotsboxes', 'reversi']],
   ['Running and jumping races', 'Move a whole army across the board by steps and chains of hops.', ['halma', 'chinese']],
   ['Mancala', 'Sow seeds round a row of pits and capture by count.', ['oware', 'kalah', 'bao']],
-  ['Cards', 'Tricks, melds, fishing, combinations and patience, and cards made for other uses.', ['cards', 'tarot', 'courtcards', 'cribbage', 'notforplay', 'scopa', 'whist', 'patience', 'bezique', 'euchre', 'koikoi', 'ganjifa']],
+  ['Cards', 'Tricks, bidding, melds, rummy, fishing, combinations and patience, and cards made for other uses.', ['cards', 'karnoffel', 'tarot', 'courtcards', 'ombre', 'cribbage', 'notforplay', 'scopa', 'whist', 'patience', 'cassino', 'bezique', 'euchre', 'conquian', 'koikoi', 'ganjifa']],
   ['Tiles', 'Dominoes and mahjong.', ['dominoes', 'mahjong']],
 ];
 
 // Other names an exhibit goes by in docs/exhibits.md and docs/scribe.md, beyond its title and its engine's name.
 export const ALIASES = {
-  ur: ['Ur', 'Royal Game of Ur'], scopa: ['Scopa'], euchre: ['Euchre'], bezique: ['Bézique'],
+  ur: ['Ur', 'Royal Game of Ur'], scopa: ['Scopa'], euchre: ['Euchre'], bezique: ['Bézique'], karnoffel: ['Karnöffel'], ombre: ['Ombre'], conquian: ['Conquian'], cassino: ['Cassino'],
   dice: ['Hazard', 'The first dice'], hounds: ['Hounds and Jackals'], go: ['Go', 'Weiqi'], latrunculi: ['Latrunculi', 'Ludus latrunculorum'],
   xii: ['Duodecim scripta', 'Ludus duodecim scriptorum'], morris: ['Morris', "Nine Men's Morris"], oware: ['Oware', 'Mancala'],
   lewis: ['Medieval chess', 'Lewis chessmen'], cards: ['Piquet', 'Playing cards'], tarot: ['Tarocchi', 'Tarot'], newqueen: ['Chess', 'The New Queen'],
@@ -260,6 +260,66 @@ export const FLOWS = {
     S --> G{"Last month played?"}
     G -->|no| D
     G -->|yes| E(["Highest total wins"])`,
+  karnoffel: `flowchart TD
+    D(["Five cards each; the first dealt face up"]) --> C["The lowest face-up card chooses the suit"]
+    C --> L["Forehand leads any card, but not the Devil to the first trick"]
+    L --> P["Each plays any card: nobody need follow suit"]
+    P --> W{"Who takes it?"}
+    W -->|"a power of the chosen suit"| X["Karnöffel, then the Devil if led, Pope, Emperor; the three, four and five beat lower cards"]
+    W -->|"no power"| Y["The highest card of the suit led"]
+    X --> T{"A side has three tricks?"}
+    Y --> T
+    T -->|no| L2["The winner leads"] --> P
+    T -->|yes| S["That side scores a point"]
+    S --> G{"5 points, or 7?"}
+    G -->|no| D
+    G -->|yes| E(["That side wins"])`,
+  ombre: `flowchart TD
+    D(["Nine cards each, a talon of thirteen"]) --> B{"Anyone bids, Entrada or Solo?"}
+    B -->|"all pass"| D
+    B -->|yes| O["The highest bidder is the Ombre and names trumps"]
+    O --> X["Exchange: the Ombre at Entrada, then each defender, from the talon"]
+    X --> P["Nine tricks: follow suit; matadors forced only by higher matadors"]
+    P --> R{"The Ombre's tricks against the defenders' best?"}
+    R -->|more| SA["Sacada: each defender pays"]
+    R -->|equal| PU["Puesta: the Ombre pays each"]
+    R -->|fewer| CO["Codille: the Ombre pays, the best defender twice"]
+    SA --> G
+    PU --> G
+    CO --> G
+    G{"6 or 12 deals played?"} -->|no| D
+    G -->|yes| E(["Most counters wins"])`,
+  conquian: `flowchart TD
+    S(["A card face up in the centre"]) --> F{"Does it fit one of your melds by itself?"}
+    F -->|yes| T
+    F -->|no| U{"Use it?"}
+    U -->|yes| T["Meld it with hand cards, or add it to a meld"]
+    T --> L["Lay off any cards that fit your melds"]
+    L --> O{"Hand empty: all eleven melded?"}
+    O -->|yes| W(["You win the hand"])
+    O -->|no| X["Discard: the centre card for the Scribe"] --> N
+    U -->|"no, it came from the Scribe"| R["Turn it down and turn up the next card"] --> U2{"Use the new card?"}
+    U2 -->|yes| T
+    U2 -->|no| P["Pass it to the Scribe"] --> N
+    U -->|"no, you turned it up"| P
+    N["The Scribe's turn"] --> Z{"Stock empty and the card no use?"}
+    Z -->|yes| DR(["The hand is drawn"])
+    Z -->|no| S`,
+  cassino: `flowchart TD
+    D(["Four cards each, four on the table"]) --> P["Play a card"]
+    P --> K{"How?"}
+    K -->|take| T["Its pairs, its builds, and sets that add up to it"]
+    K -->|build| B["On a table card or build, to a total you hold"]
+    K -->|"trail: not while you own a build"| R["Lay it on the table"]
+    T --> H
+    B --> H
+    R --> H
+    H{"Hands empty?"} -->|"no"| P
+    H -->|"yes, pack left"| M["Four more each"] --> P
+    H -->|"yes, pack spent"| S["The last taker takes the table; score 11: cards 3, spades 1, big cassino 2, little cassino 1, aces 1 each"]
+    S --> G{"Anyone at 21?"}
+    G -->|no| D
+    G -->|yes| E(["Higher score wins"])`,
   patience: `flowchart TD
     S(["Seven columns dealt, the rest the stock"]) --> C{"A card to move?"}
     C -->|yes| M["Move it, or a face-up run, onto a column or a foundation"]

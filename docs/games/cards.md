@@ -4,7 +4,7 @@
 
 **Wing III · Kings, Cards and Courts** · c. 900–1400 CE · China, Mamluk Egypt and Europe
 
-[← Four Seasons Chess](fourseasons.md) · [All games](README.md) · [Tarot (Tarocchi) →](tarot.md)
+[← Four Seasons Chess](fourseasons.md) · [All games](README.md) · [Karnöffel →](karnoffel.md)
 
 | | |
 | --- | --- |

@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · 1630s CE · England · the Stuart court
 
-[← The Game of the Goose](goose.md) · [All games](README.md) · [Cards Not for Playing →](notforplay.md)
+[← Ombre](ombre.md) · [All games](README.md) · [Cards Not for Playing →](notforplay.md)
 
 | | |
 | --- | --- |

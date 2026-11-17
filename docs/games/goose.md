@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · c. 1575 CE · Italy and Europe · 16th century
 
-[← Court Cards](courtcards.md) · [All games](README.md) · [Cribbage →](cribbage.md)
+[← Court Cards](courtcards.md) · [All games](README.md) · [Ombre →](ombre.md)
 
 | | |
 | --- | --- |

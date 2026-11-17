@@ -8219,6 +8219,885 @@
     },
   };
 
+  /* ------------------------------------------------------------- Karnöffel
+   * The oldest card game whose rules can be pieced together: first named at Nördlingen in 1426. Four seats as at
+   * Whist (0 you, South; 1 West; 2 North, your partner; 3 East), partners opposite. A 48-card German pack with no
+   * aces, numbered as every card table numbers its cards (suit * 13 + rank): ranks 1-9 are the two to the ten
+   * (the Banner), 10 the Unter, 11 the Ober, 12 the king. Suits in pack order: leaves, hearts, bells, acorns.
+   * Each player's first card is dealt face up, and the suit of the lowest of them is chosen. In the chosen suit
+   * a few cards have powers: the Unter is the Karnöffel, which beats everything; the seven is the Devil, which
+   * beats everything but the Karnöffel when it is led; the six (the Pope) and the two (the Emperor) beat
+   * everything below them; the three beats all but kings, the four all but kings and Obers, the five all but
+   * kings, Obers and Unters. The chosen king, Ober and the rest have no powers. Nobody need follow suit. */
+  const KN_SEAT = ['You', 'West', 'North', 'East'];
+  const KN_SIDE = ['You and North', 'West and East'];
+  const KN_SUIT = ['leaves', 'hearts', 'bells', 'acorns'];
+  const KN_RANK = ['', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'Unter', 'Ober', 'king'];
+  const KN_PACK = []; for (let su = 0; su < 4; su++) for (let r = 1; r <= 12; r++) KN_PACK.push(su * 13 + r);
+  const knSuit = c => (c / 13) | 0, knRank = c => c % 13;
+  const knName = c => `${KN_RANK[knRank(c)]} of ${KN_SUIT[knSuit(c)]}`;
+  // How strong a plain card is when it follows the suit led: kings, Obers and Unters sit between the powers.
+  const KN_TIER = r => (r === 12 ? 60 : r === 11 ? 45 : r === 10 ? 35 : 16 + r);
+  const KN_POWER = { 10: 100, 6: 90, 5: 80, 1: 70, 2: 50, 3: 40, 4: 30 }; // Karnöffel, Devil (led), Pope, Emperor, the three, four and five
+  const KN_TITLE = { 10: 'the Karnöffel', 6: 'the Devil', 5: 'the Pope', 1: 'the Emperor', 2: 'the chosen three', 3: 'the chosen four', 4: 'the chosen five' };
+  const KARNOFFEL = {
+    id: 'karnoffel', name: 'Karnöffel', dice: false, first: 0, cardName: c => knName(c),
+    SEATS: KN_SEAT, SIDES: KN_SIDE, SUITS: KN_SUIT,
+    variants: [{ id: '5', label: 'To 5' }, { id: '7', label: 'To 7' }], variant: '5', variantLabel: 'Game',
+    setVariant(id) { this.variant = id === '7' ? '7' : '5'; },
+    get target() { return +this.variant; },
+    get followPrompt() { return this.prompt0(); },
+    rules: [
+      'Four players in two partnerships: you sit South with North, played by the Scribe, against West and East. Each gets five cards from a 48-card German pack with no aces; the first card each player gets is dealt face up, and the suit of the lowest of them is chosen for the deal. Partners play with their hands open to each other: you can see North\'s cards.',
+      'Nobody has to follow suit: play any card. A trick goes to the highest card of the suit led (king, Ober, Unter, ten down to two) unless a card of the chosen suit with a power beats it.',
+      'The chosen suit\'s powers: its Unter, the Karnöffel, beats every card. Its seven, the Devil, beats everything but the Karnöffel when it is led, and is a plain seven otherwise; it may not be played to the first trick. Its six, the Pope, and its two, the Emperor, beat everything below them.',
+      'The chosen three beats every card but the kings and the cards above; the four every card but kings and Obers; the five every card but kings, Obers and Unters. The chosen king, Ober, ten, nine and eight have no powers.',
+      'The first side to take three tricks wins the deal and scores a point; play stops there. The player who led first deals next. The first side to 5 points (or 7) wins.'
+    ],
+    source: 'After the reconstruction of the Swiss Kaiserspiel and the oldest descriptions (Wikipedia\'s Karnöffel and David Parlett\'s history). The old game raised the stake by offers made during the deal; here every deal is worth one point.',
+    init() { this.score = [0, 0]; this.over = null; this.decided = null; this.dealer = 3; this.deals = 0; this.notes = []; this.deal(); },
+    deal() {
+      const d = KN_PACK.slice();
+      for (let i = d.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+      this.hands = [[], [], [], []]; this.shown = [];
+      for (let k = 0; k < 20; k++) { const s = (this.dealer + 1 + k) % 4; this.hands[s].push(d[k]); if (k < 4) this.shown.push(d[k]); }
+      // The lowest face-up card names the chosen suit; of equal cards, the first dealt.
+      const low = this.shown.reduce((a, b) => (knRank(b) < knRank(a) ? b : a));
+      this.chosen = knSuit(low); this.lowCard = low;
+      this.trick = []; this.tricks = [0, 0]; this.played = []; this.lastTrick = null; this.nTricks = 0;
+      this.toMove = (this.dealer + 1) % 4; this.leader = this.toMove; this.need = 'play'; this.deals++; this.notes = [];
+      this.sortAll();
+    },
+    who(s) { return s === 0 ? 'You' : KN_SEAT[s]; },
+    isDevil(c) { return knSuit(c) === this.chosen && knRank(c) === 6; },
+    // A card's strength in the trick: a power if it has one, its rank if it follows the suit led, else nothing.
+    eff(c, ledCard) {
+      const su = knSuit(c), r = knRank(c);
+      if (su === this.chosen && KN_POWER[r] !== undefined) {
+        if (r === 6) { if (c === ledCard) return KN_POWER[6]; } else return KN_POWER[r];
+      }
+      return su === knSuit(ledCard) ? KN_TIER(r) : -1;
+    },
+    best() { const led = this.trick[0].card; let b = this.trick[0]; for (const t of this.trick) if (this.eff(t.card, led) > this.eff(b.card, led)) b = t; return b; },
+    // How good a card is to hold, for sorting and for the Scribe: its power, or its rank as if it led.
+    worth(c) { return this.eff(c, c); },
+    sortAll() { this.hands.forEach(h => h.sort((a, b) => this.worth(a) - this.worth(b) || a - b)); },
+    legalCards(hand) { return this.nTricks === 0 ? hand.filter(c => !this.isDevil(c)) : hand.slice(); },
+    title(c) { return knSuit(c) === this.chosen && KN_TITLE[knRank(c)] ? KN_TITLE[knRank(c)] : null; },
+    prompt0() {
+      if (this.need === 'next') return this.notes.join(' ') + (this.decided ? ' Press See the result.' : ' Press Next deal when you are ready.');
+      const ch = KN_SUIT[this.chosen];
+      if (!this.trick.length) return `${ch[0].toUpperCase() + ch.slice(1)} are chosen (the ${knName(this.lowCard)} was lowest). Lead any card${this.nTricks ? '' : ', but not the Devil to the first trick'}.`;
+      const b = this.best(), mine = b.seat === 0 || b.seat === 2;
+      const t = this.title(b.card), named = t && (t !== 'the Devil' || b.card === this.trick[0].card) ? `${t} (the ${knName(b.card)})` : `the ${knName(b.card)}`;
+      return `${mine ? (b.seat ? 'North holds' : 'You hold') : this.who(b.seat) + ' holds'} the trick with ${named}. Play any card: nobody need follow suit. ${ch[0].toUpperCase() + ch.slice(1)} are chosen.`;
+    },
+    legal(pl) {
+      if (this.over) return [];
+      if (this.need === 'next') return pl === 0 ? [{ pl, kind: 'next', label: this.decided ? 'See the result' : 'Next deal' }] : [];
+      const s = this.toMove; if ((s === 0) !== (pl === 0)) return [];
+      return this.legalCards(this.hands[s]).map(card => ({ pl, seat: s, kind: 'play', card }));
+    },
+    apply(m) {
+      const events = [];
+      if (m.kind === 'next') {
+        if (this.decided) { this.over = this.decided; return { note: '' }; }
+        this.dealer = (this.dealer + 1) % 4; this.deal();
+        return { note: `${this.who(this.dealer)} ${this.dealer ? 'deals' : 'deal'}. The ${knName(this.lowCard)} is the lowest card turned up, so ${KN_SUIT[this.chosen]} are chosen.`, events: [{ type: 'deal' }] };
+      }
+      const s = m.seat, hand = this.hands[s];
+      hand.splice(hand.indexOf(m.card), 1);
+      this.trick.push({ seat: s, card: m.card }); this.played.push(m.card);
+      events.push({ type: 'play', seat: s, card: m.card });
+      const t = this.title(m.card), ledDevil = this.trick.length === 1 && this.isDevil(m.card), big = t && [10, 6, 5, 1].includes(knRank(m.card));
+      const note = big && (t !== 'the Devil' || ledDevil) ? `${this.who(s)} ${s ? 'plays' : 'play'} ${t}!` : '';
+      if (this.trick.length < 4) { this.toMove = (s + 1) % 4; return { note, events }; }
+      const w = this.best().seat;
+      this.tricks[w & 1]++; this.nTricks++; this.lastTrick = { cards: this.trick.map(x => x.card), winner: w };
+      this.trick = []; this.toMove = w;
+      events.push({ type: 'trick', winner: w });
+      const notes = [`${this.who(w)} ${w ? 'takes' : 'take'} the trick.`];
+      if (this.tricks[0] === 3 || this.tricks[1] === 3) this.endDeal(notes);
+      return { note: (note ? note + ' ' : '') + notes.join(' '), events };
+    },
+    endDeal(notes) {
+      const side = this.tricks[0] === 3 ? 0 : 1;
+      this.score[side]++;
+      notes.push(`${KN_SIDE[side]} take three tricks and win the deal. Score: ${this.score[0]} to ${this.score[1]}.`);
+      if (this.score[side] >= this.target) this.decided = { winner: side, title: side ? 'West and East win' : 'You and North win', text: `${this.score[0]} to ${this.score[1]}, after ${this.deals} deal${this.deals > 1 ? 's' : ''}.` };
+      this.notes = notes.slice(); this.need = 'next'; this.toMove = 0;
+    },
+    passTurn() { if (this.over) return 0; this.seat = this.toMove; return this.seat === 0 ? 0 : 1; },
+    get scribeName() { return this.seat === 2 ? 'North, your partner' : KN_SEAT[this.seat]; },
+    ended() { return !!this.over; },
+    final() { return this.over; },
+    result() { return this.over || null; },
+    /* Sharp: deal the cards it cannot see between the other side at random, many times over, play each deal
+     * out with Fair's judgement for everyone, and pick the card that wins the deal most often. */
+    sample(s, ms) {
+      const partner = (s + 2) % 4, known = new Set(this.played.concat(this.hands[s], this.hands[partner]));
+      const pool = KN_PACK.filter(c => !known.has(c)), opp = [(s + 1) % 4, (s + 3) % 4], side = s & 1;
+      const tally = new Map(ms.map(c => [c, 0])), N = 48;
+      for (let k = 0; k < N; k++) {
+        const d = pool.slice(); for (let i = d.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+        const hands = this.hands.map(h => h.slice()); let at = 0;
+        for (const o of opp) { hands[o] = d.slice(at, at + this.hands[o].length); at += this.hands[o].length; }
+        for (const c of ms) {
+          const w = Object.create(KARNOFFEL);
+          Object.assign(w, { rollout: true, chosen: this.chosen, hands: hands.map(h => h.slice()), trick: this.trick.map(t => ({ ...t })), tricks: this.tricks.slice(), played: this.played.slice(), nTricks: this.nTricks, toMove: s, need: 'play', score: [0, 0], deals: 0, variant: '5' });
+          w.apply({ pl: 1, seat: s, kind: 'play', card: c });
+          let guard = 0;
+          while (w.tricks[0] < 3 && w.tricks[1] < 3 && guard++ < 40) w.apply(w.aiPlan()[0]);
+          if (w.tricks[side] >= 3) tally.set(c, tally.get(c) + 1);
+        }
+      }
+      return ms.reduce((a, b) => (tally.get(b) > tally.get(a) ? b : a));
+    },
+    /* The Scribe. Partners see each other's hands, so each Scribe knows its side's cards and those already
+     * played. It leads the Devil once it may, keeps its powers for tricks it must win, lets a partner's sure
+     * trick stand, and otherwise wins as cheaply as it can or throws its least useful card. */
+    aiPlan() {
+      if (this.need === 'next') return [{ pl: 0, kind: 'next' }];
+      const s = this.toMove, ms = this.legalCards(this.hands[s]), mv = card => [{ pl: 1, seat: s, kind: 'play', card }];
+      if (ms.length === 1) return mv(ms[0]);
+      if (LEVEL.name === 'gentle' && Math.random() < 0.45) return mv(ms[(Math.random() * ms.length) | 0]);
+      if (LEVEL.name === 'sharp' && !this.rollout) return mv(this.sample(s, ms));
+      const partner = (s + 2) % 4, known = new Set(this.played.concat(this.hands[s], this.hands[partner]));
+      const unseen = KN_PACK.filter(c => !known.has(c));
+      const low = a => a.reduce((x, y) => (this.worth(y) < this.worth(x) ? y : x));
+      const beatable = (card, ledCard) => unseen.some(c => this.eff(c, ledCard) > this.eff(card, ledCard));
+      if (!this.trick.length) {
+        const devil = ms.find(c => this.isDevil(c));
+        if (devil && (LEVEL.name !== 'sharp' || unseen.some(c => knSuit(c) === this.chosen && knRank(c) === 10) === false || this.tricks[s & 1] >= 1)) return mv(devil);
+        const sure = ms.filter(c => !beatable(c, c) && this.worth(c) >= 30);
+        if (sure.length) return mv(low(sure));
+        // Lead a king of a suit, or the weakest card if the hand has nothing to press with.
+        const kings = ms.filter(c => knRank(c) === 12 && !(knSuit(c) === this.chosen));
+        return mv(kings.length ? kings[0] : low(ms));
+      }
+      const led = this.trick[0].card, b = this.best(), last = this.trick.length === 3;
+      const partnerHolds = b.seat === partner && (last || !beatable(b.card, led));
+      if (partnerHolds) return mv(low(ms));
+      const winners = ms.filter(c => this.eff(c, led) > this.eff(b.card, led));
+      if (winners.length) {
+        const safe = last ? winners : winners.filter(c => !beatable(c, led));
+        const pool = safe.length ? safe : winners;
+        const sideNeeds = this.tricks[s & 1] === 2 || this.tricks[1 - (s & 1)] === 2;
+        if (safe.length || sideNeeds || LEVEL.name === 'gentle') return mv(pool.reduce((x, y) => (this.eff(y, led) < this.eff(x, led) ? y : x)));
+      }
+      return mv(low(ms));
+    },
+  };
+
+  /* ----------------------------------------------------------------- Ombre
+   * The Spanish game of the 1600s, the first in which trumps were bid for. Three seats round a three-cornered
+   * table: 0 you (South), 1 East, on your right, and 2 West; play goes to the right (counter-clockwise), 0, 1, 2.
+   * A 40-card French pack without eights, nines and tens, numbered suit * 13 + rank (rank 0 the ace, 1-6 the
+   * two to the seven, 10-12 jack, queen, king); suits spades, hearts, diamonds, clubs, so 0 and 3 are black.
+   * The ace of spades (spadille) and the ace of clubs (basta) are always trumps. Manille, second best, is the
+   * trump two when black is trumps and the trump seven when red is; punto is the trump ace when red is. */
+  const OM_SEAT = ['You', 'East', 'West'];
+  const OM_SUIT = ['spades', 'hearts', 'diamonds', 'clubs'];
+  const OM_RANK = ['ace', 'two', 'three', 'four', 'five', 'six', 'seven', '', '', '', 'jack', 'queen', 'king'];
+  const OM_PACK = []; for (let su = 0; su < 4; su++) for (const r of [0, 1, 2, 3, 4, 5, 6, 10, 11, 12]) OM_PACK.push(su * 13 + r);
+  const omSuit = c => (c / 13) | 0, omRank = c => c % 13, omBlack = su => su === 0 || su === 3;
+  const OM_SPADILLE = 0, OM_BASTA = 39;
+  const omName = c => `${OM_RANK[omRank(c)]} of ${OM_SUIT[omSuit(c)]}`;
+  const OM_BID = ['', 'Entrada', 'Solo'];
+  // Trumps, best first, for each suit; and the plain suits' order, best first.
+  const omTrumps = T => {
+    const b = T * 13;
+    if (omBlack(T)) return [OM_SPADILLE, b + 1, OM_BASTA, b + 12, b + 11, b + 10, b + 6, b + 5, b + 4, b + 3, b + 2].filter((c, i, a) => a.indexOf(c) === i);
+    return [OM_SPADILLE, b + 6, OM_BASTA, b, b + 12, b + 11, b + 10, b + 1, b + 2, b + 3, b + 4, b + 5];
+  };
+  const OM_PLAIN_BLACK = [12, 11, 10, 6, 5, 4, 3, 2, 1], OM_PLAIN_RED = [12, 11, 10, 0, 1, 2, 3, 4, 5, 6];
+  const OMBRE = {
+    id: 'ombre', name: 'Ombre', dice: false, first: 0, cardName: c => omName(c),
+    SEATS: OM_SEAT, SUITS: OM_SUIT,
+    variants: [{ id: '6', label: '6 deals' }, { id: '12', label: '12 deals' }], variant: '6', variantLabel: 'Game',
+    setVariant(id) { this.variant = id === '12' ? '12' : '6'; },
+    get limit() { return +this.variant; },
+    get followPrompt() { return this.prompt0(); },
+    rules: [
+      'Three players: you, and East and West, both played by the Scribe. A 40-card pack without eights, nines and tens; each player gets nine cards and thirteen are left face down. Play goes to the right, and the player on the dealer\'s right (forehand) bids first and leads first.',
+      'Bidding: pass, or bid Entrada (you will name trumps and exchange cards) or Solo (you name trumps and play the hand as dealt). Each bid must beat the last; a pass is final. The winning bidder is the Ombre, and plays alone against the other two. If all three pass, the next player deals.',
+      'Trumps: the ace of spades (spadille) and the ace of clubs (basta) are always trumps. With black trumps they rank spadille, the two (manille), basta, king, queen, jack, seven down to three. With red trumps: spadille, the seven (manille), basta, the ace (punto), king, queen, jack, two up to six. In plain suits, black runs king, queen, jack, seven down to two; red runs king, queen, jack, ace, two up to seven.',
+      'The exchange: the Ombre at Entrada throws away any cards and draws as many from the thirteen, then each defender in turn may do the same with what is left. Click cards to mark them, then exchange. Follow suit if you can. When a trump is led you must play a trump, but a matador (spadille, manille or basta) need never be played unless a higher matador was led and you have no other trump.',
+      'The Ombre must take more tricks than either defender: sacada, and each defender pays 1 (3 at Solo). Tying the defender with most is puesta: the Ombre pays each of them. If a defender takes more, it is codille: the Ombre pays both, and that defender twice. After 6 deals (or 12) the most counters wins.'
+    ],
+    source: 'Classic three-handed Ombre after pagat.com and Wikipedia, with two of the old bids, Entrada and Solo, and payments in counters. Vuelta, the lower bids and the vole are left out.',
+    init() { this.bank = [0, 0, 0]; this.over = null; this.decided = null; this.dealer = 2; this.deals = 0; this.notes = []; this.deal(); },
+    deal() {
+      const d = OM_PACK.slice();
+      for (let i = d.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+      this.hands = [[], [], []];
+      for (let k = 0; k < 27; k++) this.hands[(this.dealer + 1 + ((k / 3) | 0)) % 3].push(d[k]); // three at a time, forehand first
+      this.talon = d.slice(27); this.discards = [[], [], []];
+      this.trump = -1; this.ombre = -1; this.bid = 0; this.passed = [false, false, false]; this.marked = [];
+      this.trick = []; this.tricks = [0, 0, 0]; this.played = []; this.lastTrick = null; this.nTricks = 0;
+      this.forehand = (this.dealer + 1) % 3; this.toMove = this.forehand; this.need = 'bid'; this.notes = [];
+      this.exchangers = []; this.plan = null; this.sortAll();
+    },
+    who(s) { return s === 0 ? 'You' : OM_SEAT[s]; },
+    isTrump(c, T = this.trump) { return c === OM_SPADILLE || c === OM_BASTA || (T >= 0 && omSuit(c) === T); },
+    suitOf(c, T = this.trump) { return this.isTrump(c, T) ? 4 : omSuit(c); }, // 4: the trump suit
+    // A card's strength: trumps above every plain card; plain cards by their suit's order.
+    power(c, T = this.trump) {
+      if (T >= 0 && this.isTrump(c, T)) return 100 - omTrumps(T).indexOf(c);
+      const order = omBlack(omSuit(c)) ? OM_PLAIN_BLACK : OM_PLAIN_RED;
+      return 50 - order.indexOf(omRank(c));
+    },
+    isMatador(c, T = this.trump) { const t = omTrumps(T); return t.indexOf(c) >= 0 && t.indexOf(c) < 3; },
+    title(c, T = this.trump) { if (T < 0) return null; const i = omTrumps(T).indexOf(c); return i === 0 ? 'spadille' : i === 1 ? 'manille' : i === 2 ? 'basta' : i === 3 && !omBlack(T) ? 'punto' : null; },
+    sortAll() { const T = this.trump; this.hands.forEach(h => h.sort((a, b) => (T >= 0 ? (this.isTrump(a) - this.isTrump(b)) : 0) || (this.suitOf(a, T) - this.suitOf(b, T)) || this.power(a, T) - this.power(b, T))); },
+    beats(a, b) { const sa = this.suitOf(a), sb = this.suitOf(b); if (sa === sb) return this.power(a) > this.power(b); return sa === 4; },
+    best() { let b = this.trick[0]; for (const t of this.trick) if (this.beats(t.card, b.card)) b = t; return b; },
+    legalCards(hand) {
+      if (!this.trick.length) return hand.slice();
+      const led = this.trick[0].card, ls = this.suitOf(led);
+      if (ls !== 4) { const f = hand.filter(c => this.suitOf(c) === ls); return f.length ? f : hand.slice(); }
+      // A trump led: a trump must be played, but a matador is only forced out by a higher matador.
+      const T = this.trump, rank = c => omTrumps(T).indexOf(c), trumps = hand.filter(c => this.isTrump(c));
+      const forced = trumps.filter(c => !this.isMatador(c) || (this.isMatador(led) && rank(led) < rank(c)));
+      return forced.length ? trumps : hand.slice();
+    },
+    talonLeft() { return this.talon.length; },
+    prompt0() {
+      const T = this.trump >= 0 ? OM_SUIT[this.trump] : '', Tc = T && T[0].toUpperCase() + T.slice(1);
+      switch (this.need) {
+        case 'bid': return this.bid ? `${this.who(this.ombre)} ${this.ombre ? 'has' : 'have'} bid ${OM_BID[this.bid]}. Bid higher, or pass.` : `${this.toMove === this.forehand ? 'You are forehand: bid' : 'Bid'} Entrada (name trumps and exchange) or Solo (no exchange), or pass.`;
+        case 'trumps': return `You are the Ombre, at ${OM_BID[this.bid]}. Name trumps.`;
+        case 'exchange': {
+          const n = this.marked.length, max = Math.min(this.talon.length, 9);
+          return `${Tc} are trumps. ${this.ombre === 0 ? 'Exchange' : 'Defending: exchange'} up to ${max} cards: click cards to mark them, then exchange${n ? ` (${n} marked)` : ''}.`;
+        }
+        case 'next': return this.notes.join(' ') + (this.decided ? ' Press See the result.' : ' Press Next deal when you are ready.');
+        default: {
+          const role = this.ombre === 0 ? 'you are the Ombre' : `${this.who(this.ombre)} is the Ombre`;
+          if (!this.trick.length) return `${Tc} are trumps; ${role} at ${OM_BID[this.bid]}. Lead any card.`;
+          const led = this.trick[0].card, ls = this.suitOf(led);
+          const can = ls === 4 ? this.hands[0].some(c => this.isTrump(c)) : this.hands[0].some(c => this.suitOf(c) === ls);
+          if (!can) return `You cannot follow: play any card. ${Tc} are trumps.`;
+          return ls === 4 ? `A trump was led: play a trump (a matador need not be played unless a higher one was led). ${Tc} are trumps.` : `Follow with a ${OM_SUIT[ls].slice(0, -1)}. ${Tc} are trumps.`;
+        }
+      }
+    },
+    legal(pl) {
+      if (this.over) return [];
+      if (this.need === 'next') return pl === 0 ? [{ pl, kind: 'next', label: this.decided ? 'See the result' : 'Next deal' }] : [];
+      const s = this.toMove; if ((s === 0) !== (pl === 0)) return [];
+      switch (this.need) {
+        case 'bid': return [1, 2].filter(b => b > this.bid).map(b => ({ pl, seat: s, kind: 'bid', bid: b, label: OM_BID[b] })).concat([{ pl, seat: s, kind: 'pass', label: 'Pass' }]);
+        case 'trumps': return OM_SUIT.map((n, su) => ({ pl, seat: s, kind: 'trumps', suit: su, label: n[0].toUpperCase() + n.slice(1) }));
+        case 'exchange': {
+          const max = Math.min(this.talon.length, 9), out = [];
+          for (const c of this.hands[s]) if (this.marked.includes(c) || this.marked.length < max) out.push({ pl, seat: s, kind: 'mark', card: c });
+          const n = this.marked.length;
+          out.push({ pl, seat: s, kind: 'exchange', cards: this.marked.slice(), label: n ? `Exchange ${n} card${n > 1 ? 's' : ''}` : 'Keep my hand' });
+          return out;
+        }
+        default: return this.legalCards(this.hands[s]).map(card => ({ pl, seat: s, kind: 'play', card }));
+      }
+    },
+    endAuction(events) {
+      if (this.ombre < 0) {
+        this.notes = ['All three pass: nobody plays this hand, and the deal moves on.']; this.need = 'next'; this.toMove = 0; this.washed = true;
+        return this.notes[0];
+      }
+      this.need = 'trumps'; this.toMove = this.ombre; events.push({ type: 'ombre', seat: this.ombre });
+      return `${this.who(this.ombre)} ${this.ombre ? 'is' : 'are'} the Ombre, at ${OM_BID[this.bid]}.`;
+    },
+    nextBidder(s) { for (let k = 1; k <= 3; k++) { const n = (s + k) % 3; if (!this.passed[n]) return n; } return -1; },
+    startExchange() {
+      // Entrada: the Ombre exchanges first, then the defenders in turn; at Solo only the defenders do.
+      const d1 = (this.ombre + 1) % 3, d2 = (this.ombre + 2) % 3;
+      this.exchangers = (this.bid === 1 ? [this.ombre] : []).concat([d1, d2]);
+      this.nextExchange();
+    },
+    nextExchange() {
+      while (this.exchangers.length && !this.talon.length) this.exchangers.shift();
+      if (!this.exchangers.length) { this.need = 'play'; this.toMove = this.forehand; this.marked = []; return; }
+      this.need = 'exchange'; this.toMove = this.exchangers.shift(); this.marked = [];
+    },
+    apply(m) {
+      const s = m.seat, events = [], Y = s === 0;
+      if (m.kind === 'next') {
+        if (this.decided) { this.over = this.decided; return { note: '' }; }
+        this.dealer = (this.dealer + 1) % 3; this.deal();
+        return { note: `${this.who(this.dealer)} ${this.dealer ? 'deals' : 'deal'}; ${this.who(this.forehand).replace('You', 'you')} ${this.forehand ? 'is' : 'are'} forehand.`, events: [{ type: 'deal' }] };
+      }
+      if (m.kind === 'pass') {
+        this.passed[s] = true; events.push({ type: 'pass', seat: s });
+        const left = [0, 1, 2].filter(k => !this.passed[k]);
+        let note = `${this.who(s)} ${Y ? 'pass' : 'passes'}.`;
+        if (!left.length || (left.length === 1 && this.ombre === left[0])) note += ' ' + this.endAuction(events);
+        else this.toMove = this.nextBidder(s);
+        return { note, events };
+      }
+      if (m.kind === 'bid') {
+        this.bid = m.bid; this.ombre = s; events.push({ type: 'bid', seat: s, bid: m.bid });
+        let note = `${this.who(s)} ${Y ? 'bid' : 'bids'} ${OM_BID[m.bid]}.`;
+        const left = [0, 1, 2].filter(k => !this.passed[k]);
+        if (left.length === 1) note += ' ' + this.endAuction(events);
+        else this.toMove = this.nextBidder(s);
+        return { note, events };
+      }
+      if (m.kind === 'trumps') {
+        this.trump = m.suit; this.sortAll(); events.push({ type: 'trumps', seat: s, suit: m.suit });
+        this.startExchange();
+        return { note: `${this.who(s)} ${Y ? 'name' : 'names'} ${OM_SUIT[m.suit]} as trumps.`, events };
+      }
+      if (m.kind === 'mark') {
+        const i = this.marked.indexOf(m.card); if (i >= 0) this.marked.splice(i, 1); else this.marked.push(m.card);
+        events.push({ type: 'mark', seat: s }); return { note: '', events };
+      }
+      if (m.kind === 'exchange') {
+        const out = m.cards.filter(c => this.hands[s].includes(c)).slice(0, this.talon.length), h = this.hands[s];
+        out.forEach(c => { h.splice(h.indexOf(c), 1); this.discards[s].push(c); });
+        const inn = this.talon.splice(0, out.length); h.push(...inn); this.sortAll();
+        events.push({ type: 'exchange', seat: s, out, in: inn });
+        this.marked = []; this.nextExchange();
+        return { note: out.length ? `${this.who(s)} ${Y ? 'exchange' : 'exchanges'} ${out.length} card${out.length > 1 ? 's' : ''}.` : `${this.who(s)} ${Y ? 'keep your' : 'keeps its'} hand.`, events };
+      }
+      // A card to the trick.
+      const hand = this.hands[s]; hand.splice(hand.indexOf(m.card), 1);
+      this.trick.push({ seat: s, card: m.card }); this.played.push(m.card);
+      events.push({ type: 'play', seat: s, card: m.card });
+      const t = this.title(m.card), note = t && this.trick.length === 1 && ['spadille', 'manille', 'basta'].includes(t) ? `${this.who(s)} ${Y ? 'lead' : 'leads'} ${t}.` : '';
+      if (this.trick.length < 3) { this.toMove = (s + 1) % 3; return { note, events }; }
+      const w = this.best().seat;
+      this.tricks[w]++; this.nTricks++; this.lastTrick = { cards: this.trick.map(x => x.card), winner: w };
+      this.trick = []; this.toMove = w;
+      events.push({ type: 'trick', winner: w });
+      const notes = [`${this.who(w)} ${w ? 'takes' : 'take'} the trick.`];
+      if (this.nTricks === 9) this.endDeal(notes);
+      return { note: (note ? note + ' ' : '') + notes.join(' '), events };
+    },
+    endDeal(notes) {
+      const o = this.ombre, d = [(o + 1) % 3, (o + 2) % 3], stake = this.bid === 2 ? 3 : 1, ot = this.tricks[o];
+      const top = Math.max(this.tricks[d[0]], this.tricks[d[1]]);
+      const pay = (from, to, n) => { this.bank[from] -= n; this.bank[to] += n; };
+      const line = `Tricks: ${this.who(o)} ${ot}, ${this.who(d[0])} ${this.tricks[d[0]]}, ${this.who(d[1])} ${this.tricks[d[1]]}.`;
+      if (ot > top) { d.forEach(x => pay(x, o, stake)); notes.push(line, `Sacada: ${this.who(o).replace('You', 'you')} ${o ? 'wins' : 'win'}, and each defender pays ${stake}.`); }
+      else if (ot === top) { d.forEach(x => pay(o, x, stake)); notes.push(line, `Puesta: a tie, so ${this.who(o).replace('You', 'you')} ${o ? 'pays' : 'pay'} each defender ${stake}.`); }
+      else {
+        const w = this.tricks[d[0]] > this.tricks[d[1]] ? d[0] : d[1];
+        d.forEach(x => pay(o, x, stake)); pay(o, w, stake);
+        notes.push(line, `Codille! ${this.who(w)} ${w ? 'takes' : 'take'} more than the Ombre and ${w ? 'is' : 'are'} paid ${stake * 2}; the other defender ${stake}.`);
+      }
+      this.deals++;
+      notes.push(`Counters: you ${this.bank[0]}, East ${this.bank[1]}, West ${this.bank[2]}.`);
+      if (this.deals >= this.limit) {
+        const hi = Math.max(...this.bank), win = this.bank.indexOf(hi), tie = this.bank.filter(x => x === hi).length > 1;
+        this.decided = { winner: tie && this.bank[0] === hi ? 2 : win === 0 ? 0 : 1, title: tie ? 'Level at the top' : win === 0 ? 'You win the game' : `${OM_SEAT[win]} wins the game`, text: `After ${this.deals} deals: you ${this.bank[0]}, East ${this.bank[1]}, West ${this.bank[2]}.` };
+      }
+      this.notes = notes.slice(); this.need = 'next'; this.toMove = 0;
+    },
+    passTurn() { if (this.over) return 0; this.seat = this.toMove; return this.seat === 0 ? 0 : 1; },
+    get scribeName() { return OM_SEAT[this.seat] || 'The Scribe'; },
+    ended() { return !!this.over; },
+    final() { return this.over; },
+    result() { return this.over || null; },
+    /* The Scribe. A hand's worth with a given trump: the matadors most, then the high trumps and the side kings.
+     * It bids when the worth clears a bar (Solo when it clears a higher one), keeps trumps and kings in the
+     * exchange, and in play leads trumps from strength as Ombre; as a defender it lets the other defender's
+     * winning card stand and spends its high cards against the Ombre. */
+    worth(hand, T) {
+      let v = 0, nT = 0;
+      for (const c of hand) {
+        if (this.isTrump(c, T)) { nT++; const i = omTrumps(T).indexOf(c); v += [3.4, 3.0, 2.6, 1.9, 1.5, 1.2, 1.0][i] || 0.75; }
+        else if (omRank(c) === 12) v += 1.0;
+        else if (omRank(c) === 11 && hand.includes(omSuit(c) * 13 + 12)) v += 0.4;
+      }
+      for (let su = 0; su < 4; su++) if (su !== T && nT >= 3 && !hand.some(c => !this.isTrump(c, T) && omSuit(c) === su)) v += 0.5;
+      return v;
+    },
+    bestTrump(hand) { let best = 0, bv = -1; for (let T = 0; T < 4; T++) { const v = this.worth(hand, T); if (v > bv) { bv = v; best = T; } } return [best, bv]; },
+    keepValue(c, T) { return this.isTrump(c, T) ? 10 + this.power(c, T) / 10 : omRank(c) === 12 ? 6 : 0; },
+    aiPlan() {
+      if (this.need === 'next') return [{ pl: 0, kind: 'next' }];
+      const s = this.toMove, hand = this.hands[s], mv = o => [Object.assign({ pl: 1, seat: s }, o)];
+      if (this.need === 'bid' && LEVEL.name === 'sharp' && !this.rollout) {
+        // Sharp tries each bid it may make in each suit, against many deals of the cards it cannot see.
+        let best = null, bv = 0.05;
+        for (const b of [1, 2].filter(x => x > this.bid)) for (let T = 0; T < 4; T++) { const v = this.bidValue(s, T, b); if (v > bv) { bv = v; best = [b, T]; } }
+        if (!best) return mv({ kind: 'pass' });
+        this.plan = { seat: s, trump: best[1] };
+        return mv({ kind: 'bid', bid: best[0] });
+      }
+      if (this.need === 'trumps' && this.plan && this.plan.seat === s && !this.rollout) return mv({ kind: 'trumps', suit: this.plan.trump });
+      if (this.need === 'bid') {
+        const [, v] = this.bestTrump(hand), jit = (Math.random() - 0.5) * pick(1.4, 0.5, 0.15);
+        const entrada = pick(7.8, 7.0, 6.6) + jit, solo = pick(14, 12.2, 11.6) + jit;
+        if (v >= solo && this.bid < 2) return mv({ kind: 'bid', bid: 2 });
+        if (v >= entrada && this.bid < 1) return mv({ kind: 'bid', bid: 1 });
+        return mv({ kind: 'pass' });
+      }
+      if (this.need === 'trumps') return mv({ kind: 'trumps', suit: this.bestTrump(hand)[0] });
+      if (this.need === 'exchange') {
+        const T = this.trump, max = Math.min(this.talon.length, 9), defender = s !== this.ombre;
+        // The Ombre throws everything but trumps and kings; a defender keeps a little of the talon for its partner.
+        const cap = defender && this.exchangers.length ? Math.min(max, Math.ceil(this.talon.length / 2)) : max;
+        const out = hand.filter(c => this.keepValue(c, T) < (defender ? 6 : 6)).sort((a, b) => this.keepValue(a, T) - this.keepValue(b, T) || this.power(a, T) - this.power(b, T)).slice(0, cap);
+        return out.map(card => ({ pl: 1, seat: s, kind: 'mark', card })).concat([{ pl: 1, seat: s, kind: 'exchange', cards: out }]);
+      }
+      const ms = this.legalCards(hand);
+      if (ms.length === 1 || (LEVEL.name === 'gentle' && !this.rollout && Math.random() < 0.35)) return mv({ kind: 'play', card: ms[(Math.random() * ms.length) | 0] });
+      if (LEVEL.name === 'sharp' && !this.rollout) return mv({ kind: 'play', card: this.sample(s, ms) });
+      return mv({ kind: 'play', card: this.choose(s, ms) });
+    },
+    // What a bid is worth to its maker on average: the unseen cards dealt at random, the exchange and the play
+    // made with Fair's judgement.
+    bidValue(s, T, b) {
+      const pool = OM_PACK.filter(c => !this.hands[s].includes(c)), N = 14; let total = 0;
+      for (let k = 0; k < N; k++) {
+        const d = pool.slice(); for (let i = d.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+        const hands = [[], [], []]; hands[s] = this.hands[s].slice(); let at = 0;
+        for (const o of [(s + 1) % 3, (s + 2) % 3]) { hands[o] = d.slice(at, at + 9); at += 9; }
+        const w = Object.create(OMBRE);
+        Object.assign(w, { rollout: true, trump: T, ombre: s, bid: b, forehand: this.forehand, hands, talon: d.slice(at), discards: [[], [], []], marked: [], passed: [false, false, false], trick: [], tricks: [0, 0, 0], played: [], nTricks: 0, bank: [0, 0, 0], deals: 0, variant: '12', notes: [], exchangers: [] });
+        w.sortAll(); w.startExchange();
+        let guard = 0;
+        while (w.nTricks < 9 && guard++ < 200) for (const m of w.aiPlan()) w.apply(m);
+        total += w.bank[s];
+      }
+      return total / N;
+    },
+    /* Sharp in play: share out the cards it cannot see (the others' hands, from everything not in its own hand
+     * or played) at random many times, play each deal out with Fair's judgement, and pick the card that does
+     * best on average for its own counters. */
+    sample(s, ms) {
+      const known = new Set(this.played.concat(this.hands[s])), pool = OM_PACK.filter(c => !known.has(c));
+      const others = [(s + 1) % 3, (s + 2) % 3], tally = new Map(ms.map(c => [c, 0])), N = 40;
+      for (let k = 0; k < N; k++) {
+        const d = pool.slice(); for (let i = d.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+        const hands = this.hands.map(h => h.slice()); let at = 0;
+        for (const o of others) { hands[o] = d.slice(at, at + this.hands[o].length); at += this.hands[o].length; }
+        for (const c of ms) {
+          const w = Object.create(OMBRE);
+          Object.assign(w, { rollout: true, trump: this.trump, ombre: this.ombre, bid: this.bid, forehand: this.forehand, hands: hands.map(h => h.slice()), trick: this.trick.map(t => ({ ...t })), tricks: this.tricks.slice(), played: this.played.slice(), nTricks: this.nTricks, toMove: s, need: 'play', bank: [0, 0, 0], deals: 0, variant: '12', notes: [] });
+          w.apply({ pl: 1, seat: s, kind: 'play', card: c });
+          let guard = 0;
+          while (w.nTricks < 9 && guard++ < 40) w.apply(w.aiPlan()[0]);
+          tally.set(c, tally.get(c) + w.bank[s]);
+        }
+      }
+      return ms.reduce((a, b) => (tally.get(b) > tally.get(a) ? b : a));
+    },
+    choose(s, ms) {
+      const T = this.trump, o = this.ombre, gone = new Set(this.played.concat(this.hands[s]));
+      const low = a => a.reduce((x, y) => (this.power(y) < this.power(x) ? y : x)), high = a => a.reduce((x, y) => (this.power(y) > this.power(x) ? y : x));
+      const master = c => !OM_PACK.some(x => !gone.has(x) && x !== c && this.suitOf(x) === this.suitOf(c) && this.power(x) > this.power(c));
+      const trumps = ms.filter(c => this.isTrump(c)), plain = ms.filter(c => !this.isTrump(c));
+      if (!this.trick.length) {
+        if (s === o) {
+          const out = OM_PACK.some(x => !gone.has(x) && this.isTrump(x));
+          if (trumps.length && out && master(high(trumps))) return high(trumps); // draw trumps with a sure winner
+          const sure = plain.filter(master); if (sure.length) return sure[0];
+          if (trumps.length >= 3 && out) return high(trumps);
+          return plain.length ? low(plain) : low(trumps);
+        }
+        const sure = plain.filter(master); if (sure.length) return sure[0];
+        return plain.length ? low(plain) : low(ms);
+      }
+      const b = this.best(), last = this.trick.length === 2, winners = ms.filter(c => this.beats(c, b.card));
+      if (s !== o && b.seat !== o && (last || master(b.card) || this.trick.length === 2)) return low(plain.length && ms.some(c => !this.isTrump(c)) ? ms.filter(c => !this.isTrump(c)) : ms); // the other defender holds it
+      if (winners.length) {
+        if (last) return low(winners);
+        const sure = winners.filter(master); if (sure.length) return low(sure);
+        return low(winners);
+      }
+      return low(ms);
+    },
+  };
+
+  /* -------------------------------------------------------------- Conquian
+   * The Mexican game (first named in 1857) from which the rummies grew, two-handed in its Anglo-American form.
+   * A 40-card French pack: ace to seven and the jack, queen and king of each suit, numbered suit * 13 + rank
+   * (rank 0 the ace). In a run the ace is low and the seven goes next to the jack. Ten cards each; one card at a
+   * time lies face up in the centre, and only that card can bring a meld down: you must use it, with cards from
+   * your hand, or turn it down. You go out by melding all eleven: your ten and the centre card. */
+  const CQ_SUIT = ['spades', 'hearts', 'diamonds', 'clubs'];
+  const CQ_RANK = ['ace', 'two', 'three', 'four', 'five', 'six', 'seven', '', '', '', 'jack', 'queen', 'king'];
+  const CQ_RANKS = [0, 1, 2, 3, 4, 5, 6, 10, 11, 12];
+  const CQ_PACK = []; for (let su = 0; su < 4; su++) for (const r of CQ_RANKS) CQ_PACK.push(su * 13 + r);
+  const cqSuit = c => (c / 13) | 0, cqRank = c => c % 13, cqSeq = c => CQ_RANKS.indexOf(cqRank(c)); // 0-9, the seven and jack adjacent
+  const cqName = c => `${CQ_RANK[cqRank(c)]} of ${CQ_SUIT[cqSuit(c)]}`;
+  // Short names in words, so the Pack switch can translate them: 'six of hearts', '5-6-7 of hearts',
+  // 'kings of spades, hearts and clubs'.
+  const CQ_SHORT = ['ace', '2', '3', '4', '5', '6', '7', '', '', '', 'jack', 'queen', 'king'];
+  const CQ_PLURAL = ['aces', 'twos', 'threes', 'fours', 'fives', 'sixes', 'sevens', '', '', '', 'jacks', 'queens', 'kings'];
+  const cqAnd = a => (a.length === 1 ? a[0] : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
+  const cqShort = c => `${CQ_SHORT[cqRank(c)]} of ${CQ_SUIT[cqSuit(c)]}`;
+  const cqList = cs => {
+    if (cs.length === 1) return 'the ' + cqShort(cs[0]);
+    if (cs.every(c => cqRank(c) === cqRank(cs[0]))) return `the ${CQ_PLURAL[cqRank(cs[0])]} of ${cqAnd(cs.map(c => CQ_SUIT[cqSuit(c)]))}`;
+    if (cs.every(c => cqSuit(c) === cqSuit(cs[0]))) return `the ${cs.slice().sort((a, b) => cqSeq(a) - cqSeq(b)).map(c => CQ_SHORT[cqRank(c)]).join('-')} of ${CQ_SUIT[cqSuit(cs[0])]}`;
+    return cqAnd(cs.map(c => 'the ' + cqShort(c)));
+  };
+  // Is this a meld? A set of three or four of a rank, or a run of three to eight in one suit.
+  function cqMeld(cs) {
+    if (cs.length < 3) return null;
+    if (cs.every(c => cqRank(c) === cqRank(cs[0]))) return cs.length <= 4 ? 'set' : null;
+    if (cs.length > 8 || !cs.every(c => cqSuit(c) === cqSuit(cs[0]))) return null;
+    const q = cs.map(cqSeq).sort((a, b) => a - b);
+    return q.every((x, i) => !i || x === q[i - 1] + 1) ? 'run' : null;
+  }
+  const cqSort = cs => cs.slice().sort((a, b) => (cqMeld(cs) === 'run' ? cqSeq(a) - cqSeq(b) : cqSuit(a) - cqSuit(b)));
+  const CONQUIAN = {
+    id: 'conquian', name: 'Conquian', dice: false, first: 0, cardName: c => cqName(c),
+    variants: [{ id: '1', label: 'One hand' }, { id: '3', label: 'First to 3' }], variant: '3', variantLabel: 'Game',
+    setVariant(id) { this.variant = id === '1' ? '1' : '3'; },
+    get target() { return +this.variant; },
+    get followPrompt() { return this.prompt0(); },
+    rules: [
+      'Two players, a 40-card pack: ace to seven and the jack, queen and king. Ten cards each; the rest are the stock. A set is three or four cards of a rank; a run is three to eight in a row in one suit, with the ace low and the seven next to the jack (6-7-J is a run, Q-K-A is not).',
+      'One card at a time lies face up in the centre. On your turn you may use it: meld it with cards from your hand (a new set or run, or added to one of yours), lay off any other cards that fit your melds, then discard a card face up, which becomes the centre card for the other player.',
+      'Or turn it down: it goes face down out of play, and you turn up the top card of the stock. You may use that card the same way, or pass it, and it becomes the centre card for the other player.',
+      'A card that fits one of your melds by itself, with no help from your hand, cannot be turned down: the other player forces it on you. You can only meld when you take the centre card.',
+      'Go out by melding all eleven cards, your ten and the centre card, leaving nothing to discard: you win the hand. If the stock runs out first, the hand is drawn. The first to win three hands (or a single hand) wins the game.'
+    ],
+    source: 'Anglo-American two-handed Conquian after pagat.com, which follows R. F. Foster\'s Complete Hoyle (1897). Forcing, an option for the other player in the old game, always happens here.',
+    init() { this.wins = [0, 0]; this.over = null; this.decided = null; this.dealer = 1; this.hand = 0; this.notes = []; this.deal(); },
+    deal() {
+      const d = CQ_PACK.slice();
+      for (let i = d.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+      this.hands = [[], []];
+      for (let k = 0; k < 20; k++) this.hands[(this.dealer + 1 + k) % 2].push(d[k]);
+      this.stock = d.slice(20); this.dead = []; this.melds = [[], []];
+      this.toMove = 1 - this.dealer; this.centre = this.stock.pop(); this.fresh = true; this.from = 'stock';
+      this.stage = 'centre'; this.hand++; this.notes = []; this.sortAll();
+    },
+    sortAll() { this.hands.forEach(h => h.sort((a, b) => cqSeq(a) - cqSeq(b) || cqSuit(a) - cqSuit(b))); },
+    who(pl) { return pl ? 'The Scribe' : 'You'; },
+    // Where a single card fits one of a player's melds on its own.
+    fits(pl, c) { return this.melds[pl].map((m, i) => (cqMeld(m.concat(c)) ? i : -1)).filter(i => i >= 0); },
+    // Every way to bring the centre card down: a new meld with hand cards, or added (with any hand cards it
+    // needs to join up) to a meld already down.
+    options(pl, c = this.centre) {
+      const h = this.hands[pl], out = [], seen = new Set();
+      const add = (into, cards) => { const key = into + ':' + cards.slice().sort((a, b) => a - b).join(','); if (seen.has(key)) return; seen.add(key); out.push({ into, cards }); };
+      const same = h.filter(x => cqRank(x) === cqRank(c));
+      for (let i = 0; i < same.length; i++) for (let j = i + 1; j < same.length; j++) { add(-1, [same[i], same[j]]); for (let k = j + 1; k < same.length; k++) add(-1, [same[i], same[j], same[k]]); }
+      const suit = h.filter(x => cqSuit(x) === cqSuit(c)), at = new Map(suit.map(x => [cqSeq(x), x])), q = cqSeq(c);
+      for (let lo = Math.max(0, q - 7); lo <= q; lo++) for (let hi = q; hi <= Math.min(9, lo + 7); hi++) {
+        if (hi - lo < 2) continue; const cards = [];
+        let ok = true; for (let x = lo; x <= hi; x++) if (x !== q) { if (!at.has(x)) { ok = false; break; } cards.push(at.get(x)); }
+        if (ok) add(-1, cards);
+      }
+      this.melds[pl].forEach((m, i) => {
+        if (cqMeld(m.concat(c))) add(i, []);
+        if (cqMeld(m) !== 'run' || cqSuit(m[0]) !== cqSuit(c)) return;
+        const qs = m.map(cqSeq), lo = Math.min(...qs), hi = Math.max(...qs);
+        const gap = q > hi ? Array.from({ length: q - hi - 1 }, (_, k) => hi + 1 + k) : q < lo ? Array.from({ length: lo - q - 1 }, (_, k) => q + 1 + k) : [];
+        if (gap.length && gap.every(x => at.has(x)) && cqMeld(m.concat(c, gap.map(x => at.get(x))))) add(i, gap.map(x => at.get(x)));
+      });
+      return out;
+    },
+    // Hand cards that fit a meld on their own, after the centre card has come down.
+    layoffs(pl) { const out = []; for (const x of this.hands[pl]) for (const i of this.fits(pl, x)) out.push({ card: x, into: i }); return out; },
+    forced(pl) { return !this.fresh && this.fits(pl, this.centre).length > 0; },
+    label(pl, o) {
+      if (o.into < 0) return `Meld ${cqList(cqSort(o.cards.concat(this.centre)))}`;
+      return `Add ${cqList(cqSort(o.cards.concat(this.centre)))} to ${cqList(cqSort(this.melds[pl][o.into]))}`.replace('Add the ', 'Add the ');
+    },
+    prompt0() {
+      const c = this.centre === null ? '' : cqName(this.centre);
+      switch (this.stage) {
+        case 'next': return this.notes.join(' ') + (this.decided ? ' Press See the result.' : ' Press Next hand when you are ready.');
+        case 'lay': return 'Lay off any card that fits one of your melds, or discard a card: click it.';
+        default:
+          if (this.forced(0)) return `The ${c} fits one of your melds by itself, so you must take it.`;
+          if (!this.options(0).length) return `The centre card is the ${c}. You cannot use it: ${this.fresh ? 'pass it to the Scribe' : 'turn it down and turn up a new card'}.`;
+          return `The centre card is the ${c}. Meld it with cards from your hand, or ${this.fresh ? 'pass it' : 'turn it down'}.`;
+      }
+    },
+    legal(pl) {
+      if (this.over) return [];
+      if (this.stage === 'next') return pl === 0 ? [{ pl, kind: 'next', label: this.decided ? 'See the result' : 'Next hand' }] : [];
+      if (this.toMove !== pl) return [];
+      if (this.stage === 'lay') {
+        return this.layoffs(pl).map(o => ({ pl, kind: 'lay', card: o.card, into: o.into, label: `Lay off the ${cqShort(o.card)} on ${cqList(cqSort(this.melds[pl][o.into]))}` }))
+          .concat(this.hands[pl].map(card => ({ pl, kind: 'discard', card })));
+      }
+      const out = this.options(pl).map(o => ({ pl, kind: 'meld', into: o.into, cards: o.cards, label: this.label(pl, o) }));
+      if (!this.forced(pl)) out.push(this.fresh ? { pl, kind: 'pass', label: 'Pass it' } : { pl, kind: 'turn', label: this.stock.length ? 'Turn it down' : 'Turn it down (the stock is empty: a draw)' });
+      return out;
+    },
+    apply(m) {
+      const pl = m.pl, events = [], Y = !pl;
+      if (m.kind === 'next') {
+        if (this.decided) { this.over = this.decided; return { note: '' }; }
+        this.dealer = 1 - this.dealer; this.deal();
+        return { note: `${this.dealer ? 'The Scribe deals; you turn up the first card.' : 'You deal; the Scribe turns up the first card.'}`, events: [{ type: 'deal' }] };
+      }
+      if (m.kind === 'meld') {
+        const h = this.hands[pl], c = this.centre;
+        m.cards.forEach(x => h.splice(h.indexOf(x), 1));
+        if (m.into < 0) this.melds[pl].push(cqSort(m.cards.concat(c)));
+        else this.melds[pl][m.into] = cqSort(this.melds[pl][m.into].concat(m.cards, c));
+        this.centre = null;
+        events.push({ type: 'meld', pl, card: c, cards: m.cards, into: m.into });
+        if (!h.length) return { note: `${this.who(pl)} ${Y ? 'meld' : 'melds'} the ${cqName(c)}. ` + this.goOut(pl), events };
+        this.stage = 'lay';
+        return { note: `${this.who(pl)} ${Y ? 'meld' : 'melds'} the ${cqName(c)}${m.cards.length ? ' with ' + cqList(m.cards) : ''}.`, events };
+      }
+      if (m.kind === 'lay') {
+        const h = this.hands[pl]; h.splice(h.indexOf(m.card), 1);
+        this.melds[pl][m.into] = cqSort(this.melds[pl][m.into].concat(m.card));
+        events.push({ type: 'lay', pl, card: m.card, into: m.into });
+        if (!h.length) return { note: this.goOut(pl), events };
+        return { note: '', events };
+      }
+      if (m.kind === 'discard') {
+        const h = this.hands[pl]; h.splice(h.indexOf(m.card), 1);
+        this.centre = m.card; this.fresh = false; this.from = 'discard'; this.stage = 'centre'; this.toMove = 1 - pl;
+        events.push({ type: 'discard', pl, card: m.card });
+        return { note: `${this.who(pl)} ${Y ? 'discard' : 'discards'} the ${cqName(m.card)}.`, events };
+      }
+      if (m.kind === 'turn') { // turn the centre card down and turn up a new one
+        this.dead.push(this.centre); events.push({ type: 'dead', card: this.centre });
+        if (!this.stock.length) return { note: this.drawn(), events };
+        this.centre = this.stock.pop(); this.fresh = true; this.from = 'stock';
+        events.push({ type: 'turnup', card: this.centre });
+        return { note: `${this.who(pl)} ${Y ? 'turn' : 'turns'} it down and ${Y ? 'turn' : 'turns'} up the ${cqName(this.centre)}.`, events };
+      }
+      // pass: the card a player turned up goes to the other player
+      this.fresh = false; this.from = 'pass'; this.toMove = 1 - pl;
+      events.push({ type: 'pass', pl });
+      return { note: `${this.who(pl)} ${Y ? 'pass' : 'passes'} the ${cqName(this.centre)}.`, events };
+    },
+    goOut(pl) {
+      this.wins[pl]++;
+      const t = `${this.who(pl)} ${pl ? 'goes' : 'go'} out with all eleven cards melded and ${pl ? 'wins' : 'win'} the hand. Hands: you ${this.wins[0]}, the Scribe ${this.wins[1]}.`;
+      return this.endHand(t, pl);
+    },
+    drawn() { return this.endHand(`The stock is empty and the centre card is no use: the hand is drawn. Hands: you ${this.wins[0]}, the Scribe ${this.wins[1]}.`, -1); },
+    endHand(t, w) {
+      this.notes = [t]; this.stage = 'next'; this.toMove = 0; this.centre = null;
+      if (w >= 0 && this.wins[w] >= this.target) this.decided = { winner: w, title: w ? 'The Scribe wins' : 'You win', text: `${this.wins[0]} hand${this.wins[0] === 1 ? '' : 's'} to ${this.wins[1]}, after ${this.hand} hand${this.hand > 1 ? 's' : ''}.` };
+      return t;
+    },
+    passTurn() { return this.over ? 0 : this.toMove; },
+    ended() { return !!this.over; },
+    final() { return this.over; },
+    result() { return this.over || null; },
+    /* The Scribe. A hand card's use: how many others of its rank, and of its suit nearby, it could meld with.
+     * It takes the centre card when that brings the most cards down (or when forced), lays off whatever fits,
+     * and discards the card it can least use, avoiding (at Fair and Sharp) one that fits the other's melds. */
+    use(pl, x, hand = this.hands[pl]) {
+      let v = 0;
+      for (const y of hand) { if (y === x) continue; if (cqRank(y) === cqRank(x)) v += 1; else if (cqSuit(y) === cqSuit(x)) { const d = Math.abs(cqSeq(y) - cqSeq(x)); if (d === 1) v += 1.1; else if (d === 2) v += 0.5; } }
+      return v + this.fits(pl, x).length * 2;
+    },
+    aiPlan(pl = 1) {
+      if (this.stage === 'next') return [{ pl: 0, kind: 'next' }];
+      const ms = this.legal(pl);
+      if (this.stage === 'lay') {
+        const lay = ms.find(m => m.kind === 'lay'); if (lay) return [lay];
+        const disc = ms.filter(m => m.kind === 'discard');
+        if (LEVEL.name === 'gentle' && Math.random() < 0.35) return [disc[(Math.random() * disc.length) | 0]];
+        const risk = c => (LEVEL.name !== 'gentle' && this.fits(1 - pl, c).length ? 3 : 0);
+        return [disc.reduce((a, b) => (this.use(pl, b.card) + risk(b.card) + Math.random() * pick(1.5, 0.4, 0.1) < this.use(pl, a.card) + risk(a.card) ? b : a))];
+      }
+      const melds = ms.filter(m => m.kind === 'meld');
+      if (melds.length) {
+        // Prefer the meld that brings most cards down while keeping the rest of the hand useful.
+        const score = m => { const rest = this.hands[pl].filter(x => !m.cards.includes(x)); return m.cards.length + 1 + rest.reduce((t, x) => t + this.use(pl, x, rest), 0) * 0.15 + (rest.length === 0 ? 50 : 0); };
+        const best = melds.reduce((a, b) => (score(b) > score(a) ? b : a));
+        if (LEVEL.name !== 'gentle' || Math.random() < 0.8) return [best];
+      }
+      return [ms.find(m => m.kind !== 'meld') || melds[0]];
+    },
+  };
+
+  /* --------------------------------------------------------------- Cassino
+   * The English fishing game, first in print in 1792. A full French pack, numbered suit * 13 + rank (rank 0 the
+   * ace, 1-9 the two to the ten, 10-12 jack, queen, king); spades, hearts, diamonds, clubs. Number cards count
+   * their pips, the ace 1; court cards count nothing and pair only one at a time. The table holds items: a loose
+   * card, a build (cards that add up to a value, which can still be raised) or a multiple build (cards that
+   * each make the same value, which can't). Every build has an owner, the last player to make or raise it. */
+  const CA_SUIT = ['spades', 'hearts', 'diamonds', 'clubs'];
+  const CA_RANK = ['ace', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'jack', 'queen', 'king'];
+  const caSuit = c => (c / 13) | 0, caRank = c => c % 13, caFace = c => caRank(c) >= 10, caVal = c => (caFace(c) ? 0 : caRank(c) + 1);
+  const CA_BIG = 2 * 13 + 9, CA_LITTLE = 1; // the ten of diamonds and the two of spades
+  const caName = c => `${CA_RANK[caRank(c)]} of ${CA_SUIT[caSuit(c)]}`;
+  const caShort = c => `${['ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king'][caRank(c)]} of ${CA_SUIT[caSuit(c)]}`; // in words, for the Pack switch
+  const CASSINO = {
+    id: 'cassino', name: 'Cassino', dice: false, first: 0, cardName: c => caName(c),
+    variants: [{ id: 'plain', label: 'No sweeps' }, { id: 'sweeps', label: 'With sweeps' }], variant: 'plain', variantLabel: 'Sweeps',
+    setVariant(id) { this.variant = id === 'sweeps' ? 'sweeps' : 'plain'; },
+    get followPrompt() { return this.prompt0(); },
+    rules: [
+      'Two players, a full pack. Four cards each and four face up on the table; when both hands are empty, four more each, until the pack is used up. Each turn, play one card from your hand.',
+      'Take: a card takes every table card of its rank (a court card only one at a time), every build of its value, and any sets of number cards that add up to it: a 9 takes a 4 and a 5. Aces count 1; court cards count nothing and only pair.',
+      'Build: put a card on a table card or build so the total is the value of another card you hold (a 3 on a 5 to build 8, holding an 8), or on one of the same value to make a multiple build of that value. Either player may take a build with a card of its value; a plain build can be raised by anyone holding the new total, a multiple build cannot. While you own a build you may not trail.',
+      'Trail: lay your card face up on the table. When the pack is spent, the last player to take anything takes what is left on the table.',
+      'Each deal scores 11: most cards 3, most spades 1, big cassino (the ten of diamonds) 2, little cassino (the two of spades) 1, and each ace 1; with sweeps, 1 more for clearing the table. The first to 21 at the end of a deal wins.'
+    ],
+    source: 'Two-handed Cassino as in the Hoyles that followed Robert Long\'s rules of 1792, after Wikipedia\'s Cassino and pagat.com. A player who owns a build may not trail, as Hoyle recommends; combining a build with loose cards is left out.',
+    init() { this.total = [0, 0]; this.over = null; this.decided = null; this.dealer = 1; this.deals = 0; this.notes = []; this.deal(); },
+    deal() {
+      const d = Array.from({ length: 52 }, (_, i) => i);
+      for (let i = d.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+      this.pack = d; this.hands = [[], []]; this.table = []; this.piles = [[], []]; this.sweeps = [0, 0]; this.lastTaker = -1; this.nid = 0;
+      this.dealHands(); for (let k = 0; k < 4; k++) this.table.push(this.loose(this.pack.pop()));
+      this.toMove = 1 - this.dealer; this.stage = 'pick'; this.picked = null; this.deals++; this.notes = [];
+    },
+    dealHands() { for (let k = 0; k < 4; k++) for (const pl of [1 - this.dealer, this.dealer]) this.hands[pl].push(this.pack.pop()); this.hands.forEach(h => h.sort((a, b) => caRank(a) - caRank(b) || a - b)); },
+    loose(c) { return { id: this.nid++, cards: [c], kind: 'card', value: caVal(c), owner: -1 }; },
+    who(pl) { return pl ? 'The Scribe' : 'You'; },
+    itemName(t) { return t.kind === 'card' ? 'the ' + caShort(t.cards[0]) : t.kind === 'multi' ? `the build of ${t.value}s` : `the build of ${t.value}`; },
+    owns(pl) { return this.table.some(t => t.kind !== 'card' && t.owner === pl); },
+    holds(pl, v, not) { return this.hands[pl].some(x => x !== not && !caFace(x) && caVal(x) === v); },
+    // What a card takes: its pairs and builds, and the largest set of disjoint sums of loose number cards.
+    capture(c) {
+      if (caFace(c)) { const t = this.table.find(x => x.kind === 'card' && caRank(x.cards[0]) === caRank(c)); return t ? [t] : []; }
+      const v = caVal(c), take = this.table.filter(t => t.value === v && (t.kind !== 'card' || !caFace(t.cards[0])));
+      const rest = this.table.filter(t => t.kind === 'card' && !caFace(t.cards[0]) && t.value < v && !take.includes(t));
+      let best = [];
+      const go = (pool, chosen) => { // pick sums greedily from the smallest card up, keeping the largest packing
+        if (chosen.length > best.length) best = chosen.slice();
+        if (!pool.length) return;
+        const [first, ...others] = pool;
+        const sums = [];
+        const find = (i, sum, set) => { if (sum === v && set.length >= 2) { sums.push(set.slice()); return; } if (sum >= v) return; for (let j = i; j < others.length; j++) { set.push(others[j]); find(j + 1, sum + others[j].value, set); set.pop(); } };
+        find(0, first.value, [first]);
+        for (const s of sums) go(others.filter(t => !s.includes(t)), chosen.concat(s));
+        go(others, chosen);
+      };
+      go(rest, []);
+      return take.concat(best);
+    },
+    // Every play for one card from hand.
+    plays(pl, c) {
+      const out = [], v = caVal(c), cap = this.capture(c);
+      if (cap.length) out.push({ pl, kind: 'take', card: c, items: cap.map(t => t.id), label: `Take ${cap.map(t => this.itemName(t)).join(', ')} with the ${caShort(c)}` });
+      if (!caFace(c)) for (const t of this.table) {
+        if (t.kind === 'card' && caFace(t.cards[0])) continue;
+        const nv = t.value + v;
+        if (t.kind !== 'multi' && nv <= 10 && this.holds(pl, nv, c)) out.push({ pl, kind: 'build', card: c, item: t.id, value: nv, label: `Build ${nv}: the ${caShort(c)} on ${this.itemName(t)}` });
+        if (t.value === v && this.holds(pl, v, c)) out.push({ pl, kind: 'multi', card: c, item: t.id, value: v, label: `Build ${v}s: the ${caShort(c)} on ${this.itemName(t)}` });
+      }
+      if (!this.owns(pl)) out.push({ pl, kind: 'trail', card: c, label: `Trail the ${caShort(c)}` });
+      return out;
+    },
+    prompt0() {
+      if (this.stage === 'next') return this.notes.join(' ') + (this.decided ? ' Press See the result.' : ' Press Next deal when you are ready.');
+      if (this.stage === 'how') return `What will the ${caName(this.picked)} do?`;
+      return this.owns(0) ? 'You own a build, so you may not trail: take, build or raise. Pick a card.' : 'Pick a card to play: to take, to build or to trail.';
+    },
+    legal(pl) {
+      if (this.over) return [];
+      if (this.stage === 'next') return pl === 0 ? [{ pl, kind: 'next', label: this.decided ? 'See the result' : 'Next deal' }] : [];
+      if (this.toMove !== pl) return [];
+      if (this.stage === 'how') return this.plays(pl, this.picked).concat([{ pl, kind: 'back', label: 'Another card' }]);
+      const out = [];
+      for (const c of this.hands[pl]) {
+        const ps = this.plays(pl, c);
+        if (ps.length === 1) out.push(Object.assign({}, ps[0], { label: undefined, one: true }));
+        else if (ps.length) out.push({ pl, kind: 'pick', card: c });
+      }
+      // A build owned with no card left to take it: trailing is allowed again rather than leave no play.
+      if (!out.length) return this.hands[pl].map(c => ({ pl, kind: 'trail', card: c, one: true }));
+      return out;
+    },
+    apply(m) {
+      const pl = m.pl, events = [], Y = !pl;
+      if (m.kind === 'next') {
+        if (this.decided) { this.over = this.decided; return { note: '' }; }
+        this.dealer = 1 - this.dealer; this.deal();
+        return { note: `${this.dealer ? 'The Scribe deals; you play first.' : 'You deal; the Scribe plays first.'}`, events: [{ type: 'deal' }] };
+      }
+      if (m.kind === 'pick') { this.picked = m.card; this.stage = 'how'; return { note: '', events: [{ type: 'pick', card: m.card }] }; }
+      if (m.kind === 'back') { this.picked = null; this.stage = 'pick'; return { note: '', events: [{ type: 'pick', card: null }] }; }
+      const h = this.hands[pl], c = m.card; h.splice(h.indexOf(c), 1);
+      this.picked = null; this.stage = 'pick';
+      let note;
+      if (m.kind === 'take') {
+        const got = this.table.filter(t => m.items.includes(t.id)), cards = [c, ...got.flatMap(t => t.cards)];
+        this.table = this.table.filter(t => !m.items.includes(t.id));
+        this.piles[pl].push(...cards); this.lastTaker = pl;
+        const last = !this.pack.length && !this.hands[0].length && !this.hands[1].length;
+        const sweep = !this.table.length && !last && this.variant === 'sweeps';
+        if (sweep) this.sweeps[pl]++;
+        events.push({ type: 'take', pl, card: c, cards: got.flatMap(t => t.cards), sweep });
+        note = `${this.who(pl)} ${Y ? 'take' : 'takes'} ${got.map(t => this.itemName(t)).join(', ')} with the ${caName(c)}${sweep ? ': a sweep!' : '.'}`;
+      } else if (m.kind === 'build' || m.kind === 'multi') {
+        const t = this.table.find(x => x.id === m.item);
+        t.cards.push(c); t.kind = m.kind === 'multi' ? 'multi' : 'build'; t.value = m.value; t.owner = pl;
+        events.push({ type: 'build', pl, card: c, item: t.id });
+        note = `${this.who(pl)} ${Y ? 'build' : 'builds'} ${m.kind === 'multi' ? m.value + 's' : m.value}.`;
+      } else {
+        const t = this.loose(c); this.table.push(t);
+        events.push({ type: 'trail', pl, card: c });
+        note = `${this.who(pl)} ${Y ? 'trail' : 'trails'} the ${caName(c)}.`;
+      }
+      this.toMove = 1 - pl;
+      if (!this.hands[0].length && !this.hands[1].length) {
+        if (this.pack.length) { this.dealHands(); events.push({ type: 'deal4' }); this.toMove = 1 - this.dealer; note += ` Four more cards each${this.pack.length ? '' : ', the last of the pack'}.`; }
+        else note += ' ' + this.endDeal(events);
+      }
+      return { note, events };
+    },
+    endDeal(events) {
+      const notes = [];
+      if (this.table.length && this.lastTaker >= 0) {
+        const cards = this.table.flatMap(t => t.cards); this.piles[this.lastTaker].push(...cards); this.table = [];
+        events.push({ type: 'sweepUp', pl: this.lastTaker, cards });
+        notes.push(`${this.who(this.lastTaker)} took last, and ${this.lastTaker ? 'takes' : 'take'} what is left.`);
+      }
+      const P = this.piles, pts = [0, 0], why = [[], []];
+      const most = (f, n, what) => { const a = f(P[0]), b = f(P[1]); if (a !== b) { const w = a > b ? 0 : 1; pts[w] += n; why[w].push(what); } };
+      most(p => p.length, 3, 'cards'); most(p => p.filter(c => caSuit(c) === 0).length, 1, 'spades');
+      for (const pl of [0, 1]) {
+        if (P[pl].includes(CA_BIG)) { pts[pl] += 2; why[pl].push('big cassino'); }
+        if (P[pl].includes(CA_LITTLE)) { pts[pl] += 1; why[pl].push('little cassino'); }
+        const aces = P[pl].filter(c => caRank(c) === 0).length; if (aces) { pts[pl] += aces; why[pl].push(aces + (aces > 1 ? ' aces' : ' ace')); }
+        if (this.sweeps[pl]) { pts[pl] += this.sweeps[pl]; why[pl].push(this.sweeps[pl] + (this.sweeps[pl] > 1 ? ' sweeps' : ' sweep')); }
+        this.total[pl] += pts[pl];
+      }
+      notes.push(`You score ${pts[0]}${why[0].length ? ' (' + why[0].join(', ') + ')' : ''}; the Scribe ${pts[1]}${why[1].length ? ' (' + why[1].join(', ') + ')' : ''}. Total: ${this.total[0]} to ${this.total[1]}.`);
+      const [a, b] = this.total;
+      if ((a >= 21 || b >= 21) && a !== b) { const w = a > b ? 0 : 1; this.decided = { winner: w, title: w ? 'The Scribe wins' : 'You win', text: `${a} to ${b}, after ${this.deals} deal${this.deals > 1 ? 's' : ''}.` }; }
+      this.notes = notes; this.stage = 'next'; this.toMove = 0;
+      return notes.join(' ');
+    },
+    passTurn() { return this.over ? 0 : this.toMove; },
+    ended() { return !!this.over; },
+    final() { return this.over; },
+    result() { return this.over || null; },
+    /* The Scribe weighs each play: what a take is worth (cards, spades, the cassinos, aces, a sweep), what a
+     * build should bring next turn, and what a card left on the table could give away. Sharp also counts the
+     * cards it has not seen to judge whether the other player can take what it leaves. */
+    cardWorth(c) { return 0.25 + (caSuit(c) === 0 ? 0.3 : 0) + (caRank(c) === 0 ? 1 : 0) + (c === CA_BIG ? 2 : 0) + (c === CA_LITTLE ? 1 : 0); },
+    aiPlan(pl = 1) {
+      if (this.stage === 'next') return [{ pl: 0, kind: 'next' }];
+      const all = this.hands[pl].flatMap(c => this.plays(pl, c));
+      if (LEVEL.name === 'gentle' && Math.random() < 0.35) { const takes = all.filter(m => m.kind === 'take'); const pool = takes.length && Math.random() < 0.7 ? takes : all; return this.asPlan(pool[(Math.random() * pool.length) | 0]); }
+      const seen = new Set(this.hands[pl].concat(this.table.flatMap(t => t.cards), LEVEL.name === 'sharp' ? this.piles[0].concat(this.piles[1]) : []));
+      const unseen = Array.from({ length: 52 }, (_, i) => i).filter(c => !seen.has(c)), oppN = this.hands[1 - pl].length;
+      const chance = v => { const k = unseen.filter(c => !caFace(c) && caVal(c) === v).length; return 1 - Math.pow(1 - k / Math.max(1, unseen.length), Math.max(1, oppN)); };
+      const score = m => {
+        let s = 0;
+        if (m.kind === 'take') {
+          const got = this.table.filter(t => m.items.includes(t.id)).flatMap(t => t.cards);
+          s += [m.card, ...got].reduce((t, c) => t + this.cardWorth(c), 0) + 1;
+          if (got.length === this.table.flatMap(t => t.cards).length && this.variant === 'sweeps') s += 1.5;
+        } else if (m.kind === 'build' || m.kind === 'multi') {
+          const t = this.table.find(x => x.id === m.item), cards = [m.card, ...t.cards];
+          s += cards.reduce((a, c) => a + this.cardWorth(c), 0) * 0.85 - chance(m.value) * cards.reduce((a, c) => a + this.cardWorth(c), 0) * 0.6 + 0.4;
+        } else {
+          s -= this.cardWorth(m.card) * 1.2 + (caFace(m.card) ? 0 : chance(caVal(m.card)) * 0.4) + (caVal(m.card) >= 6 ? 0.1 : 0);
+        }
+        return s + Math.random() * pick(1.2, 0.3, 0.05);
+      };
+      return this.asPlan(all.reduce((a, b) => (score(b) > score(a) ? b : a)));
+    },
+    // A play as the hall needs it: a card with one play is played at once, otherwise picked first.
+    asPlan(m) { return this.plays(m.pl, m.card).length === 1 ? [Object.assign({}, m, { label: undefined, one: true })] : [{ pl: m.pl, kind: 'pick', card: m.card }, m]; },
+  };
+
   /* ---------------------------------------------------------- Rithmomachia
    * An 8 x 16 board: square i = r * 8 + c, with row 0 the visitor's back row.
    * A piece is { pl, shape, v }: shape 'c' round, 't' triangle, 's' square, 'p' pyramid.
@@ -8491,7 +9370,7 @@
     const out = {}; for (const k of Object.keys(v)) out[k] = unpackState(v[k]); return out;
   }
 
-  const api = { DICE_P, LEVELS, setLevel, packState, unpackState, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, euchre: EUCHRE, patience: PATIENCE, rithmo: RITHMO, lewischess: LEWISCHESS, courier: COURIER, hazard: HAZARD, piquet: PIQUET, bezique: BEZIQUE, scopa: SCOPA, nard: NARD, xii: XII, koikoi: KOIKOI, idraughts: IDRAUGHTS, hnefatafl: HNEFATAFL };
+  const api = { DICE_P, LEVELS, setLevel, packState, unpackState, level: () => LEVEL.name, ur: UR, senet: SENET, morris: MORRIS, oware: OWARE, brandubh: BRANDUBH, tables: TABLES, shatranj: SHATRANJ, foxgeese: FOXGEESE, draughts: DRAUGHTS, goose: GOOSE, reversi: REVERSI, dotsboxes: DOTSBOXES, halma: HALMA, go: GO, alquerque: ALQUERQUE, snakes: SNAKES, xiangqi: XIANGQI, tarocchi: TAROCCHI, mutorere: MUTORERE, konane: KONANE, fanorona: FANORONA, chess: CHESS, shogi: SHOGI, yut: YUT, pachisi: PACHISI, mahjong: MAHJONG, bao: BAO, landlord: LANDLORD, chinese: CHINESE, hex: HEX, gomoku: GOMOKU, dominoes: DOMINOES, tablut: TABLUT, makruk: MAKRUK, kalah: KALAH, cribbage: CRIBBAGE, morabaraba: MORABARABA, ludo: LUDO, janggi: JANGGI, chaturaji: CHATURAJI, seega: SEEGA, tab: TAB, baghchal: BAGHCHAL, fourseasons: FOURSEASONS, hounds: HOUNDS, latrunculi: LATRUNCULI, patolli: PATOLLI, mansion: MANSION, lifegame: LIFEGAME, jungle: JUNGLE, chaturanga: CHATURANGA, whist: WHIST, euchre: EUCHRE, patience: PATIENCE, karnoffel: KARNOFFEL, ombre: OMBRE, conquian: CONQUIAN, cassino: CASSINO, rithmo: RITHMO, lewischess: LEWISCHESS, courier: COURIER, hazard: HAZARD, piquet: PIQUET, bezique: BEZIQUE, scopa: SCOPA, nard: NARD, xii: XII, koikoi: KOIKOI, idraughts: IDRAUGHTS, hnefatafl: HNEFATAFL };
   // Where this file came from, so the hall can start a worker that loads the very same rules:
   // its address when it is a file of its own, its text when it is written into the page.
   const here = typeof document !== 'undefined' && document.currentScript;

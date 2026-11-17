@@ -4,7 +4,7 @@
 
 **Wing V · The Modern Board Game** · 1850s–60s CE · America, and the Joker
 
-[← The Mansion of Happiness](mansion.md) · [All games](README.md) · [The Checkered Game of Life →](lifegame.md)
+[← The Mansion of Happiness](mansion.md) · [All games](README.md) · [Conquian →](conquian.md)
 
 | | |
 | --- | --- |

@@ -4,7 +4,7 @@
 
 **Wing III · Kings, Cards and Courts** · c. 1440 CE · Northern Italy · 15th century
 
-[← Playing Cards](cards.md) · [All games](README.md) · [Fox and Geese →](foxgeese.md)
+[← Karnöffel](karnoffel.md) · [All games](README.md) · [Fox and Geese →](foxgeese.md)
 
 | | |
 | --- | --- |
