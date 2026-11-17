@@ -225,6 +225,7 @@ function buildShelves(len, midZ) {
     const books = new THREE.InstancedMesh(geo, bookMat, bk.mats.length);
     bk.mats.forEach((m, i) => { books.setMatrixAt(i, m); books.setColorAt(i, bk.cols[i]); });
     books.instanceMatrix.needsUpdate = true; books.instanceColor.needsUpdate = true;
+    books.frustumCulled = true; // three.js leaves instanced meshes unculled; without this every wing's books were drawn every frame
     scene.add(books);
   });
 }
@@ -1578,7 +1579,7 @@ const PACK_WORDS = {
   latin: { suits: ['swords', 'cups', 'coins', 'batons'], courts: [['knave', 'knaves'], ['knight', 'knights'], ['king', 'kings']] },
 };
 // The tables that offer the switch, and the pack each game is played with by default.
-const PACK_TABLES = { piquet: 'french', whist: 'french', cribbage: 'french', bezique: 'french', scopa: 'latin' };
+const PACK_TABLES = { piquet: 'french', whist: 'french', cribbage: 'french', bezique: 'french', scopa: 'latin', euchre: 'french' };
 let packNow = 'french';
 const packFor = g => (PACK_TABLES[g.id] ? ((store.packs || {})[g.id] || PACK_TABLES[g.id]) : 'french');
 function packText(text, from, to) {
@@ -1661,9 +1662,30 @@ function packCourt(g, w, h, kind, k, style) {
   packMark(g, kind, cx + 30, cy + 24, 26); // the suit sign held at the shoulder
 }
 const crFaceCache = new Map();
+// The Joker (card 52), the Best Bower of 1860s American euchre packs: a jester, the same in every pack.
+function jokerFace() {
+  return cardTex((g, w, h) => {
+    g.fillStyle = '#f7f2e6'; g.fillRect(0, 0, w, h); g.strokeStyle = '#3a2a1a'; g.lineWidth = 4; g.strokeRect(5, 5, w - 10, h - 10);
+    g.fillStyle = '#8a1e14'; g.font = '700 15px "Montserrat",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    [...'JOKER'].forEach((ch, i) => { g.fillText(ch, 18, 22 + i * 16); g.save(); g.translate(w - 18, h - 22 - i * 16); g.rotate(Math.PI); g.fillText(ch, 0, 0); g.restore(); });
+    const cx = w / 2, cy = h * 0.56;
+    g.save(); g.strokeStyle = 'rgba(30,18,8,.85)'; g.lineWidth = 2;
+    g.fillStyle = '#2a4a7a'; g.beginPath(); g.moveTo(cx - 38, cy + 64); g.quadraticCurveTo(cx - 36, cy + 4, cx, cy + 2); g.quadraticCurveTo(cx + 36, cy + 4, cx + 38, cy + 64); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#c8901e'; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(cx - 26 + k * 13, cy + 8 + (k % 2) * 6, 6, 0, TAU); g.fill(); g.stroke(); } // the ruff
+    g.fillStyle = '#ecd2ae'; g.beginPath(); g.arc(cx, cy - 16, 17, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = '#1c1c1c'; g.beginPath(); g.arc(cx - 6, cy - 18, 1.8, 0, TAU); g.arc(cx + 6, cy - 18, 1.8, 0, TAU); g.fill();
+    g.beginPath(); g.arc(cx, cy - 12, 7, 0.2, Math.PI - 0.2); g.stroke(); // a grin
+    // the fool's cap: two horns with bells
+    g.fillStyle = '#b3261e'; g.beginPath(); g.moveTo(cx - 16, cy - 28); g.quadraticCurveTo(cx - 34, cy - 58, cx - 46, cy - 40); g.quadraticCurveTo(cx - 26, cy - 44, cx, cy - 34); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#2f6b2a'; g.beginPath(); g.moveTo(cx + 16, cy - 28); g.quadraticCurveTo(cx + 34, cy - 58, cx + 46, cy - 40); g.quadraticCurveTo(cx + 26, cy - 44, cx, cy - 34); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#e8b83a'; for (const x of [-46, 46]) { g.beginPath(); g.arc(cx + x, cy - 40, 5, 0, TAU); g.fill(); g.stroke(); }
+    g.restore();
+  }, 140, 210);
+}
 function crFace(c, style = packNow) {
   const key = style + c;
   if (crFaceCache.has(key)) return crFaceCache.get(key);
+  if (c === 52) { const j = jokerFace(); for (const st of PACK_STYLES) crFaceCache.set(st + c, j); return j; }
   const rk = c % 13, su = (c / 13) | 0, kind = PACK_SUITS[style][su], court = rk >= 10 ? rk - 10 : -1;
   const french = style === 'french', col = french ? (su === 1 || su === 2 ? '#b3261e' : '#1c1c1c') : '#2a1a0c';
   const label = court >= 0 ? PACK_COURT[style][court] : rk === 0 ? 'A' : String(rk + 1);
@@ -1816,6 +1838,101 @@ function buildNotForPlay(group) {
   // An invitation to a ball, on the plain back of another.
   lay(cardTex((g, w, h) => { paper(g, w, h, '#f2e8d2'); g.strokeStyle = '#8a6a2a'; g.lineWidth = 3; g.strokeRect(20, 20, w - 40, h - 40); hand(g, ['The favour of', 'your Company', 'is desired', 'at a Ball'], w / 2, 100, 20); }), 0.47, -0.1, 0.18);
   glassCase(group, 1.3, 0.42, 0.85);
+  return y0;
+}
+
+// Euchre: on display, the Joker (the Best Bower) with the right and left bowers, and a hand laid out.
+function buildEuchre(group) {
+  const y = cardTable(group, ['#2a4a2c', '#244024', '#305434', '#1f3a20']), shown = [];
+  const put = (c, x, z, ry, down) => { const m = crCard(c, c, 'french'); m.position.set(x, y + 0.001 + shown.length * 0.0002, z); m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  [52, 1 * 13 + 10, 2 * 13 + 10].forEach((c, i) => put(c, (i - 1) * 0.085, 0.02, (i - 1) * -0.12)); // Joker, jack of hearts, jack of diamonds
+  [1 * 13 + 0, 1 * 13 + 12, 3 * 13 + 0, 0 * 13 + 9, 1 * 13 + 8].forEach((c, i) => put(c, (i - 2) * 0.07, 0.29, 0));
+  for (let s = 1; s < 4; s++) for (let i = 0; i < 5; i++) { const at = wsHandSpot(s, i, 5, y); put(0, at.x, at.z, WS_YAW[s], true); }
+  for (let k = 0; k < 3; k++) put(0, -0.3, -0.02, Math.PI / 2, true);
+  group.userData.display = shown;
+  return y;
+}
+// Patience: a Klondike game in progress, laid out on green baize.
+function buildPatience(group) {
+  const y = cardTable(group, ['#1f4a32', '#1a422c', '#24523a', '#173a26']), shown = [];
+  const put = (c, x, z, down) => { const m = crCard(c, c, 'french'); m.scale.set(1.22, 1, 1.22); m.position.set(x, y + 0.001 + shown.length * 0.0001, z); m.rotation.set(0, 0, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  const cols = [[39 + 12], [0, 1 * 13 + 11], [0, 0, 2 * 13 + 6, 3 * 13 + 5], [0, 0, 0, 13 + 9], [0, 0, 0, 0, 12], [0, 0, 0, 0, 0, 26 + 3, 2], [0, 0, 0, 0, 0, 0, 13 + 7, 6]];
+  cols.forEach((col, i) => col.forEach((c, j) => { const down = c === 0 && j < col.length - 1; put(down ? 0 : c, (i - 3) * 0.1, -0.17 + j * 0.026, down); }));
+  for (let k = 0; k < 8; k++) put(0, -0.3, -0.31, true);
+  put(3 * 13 + 3, -0.2, -0.31, false);
+  [0, 13, 26 + 1].forEach((c, s) => put(c, s * 0.1, -0.31, false));
+  group.userData.display = shown;
+  return y;
+}
+/* Ganjifa: round, hand-painted cards. A Mughal pack's eight suits, each with its own ground colour, shown with
+ * numerals and its two court cards, the mir (king) and the wazir (minister); and two Dashavatara cards. Our own
+ * paintings after the style, not copies of any pack. */
+const GJ_SUITS = [
+  { name: 'Slaves', ground: '#c9a33a', ink: '#3a1e0a' }, { name: 'Crowns', ground: '#7a2a1e', ink: '#f2d27a' },
+  { name: 'Swords', ground: '#2a3a5a', ink: '#e8e0c8' }, { name: 'Red gold', ground: '#9a1e1a', ink: '#f6c04a' },
+  { name: 'Harps', ground: '#2f5a3a', ink: '#f2e2b0' }, { name: 'Bills', ground: '#d9c79a', ink: '#5a2a10' },
+  { name: 'White gold', ground: '#5a4a6a', ink: '#ece8f2' }, { name: 'Cloth', ground: '#a8501e', ink: '#fbe7c0' },
+];
+function gjSign(g, k, x, y, s, ink) {
+  g.save(); g.translate(x, y); g.fillStyle = ink; g.strokeStyle = ink; g.lineWidth = Math.max(1.5, s * 0.08);
+  switch (k) {
+    case 0: g.beginPath(); g.arc(0, -s * 0.28, s * 0.16, 0, TAU); g.fill(); g.beginPath(); g.moveTo(-s * 0.26, s * 0.4); g.lineTo(0, -s * 0.1); g.lineTo(s * 0.26, s * 0.4); g.closePath(); g.fill(); break; // a figure
+    case 1: g.beginPath(); g.moveTo(-s * 0.36, s * 0.24); g.lineTo(-s * 0.36, -s * 0.12); g.lineTo(-s * 0.18, s * 0.04); g.lineTo(0, -s * 0.32); g.lineTo(s * 0.18, s * 0.04); g.lineTo(s * 0.36, -s * 0.12); g.lineTo(s * 0.36, s * 0.24); g.closePath(); g.fill(); break; // a crown
+    case 2: g.beginPath(); g.moveTo(-s * 0.3, s * 0.36); g.quadraticCurveTo(s * 0.1, s * 0.1, s * 0.34, -s * 0.38); g.stroke(); g.beginPath(); g.moveTo(-s * 0.36, s * 0.18); g.lineTo(-s * 0.1, s * 0.44); g.stroke(); break; // a curved sword
+    case 3: case 6: g.beginPath(); g.arc(0, 0, s * 0.34, 0, TAU); g.fill(); g.strokeStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(0, 0, s * 0.2, 0, TAU); g.stroke(); break; // a coin
+    case 4: g.beginPath(); g.moveTo(-s * 0.26, s * 0.36); g.quadraticCurveTo(-s * 0.36, -s * 0.36, s * 0.26, -s * 0.36); g.lineTo(s * 0.26, s * 0.36); g.closePath(); g.stroke(); for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(-s * 0.2 + i * 0.1 * s, -s * 0.2); g.lineTo(-s * 0.2 + i * 0.1 * s, s * 0.36); g.stroke(); } break; // a harp
+    case 5: g.fillRect(-s * 0.26, -s * 0.34, s * 0.52, s * 0.62); g.fillStyle = 'rgba(0,0,0,.3)'; for (let i = 0; i < 4; i++) g.fillRect(-s * 0.18, -s * 0.22 + i * s * 0.13, s * 0.36, s * 0.04); break; // a written bill
+    case 7: g.beginPath(); g.ellipse(0, 0, s * 0.36, s * 0.2, 0, 0, TAU); g.fill(); g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(-s * 0.22, 0, s * 0.08, s * 0.18, 0, 0, TAU); g.fill(); break; // a bolt of cloth
+  }
+  g.restore();
+}
+function gjFace(k, n) { // n: 1-10, or 11 the wazir, 12 the mir
+  const S = GJ_SUITS[k];
+  return tex(256, 256, (g, w, h) => {
+    g.fillStyle = '#1a120a'; g.fillRect(0, 0, w, h);
+    g.fillStyle = S.ground; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 4, 0, TAU); g.fill();
+    g.strokeStyle = '#e8c45a'; g.lineWidth = 5; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 12, 0, TAU); g.stroke();
+    g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 20, 0, TAU); g.stroke();
+    if (n <= 10) {
+      for (let i = 0; i < n; i++) { const a = i / n * TAU - Math.PI / 2, r = n === 1 ? 0 : 70; gjSign(g, k, w / 2 + Math.cos(a) * r, h / 2 + Math.sin(a) * r, n === 1 ? 110 : 44, S.ink); }
+    } else { // a court card: a seated figure under a canopy, the suit's sign beside him
+      g.fillStyle = S.ink; g.beginPath(); g.moveTo(w * 0.28, h * 0.36); g.quadraticCurveTo(w / 2, h * 0.16, w * 0.72, h * 0.36); g.lineTo(w * 0.72, h * 0.4); g.lineTo(w * 0.28, h * 0.4); g.fill();
+      g.fillStyle = '#ecd2ae'; g.beginPath(); g.arc(w / 2, h * 0.5, 20, 0, TAU); g.fill();
+      g.fillStyle = n === 12 ? '#e8c45a' : '#f2f0e6'; g.beginPath(); g.ellipse(w / 2, h * 0.43, 22, 12, 0, Math.PI, TAU); g.fill(); // turban
+      g.fillStyle = S.ink; g.beginPath(); g.moveTo(w * 0.36, h * 0.78); g.quadraticCurveTo(w / 2, h * 0.52, w * 0.64, h * 0.78); g.closePath(); g.fill();
+      gjSign(g, k, w * 0.74, h * 0.62, 48, S.ink);
+      if (n === 12) { g.fillStyle = '#e8c45a'; g.beginPath(); g.arc(w / 2, h * 0.5, 34, Math.PI * 1.1, Math.PI * 1.9); g.lineWidth = 4; g.strokeStyle = '#e8c45a'; g.stroke(); } // the mir's halo
+    }
+  });
+}
+function gjAvatar(kind) { // two Dashavatara suits: the fish (Matsya) and the tortoise (Kurma)
+  return tex(256, 256, (g, w, h) => {
+    g.fillStyle = '#1a120a'; g.fillRect(0, 0, w, h);
+    g.fillStyle = kind ? '#2a5a6a' : '#1e3a6a'; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 4, 0, TAU); g.fill();
+    g.strokeStyle = '#e8c45a'; g.lineWidth = 5; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 12, 0, TAU); g.stroke();
+    g.fillStyle = '#e8b83a'; g.strokeStyle = '#3a1e0a'; g.lineWidth = 3;
+    if (!kind) { g.beginPath(); g.ellipse(w / 2 - 10, h / 2, 70, 34, 0, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.moveTo(w / 2 + 56, h / 2); g.lineTo(w / 2 + 96, h / 2 - 34); g.lineTo(w / 2 + 96, h / 2 + 34); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#1a120a'; g.beginPath(); g.arc(w / 2 - 50, h / 2 - 8, 6, 0, TAU); g.fill(); }
+    else { g.beginPath(); g.ellipse(w / 2, h / 2, 64, 48, 0, 0, TAU); g.fill(); g.stroke(); g.strokeStyle = 'rgba(58,30,10,.6)'; for (let i = -1; i <= 1; i++) { g.beginPath(); g.moveTo(w / 2 + i * 30, h / 2 - 44); g.lineTo(w / 2 + i * 30, h / 2 + 44); g.stroke(); } g.fillStyle = '#e8b83a'; g.beginPath(); g.arc(w / 2 + 80, h / 2, 16, 0, TAU); g.fill(); }
+  });
+}
+function buildGanjifa(group) {
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.04, 0.78), new THREE.MeshLambertMaterial({ color: 0x241008 }));
+  base.position.y = TOP + 0.02; group.add(base);
+  const y0 = TOP + 0.041, edge = new THREE.MeshStandardMaterial({ color: 0x2a1a0c, roughness: 0.4 });
+  // A sloped board in dark cloth, so the round faces look at you: three rows of nine.
+  const board = new THREE.Group(); board.position.set(0, TOP + 0.21, -0.05); board.rotation.x = -0.5; group.add(board);
+  board.add(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.36, 0.02), new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.95 })));
+  const faces = [];
+  GJ_SUITS.forEach((S, k) => { faces.push(gjFace(k, 12), gjFace(k, 11), gjFace(k, [1, 3, 5, 7, 9, 4, 6, 10][k])); });
+  faces.push(gjAvatar(0), gjAvatar(1), gjFace(3, 10));
+  faces.forEach((map, i) => {
+    const r = 0.052, m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.003, 40), [edge, new THREE.MeshStandardMaterial({ map, roughness: 0.35, metalness: 0.05 }), edge]);
+    m.rotation.x = Math.PI / 2; m.rotation.y = rand(-0.3, 0.3);
+    m.position.set(-0.48 + (i % 9) * 0.12, 0.115 - Math.floor(i / 9) * 0.115, 0.013); board.add(m);
+  });
+  // A lacquered box for the pack, on the cloth in front.
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.14), new THREE.MeshStandardMaterial({ color: 0x6a1a10, roughness: 0.35 })); box.position.set(0.4, y0 + 0.025, 0.28); group.add(box);
+  glassCase(group, 1.3, 0.44, 0.85);
   return y0;
 }
 /* --- Tarocchi cards for the table: original faces in an old Italian manner */
@@ -3872,6 +3989,16 @@ const STOPS = [
     ],
     facts: [['Players', 'Four, in two partnerships'], ['Deck', '52 cards, thirteen each'], ['Trumps', 'The dealer\'s last card, turned up'], ['Game', '5 points, short whist']],
     build: buildWhist },
+  { id: 'patience', wing: 4, title: 'Patience', date: '1788 CE', rail: 'Patience',
+    eyebrow: 'Germany, France, England', status: ['known', 'Still played'], game: 'patience',
+    note: 'The one table with no Scribe: you play alone. Undo and Hint are there if you want them.',
+    body: [
+      'Games of patience, for one player, first appear in print in 1788, in a German anthology of card games, Das neue Königliche L\'Hombre-Spiel. They came soon after the layouts for reading fortunes in cards, in the 1760s; the Danish and Norwegian name, kabal, still recalls the cabbala.',
+      'Patience was fashionable in France early in the 1800s and reached Britain and America later in the century. Lady Adelaide Cadogan\'s Illustrated Games of Patience, of about 1870, was the first collection in English.',
+      'Klondike, the game at this table, is the best known of hundreds. From 1990 it came with Microsoft Windows, and put a game of patience in front of millions.'
+    ],
+    facts: [['First in print', 'Germany, 1788'], ['First in English', 'Lady Cadogan, c. 1870'], ['Players', 'One'], ['This table', 'Klondike']],
+    build: buildPatience },
   { id: 'snakes', wing: 4, title: 'Snakes and Ladders', date: '18th–19th century CE', rail: 'Snakes and Ladders',
     eyebrow: 'India, then England', status: ['known', 'Still played today'], game: 'snakes',
     body: [
@@ -3925,6 +4052,16 @@ const STOPS = [
     ],
     facts: [['Publisher', 'W. & S. B. Ives, Salem'], ['Board', '67 squares on a spiral'], ['Moves', 'A spinning teetotum'], ['Goal', 'Reach the mansion at the centre']],
     build: buildMansion },
+  { id: 'euchre', wing: 5, title: 'Euchre', date: '1850s–60s CE', rail: 'Euchre',
+    eyebrow: 'America, and the Joker', status: ['known', 'Still played'], game: 'euchre',
+    note: 'The cards are our own. The Pack switch at the table redraws them in other suits; the Joker stays a joker.',
+    body: [
+      'Euchre most likely came from Jucker, an old game of Alsace. Its name turns up in America in 1810, it was played with bowers on a Midwest steamboat in 1829, and its first surviving rules were printed in 1844. By the late 1800s it was called the national card game of the United States. The bowers, the two top jacks, are the German Bauer: the farmer, and the jack.',
+      'Euchre gave the pack its fifty-third card. In the 1850s or 1860s American players added an extra top trump, first called the Best Bower; jokers were printed in American packs by about 1863 and reached English packs around 1880. Many early jokers are jesters, some of them sinister, and makers used them to show off their names. From euchre the joker went on to poker, and to every wild card since.',
+      'Bridge and spades drew players away in the 20th century, but euchre is still played in the American Midwest and upstate New York, in Canada, Australia and New Zealand, and in Cornwall and Devon.'
+    ],
+    facts: [['Pack', '24 cards, or 25 with the Joker'], ['Players', 'Four, in two partnerships'], ['Trumps', 'Joker, right bower, left bower'], ['Game', '10 points']],
+    build: buildEuchre },
   { id: 'lifegame', wing: 5, title: 'The Checkered Game of Life', short: 'Checkered Game of Life', date: '1860 CE', rail: 'Game of Life',
     eyebrow: 'Springfield, Massachusetts', status: ['known', 'Rules survive in print'], game: 'lifegame',
     note: 'The table follows Bradley\'s rules; what each spin allows comes from a modern reproduction.',
@@ -4034,6 +4171,16 @@ const STOPS = [
     ],
     facts: [['Cards', '48, four for each month'], ['Kinds', 'Brights, animals, ribbons, plain'], ['Maker', 'Nintendo, founded 1889 for hanafuda'], ['Game here', 'Koi-koi, for two']],
     build: buildKoikoi },
+  { id: 'ganjifa', wing: 6, title: 'Ganjifa', date: '16th century CE', rail: 'Ganjifa',
+    eyebrow: 'Persia and Mughal India', status: ['known', 'Still painted by hand'],
+    note: 'Our own paintings after the style of Mughal packs. The rules of play are not recorded well enough to set out a table here, so this pack stays behind glass.',
+    body: [
+      'Ganjifa are round cards, painted by hand and lacquered. They came to India from Persia and were popular at the Mughal court in the 16th century: in 1527 the emperor Babur sent a pack as a gift. Court packs were made of ivory inlaid with stones, or of tortoiseshell; bazaar packs of wood, palm leaf, stiffened cloth or pasteboard.',
+      'A Mughal pack has 96 cards in eight suits of twelve: ten numerals and two court cards, the mir (king) and the wazir (minister). The suits are slaves, crowns, swords, red gold coins, harps, bills of exchange, white gold coins and cloth. In Dashavatara packs the ten suits are the ten avatars of Vishnu, from the fish and the tortoise onwards.',
+      'The game is for three or more players, each for themselves, taking tricks without trumps. In half the suits the numerals rank backwards, the ace highest, and which suit leads depends on whether the game is played by day or by night. Western cards and their games pushed ganjifa aside in the 20th century, but it is still painted in Sawantwadi, Odisha and Bishnupur, among other places.'
+    ],
+    facts: [['Mughal pack', '96 cards, eight suits'], ['Court cards', 'Mir and wazir'], ['Dashavatara', 'Ten suits, the avatars of Vishnu'], ['Players', 'Three or more']],
+    build: buildGanjifa },
   { id: 'makruk', wing: 6, title: 'Makruk', date: 'traditional', rail: 'Makruk',
     eyebrow: 'Thailand', status: ['known', 'Still played'], game: 'makruk',
     body: [
@@ -4196,7 +4343,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet, bezique: R.bezique, scopa: R.scopa, nard: R.nard, xii: R.xii, koikoi: R.koikoi, idraughts: R.idraughts, hnefatafl: R.hnefatafl };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet, bezique: R.bezique, scopa: R.scopa, euchre: R.euchre, patience: R.patience, nard: R.nard, xii: R.xii, koikoi: R.koikoi, idraughts: R.idraughts, hnefatafl: R.hnefatafl };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -6946,6 +7093,167 @@ const SCOPA_P = {
     return [['You', G.total[0]], ['Scribe', G.total[1]], `to ${G.target} · hand ${G.hands0} · cards ${G.piles[0].length}–${G.piles[1].length} · scope ${G.scope[0]}–${G.scope[1]}`];
   },
 };
+// Euchre sits like Whist: four hands round the table, the trick in the middle. While trumps are being made the
+// turned card lies face up beside the undealt cards; the dealer takes it, or it is turned down.
+const EUCHRE_P = {
+  camW: 1.15,
+  intro() { const G = GAMES.euchre; return `You sit South; North, across the table, is your partner. ${G.who(G.dealer)} ${G.dealer ? 'deals' : 'deal'}. ` + this.prompt(); },
+  prompt() { return GAMES.euchre.prompt0(); },
+  choosePrompt() { return GAMES.euchre.prompt0(); },
+  setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.euchre.surface + 0.001,
+  card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
+  pileSpot(side, k) { return V3(0.24 + (k % 5) * 0.016, this.y() + 0.001 + k * 0.0018, side ? -0.25 : 0.25); },
+  kittySpot(k) { return V3(-0.3, this.y() + k * 0.0016, -0.02); },
+  upSpot() { return V3(-0.2, this.y() + 0.002, -0.02); },
+  down(m) { m.rotation.set(0, Math.PI / 2, Math.PI); },
+  redeal() {
+    const G = GAMES.euchre;
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map(); this.piles = [0, 0];
+    G.kitty.forEach((c, k) => { const m = this.card(c); this.down(m); m.position.copy(this.kittySpot(k)); });
+    if (G.buried !== null) { const m = this.card(G.buried); this.down(m); m.position.copy(this.kittySpot(G.kitty.length)); }
+    if (!G.hands.some(h => h.includes(G.up))) { // the turned card is still on the table (face down once turned down)
+      const m = this.card(G.up); m.position.copy(this.upSpot()); m.rotation.set(0, 0, G.need === 'order1' || G.need === 'joker' ? 0 : Math.PI);
+    }
+    for (let s = 0; s < 4; s++) this.layHand(s, true);
+    const done = G.played.slice(0, G.played.length - G.trick.length), per = G.active;
+    for (let t = 0; t * per < done.length; t++) {
+      const side = t < G.tricks[0] ? 0 : 1, k = this.piles[side]++, to = this.pileSpot(side, k);
+      done.slice(t * per, t * per + per).forEach((c, j) => { const m = this.card(c); m.position.set(to.x, to.y + j * 0.0004, to.z); this.down(m); });
+    }
+    G.trick.forEach((t, j) => { const m = this.card(t.card); m.position.copy(wsTrickSpot(t.seat, this.y() + 0.002 + j * 0.0005)); m.rotation.set(0, WS_YAW[t.seat], 0); });
+  },
+  layHand(seat, instant) {
+    const G = GAMES.euchre, h = G.hands[seat], jobs = [];
+    h.forEach((c, i) => {
+      const m = this.card(c), to = wsHandSpot(seat, i, h.length, this.y());
+      m.rotation.set(0, WS_YAW[seat], seat === 0 && G.out !== 0 ? 0 : Math.PI);
+      if (instant) m.position.copy(to); else jobs.push(hop(m, to, 0.2, 0.008));
+    });
+    return Promise.all(jobs);
+  },
+  meshesFor(m) { return (m.kind === 'play' || m.kind === 'discard') && m.seat === 0 ? [this.mesh.get(m.card)] : []; },
+  ringFor: () => null,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.euchre, tok = play.token, trickBefore = G.trick.length;
+    const res = G.apply(m);
+    for (const e of res.events || []) {
+      if (tok !== play.token) return res;
+      if (e.type === 'deal') { this.redeal(); continue; }
+      if (e.type === 'turnDown') { const mc = this.card(G.up); tween(0.3, k => { mc.rotation.z = Math.PI * k; }); await wait(300); continue; }
+      if (e.type === 'pickup') { sfx.card(); await this.layHand(e.seat); continue; }
+      if (e.type === 'discard') { const mc = this.card(e.card); sfx.card(); this.down(mc); await hop(mc, this.kittySpot(G.kitty.length), 0.3, 0.03); await this.layHand(e.seat); continue; }
+      if (e.type === 'alone') { await this.layHand(e.out); continue; } // the partner's hand goes face down
+      if (e.type === 'play') {
+        const mc = this.card(e.card), flip = mc.rotation.z !== 0, at = wsTrickSpot(e.seat, this.y() + 0.002 + trickBefore * 0.0005);
+        sfx.card();
+        if (flip) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        await hop(mc, at, 0.3, 0.05);
+        mc.rotation.set(0, WS_YAW[e.seat] + (Math.random() - 0.5) * 0.2, 0);
+        await this.layHand(e.seat);
+      }
+      if (e.type === 'trick') {
+        await wait(700); if (tok !== play.token) return res;
+        const side = e.winner & 1, k = this.piles[side]++, to = this.pileSpot(side, k);
+        const cards = G.lastTrick.cards.map(c => this.card(c));
+        await Promise.all(cards.map((mc, j) => { tween(0.3, t => { mc.rotation.z = Math.PI * t; }); return hop(mc, V3(to.x, to.y + j * 0.0004, to.z), 0.35, 0.03); }));
+        cards.forEach(mc => this.down(mc));
+      }
+    }
+    return res;
+  },
+  score() {
+    const G = GAMES.euchre, T = G.trump >= 0 ? asPack(G.SUITS[G.trump]) + ' trumps' : 'making trumps';
+    return [['You and North', G.score[0]], ['West and East', G.score[1]], `to 10 · tricks ${G.tricks[0]}–${G.tricks[1]} · ${T}`];
+  },
+};
+// Patience: the stock and waste top left, the four foundations top right, the seven columns fanned towards you.
+// Cards are drawn a size larger than at the two-player tables, since all fifty-two are out at once.
+const PT_SCALE = 1.45;
+const PATIENCE_P = {
+  camW: 1.0, camElev: 70, oneClick: true,
+  intro() { return 'Patience, alone: there is no Scribe at this table. ' + this.prompt(); },
+  prompt() { return GAMES.patience.prompt0(); },
+  setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.patience.surface + 0.001,
+  card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); m.scale.set(PT_SCALE, 1, PT_SCALE); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
+  colX: i => (i - 3) * 0.118,
+  stockSpot(k) { return V3(this.colX(0), this.y() + k * 0.0012, -0.32); },
+  wasteSpot(k, n) { const fan = GAMES.patience.variant === 'three' ? Math.max(0, k - (n - 3)) : 0; return V3(this.colX(1) + Math.max(0, fan) * 0.026, this.y() + k * 0.0012, -0.32); },
+  foundSpot(s, k) { return V3(this.colX(3 + s), this.y() + k * 0.0012, -0.32); },
+  // A column fans towards you: face-down cards close together, face-up ones further apart, closer still when the column is long.
+  tabSpot(i, j) {
+    const G = GAMES.patience, col = G.tab[i], down = G.down[i], up = Math.max(1, col.length - down);
+    const gapUp = Math.min(0.044, (0.52 - down * 0.022) / up);
+    const z = -0.15 + Math.min(j, down) * 0.022 + Math.max(0, j - down) * gapUp;
+    return V3(this.colX(i), this.y() + j * 0.0012, z);
+  },
+  face(m, up) { m.rotation.set(0, 0, up ? 0 : Math.PI); },
+  spotOf(place, k, n) { return place === 'w' ? this.wasteSpot(k, n) : place[0] === 'f' ? this.foundSpot(+place[1], k) : this.tabSpot(+place[1], k); },
+  redeal() {
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map(); this.marks = null;
+    this.layAll(true);
+    this.emptySpots();
+  },
+  // Faint outlines where the foundations and empty columns are, so there is somewhere to aim.
+  emptySpots() {
+    if (this.marks) return;
+    const geo = new THREE.PlaneGeometry(CR_W * PT_SCALE, CR_H * PT_SCALE), mat = new THREE.MeshBasicMaterial({ color: 0xecdfc3, transparent: true, opacity: 0.12, depthWrite: false });
+    this.marks = [];
+    const at = v => { const m = new THREE.Mesh(geo, mat); m.rotation.x = -Math.PI / 2; m.position.set(v.x, this.y() - 0.0004, v.z); this.ex.group.add(m); this.marks.push(m); this.cards.push(m); };
+    for (let s = 0; s < 4; s++) at(this.foundSpot(s, 0));
+    for (let i = 0; i < 7; i++) at(V3(this.colX(i), 0, -0.15));
+    at(this.stockSpot(0)); at(V3(this.colX(1), 0, -0.32));
+  },
+  layAll(instant) {
+    const G = GAMES.patience, jobs = [];
+    const put = (c, to, up) => { const m = this.card(c); this.face(m, up); if (instant) m.position.copy(to); else jobs.push(hop(m, to, 0.16, 0.012)); };
+    G.stock.forEach((c, k) => put(c, this.stockSpot(k), false));
+    G.waste.forEach((c, k) => put(c, this.wasteSpot(k, G.waste.length), true));
+    G.found.forEach((f, s) => f.forEach((c, k) => put(c, this.foundSpot(s, k), true)));
+    G.tab.forEach((col, i) => col.forEach((c, j) => put(c, this.tabSpot(i, j), j >= G.down[i])));
+    return Promise.all(jobs);
+  },
+  meshesFor(m) {
+    if (m.kind === 'draw') return [this.mesh.get(m.card)];
+    return m.kind === 'move' ? [this.mesh.get(m.card)] : [];
+  },
+  // Where a picked card can go: on top of a column or foundation, or into an empty column.
+  ringFor(m) {
+    if (m.kind === 'draw') return V3(this.colX(1), this.y() + 0.004, -0.32);
+    if (m.kind !== 'move') return null;
+    const G = GAMES.patience, dst = G.pile(m.to), at = m.to[0] === 'f' ? this.foundSpot(+m.to[1], dst.length) : this.tabSpot(+m.to[1], dst.length);
+    at.y += 0.004; return at;
+  },
+  ringScale: 0.8,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.patience, tok = play.token;
+    const res = G.apply(m);
+    for (const e of res.events || []) {
+      if (tok !== play.token) return res;
+      if (e.type === 'draw' || e.type === 'recycle') { sfx.card(); await this.layAll(); continue; }
+      if (e.type === 'move') {
+        sfx.card();
+        const dst = G.pile(e.to), base = dst.length - e.cards.length;
+        await Promise.all(e.cards.map((c, j) => { const mc = this.card(c); this.face(mc, true); return hop(mc, this.spotOf(e.to, base + j, dst.length), e.auto ? 0.12 : 0.24, 0.03); }));
+        continue;
+      }
+      if (e.type === 'flip') { const mc = this.card(e.card); tween(0.25, k => { mc.rotation.z = Math.PI * (1 - k); }); await wait(250); await this.layAll(); }
+    }
+    await this.layAll();
+    return res;
+  },
+  score() {
+    const G = GAMES.patience;
+    return [['Up', `${G.onFound}/52`], ['Moves', G.moves], `${G.variant === 'three' ? 'draw three' : 'draw one'} · pass ${G.passes + 1}`];
+  },
+};
 // Bézique: two packs on one table. Each hand of eight, the melds laid face up in front of it, the stock with the
 // trump card turned across it at the side, the trick in the middle and each player's tricks in a pile on the right.
 const BEZIQUE_P = {
@@ -7031,7 +7339,7 @@ const BEZIQUE_P = {
     return [['You', G.total[0] + live * G.score[0]], ['Scribe', G.total[1] + live * G.score[1]], `${G.variant === 'deal' ? 'one deal' : 'to 1,000'} · trumps ${trumps} · stock ${G.stock.length + (G.turnUp === null ? 0 : 1)}`];
   },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P, bezique: BEZIQUE_P, scopa: SCOPA_P, nard: NARD_P, xii: XII_P, koikoi: KOIKOI_P, idraughts: IDRAUGHTS_P, hnefatafl: HNEFATAFL_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P, bezique: BEZIQUE_P, scopa: SCOPA_P, euchre: EUCHRE_P, patience: PATIENCE_P, nard: NARD_P, xii: XII_P, koikoi: KOIKOI_P, idraughts: IDRAUGHTS_P, hnefatafl: HNEFATAFL_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -7518,7 +7826,7 @@ function restartTable() { const ex = play.ex; clearSave(play.game.id); play.toke
 function renderVariants(g) {
   const box = $('#lm-variant'); box.innerHTML = '';
   box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !play.resumed && !PACK_TABLES[g.id];
-  $('#lm-level').hidden = friendOn(g);
+  $('#lm-level').hidden = friendOn(g) || !!g.solo; // no Scribe to set at a solo table
   if (HOTSEAT.has(g.id)) {
     const label = document.createElement('span'); label.textContent = 'Opponent'; box.appendChild(label);
     for (const [id, text] of [['scribe', 'The Scribe'], ['friend', 'A friend']]) {
@@ -7638,11 +7946,11 @@ async function startGame(ex) {
  * move. Undo takes the table back to the start of your previous turn. Both copy
  * the engine's data fields first, so nothing the Scribe tries can leak out. */
 // Only tables whose pieces are rebuilt entirely from the engine's state can be taken back.
-const UNDO_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'draughts', 'tablut', 'halma', 'reversi', 'jungle', 'mutorere', 'oware', 'kalah', 'idraughts', 'hnefatafl', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi']);
+const UNDO_OK = new Set(['patience', 'chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'draughts', 'tablut', 'halma', 'reversi', 'jungle', 'mutorere', 'oware', 'kalah', 'idraughts', 'hnefatafl', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi']);
 // At dice tables the Hint weighs the moves this throw allows; where the moves are fixed (the Goose, Snakes and
 // Ladders, the Mansion, Hazard's bets) there is nothing to weigh.
 const DICE_HINT = new Set(['ur', 'senet', 'tables', 'nard', 'xii', 'yut', 'pachisi', 'ludo', 'patolli', 'tab', 'hounds', 'lifegame']);
-const canHint = g => !!g.aiPlan && (g.dice ? DICE_HINT.has(g.id) : !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'bezique', 'scopa', 'fourseasons', 'chaturaji'].includes(g.id));
+const canHint = g => !!g.aiPlan && (g.dice ? DICE_HINT.has(g.id) : !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'bezique', 'scopa', 'euchre', 'fourseasons', 'chaturaji'].includes(g.id));
 function copyState(g) {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
   for (const k of Object.keys(d)) if ('value' in d[k] && typeof d[k].value !== 'function' && k !== 'rules' && k !== 'source' && k !== 'surface') out[k] = d[k].value;
@@ -7706,7 +8014,7 @@ $('#lm-hintBtn').addEventListener('click', async () => {
  * A long game against the Scribe is kept in this browser at the start of each of
  * your turns (between tricks, at card tables), and comes back when you sit down
  * again. Only the engine's own state is kept; the table is rebuilt from it. */
-const SAVE_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl', 'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong']);
+const SAVE_OK = new Set(['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'euchre', 'patience', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl', 'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong']);
 const SAVE_VERSION = 1;
 // Mahjong is kept only when it is your turn to discard: the table is laid out again from the hands, melds and discards.
 GAMES.mahjong.saveable = function () { return this.need.type === 'discard' && this.need.seat === 0 && this.winner === null; };
@@ -8465,7 +8773,7 @@ function activateTarget(t) {
   if (play.rings.includes(t)) return choose(t.userData.move);
   const list = play.byMesh.get(t);
   if (!list) return;
-  if (!play.twoStep) return choose(list[0]);
+  if (!play.twoStep || (list.length === 1 && play.P.oneClick)) return choose(list[0]); // (oneClick: a piece with one move goes there at once)
   select(t); play.kb = -1;
 }
 /* Keyboard play: the arrow keys step through what can be chosen (pieces first,
@@ -8719,9 +9027,12 @@ function frame() {
 }
 function step() {
   lastStep = performance.now();
-  const dt = Math.min(0.05, clock.getDelta()); t += dt;
+  const raw = clock.getDelta(), dt = Math.min(0.05, raw); t += dt;
+  // Animations keep to the clock (up to a quarter second a frame), so a slow machine plays a move in about the
+  // same time as a fast one rather than stretching it over many slow frames. The walking still steps at most 0.05.
+  const tdt = Math.min(0.25, raw);
   for (let i = tweens.length - 1; i >= 0; i--) {
-    const tw = tweens[i]; tw.t += dt; const k = Math.min(1, tw.t / tw.dur);
+    const tw = tweens[i]; tw.t += tdt; const k = Math.min(1, tw.t / tw.dur);
     tw.fn(tw.e(k)); if (k >= 1) { tweens.splice(i, 1); tw.res(); }
   }
   let jf = 0, jt = 0;

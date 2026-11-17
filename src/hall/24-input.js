@@ -18,7 +18,7 @@ function activateTarget(t) {
   if (play.rings.includes(t)) return choose(t.userData.move);
   const list = play.byMesh.get(t);
   if (!list) return;
-  if (!play.twoStep) return choose(list[0]);
+  if (!play.twoStep || (list.length === 1 && play.P.oneClick)) return choose(list[0]); // (oneClick: a piece with one move goes there at once)
   select(t); play.kb = -1;
 }
 /* Keyboard play: the arrow keys step through what can be chosen (pieces first,

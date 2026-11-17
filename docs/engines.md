@@ -219,6 +219,8 @@ Saved games store the engine's plain data fields as JSON. Typed-array boards, Se
 | Courier chess | `courier` | Chess family, 12 × 8 | Search | opening leaps made before play |
 | Piquet | `piquet` | Cards: exchange, declarations, tricks | Sampled exchange (Sharp), card-play heuristic | `followUp` to mark discards, `passTurn`, `variants`, a labelled Next deal move |
 | Bézique | `bezique` | Cards: tricks, melds, a strict close | Card-keeping heuristic; Sharp chases bigger melds | `passTurn`, `variants`, a `meld` stage of labelled choices, `face(id)` for two packs |
+| Euchre | `euchre` | Cards: four seats, partnerships, bowers | Bidding by hand worth; trick play by masters and partner | `passTurn`, `variants`, `scribeName` per seat, labelled bidding choices |
+| Patience | `patience` | Cards: solo (Klondike) | Hint heuristic only (no opponent) | `solo`, `variants`, a presenter with `oneClick` |
 | Scopa | `scopa` | Cards: fishing (captures by value or sum) | Sweep-risk estimate; Sharp counts the cards taken | `passTurn`, `variants`, rings for the set a card takes |
 | Xiangqi | `xiangqi` | Chess family | Search | |
 | Rithmomachia | `rithmo` | Number captures (modern reconstruction) | Search | captures made for the mover after each move |

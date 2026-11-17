@@ -66,6 +66,7 @@ flowchart LR
 - **Marks:** every piece you can move has a gold ring at its foot, and every square it can go to a gold ring with a faint gold wash. Each sits on a dark band, so it shows on pale boards and dark ones alike. A red-orange ring marks a capture or a removal, and a faint red-orange mark shows where the Scribe's last move came from and went.
 - **Hints on or off:** the Hints button beside Rules (or the M key) hides the marks for a bare board. Point at a square and its ring still appears if it is a move; Hint still suggests one. The choice is remembered.
 - **Pack:** at the card tables (Piquet, Whist, Cribbage, Scopa, Bézique), the Pack switch beside the board redraws the cards in French, German, Swiss or Latin suits; the messages and the rules panel name the cards to match. The game carries on as it was.
+- **Playing alone:** Patience has no Scribe. Click a card to move it (a card with one place to go goes there at once), click the stock to turn cards, and use Undo, Hint or Give up as you like.
 - **The table lamp:** sitting down brings up a warm light over the board while the hall's candles ease back; it fades when you leave.
 - **Esc** clears a selection, or leaves the table.
 - **Rules** reopens the *How to play* panel, which ends with a note on where the rules come from.

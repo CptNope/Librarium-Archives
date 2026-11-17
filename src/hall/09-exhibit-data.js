@@ -402,6 +402,16 @@ const STOPS = [
     ],
     facts: [['Players', 'Four, in two partnerships'], ['Deck', '52 cards, thirteen each'], ['Trumps', 'The dealer\'s last card, turned up'], ['Game', '5 points, short whist']],
     build: buildWhist },
+  { id: 'patience', wing: 4, title: 'Patience', date: '1788 CE', rail: 'Patience',
+    eyebrow: 'Germany, France, England', status: ['known', 'Still played'], game: 'patience',
+    note: 'The one table with no Scribe: you play alone. Undo and Hint are there if you want them.',
+    body: [
+      'Games of patience, for one player, first appear in print in 1788, in a German anthology of card games, Das neue Königliche L\'Hombre-Spiel. They came soon after the layouts for reading fortunes in cards, in the 1760s; the Danish and Norwegian name, kabal, still recalls the cabbala.',
+      'Patience was fashionable in France early in the 1800s and reached Britain and America later in the century. Lady Adelaide Cadogan\'s Illustrated Games of Patience, of about 1870, was the first collection in English.',
+      'Klondike, the game at this table, is the best known of hundreds. From 1990 it came with Microsoft Windows, and put a game of patience in front of millions.'
+    ],
+    facts: [['First in print', 'Germany, 1788'], ['First in English', 'Lady Cadogan, c. 1870'], ['Players', 'One'], ['This table', 'Klondike']],
+    build: buildPatience },
   { id: 'snakes', wing: 4, title: 'Snakes and Ladders', date: '18th–19th century CE', rail: 'Snakes and Ladders',
     eyebrow: 'India, then England', status: ['known', 'Still played today'], game: 'snakes',
     body: [
@@ -455,6 +465,16 @@ const STOPS = [
     ],
     facts: [['Publisher', 'W. & S. B. Ives, Salem'], ['Board', '67 squares on a spiral'], ['Moves', 'A spinning teetotum'], ['Goal', 'Reach the mansion at the centre']],
     build: buildMansion },
+  { id: 'euchre', wing: 5, title: 'Euchre', date: '1850s–60s CE', rail: 'Euchre',
+    eyebrow: 'America, and the Joker', status: ['known', 'Still played'], game: 'euchre',
+    note: 'The cards are our own. The Pack switch at the table redraws them in other suits; the Joker stays a joker.',
+    body: [
+      'Euchre most likely came from Jucker, an old game of Alsace. Its name turns up in America in 1810, it was played with bowers on a Midwest steamboat in 1829, and its first surviving rules were printed in 1844. By the late 1800s it was called the national card game of the United States. The bowers, the two top jacks, are the German Bauer: the farmer, and the jack.',
+      'Euchre gave the pack its fifty-third card. In the 1850s or 1860s American players added an extra top trump, first called the Best Bower; jokers were printed in American packs by about 1863 and reached English packs around 1880. Many early jokers are jesters, some of them sinister, and makers used them to show off their names. From euchre the joker went on to poker, and to every wild card since.',
+      'Bridge and spades drew players away in the 20th century, but euchre is still played in the American Midwest and upstate New York, in Canada, Australia and New Zealand, and in Cornwall and Devon.'
+    ],
+    facts: [['Pack', '24 cards, or 25 with the Joker'], ['Players', 'Four, in two partnerships'], ['Trumps', 'Joker, right bower, left bower'], ['Game', '10 points']],
+    build: buildEuchre },
   { id: 'lifegame', wing: 5, title: 'The Checkered Game of Life', short: 'Checkered Game of Life', date: '1860 CE', rail: 'Game of Life',
     eyebrow: 'Springfield, Massachusetts', status: ['known', 'Rules survive in print'], game: 'lifegame',
     note: 'The table follows Bradley\'s rules; what each spin allows comes from a modern reproduction.',
@@ -564,6 +584,16 @@ const STOPS = [
     ],
     facts: [['Cards', '48, four for each month'], ['Kinds', 'Brights, animals, ribbons, plain'], ['Maker', 'Nintendo, founded 1889 for hanafuda'], ['Game here', 'Koi-koi, for two']],
     build: buildKoikoi },
+  { id: 'ganjifa', wing: 6, title: 'Ganjifa', date: '16th century CE', rail: 'Ganjifa',
+    eyebrow: 'Persia and Mughal India', status: ['known', 'Still painted by hand'],
+    note: 'Our own paintings after the style of Mughal packs. The rules of play are not recorded well enough to set out a table here, so this pack stays behind glass.',
+    body: [
+      'Ganjifa are round cards, painted by hand and lacquered. They came to India from Persia and were popular at the Mughal court in the 16th century: in 1527 the emperor Babur sent a pack as a gift. Court packs were made of ivory inlaid with stones, or of tortoiseshell; bazaar packs of wood, palm leaf, stiffened cloth or pasteboard.',
+      'A Mughal pack has 96 cards in eight suits of twelve: ten numerals and two court cards, the mir (king) and the wazir (minister). The suits are slaves, crowns, swords, red gold coins, harps, bills of exchange, white gold coins and cloth. In Dashavatara packs the ten suits are the ten avatars of Vishnu, from the fish and the tortoise onwards.',
+      'The game is for three or more players, each for themselves, taking tricks without trumps. In half the suits the numerals rank backwards, the ace highest, and which suit leads depends on whether the game is played by day or by night. Western cards and their games pushed ganjifa aside in the 20th century, but it is still painted in Sawantwadi, Odisha and Bishnupur, among other places.'
+    ],
+    facts: [['Mughal pack', '96 cards, eight suits'], ['Court cards', 'Mir and wazir'], ['Dashavatara', 'Ten suits, the avatars of Vishnu'], ['Players', 'Three or more']],
+    build: buildGanjifa },
   { id: 'makruk', wing: 6, title: 'Makruk', date: 'traditional', rail: 'Makruk',
     eyebrow: 'Thailand', status: ['known', 'Still played'], game: 'makruk',
     body: [

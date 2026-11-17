@@ -108,6 +108,7 @@ function buildShelves(len, midZ) {
     const books = new THREE.InstancedMesh(geo, bookMat, bk.mats.length);
     bk.mats.forEach((m, i) => { books.setMatrixAt(i, m); books.setColorAt(i, bk.cols[i]); });
     books.instanceMatrix.needsUpdate = true; books.instanceColor.needsUpdate = true;
+    books.frustumCulled = true; // three.js leaves instanced meshes unculled; without this every wing's books were drawn every frame
     scene.add(books);
   });
 }

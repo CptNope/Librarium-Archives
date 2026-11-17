@@ -2,7 +2,7 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**70 exhibits, 64 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**73 exhibits, 66 of them playable.** The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
@@ -10,9 +10,9 @@ pie showData
     "Wing I · 4 of 6" : 6
     "Wing II · 9 of 11" : 11
     "Wing III · 11 of 11" : 11
-    "Wing IV · 15 of 17" : 17
-    "Wing V · 9 of 9" : 9
-    "Wing VI · 16 of 16" : 16
+    "Wing IV · 16 of 18" : 18
+    "Wing V · 10 of 10" : 10
+    "Wing VI · 16 of 17" : 17
 ```
 
 ```mermaid
@@ -157,6 +157,7 @@ timeline
     18th century CE : Dominoes : Scopa : Snakes and Ladders
     1732 CE : Tablut
     1742 CE : Whist (Hoyle)
+    1788 CE : Patience
     1847 CE : Bézique
     mid-1800s CE : Mahjong
     1896 CE : Ludo
@@ -177,6 +178,7 @@ timeline
 | Scopa | 18th century CE (Naples) | Still played | Playable: two-player Scopa to 11 or 21, with Italian cards |
 | Tablut | recorded 1732 CE (Linnaeus) | Partly reconstructed | Playable, as the king's side |
 | Whist | 1742 CE (Hoyle) | Survive in print; short whist still played | Playable: you and a Scribe partner against two Scribes |
+| Patience | 1788 CE (first in print, Germany) | Still played | Playable: Klondike, draw one or three, the hall's one table without the Scribe |
 | Snakes and Ladders (gyan chaupar) | 18th–19th century CE | Still played | Playable, with virtues and vices from an old Indian board |
 | Bézique | 1847 CE (Paris); England 1861 | Still played | Playable: two-handed Bézique with two packs, to 1,000 or one deal |
 | Ludo | 1896 CE | Still played | Playable: red against yellow, one die |
@@ -196,6 +198,8 @@ Rule choices:
 - **Scopa:** two players with the 40-card Italian pack, as on pagat.com. A card must take a single card of its value if there is one, otherwise any set adding up to it; clearing the table is a scopa except on the last play. A table dealt with three or four kings is dealt again. Hands score cards, coins, the settebello and the primiera; the first to 11 (or 21) wins, and a tie at the target plays another hand.
 - **Bézique:** two-handed Bézique with 64 cards, as on pagat.com: one meld after each trick won while the stock lasts, chosen from a list; a card may count again in another kind of meld but never the same kind, a marriage cannot be taken out of a sequence, and every meld needs a card from the hand. The seven of trumps scores 10 when turned up, swapped or shown. After the stock, melds return to the hand and you must follow suit, win if you can, and trump if void. Brisques and the last trick score 10 each; a game is to 1,000, or one deal.
 - **The Pack switch** at Piquet, Whist, Cribbage, Scopa and Bézique redraws the cards in French, German, Swiss or Latin suits, and the messages name them to match (leaves, bells and acorns; Ober and Unter; cups, coins and swords). The suits are matched as players matched them: spades with leaves, shields and swords; hearts with hearts, roses and cups; diamonds with bells and coins; clubs with acorns and batons. The game does not change.
+- **Patience:** Klondike, after the usual rules: build down in alternating colours, kings to empty columns, foundations up by suit, unlimited passes through the stock (draw one or three). Cards may come back down from a foundation. Once every card is face up and the stock is spent, the rest go up by themselves. There is no Scribe; Undo and Hint are open, and Give up ends the game.
+- **Euchre:** four-handed, after pagat.com, with American scoring to 10: one round of ordering up the turned card, then a round of naming another suit; everyone passing twice throws the deal in (no "stick the dealer"). Going alone is declared once trumps are made rather than with the bid. With the Joker (the Best Bower, top trump), a Joker turned up makes the dealer's side the makers and the dealer names trumps.
 - **Ludo:** two players, red and yellow, from opposite corners. A six brings a token out or moves one, and earns another throw; landing on an enemy token sends it to its yard; your home column is safe; the finish needs the exact throw. There are no blocks or safe squares on the track.
 - **Mahjong:** a basic Chinese game with the 136 tiles (no flowers or seasons). Go out with four sets and a pair, seven pairs or the thirteen orphans. You may claim a discard for a pung or kong from anyone, a chow only from the player on your left, and a win from anyone; a win beats a pung or kong, which beats a chow. A kong draws a replacement tile. There is no scoring: whoever goes out first wins the hand, and an empty wall is a draw.
 
@@ -205,6 +209,7 @@ Rule choices:
 timeline
     title Wing V · The Modern Board Game
     1843 CE : The Mansion of Happiness
+    1850s–60s CE : Euchre and the Joker
     1860 CE : The Checkered Game of Life
     1883–84 CE : Reversi : Halma
     late 19th century CE : Dots and Boxes
@@ -217,6 +222,7 @@ timeline
 | Exhibit | Date | Rules | In the Archives |
 | --- | --- | --- | --- |
 | The Mansion of Happiness | 1843 CE | Survive in print | Playable: all 67 squares of the 1843 Ives board, with a teetotum |
+| Euchre | 1850s–60s CE (the Joker) | Still played | Playable: four seats in partnerships, with the Joker as Best Bower or with 24 cards |
 | The Checkered Game of Life | 1860 CE | Survive in print (Bradley's patent, 1866) | Playable on the board of about 1911 |
 | Reversi | 1883 CE | Survive in print; played today as Othello | Playable, from the Othello opening |
 | Halma | 1883–84 CE | Still played, as Chinese checkers | Playable, two players with 19 men each |
@@ -254,6 +260,7 @@ mindmap
       Yut Nori
       Janggi
     South and Southeast Asia
+      Ganjifa
       Makruk
       Bagh-chal
     Pacific
@@ -276,6 +283,7 @@ mindmap
 | Shogi | oldest pieces c. 1058 CE (Kōfuku-ji) | Unbroken tradition | Playable, with drops |
 | Gomoku | named renju in 1899 | Still played | Playable, freestyle on 15 × 15 |
 | Hanafuda (koi-koi) | Edo period onward | Still played | Playable: koi-koi, with flower cards drawn in our own style |
+| Ganjifa | 16th century CE (Mughal India) | Still painted by hand | Display: round lacquered cards of all eight Mughal suits, with mir and wazir, and two Dashavatara cards |
 | Jungle (dou shou qi) | 20th century | Still played | Playable on the 7 × 9 board with two rivers |
 | Makruk | traditional | Still played | Playable, with the counting rules kept for you |
 | Bagh-chal | traditional | Still played | Playable as either side |

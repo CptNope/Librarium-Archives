@@ -52,3 +52,19 @@ The rules of both new tables follow pagat.com. Not checked, so left out: the cla
 - [Grace's Card](https://words.fromoldbooks.org/Brewer-DictionaryOfPhraseAndFable/g/graces-card-or-grace-card.html), Brewer's Dictionary of Phrase and Fable
 - [Scopa](https://en.wikipedia.org/wiki/Scopa), Wikipedia, and [Scopa](https://www.pagat.com/fishing/scopa.html), pagat.com
 - [Bezique](https://en.wikipedia.org/wiki/Bezique), Wikipedia, and [Bezique and variations](https://www.pagat.com/marriage/Bezique_and_Variations.html), pagat.com
+
+## The card room, part two (0.34.0)
+
+| Placard | Claims | Source |
+| --- | --- | --- |
+| Euchre | Probably from Jucker of Alsace; "Eucre" in America in 1810; bowers on a Midwest steamboat in 1829; first surviving rules 1844; the national card game in the late 1800s; bower from German *Bauer*; still played in the Midwest, upstate New York, Canada, Australia, New Zealand, Cornwall and Devon | Wikipedia, Euchre |
+| | The Joker added for euchre as an extra top trump, first called the Best Bower: "1850s" (pagat.com, Wikipedia) or "around 1863" in American packs (WOPC); in English packs around 1880; early jokers as jesters, some sinister; makers' identifiers | pagat.com; WOPC, The Joker; Wikipedia |
+| Patience | First in print in 1788 in *Das neue Königliche L'Hombre-Spiel*; after cartomantic layouts of about 1765; Danish and Norwegian *kabal*; France early 1800s, Britain and America later; Lady Cadogan's *Illustrated Games of Patience*, about 1870 (1874 in the references); Klondike with Windows from 1990 | Wikipedia, Patience (game) |
+| Ganjifa | Persian origin, popular at the Mughal court in the 16th century; Babur sent a pack in 1527; ivory with stones, tortoiseshell, and cheap packs of wood, palm leaf, cloth or pasteboard; 96 cards in 8 suits of 12, mir and wazir; the eight suits named; Dashavatara's ten avatars; three or more players, tricks, no trumps, reversed suits, day and night leads; decline in the 20th century; still made in Sawantwadi, Odisha, Bishnupur and elsewhere | Wikipedia, Ganjifa; WOPC, Ganjifa |
+
+Ganjifa is on display only. Its rules survive from about 1600, but the details of play, such as the *deni* and *utari* leads, are not set out in any source checked here, so no table was built.
+
+- [Euchre](https://en.wikipedia.org/wiki/Euchre), Wikipedia, and [Euchre](https://www.pagat.com/euchre/euchre.html), pagat.com
+- [The Joker](https://www.wopc.co.uk/playing-cards/the-joker-card), WOPC
+- [Patience (game)](https://ipfs.ssi.eecc.de/ipns/en.wikipedia-on-ipfs.org/wiki/Patience_(game)), Wikipedia mirror
+- [Ganjifa](https://en.wikipedia.org/wiki/Ganjifa), Wikipedia, and [Ganjifa](https://www.wopc.co.uk/explore/suit/ganjifa/), WOPC

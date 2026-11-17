@@ -16,7 +16,7 @@ const PACK_WORDS = {
   latin: { suits: ['swords', 'cups', 'coins', 'batons'], courts: [['knave', 'knaves'], ['knight', 'knights'], ['king', 'kings']] },
 };
 // The tables that offer the switch, and the pack each game is played with by default.
-const PACK_TABLES = { piquet: 'french', whist: 'french', cribbage: 'french', bezique: 'french', scopa: 'latin' };
+const PACK_TABLES = { piquet: 'french', whist: 'french', cribbage: 'french', bezique: 'french', scopa: 'latin', euchre: 'french' };
 let packNow = 'french';
 const packFor = g => (PACK_TABLES[g.id] ? ((store.packs || {})[g.id] || PACK_TABLES[g.id]) : 'french');
 function packText(text, from, to) {
@@ -99,9 +99,30 @@ function packCourt(g, w, h, kind, k, style) {
   packMark(g, kind, cx + 30, cy + 24, 26); // the suit sign held at the shoulder
 }
 const crFaceCache = new Map();
+// The Joker (card 52), the Best Bower of 1860s American euchre packs: a jester, the same in every pack.
+function jokerFace() {
+  return cardTex((g, w, h) => {
+    g.fillStyle = '#f7f2e6'; g.fillRect(0, 0, w, h); g.strokeStyle = '#3a2a1a'; g.lineWidth = 4; g.strokeRect(5, 5, w - 10, h - 10);
+    g.fillStyle = '#8a1e14'; g.font = '700 15px "Montserrat",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    [...'JOKER'].forEach((ch, i) => { g.fillText(ch, 18, 22 + i * 16); g.save(); g.translate(w - 18, h - 22 - i * 16); g.rotate(Math.PI); g.fillText(ch, 0, 0); g.restore(); });
+    const cx = w / 2, cy = h * 0.56;
+    g.save(); g.strokeStyle = 'rgba(30,18,8,.85)'; g.lineWidth = 2;
+    g.fillStyle = '#2a4a7a'; g.beginPath(); g.moveTo(cx - 38, cy + 64); g.quadraticCurveTo(cx - 36, cy + 4, cx, cy + 2); g.quadraticCurveTo(cx + 36, cy + 4, cx + 38, cy + 64); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#c8901e'; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(cx - 26 + k * 13, cy + 8 + (k % 2) * 6, 6, 0, TAU); g.fill(); g.stroke(); } // the ruff
+    g.fillStyle = '#ecd2ae'; g.beginPath(); g.arc(cx, cy - 16, 17, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = '#1c1c1c'; g.beginPath(); g.arc(cx - 6, cy - 18, 1.8, 0, TAU); g.arc(cx + 6, cy - 18, 1.8, 0, TAU); g.fill();
+    g.beginPath(); g.arc(cx, cy - 12, 7, 0.2, Math.PI - 0.2); g.stroke(); // a grin
+    // the fool's cap: two horns with bells
+    g.fillStyle = '#b3261e'; g.beginPath(); g.moveTo(cx - 16, cy - 28); g.quadraticCurveTo(cx - 34, cy - 58, cx - 46, cy - 40); g.quadraticCurveTo(cx - 26, cy - 44, cx, cy - 34); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#2f6b2a'; g.beginPath(); g.moveTo(cx + 16, cy - 28); g.quadraticCurveTo(cx + 34, cy - 58, cx + 46, cy - 40); g.quadraticCurveTo(cx + 26, cy - 44, cx, cy - 34); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#e8b83a'; for (const x of [-46, 46]) { g.beginPath(); g.arc(cx + x, cy - 40, 5, 0, TAU); g.fill(); g.stroke(); }
+    g.restore();
+  }, 140, 210);
+}
 function crFace(c, style = packNow) {
   const key = style + c;
   if (crFaceCache.has(key)) return crFaceCache.get(key);
+  if (c === 52) { const j = jokerFace(); for (const st of PACK_STYLES) crFaceCache.set(st + c, j); return j; }
   const rk = c % 13, su = (c / 13) | 0, kind = PACK_SUITS[style][su], court = rk >= 10 ? rk - 10 : -1;
   const french = style === 'french', col = french ? (su === 1 || su === 2 ? '#b3261e' : '#1c1c1c') : '#2a1a0c';
   const label = court >= 0 ? PACK_COURT[style][court] : rk === 0 ? 'A' : String(rk + 1);
