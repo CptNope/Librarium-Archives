@@ -58,6 +58,7 @@ None. The released plugin bundles three.js and its fonts, sends nothing anywhere
 
 = 0.34.0 =
 * The card room, part two: Euchre with the Joker as Best Bower, Patience (Klondike, played alone), and a Ganjifa display.
+* Faster drawing: the bookshelves are culled wing by wing, so a table draws about a seventh of the triangles it did.
 
 = 0.33.0 =
 * Works at every screen size: panels can always be closed, a compact play screen with an Options sheet on phones, and nothing runs under the bottom bar.
