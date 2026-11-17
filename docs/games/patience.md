@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · 1788 CE · Germany, France, England
 
-[← Whist](whist.md) · [All games](README.md) · [Snakes and Ladders →](snakes.md)
+[← Whist](whist.md) · [All games](README.md) · [Cassino →](cassino.md)
 
 | | |
 | --- | --- |

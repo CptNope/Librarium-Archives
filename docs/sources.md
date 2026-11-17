@@ -64,3 +64,7 @@ Each exhibit's page in [games/](games/README.md) repeats its placard, the rules 
 - Wikipedia: Dice, Polis (board game), Liubo, Patolli, Alquerque, Xiangqi, Snakes and ladders, Royal Game of Ur
 - Jacob Schmidt-Madsen, *The Game of Knowledge: Playing at Spiritual Liberation in 18th- and 19th-century Western India*
 - Librarium Games (librarium.games): Phoenix Farm, Calendra, The Great Chase, Royal Threadcount
+- Wikipedia: Karnöffel; David Parlett, *The oldest card game* (parlettgames.uk), on Karnöffel and the Kaiserspiel
+- Wikipedia: Ombre; pagat.com: L'Hombre (the Danish game); Alexander Pope, *The Rape of the Lock* (1714)
+- Wikipedia: Cassino (card game), after Robert Long, *Short Rules for Playing the Game of Casino* (1792)
+- pagat.com: Conquian, after R. F. Foster, *Foster's Complete Hoyle* (1897)

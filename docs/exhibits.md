@@ -2,16 +2,16 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**73 exhibits, 66 of them playable.** Each one also has [a page of its own](games/README.md), with a turn diagram, the rules as played and the Scribe's notes. The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**77 exhibits, 70 of them playable.** Each one also has [a page of its own](games/README.md), with a turn diagram, the rules as played and the Scribe's notes. The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
     title Exhibits by wing (playable tables)
     "Wing I · 4 of 6" : 6
     "Wing II · 9 of 11" : 11
-    "Wing III · 11 of 11" : 11
-    "Wing IV · 16 of 18" : 18
-    "Wing V · 10 of 10" : 10
+    "Wing III · 12 of 12" : 12
+    "Wing IV · 18 of 20" : 20
+    "Wing V · 11 of 11" : 11
     "Wing VI · 16 of 17" : 17
 ```
 
@@ -112,6 +112,7 @@ timeline
     c. 1150–1200 CE : The Lewis Chessmen
     by 1202 CE : Courier chess
     1283 CE : Four Seasons chess (Alfonso X)
+    1426 CE : Karnöffel
     c. 1440 CE : Tarot (tarocchi)
 ```
 
@@ -127,6 +128,7 @@ timeline
 | Courier chess | by 1202 CE | Survive in print (Selenus, 1616) | Playable on the 12 × 8 board |
 | Four Seasons chess | 1283 CE | Partly reconstructed (Alfonso X's Book of Games) | Playable, you and three Scribes |
 | Playing cards | c. 900–1400 CE | Earliest games lost | Playable as Piquet (recorded by 1535); the old cards are new designs in old styles |
+| Karnöffel | 1426 CE (Nördlingen) | Partly reconstructed (the Swiss Kaiserspiel, the old descriptions) | Playable: four seats in partnerships, partners' hands open |
 | Tarot (tarocchi) | c. 1440 CE | Still played as a card game | Playable as a simplified tarocchi for two; trumps on display (new paintings in the Milan style) |
 
 Rule choices:
@@ -138,6 +140,7 @@ Rule choices:
 - **Piquet** (at the playing cards): Cavendish's rules (1882) after pagat.com. The visitor marks discards and exchanges; declarations are made for both players, in full and without sinking. Pique, repique, capot and carte blanche all count. A partie of six deals with the Rubicon reckoning shown at the end, or a short game of two deals; a tie is a draw.
 - **Chaturaji:** al-Biruni's game as H. J. R. Murray read it, each of the four armies for itself. Two ordinary dice: 1 or 5 moves the king or a pawn, 2 the boat, 3 the horse, 4 or 6 the elephant; each die is one optional move, in either order. The elephant moves like a rook and the boat jumps two squares diagonally; there is no check, and kings are captured. A pawn on the far edge becomes the piece whose line it reached, but only if that piece has been lost. A boat that completes a square of four boats takes the other three. Captures score king 5, elephant 4, horse 3, boat 2, pawn 1. A player without a king is out, and that army stays on the board. You win by being the last king standing (taking all three yourself is chaturaji) and lose with your king; after 30 rounds the highest score among the kings left wins. Left out: partnerships, the throne rule (sinhasana) and ransoming kings, on which accounts differ.
 - **Four Seasons chess:** Alfonso X's acedrex de los quatro tiempos as Murray and Bodlaender read it, each army for itself and without dice. Armies of king, rook, knight, alfil and four pawns start in the corners (you are Red, in a1); Green moves first and play goes Green, Red, Black, White. The alfil leaps exactly two squares diagonally; pawns step one square without a double step, two of each army's pawns going along the files and two along the ranks, and become generals (one square diagonally) at the edge. You may not leave your king in check. A player checkmated is out and the whole army passes to the mater; taking a king counts the same; a player stalemated is out and the army leaves the board. Mates and stalemates are judged as soon as a move is made. The last army left wins; after 60 rounds the strongest army still in play wins (rook 5, knight 3, general 2, alfil 1½, pawn 1). The centre diagonals are decoration.
+- **Karnöffel:** a reconstruction after the Swiss Kaiserspiel and the descriptions gathered by Wikipedia and David Parlett. Four players in partnerships, five cards each, the first dealt face up; the lowest face-up card chooses the suit. Nobody need follow suit. The chosen Unter (the Karnöffel) beats everything; the seven (the Devil) beats all but the Karnöffel when led and may not be played to the first trick; the six (Pope) and two (Emperor) beat everything below them; the three, four and five beat all but kings, kings and Obers, and kings, Obers and Unters. Three tricks win the deal. Partners' hands are open to each other, after Parlett's note that partners advised each other freely. The old game's raising of the stake during the deal is left out: a deal is worth a point, and the game is to 5 or 7.
 - **Tarocchi:** the rules of the first tarot games of the 1440s were never written down, so the table plays a simplified two-player game built on what every tarot game still shares: follow suit, trump if you cannot, and the Fool as an excuse. Thirteen cards each; kings 5, queens 4, knights 3, jacks 2, trumps I and XXI and the Fool 5, and 1 for each trick.
 
 ## Wing IV: Printed Boards and Parlour Tables (c. 1300–1900 CE)
@@ -152,12 +155,14 @@ timeline
     16th century CE : Pachisi
     c. 1565 CE : Court Cards
     c. 1575 CE : The Game of the Goose
+    early 1600s CE : Ombre
     1630s CE : Cribbage
     1685–1805 CE : Cards Not for Playing
     18th century CE : Dominoes : Scopa : Snakes and Ladders
     1732 CE : Tablut
     1742 CE : Whist (Hoyle)
     1788 CE : Patience
+    1792 CE : Cassino
     1847 CE : Bézique
     mid-1800s CE : Mahjong
     1896 CE : Ludo
@@ -178,6 +183,8 @@ timeline
 | Scopa | 18th century CE (Naples) | Still played | Playable: two-player Scopa to 11 or 21, with Italian cards |
 | Tablut | recorded 1732 CE (Linnaeus) | Partly reconstructed | Playable, as the king's side |
 | Whist | 1742 CE (Hoyle) | Survive in print; short whist still played | Playable: you and a Scribe partner against two Scribes |
+| Ombre | early 1600s CE (Spain); English rules 1660 | Survive in print; still played as l'Hombre | Playable: three-handed at a three-cornered table, Entrada and Solo |
+| Cassino | 1792 CE (Robert Long) | Survive in print | Playable: two-handed, to 21, sweeps optional |
 | Patience | 1788 CE (first in print, Germany) | Still played | Playable: Klondike, draw one or three, the hall's one table without the Scribe |
 | Snakes and Ladders (gyan chaupar) | 18th–19th century CE | Still played | Playable, with virtues and vices from an old Indian board |
 | Bézique | 1847 CE (Paris); England 1861 | Still played | Playable: two-handed Bézique with two packs, to 1,000 or one deal |
@@ -197,9 +204,11 @@ Rule choices:
 - **Whist:** short whist as on pagat.com: thirteen cards each, the dealer's last card turned for trumps, a point for every trick over six, honours (4 for all four, 2 for three; not for a side at four), tricks before honours, and one game to 5 points rather than a rubber. Gentle and Fair Scribes play some cards carelessly; Sharp plays every card by the book (cash winners, second hand low, third hand high, ruff when an opponent is winning).
 - **Scopa:** two players with the 40-card Italian pack, as on pagat.com. A card must take a single card of its value if there is one, otherwise any set adding up to it; clearing the table is a scopa except on the last play. A table dealt with three or four kings is dealt again. Hands score cards, coins, the settebello and the primiera; the first to 11 (or 21) wins, and a tie at the target plays another hand.
 - **Bézique:** two-handed Bézique with 64 cards, as on pagat.com: one meld after each trick won while the stock lasts, chosen from a list; a card may count again in another kind of meld but never the same kind, a marriage cannot be taken out of a sequence, and every meld needs a card from the hand. The seven of trumps scores 10 when turned up, swapped or shown. After the stock, melds return to the hand and you must follow suit, win if you can, and trump if void. Brisques and the last trick score 10 each; a game is to 1,000, or one deal.
-- **The Pack switch** at Piquet, Whist, Cribbage, Scopa and Bézique redraws the cards in French, German, Swiss or Latin suits, and the messages name them to match (leaves, bells and acorns; Ober and Unter; cups, coins and swords). The suits are matched as players matched them: spades with leaves, shields and swords; hearts with hearts, roses and cups; diamonds with bells and coins; clubs with acorns and batons. The game does not change.
+- **The Pack switch** at Piquet, Karnöffel, Whist, Cribbage, Scopa, Bézique, Euchre, Ombre, Cassino and Conquian redraws the cards in French, German, Swiss or Latin suits, and the messages name them to match (leaves, bells and acorns; Ober and Unter; cups, coins and swords). The suits are matched as players matched them: spades with leaves, shields and swords; hearts with hearts, roses and cups; diamonds with bells and coins; clubs with acorns and batons. The game does not change.
 - **Patience:** Klondike, after the usual rules: build down in alternating colours, kings to empty columns, foundations up by suit, unlimited passes through the stock (draw one or three). Cards may come back down from a foundation. Once every card is face up and the stock is spent, the rest go up by themselves. There is no Scribe; Undo and Hint are open, and Give up ends the game.
 - **Euchre:** four-handed, after pagat.com, with American scoring to 10: one round of ordering up the turned card, then a round of naming another suit; everyone passing twice throws the deal in (no "stick the dealer"). Going alone is declared once trumps are made rather than with the bid. With the Joker (the Best Bower, top trump), a Joker turned up makes the dealer's side the makers and the dealer names trumps.
+- **Ombre:** three-handed, after pagat.com and Wikipedia. A 40-card pack; nine cards each and a talon of thirteen. Bids, low to high: Entrada (name trumps, exchange) and Solo (name trumps, no exchange); a pass is final, and if all three pass the deal moves on. The Ombre exchanges first at Entrada, then each defender in turn from what is left. Matadors (spadille, manille, basta) are forced only by a higher matador. Sacada: each defender pays the stake (1, or 3 at Solo); puesta: the Ombre pays each; codille: the Ombre pays each, and the defender with most twice. Vuelta, the lower bids, the vole and the surrender are left out. Six or twelve deals.
+- **Cassino:** two-handed, after Wikipedia and pagat.com: four cards each and four to the table, then four each until the pack is spent; pairing (court cards one at a time), combining, single builds that anyone may raise while holding the new total, and multiple builds that cannot be raised. As Hoyle recommends, the owner of a build may not trail. Combining a build with loose cards is left out. Scoring 11 a deal; sweeps are an option. Game to 21.
 - **Ludo:** two players, red and yellow, from opposite corners. A six brings a token out or moves one, and earns another throw; landing on an enemy token sends it to its yard; your home column is safe; the finish needs the exact throw. There are no blocks or safe squares on the track.
 - **Mahjong:** a basic Chinese game with the 136 tiles (no flowers or seasons). Go out with four sets and a pair, seven pairs or the thirteen orphans. You may claim a discard for a pung or kong from anyone, a chow only from the player on your left, and a win from anyone; a win beats a pung or kong, which beats a chow. A kong draws a replacement tile. There is no scoring: whoever goes out first wins the hand, and an empty wall is a draw.
 
@@ -210,6 +219,7 @@ timeline
     title Wing V · The Modern Board Game
     1843 CE : The Mansion of Happiness
     1850s–60s CE : Euchre and the Joker
+    1857 CE : Conquian
     1860 CE : The Checkered Game of Life
     1883–84 CE : Reversi : Halma
     late 19th century CE : Dots and Boxes
@@ -223,6 +233,7 @@ timeline
 | --- | --- | --- | --- |
 | The Mansion of Happiness | 1843 CE | Survive in print | Playable: all 67 squares of the 1843 Ives board, with a teetotum |
 | Euchre | 1850s–60s CE (the Joker) | Still played | Playable: four seats in partnerships, with the Joker as Best Bower or with 24 cards |
+| Conquian | 1857 CE (Mexico City) | Survive in print (Foster, 1897) | Playable: two-handed, the Anglo-American game |
 | The Checkered Game of Life | 1860 CE | Survive in print (Bradley's patent, 1866) | Playable on the board of about 1911 |
 | Reversi | 1883 CE | Survive in print; played today as Othello | Playable, from the Othello opening |
 | Halma | 1883–84 CE | Still played, as Chinese checkers | Playable, two players with 19 men each |
@@ -237,6 +248,7 @@ timeline
 
 Rule choices:
 
+- **Conquian:** the Anglo-American two-handed game after pagat.com and Foster (1897): 40 cards, ten each; the centre card must be used or turned down (or, if you turned it up yourself, passed); melds only with the centre card; lay off on your own melds; runs from the ace up with the seven next to the jack, up to eight long. A card that fits one of your melds by itself is forced on you (in the old game the opponent chooses whether to force it). Go out by melding all eleven. A hand is drawn if the stock runs out. One hand, or first to three.
 - **Reversi** starts from the four centre discs of Othello rather than the empty board of the 1880s. A player with no legal move passes; the game ends when neither can move.
 - **Halma:** a man in the far camp may not leave it, and a full far camp with at least one of your men in it wins, so neither side can block by staying home. A house rule ends the game after two hundred moves each.
 - **Dots and Boxes:** closing a box scores it and you must draw again. The Scribe plays the whole of its turn, so it may take several boxes in a row.

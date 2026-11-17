@@ -1,6 +1,33 @@
 # Changelog
 
-## Unreleased: game by game
+## 0.35.0: The card room, part three
+
+- **Karnöffel** (Wing III), the oldest card game whose rules can be pieced together, first named at Nördlingen in 1426.
+  - Four seats in partnerships, with a 48-card German pack.
+  - The lowest card turned up chooses the suit. In that suit a lowly Unter, the Karnöffel, beats everything, and the Devil, the Pope and the Emperor come next.
+  - Nobody need follow suit, partners' hands are open to each other, and three tricks win the deal.
+  - A reconstruction, and the placard says so.
+- **Ombre** (Wing IV), the Spanish game of the 1600s and the first with bidding.
+  - Three-handed at a three-cornered table: you against East and West, or with them against you.
+  - Bid Entrada or Solo, name trumps, and exchange from the talon by marking cards.
+  - The matadors (spadille, manille, basta) keep their old privilege.
+  - Sacada, puesta and codille are paid in counters over 6 or 12 deals.
+- **Cassino** (Wing IV), the English fishing game of 1792.
+  - Pairing, combining, and builds that either player can take, raise or turn into a multiple build.
+  - Big and little cassino. Sweeps are optional. Game to 21.
+  - A card with only one play is played by clicking it; a card with several offers them as buttons.
+- **Conquian** (Wing V), from Mexico City in 1857, the first of the rummies.
+  - Ten cards each. The centre card is the only way to meld: use it, or turn it down.
+  - Forcing, laying off, and going out by melding all eleven.
+- The Pack switch works at all four tables. Card names in their choices are written out in words, so they change with the pack.
+- The Scribe:
+  - At Karnöffel, Sharp samples the unseen cards.
+  - At Ombre, Sharp prices every bid by dealing the unseen cards and playing the hand out, and samples the hidden hands in play.
+  - Measured strength is in the Scribe guide.
+- 77 exhibits, 70 of them playable. 300 rules tests, twelve of them new.
+- **Wing introductions:** each wing's introduction now lists every table in it. Wings III, IV and V had fallen behind since 0.32.
+
+## Game by game (documentation, between 0.34.0 and 0.35.0)
 
 - **A page for every exhibit** in `docs/games/`, 73 in all, with an index, each linked from the README. A page carries:
   - the placard and its facts, drawn as a mind map;

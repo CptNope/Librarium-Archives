@@ -220,6 +220,10 @@ Saved games store the engine's plain data fields as JSON. Typed-array boards, Se
 | Piquet | `piquet` | Cards: exchange, declarations, tricks | Sampled exchange (Sharp), card-play heuristic | `followUp` to mark discards, `passTurn`, `variants`, a labelled Next deal move |
 | Bézique | `bezique` | Cards: tricks, melds, a strict close | Card-keeping heuristic; Sharp chases bigger melds | `passTurn`, `variants`, a `meld` stage of labelled choices, `face(id)` for two packs |
 | Euchre | `euchre` | Cards: four seats, partnerships, bowers | Bidding by hand worth; trick play by masters and partner | `passTurn`, `variants`, `scribeName` per seat, labelled bidding choices |
+| Karnöffel | `karnoffel` | Cards: four seats, partnerships, a chosen suit with powers, no need to follow | Heuristic with open partner hands; Sharp samples the unseen cards | `passTurn`, `variants`, `scribeName` per seat |
+| Ombre | `ombre` | Cards: three seats, bidding, exchange, matadors | Bidding by hand worth; Sharp samples the hidden hands in play | `passTurn`, `variants`, labelled bids and a marked exchange |
+| Conquian | `conquian` | Cards: melding (rummy) | Meld-and-keep heuristic | `variants`, every meld offered as a labelled choice |
+| Cassino | `cassino` | Cards: fishing with builds | Take, build and trail weighed; Sharp counts the cards taken | `variants`, a pick stage when a card has several plays |
 | Patience | `patience` | Cards: solo (Klondike) | Hint heuristic only (no opponent) | `solo`, `variants`, a presenter with `oneClick` |
 | Scopa | `scopa` | Cards: fishing (captures by value or sum) | Sweep-risk estimate; Sharp counts the cards taken | `passTurn`, `variants`, rings for the set a card takes |
 | Xiangqi | `xiangqi` | Chess family | Search | |

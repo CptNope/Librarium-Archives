@@ -2,7 +2,7 @@
 
 # Game by game
 
-One page for each of the hall's **73 exhibits**, 66 of them playable, in the order you walk them. Each page has the placard's history, a diagram of a turn, the rules as the table plays them and where they come from, what the table offers (the Scribe, a friend, Undo, Hint, saved games), how the Scribe plays and how strong it is, and the files that make it.
+One page for each of the hall's **77 exhibits**, 70 of them playable, in the order you walk them. Each page has the placard's history, a diagram of a turn, the rules as the table plays them and where they come from, what the table offers (the Scribe, a friend, Undo, Hint, saved games), how the Scribe plays and how strong it is, and the files that make it.
 
 The pages are written from the code and the other guides by `tools/build-docs.mjs`, so they change when the games do. For the reasoning behind the rule choices see [the exhibits guide](../exhibits.md); for the AI, [the Scribe](../scribe.md).
 
@@ -82,15 +82,19 @@ mindmap
       bao["Bao"]
     f10["Cards"]
       cards["Playing Cards"]
+      karnoffel["Karnöffel"]
       tarot["Tarot (Tarocchi)"]
       courtcards["Court Cards (display)"]
+      ombre["Ombre"]
       cribbage["Cribbage"]
       notforplay["Cards Not for Playing (display)"]
       scopa["Scopa"]
       whist["Whist"]
       patience["Patience"]
+      cassino["Cassino"]
       bezique["Bézique"]
       euchre["Euchre"]
+      conquian["Conquian"]
       koikoi["Hanafuda (Koi-koi)"]
       ganjifa["Ganjifa (display)"]
     f11["Tiles"]
@@ -160,9 +164,9 @@ Sow seeds round a row of pits and capture by count.
 
 ### Cards
 
-Tricks, melds, fishing, combinations and patience, and cards made for other uses.
+Tricks, bidding, melds, rummy, fishing, combinations and patience, and cards made for other uses.
 
-[Playing Cards](cards.md) · [Tarot (Tarocchi)](tarot.md) · [Court Cards](courtcards.md) (display) · [Cribbage](cribbage.md) · [Cards Not for Playing](notforplay.md) (display) · [Scopa](scopa.md) · [Whist](whist.md) · [Patience](patience.md) · [Bézique](bezique.md) · [Euchre](euchre.md) · [Hanafuda](koikoi.md) · [Ganjifa](ganjifa.md) (display)
+[Playing Cards](cards.md) · [Karnöffel](karnoffel.md) · [Tarot (Tarocchi)](tarot.md) · [Court Cards](courtcards.md) (display) · [Ombre](ombre.md) · [Cribbage](cribbage.md) · [Cards Not for Playing](notforplay.md) (display) · [Scopa](scopa.md) · [Whist](whist.md) · [Patience](patience.md) · [Cassino](cassino.md) · [Bézique](bezique.md) · [Euchre](euchre.md) · [Conquian](conquian.md) · [Hanafuda](koikoi.md) · [Ganjifa](ganjifa.md) (display)
 
 ### Tiles
 
@@ -176,7 +180,7 @@ Dominoes and mahjong.
 pie showData
     title Rules status of the 73 exhibits
     "Still played" : 20
-    "Rules survive in print" : 8
+    "Rules survive in print" : 11
     "Modern reconstruction" : 7
     "Rules survive in writing" : 6
     "Rules reconstructed" : 4
@@ -190,6 +194,7 @@ pie showData
     "Rules survive in modern backgammon" : 1
     "Rules in print, 1616" : 1
     "Earliest games lost" : 1
+    "Rules partly reconstructed" : 1
     "Still played as a card game" : 1
     "Still played, and the ancestor of Ludo" : 1
     "Packs survive" : 1
@@ -208,8 +213,8 @@ pie showData
 xychart-beta
     title "Playable tables with each feature"
     x-axis ["Scribe", "Friend", "Undo", "Hint", "Saved", "Pack"]
-    y-axis "Tables" 0 --> 66
-    bar [65, 51, 37, 51, 43, 6]
+    y-axis "Tables" 0 --> 70
+    bar [69, 51, 37, 51, 47, 10]
 ```
 
 ## Wing I: The Dawn of Play
@@ -290,7 +295,7 @@ flowchart TB
     end
     subgraph r2[" "]
         direction LR
-        cards["Playing Cards<br/>c. 900–1400 CE"] --> tarot["Tarot (Tarocchi)<br/>c. 1440 CE"] --> out(["On to Wing IV"])
+        cards["Playing Cards<br/>c. 900–1400 CE"] --> karnoffel["Karnöffel<br/>1426 CE"] --> tarot["Tarot (Tarocchi)<br/>c. 1440 CE"] --> out(["On to Wing IV"])
     end
     r0 --> r1
     r1 --> r2
@@ -308,6 +313,7 @@ flowchart TB
 | [Courier Chess](courier.md) | by 1202 CE | Rules in print, 1616 | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Four Seasons Chess](fourseasons.md) | 1283 CE | Partly reconstructed | ✓ | · | · | · | · |
 | [Playing Cards](cards.md) | c. 900–1400 CE | Earliest games lost | ✓ | · | · | · | ✓ |
+| [Karnöffel](karnoffel.md) | 1426 CE | Rules partly reconstructed | ✓ | · | · | · | ✓ |
 | [Tarot (Tarocchi)](tarot.md) | c. 1440 CE | Still played as a card game | ✓ | · | · | · | · |
 
 ## Wing IV: Printed Boards and Parlour Tables
@@ -322,19 +328,24 @@ flowchart TB
     end
     subgraph r1[" "]
         direction LR
-        pachisi["Pachisi (Chaupar)<br/>16th century CE"] --> courtcards[/"Court Cards<br/>c. 1565 CE<br/>on display"/] --> goose["Game of the Goose<br/>c. 1575 CE"] --> cribbage["Cribbage<br/>1630s CE"] --> notforplay[/"Cards Not for Playing<br/>1685 – 1805 CE<br/>on display"/]
+        pachisi["Pachisi (Chaupar)<br/>16th century CE"] --> courtcards[/"Court Cards<br/>c. 1565 CE<br/>on display"/] --> goose["Game of the Goose<br/>c. 1575 CE"] --> ombre["Ombre<br/>early 1600s CE"] --> cribbage["Cribbage<br/>1630s CE"]
     end
     subgraph r2[" "]
         direction LR
-        dominoes["Dominoes<br/>18th century CE"] --> scopa["Scopa<br/>18th century CE"] --> tablut["Tablut<br/>1732 CE"] --> whist["Whist<br/>1742 CE"] --> patience["Patience<br/>1788 CE"]
+        notforplay[/"Cards Not for Playing<br/>1685 – 1805 CE<br/>on display"/] --> dominoes["Dominoes<br/>18th century CE"] --> scopa["Scopa<br/>18th century CE"] --> tablut["Tablut<br/>1732 CE"] --> whist["Whist<br/>1742 CE"]
     end
     subgraph r3[" "]
         direction LR
-        snakes["Snakes and Ladders<br/>18th–19th century CE"] --> bezique["Bézique<br/>1847 CE"] --> ludo["Ludo<br/>1896 CE"] --> mahjong["Mahjong<br/>mid-1800s CE"] --> out(["On to Wing V"])
+        patience["Patience<br/>1788 CE"] --> cassino["Cassino<br/>1792 CE"] --> snakes["Snakes and Ladders<br/>18th–19th century CE"] --> bezique["Bézique<br/>1847 CE"] --> ludo["Ludo<br/>1896 CE"]
+    end
+    subgraph r4[" "]
+        direction LR
+        mahjong["Mahjong<br/>mid-1800s CE"] --> out(["On to Wing V"])
     end
     r0 --> r1
     r1 --> r2
     r2 --> r3
+    r3 --> r4
 ```
 
 | Exhibit | Date | Rules | Scribe | Friend | Undo | Hint | Saved |
@@ -346,6 +357,7 @@ flowchart TB
 | [Pachisi (Chaupar)](pachisi.md) | 16th century CE | Still played, and the ancestor of Ludo | ✓ | ✓ | · | ✓ | · |
 | [Court Cards](courtcards.md) | c. 1565 CE | Packs survive (display) |  |  |  |  |  |
 | [The Game of the Goose](goose.md) | c. 1575 CE | Rules survive in print | ✓ | ✓ | · | · | · |
+| [Ombre](ombre.md) | early 1600s CE | Rules survive in print | ✓ | · | · | · | ✓ |
 | [Cribbage](cribbage.md) | 1630s CE | Still played | ✓ | · | · | · | · |
 | [Cards Not for Playing](notforplay.md) | 1685 – 1805 CE | Examples survive (display) |  |  |  |  |  |
 | [Dominoes](dominoes.md) | 18th century CE | Still played | ✓ | · | · | · | · |
@@ -353,6 +365,7 @@ flowchart TB
 | [Tablut](tablut.md) | 1732 CE | Rules partly read | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Whist](whist.md) | 1742 CE | Rules in print since 1742 | ✓ | · | · | ✓ | ✓ |
 | [Patience](patience.md) | 1788 CE | Still played | · | · | ✓ | ✓ | ✓ |
+| [Cassino](cassino.md) | 1792 CE | Rules survive in print | ✓ | · | · | · | ✓ |
 | [Snakes and Ladders](snakes.md) | 18th–19th century CE | Still played today | ✓ | ✓ | · | · | · |
 | [Bézique](bezique.md) | 1847 CE | Still played | ✓ | · | · | · | ✓ |
 | [Ludo](ludo.md) | 1896 CE | Still played | ✓ | ✓ | · | ✓ | · |
@@ -366,15 +379,15 @@ With cheap colour printing, board games became products. Publishers in Salem, Sp
 flowchart TB
     subgraph r0[" "]
         direction LR
-        in(["From Wing IV"]) --> mansion["The Mansion of Happiness<br/>1843 CE"] --> euchre["Euchre<br/>1850s–60s CE"] --> lifegame["Checkered Game of Life<br/>1860 CE"] --> reversi["Reversi<br/>1883 CE"]
+        in(["From Wing IV"]) --> mansion["The Mansion of Happiness<br/>1843 CE"] --> euchre["Euchre<br/>1850s–60s CE"] --> conquian["Conquian<br/>1857 CE"] --> lifegame["Checkered Game of Life<br/>1860 CE"]
     end
     subgraph r1[" "]
         direction LR
-        halma["Halma<br/>1883–84 CE"] --> dotsboxes["Dots and Boxes<br/>late 19th century CE"] --> chinese["Chinese Checkers<br/>1892 CE"] --> landlord["The Landlord's Game<br/>1904 CE"] --> kalah["Kalah<br/>1940 CE"]
+        reversi["Reversi<br/>1883 CE"] --> halma["Halma<br/>1883–84 CE"] --> dotsboxes["Dots and Boxes<br/>late 19th century CE"] --> chinese["Chinese Checkers<br/>1892 CE"] --> landlord["The Landlord's Game<br/>1904 CE"]
     end
     subgraph r2[" "]
         direction LR
-        hex["Hex<br/>1942 CE"] --> out(["On to Wing VI"])
+        kalah["Kalah<br/>1940 CE"] --> hex["Hex<br/>1942 CE"] --> out(["On to Wing VI"])
     end
     r0 --> r1
     r1 --> r2
@@ -384,6 +397,7 @@ flowchart TB
 | --- | --- | --- | :---: | :---: | :---: | :---: | :---: |
 | [The Mansion of Happiness](mansion.md) | 1843 CE | Rules survive in print | ✓ | ✓ | · | · | · |
 | [Euchre](euchre.md) | 1850s–60s CE | Still played | ✓ | · | · | · | ✓ |
+| [Conquian](conquian.md) | 1857 CE | Rules survive in print | ✓ | · | · | · | ✓ |
 | [The Checkered Game of Life](lifegame.md) | 1860 CE | Rules survive in print | ✓ | ✓ | · | ✓ | · |
 | [Reversi](reversi.md) | 1883 CE | Rules survive in print | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Halma](halma.md) | 1883–84 CE | Still played, as Chinese checkers | ✓ | ✓ | ✓ | ✓ | ✓ |
