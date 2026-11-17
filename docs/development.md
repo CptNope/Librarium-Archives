@@ -126,6 +126,29 @@ Its measurements drive the layout rules in the stylesheet:
 - `layoutHud()` measures the play screen's bars and the bottom bar into `--hud-top`, `--hud-bot` and `--rail-h`. Panels are fitted between them.
 - `lm-compact` (a window 720 px wide or less, or 500 px tall or less) folds the play screen's secondary controls into the Options sheet.
 
+## The game pages
+
+`docs/games/` holds a page for every exhibit and an index. They are written by `npm run build:docs` (`tools/build-docs.mjs`) from:
+
+- the placards (`src/hall/09-exhibit-data.js`),
+- the rule engines (`js/rules.js`: rules, source, options, seats),
+- the hall's feature lists (pass-and-play, Undo, Hint, saved games, the Pack switch),
+- the per-game rows of `docs/exhibits.md`, `docs/scribe.md` and `docs/fact-check.md`.
+
+The families, the other names a game goes by in those guides, and the hand-drawn turn diagrams for games whose turns are not a plain dice race or a plain move are in `tools/docs-data.mjs`.
+
+```mermaid
+flowchart LR
+    X["src/hall/09-exhibit-data.js"] --> B["tools/build-docs.mjs"]
+    J["js/rules.js"] --> B
+    H["src/hall/*.js<br/>feature lists"] --> B
+    D["docs/exhibits.md<br/>docs/scribe.md<br/>docs/fact-check.md"] --> B
+    T["tools/docs-data.mjs<br/>families, turn diagrams"] --> B
+    B --> G["docs/games/*.md"]
+```
+
+Don't edit the pages by hand. Change the source, then run `npm run build:docs`. CI runs `node tools/build-docs.mjs --check` and fails if a page is out of date, as it does for `js/`. A new game needs a family in `docs-data.mjs`, and the build fails until it has one.
+
 ## CI and deployment
 
 ```mermaid

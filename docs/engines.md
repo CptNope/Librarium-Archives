@@ -286,4 +286,4 @@ flowchart LR
 6. **Stop.** Add a `STOPS` entry in walking order, with `game: '<id>'`. Update the wing intro's list of tables.
 7. **Plugin.** Add the id to `librarium_archives_exhibits()` so it can be a `start` exhibit.
 8. **Docs.** Add the game to [exhibits](exhibits.md), [the Scribe](scribe.md) and the changelog.
-9. **Browser check.** Play several turns headless and look at a screenshot (see [development](development.md#browser-checks)).
+9. **Browser check.** Play several turns headless and look at a screenshot (see [development](development.md#browser-tests)).

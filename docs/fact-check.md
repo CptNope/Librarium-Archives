@@ -2,6 +2,25 @@
 
 The placards' dates, numbers and attributions were checked for 0.30.0. This page lists the claims that looked shaky, what the sources say, and what changed. Claims not listed here were read and left alone.
 
+```mermaid
+flowchart LR
+    C["A claim on a placard:<br/>a date, a number, a name"] --> S["Looked up in at least one<br/>museum, scholarly or<br/>reference source"]
+    S --> A{"Does it agree?"}
+    A -->|yes| K["Left as written"]
+    A -->|"close, but loose"| E["Tightened or given context"]
+    A -->|no| F["Corrected on the placard,<br/>in the rules note and in the docs"]
+    A -->|"sources disagree"| D["Both dates given,<br/>or the museum's followed"]
+```
+
+```mermaid
+pie showData
+    title The 0.30.0 check: 11 claims
+    "Correct as written" : 4
+    "Correct, wording tightened" : 1
+    "Kept, with context or a museum dating" : 2
+    "Corrected" : 4
+```
+
 | Placard | Claim as it stood | What the sources say | Verdict |
 | --- | --- | --- | --- |
 | Senet | Rules follow "Timothy Kendall's 1979 work" | Kendall's *Passing Through the Netherworld* is dated 1978; the first printing of his rules is sometimes given as 1979 | Changed to "first published in 1978 and revised since" (also in the rules note and docs/exhibits.md) |

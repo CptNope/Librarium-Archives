@@ -2,6 +2,20 @@
 
 The placard text is written for the Archives. Where scholarship is uncertain, the placards say so: Senet's rules were never written down, so the playable version is a modern reconstruction; the Royal Game of Ur follows Irving Finkel's translation of a Babylonian rules tablet; Hounds and Jackals, Ludus latrunculorum and Patolli are played as modern reconstructions, named on each placard; Mehen and the Başur Höyük pieces are shown without rules because none survive.
 
+```mermaid
+flowchart LR
+    M["Museums and archaeology<br/>(British Museum, the Met,<br/>Bank of Canada Museum)"] --> P
+    T["Old texts<br/>(Alfonso X, al-Biruni, Hoyle,<br/>Lane, Durán)"] --> P
+    H["Historians and players<br/>(Murray, Finkel, Kendall,<br/>pagat.com, WOPC)"] --> P
+    P["The placard"] --> F["The fact-check<br/>(fact-check.md)"]
+    T --> R["The table's rules"]
+    H --> R
+    R --> G["The game pages<br/>(games/)"]
+    P --> G
+```
+
+Each exhibit's page in [games/](games/README.md) repeats its placard, the rules as the table plays them and the source the rules follow.
+
 - Smithsonian Magazine, "The Best Board Games of the Ancient World"
 - History.com, "The Oldest Board Games in the World"
 - Wikipedia: Royal Game of Ur, Senet, Hounds and jackals, History of Go, Ludus latrunculorum, Tafl games
