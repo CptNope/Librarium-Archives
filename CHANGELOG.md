@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.33.0: Every screen size
+
+A layout audit at 16 screen sizes, from a 320 px phone to a 1920 px desktop in both orientations (`tools/audit-layout.mjs`), and fixes for what it found:
+
+- **Panels can always be closed.** On phones, and on iPads in portrait, the Rules and Moves panels opened over the controls that closed them. Now they fit between the play screen's bars, measured as they are, and each has its own × button.
+- **A compact play screen** on phones and short landscape screens. The top bar keeps the table's name, the score, Options and Leave. The Scribe's level, the game and Pack switches, Moves, Hints and Rules fold into an Options sheet that wraps instead of running off the edge. Before, Piquet's and Bézique's switches ran off the screen.
+- **The sound and full-screen buttons** no longer sit on top of "Leave the table" at every size. While you play, the help button goes, since Rules does its job.
+- **The guide's card** sits above the bottom bar instead of covering Undo and Hint.
+- **The index and the passport** fit above the bottom bar instead of running under the wing tabs. The placard steps aside while they are open.
+- **Placards:** the first line no longer runs under the Read aloud button.
+- **The bottom bar** wraps on narrow phones instead of pushing Hint off the edge.
+
 ## 0.32.0: The card room
 
 New in Wing IV, from a study of the World of Playing Cards archive (wopc.co.uk):
