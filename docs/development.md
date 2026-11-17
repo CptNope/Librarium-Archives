@@ -53,6 +53,22 @@ Add `?debug` to the address to expose the live state as `window.__archives`. Deb
 | `humanThrow()` | Throw the dice, as if the button were pressed |
 | `snap()` | Render one frame and return a small JPEG of the 3D view |
 | `cam`, `camera`, `view`, `joy` | Camera and input state |
+| `renderer`, `scene` | The three.js renderer and scene, for `renderer.info` and the like |
+| `mergeStats` | How many static meshes were found and how many were merged away |
+| `RES` | The adaptive resolution: the pixel ratio now, its ceiling and floor, and the frame-time average |
+| `bootTimes` | How long the first wing and all the exhibits took to build |
+
+Two more switches help when measuring. `?nomerge` leaves every mesh as built, and `?fixedres` keeps the pixel ratio where it starts.
+
+### Profiling
+
+```bash
+node tools/profile-hall.mjs                  # draw calls, triangles, meshes, textures, render time and heap at seven places
+node tools/profile-hall.mjs --nomerge        # the same without merging, to compare
+node tools/profile-hall.mjs --json=out.json  # also save the numbers
+```
+
+It runs Playwright's Chromium with SwiftShader, so render times are those of software rendering, and they jump about when the GPU queue backs up. Compare runs on one machine, and trust the draw calls and triangles over the milliseconds. A browser test checks that Wing IV and Wing VI stay under 800 draw calls.
 
 ```js
 const A = window.__archives;

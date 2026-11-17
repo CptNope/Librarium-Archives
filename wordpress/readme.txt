@@ -56,6 +56,9 @@ None. The released plugin bundles three.js and its fonts, sends nothing anywhere
 
 == Changelog ==
 
+= 0.37.0 =
+* The hall draws faster: static meshes are merged, far exhibits are hidden, and the resolution adapts to the frame rate.
+
 = 0.36.0 =
 * The card room, part four: Skat, Pinochle and Hearts.
 

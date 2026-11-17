@@ -10,7 +10,7 @@ const MAX_ANISO = renderer.capabilities.getMaxAnisotropy();
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0807);
 scene.fog = new THREE.FogExp2(0x0a0807, 0.042);
-const camera = new THREE.PerspectiveCamera(58, 1, 0.03, 90);
+const camera = new THREE.PerspectiveCamera(58, 1, 0.03, 60); // the fog is total by 60 m
 camera.rotation.order = 'YXZ';
 
 function resize() {
