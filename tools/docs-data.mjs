@@ -14,13 +14,13 @@ export const FAMILIES = [
   ['Territory and enclosure', 'Surround, close in or flip to own the most of the board.', ['go', 'dotsboxes', 'reversi']],
   ['Running and jumping races', 'Move a whole army across the board by steps and chains of hops.', ['halma', 'chinese']],
   ['Mancala', 'Sow seeds round a row of pits and capture by count.', ['oware', 'kalah', 'bao']],
-  ['Cards', 'Tricks, bidding, melds, rummy, fishing, combinations and patience, and cards made for other uses.', ['cards', 'karnoffel', 'tarot', 'courtcards', 'ombre', 'cribbage', 'notforplay', 'scopa', 'whist', 'patience', 'cassino', 'bezique', 'euchre', 'conquian', 'koikoi', 'ganjifa']],
+  ['Cards', 'Tricks, bidding, melds, rummy, fishing, combinations and patience, and cards made for other uses.', ['cards', 'karnoffel', 'tarot', 'courtcards', 'ombre', 'cribbage', 'notforplay', 'scopa', 'whist', 'patience', 'cassino', 'skat', 'bezique', 'euchre', 'conquian', 'pinochle', 'hearts', 'koikoi', 'ganjifa']],
   ['Tiles', 'Dominoes and mahjong.', ['dominoes', 'mahjong']],
 ];
 
 // Other names an exhibit goes by in docs/exhibits.md and docs/scribe.md, beyond its title and its engine's name.
 export const ALIASES = {
-  ur: ['Ur', 'Royal Game of Ur'], scopa: ['Scopa'], euchre: ['Euchre'], bezique: ['Bézique'], karnoffel: ['Karnöffel'], ombre: ['Ombre'], conquian: ['Conquian'], cassino: ['Cassino'],
+  ur: ['Ur', 'Royal Game of Ur'], scopa: ['Scopa'], euchre: ['Euchre'], bezique: ['Bézique'], karnoffel: ['Karnöffel'], ombre: ['Ombre'], conquian: ['Conquian'], cassino: ['Cassino'], skat: ['Skat'], pinochle: ['Pinochle'], hearts: ['Hearts'],
   dice: ['Hazard', 'The first dice'], hounds: ['Hounds and Jackals'], go: ['Go', 'Weiqi'], latrunculi: ['Latrunculi', 'Ludus latrunculorum'],
   xii: ['Duodecim scripta', 'Ludus duodecim scriptorum'], morris: ['Morris', "Nine Men's Morris"], oware: ['Oware', 'Mancala'],
   lewis: ['Medieval chess', 'Lewis chessmen'], cards: ['Piquet', 'Playing cards'], tarot: ['Tarocchi', 'Tarot'], newqueen: ['Chess', 'The New Queen'],
@@ -320,6 +320,48 @@ export const FLOWS = {
     S --> G{"Anyone at 21?"}
     G -->|no| D
     G -->|yes| E(["Higher score wins"])`,
+  skat: `flowchart TD
+    D(["Ten cards each, two in the skat"]) --> A["Middlehand bids to forehand, then rearhand to whoever is left"]
+    A --> N{"Anyone bid?"}
+    N -->|"no"| F{"Forehand plays at 18?"}
+    F -->|no| D
+    F -->|yes| K
+    N -->|yes| K{"The declarer picks up the skat?"}
+    K -->|yes| L["Take the two, lay two away"] --> G
+    K -->|"no: hand"| G["Name the game: a suit, grand or null"]
+    G --> P["Ten tricks: follow suit, the jacks are trumps"]
+    P --> R{"Null: no tricks? Otherwise 61 card points, and worth the bid?"}
+    R -->|yes| W["The declarer scores the game's value"]
+    R -->|no| X["The declarer loses twice the value"]
+    W --> E{"6 or 12 deals played?"}
+    X --> E
+    E -->|no| D
+    E -->|yes| Z(["Highest score wins"])`,
+  pinochle: `flowchart TD
+    D(["Twelve cards each; turn up trumps"]) --> P["Lead and play a trick: no need to follow while the stock lasts"]
+    P --> M["The winner may meld once: run, marriages, around, pinochle, the dix"]
+    M --> W["Winner draws, then loser"]
+    W --> S{"Stock gone?"}
+    S -->|no| P
+    S -->|yes| L["Last twelve tricks: melds back in hand, follow and win if you can"]
+    L --> B["Cards count 11, 10, 4, 3, 2; the last trick 10"]
+    B --> G{"Anyone at 1,000?"}
+    G -->|yes| E(["The higher total wins"])
+    G -->|no| D`,
+  hearts: `flowchart TD
+    D(["Thirteen cards each"]) --> X["Pass three: left, right, across, or none"]
+    X --> L["The two of clubs leads"]
+    L --> F["Follow suit if you can; no points on the first trick"]
+    F --> W["The highest of the suit led takes it, and its hearts and the queen"]
+    W --> M{"Thirteen tricks played?"}
+    M -->|no| N["The winner leads; hearts only once broken"] --> F
+    M -->|yes| S{"One player took all 26?"}
+    S -->|yes| O["Everyone else takes 26"]
+    S -->|no| P["Hearts 1 each, the queen 13"]
+    O --> G
+    P --> G{"Anyone at 100?"}
+    G -->|no| D
+    G -->|yes| E(["Lowest score wins"])`,
   patience: `flowchart TD
     S(["Seven columns dealt, the rest the stock"]) --> C{"A card to move?"}
     C -->|yes| M["Move it, or a face-up run, onto a column or a foundation"]

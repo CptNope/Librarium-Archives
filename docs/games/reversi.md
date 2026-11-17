@@ -4,7 +4,7 @@
 
 **Wing V · The Modern Board Game** · 1883 CE · Victorian England
 
-[← The Checkered Game of Life](lifegame.md) · [All games](README.md) · [Halma →](halma.md)
+[← Pinochle](pinochle.md) · [All games](README.md) · [Halma →](halma.md)
 
 | | |
 | --- | --- |

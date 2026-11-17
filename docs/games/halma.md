@@ -4,7 +4,7 @@
 
 **Wing V · The Modern Board Game** · 1883–84 CE · Massachusetts and Germany
 
-[← Reversi](reversi.md) · [All games](README.md) · [Dots and Boxes →](dotsboxes.md)
+[← Reversi](reversi.md) · [All games](README.md) · [Hearts →](hearts.md)
 
 | | |
 | --- | --- |

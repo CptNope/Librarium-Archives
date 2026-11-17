@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · 1792 CE · England
 
-[← Patience](patience.md) · [All games](README.md) · [Snakes and Ladders →](snakes.md)
+[← Patience](patience.md) · [All games](README.md) · [Skat →](skat.md)
 
 | | |
 | --- | --- |

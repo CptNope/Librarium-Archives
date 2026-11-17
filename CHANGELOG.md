@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.36.0: The card room, part four
+
+- **Skat** (Wing IV), from Altenburg around 1810.
+  - Three-handed at a card table, with the auction as it is played: middlehand to forehand, then rearhand to the survivor.
+  - Pick up the skat and lay two away, or play hand. Suit games, grand and null.
+  - The jacks are top trumps, with matadors with or without, game, hand, schneider and schwarz.
+  - Overbidding loses. Six or twelve deals.
+- **Pinochle** (Wing V), bézique's American branch, two-handed.
+  - Runs, marriages, the four kinds around, the pinochle and double pinochle, and the dix.
+  - Card points, and the strict last twelve tricks.
+- **Hearts** (Wing V), in its Black Lady form.
+  - Four players, each for themselves. Pass three cards left, right, across, or none.
+  - The two of clubs leads. No points on the first trick, and hearts can't be led until broken.
+  - Hearts count 1 and the queen of spades 13. Shooting the moon gives everyone else 26.
+- **A Scribe can open:** at Skat a Scribe may open the bidding, and at Hearts a Scribe may hold the two of clubs. Both tables now let the Scribe go first (a `first` getter on the engine).
+- **The Scribe:** at Skat and Hearts, Sharp samples the hidden hands in play. Measured strength is in the Scribe guide.
+- 80 exhibits, 73 of them playable. 309 rules tests.
+
 ## 0.35.0: The card room, part three
 
 - **Karnöffel** (Wing III), the oldest card game whose rules can be pieced together, first named at Nördlingen in 1426.

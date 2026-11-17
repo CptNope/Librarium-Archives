@@ -4,7 +4,7 @@
 
 **Wing V · The Modern Board Game** · late 19th century CE · France
 
-[← Halma](halma.md) · [All games](README.md) · [Chinese Checkers →](chinese.md)
+[← Hearts](hearts.md) · [All games](README.md) · [Chinese Checkers →](chinese.md)
 
 | | |
 | --- | --- |

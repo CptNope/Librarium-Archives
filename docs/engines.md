@@ -224,6 +224,9 @@ Saved games store the engine's plain data fields as JSON. Typed-array boards, Se
 | Ombre | `ombre` | Cards: three seats, bidding, exchange, matadors | Bidding by hand worth; Sharp samples the hidden hands in play | `passTurn`, `variants`, labelled bids and a marked exchange |
 | Conquian | `conquian` | Cards: melding (rummy) | Meld-and-keep heuristic | `variants`, every meld offered as a labelled choice |
 | Cassino | `cassino` | Cards: fishing with builds | Take, build and trail weighed; Sharp counts the cards taken | `variants`, a pick stage when a card has several plays |
+| Skat | `skat` | Cards: three seats, an auction, the skat, suit, grand and null | Strength by game; Sharp samples the hidden hands in play | `passTurn`, `variants`, a `first` getter (a Scribe may open), labelled bids and a marked discard |
+| Pinochle | `pinochle` | Cards: tricks and melds (Bézique's engine) | Card-keeping heuristic | `passTurn`, `variants`, a `meld` stage, `face(id)` for doubled cards |
+| Hearts | `hearts` | Cards: four seats, trick avoidance, passing | Ducking and dumping; Sharp samples the unseen cards | `passTurn`, `variants`, a `first` getter, a marked pass |
 | Patience | `patience` | Cards: solo (Klondike) | Hint heuristic only (no opponent) | `solo`, `variants`, a presenter with `oneClick` |
 | Scopa | `scopa` | Cards: fishing (captures by value or sum) | Sweep-risk estimate; Sharp counts the cards taken | `passTurn`, `variants`, rings for the set a card takes |
 | Xiangqi | `xiangqi` | Chess family | Search | |

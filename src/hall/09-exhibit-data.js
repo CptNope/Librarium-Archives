@@ -292,9 +292,9 @@ const STOPS = [
     eyebrow: 'Wing IV · Librarium Archives', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
-      'Eighteen tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts, and International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Ombre, at its three-cornered table; Cribbage; Dominoes; Scopa; Tablut; Whist, with a Scribe as your partner; Patience, played alone; Cassino; Snakes and Ladders; Bézique; Ludo; and Mahjong, with three Scribes.'
+      'Nineteen tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts, and International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Ombre, at its three-cornered table; Cribbage; Dominoes; Scopa; Tablut; Whist, with a Scribe as your partner; Patience, played alone; Cassino; Skat; Snakes and Ladders; Bézique; Ludo; and Mahjong, with three Scribes.'
     ],
-    facts: [['Tables', 'Fox and Geese, Chess, Draughts, International draughts, Pachisi, the Goose, Ombre, Cribbage, Dominoes, Scopa, Tablut, Whist, Patience, Cassino, Snakes and Ladders, Bézique, Ludo, Mahjong']],
+    facts: [['Tables', 'Fox and Geese, Chess, Draughts, International draughts, Pachisi, the Goose, Ombre, Cribbage, Dominoes, Scopa, Tablut, Whist, Patience, Cassino, Skat, Snakes and Ladders, Bézique, Ludo, Mahjong']],
   },
   { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
@@ -442,6 +442,16 @@ const STOPS = [
     ],
     facts: [['First in print', 'London, 1792'], ['Pack', '52 cards'], ['Each deal', '11 points'], ['Game', '21']],
     build: buildCassino },
+  { id: 'skat', wing: 4, title: 'Skat', date: 'c. 1810 CE', rail: 'Skat',
+    eyebrow: 'Altenburg, Saxony', status: ['known', 'Still played'], game: 'skat',
+    note: 'The table plays the international rules of 1999, without the announced and open games.',
+    body: [
+      'Skat was invented around 1810 by the members of a card club in Altenburg, south of Leipzig, led by the lawyer Friedrich Ferdinand Hempel. It grew out of Schafkopf, with bidding from l\'Hombre and Tarock; its name means the discard, the two cards laid away.',
+      'Grand and null joined it in 1848. The first national Skat congress met at Altenburg in 1886 and set out the first general rules, and a fountain topped by the four jacks was put up in the town in 1903. Melted down in 1942, it was recast in 1954.',
+      'German emigrants took the game to America, where an American Skat League was founded in 1898. In 1999 the German and international associations agreed one set of rules, which this table follows.'
+    ],
+    facts: [['Pack', '32 cards'], ['Players', 'Three: a declarer against two'], ['Trumps', 'The four jacks, then the suit'], ['To win', '61 of 120 card points']],
+    build: buildSkat },
   { id: 'snakes', wing: 4, title: 'Snakes and Ladders', date: '18th–19th century CE', rail: 'Snakes and Ladders',
     eyebrow: 'India, then England', status: ['known', 'Still played today'], game: 'snakes',
     body: [
@@ -481,9 +491,9 @@ const STOPS = [
     eyebrow: 'Wing V · Librarium Archives', status: null, begin: 'mansion',
     body: [
       'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
-      'All eleven tables are open: the Mansion of Happiness, Euchre, Conquian, the Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
+      'All thirteen tables are open: the Mansion of Happiness, Euchre, Conquian, the Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
     ],
-    facts: [['Tables', 'Mansion of Happiness, Euchre, Conquian, Checkered Game of Life, Reversi, Halma, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex']],
+    facts: [['Tables', 'Mansion of Happiness, Euchre, Conquian, Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex']],
   },
   { id: 'mansion', wing: 5, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
     eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'], game: 'mansion',
@@ -525,6 +535,15 @@ const STOPS = [
     ],
     facts: [['Maker', 'Milton Bradley'], ['Board', '8 × 8, 32 squares in play'], ['Moves', 'A teetotum: up, across or diagonally'], ['Goal', 'First to 100 points'], ['Sold', 'Over 45,000 by 1861']],
     build: buildCheckeredLife },
+  { id: 'pinochle', wing: 5, title: 'Pinochle', date: 'late 1800s CE', rail: 'Pinochle',
+    eyebrow: 'America, from Binokel', status: ['known', 'Still played'], game: 'pinochle',
+    body: [
+      'Pinochle is bézique\'s American branch. German immigrants brought the Swiss and Swabian game of Binokel to America in the last quarter of the 1800s, and the name was misheard and misspelled into pinochle. By 1889 a St. Louis paper was reporting its popularity in New York.',
+      'Early players made up their 48-card packs from other packs; boxed pinochle packs were sold once the game was popular in the early 1900s. It was a favourite of Jewish and Irish immigrants, while most Germans in America kept to Skat. During the First World War Syracuse, New York, banned it as German.',
+      'The name may come from the French binocle, eyeglasses. Today the standard form is partnership auction pinochle for four, played in clubs and tournaments. This table plays the two-handed game.'
+    ],
+    facts: [['Pack', '48 cards: two of each, nine to ace'], ['Players', 'Two here'], ['Melds', 'Pinochle: Q♠ and J♦'], ['Game', '1,000 points']],
+    build: buildPinochle },
   { id: 'reversi', wing: 5, title: 'Reversi', date: '1883 CE', rail: 'Reversi',
     eyebrow: 'Victorian England', status: ['known', 'Rules survive in print'], game: 'reversi',
     body: [
@@ -542,6 +561,15 @@ const STOPS = [
     ],
     facts: [['Board', '16 × 16'], ['Players', 'Two or four'], ['Moves', 'A step, or chains of leaps'], ['Descendant', 'Chinese checkers']],
     build: buildHalma },
+  { id: 'hearts', wing: 5, title: 'Hearts', date: '1880s CE', rail: 'Hearts',
+    eyebrow: 'America, and the Black Lady', status: ['known', 'Still played'], game: 'hearts',
+    body: [
+      'Hearts turned the trick-taking game inside out: you try not to win the cards that count. Its likely ancestor is Reversis, popular in Spain around 1750. Hearts itself appears in the United States in the 1880s: the Standard Hoyle of 1887 says it had been played there for "the last five years".',
+      'Black Lady, from 1909, added the queen of spades as a penalty of thirteen and the passing of cards before each hand, and became the American favourite. Shooting the moon, taking every penalty card to turn them on the others, is first recorded in Britain in 1939, where the game is also called Black Maria.',
+      'Microsoft Windows shipped a game of Hearts, in fact Black Lady, with every version from Windows 3.1 to Windows 7.'
+    ],
+    facts: [['Players', 'Four, each for themselves'], ['Pass', 'Three cards: left, right, across, none'], ['Penalties', 'Hearts 1, queen of spades 13'], ['Game', '100: lowest wins']],
+    build: buildHearts },
   { id: 'dotsboxes', wing: 5, title: 'Dots and Boxes', date: 'late 19th century CE', rail: 'Dots and Boxes',
     eyebrow: 'France', status: ['known', 'Rules survive in print'], game: 'dotsboxes',
     body: [
