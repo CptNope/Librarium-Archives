@@ -9,9 +9,12 @@ function frame() {
 }
 function step() {
   lastStep = performance.now();
-  const dt = Math.min(0.05, clock.getDelta()); t += dt;
+  const raw = clock.getDelta(), dt = Math.min(0.05, raw); t += dt;
+  // Animations keep to the clock (up to a quarter second a frame), so a slow machine plays a move in about the
+  // same time as a fast one rather than stretching it over many slow frames. The walking still steps at most 0.05.
+  const tdt = Math.min(0.25, raw);
   for (let i = tweens.length - 1; i >= 0; i--) {
-    const tw = tweens[i]; tw.t += dt; const k = Math.min(1, tw.t / tw.dur);
+    const tw = tweens[i]; tw.t += tdt; const k = Math.min(1, tw.t / tw.dur);
     tw.fn(tw.e(k)); if (k >= 1) { tweens.splice(i, 1); tw.res(); }
   }
   let jf = 0, jt = 0;

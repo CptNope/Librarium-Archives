@@ -25,7 +25,7 @@ let server, browser, page, base;
 const errors = [];
 
 // Every table a test touches is marked as seen, so its rules panel stays shut; the Scribe plays Gentle to keep it quick.
-const SEEN = ['newqueen', 'chess', 'dotsboxes', 'ur', 'bao', 'scopa'];
+const SEEN = ['newqueen', 'chess', 'dotsboxes', 'ur', 'bao', 'scopa', 'patience'];
 async function open(path = 'index.html') {
   page = await browser.newPage({ viewport: { width: 900, height: 560 } });
   page.on('pageerror', e => errors.push(String(e).slice(0, 300)));
@@ -166,6 +166,19 @@ test('scopa: the Pack switch redraws the cards in place, and a hand goes on', { 
   assert.doesNotMatch(await page.evaluate(() => document.getElementById('lm-rules').textContent + document.getElementById('lm-msg').textContent), /\b(swords|batons)\b/);
   await playAny(); await sleep(400); await yourTurn();
   await page.evaluate(() => [...document.querySelectorAll('#lm-variant button')].find(b => b.textContent === 'Latin').click());
+  await leave();
+});
+
+test('patience: a table with no Scribe, where a move can be taken back', { timeout: LONG * 2 }, async () => {
+  await sit('patience'); await yourTurn();
+  assert.equal(await page.evaluate(() => document.getElementById('lm-level').hidden), true, 'a Scribe level at a solo table');
+  assert.ok(await page.evaluate(() => window.__archives.play.moves.some(m => m.kind === 'giveup')), 'no way to give up');
+  const before = await page.evaluate(() => JSON.stringify([window.__archives.play.game.tab, window.__archives.play.game.waste]));
+  await page.evaluate(() => { const P = window.__archives.play; window.__archives.choose(P.moves.find(m => m.kind === 'draw') || P.moves[0]); });
+  await sleep(500); await yourTurn();
+  assert.notEqual(await page.evaluate(() => JSON.stringify([window.__archives.play.game.tab, window.__archives.play.game.waste])), before);
+  await page.evaluate(() => document.getElementById('lm-undoBtn').click()); await sleep(600); await yourTurn();
+  assert.equal(await page.evaluate(() => JSON.stringify([window.__archives.play.game.tab, window.__archives.play.game.waste])), before, 'Undo did not take the move back');
   await leave();
 });
 

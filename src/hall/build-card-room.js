@@ -125,3 +125,98 @@ function buildNotForPlay(group) {
   glassCase(group, 1.3, 0.42, 0.85);
   return y0;
 }
+
+// Euchre: on display, the Joker (the Best Bower) with the right and left bowers, and a hand laid out.
+function buildEuchre(group) {
+  const y = cardTable(group, ['#2a4a2c', '#244024', '#305434', '#1f3a20']), shown = [];
+  const put = (c, x, z, ry, down) => { const m = crCard(c, c, 'french'); m.position.set(x, y + 0.001 + shown.length * 0.0002, z); m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  [52, 1 * 13 + 10, 2 * 13 + 10].forEach((c, i) => put(c, (i - 1) * 0.085, 0.02, (i - 1) * -0.12)); // Joker, jack of hearts, jack of diamonds
+  [1 * 13 + 0, 1 * 13 + 12, 3 * 13 + 0, 0 * 13 + 9, 1 * 13 + 8].forEach((c, i) => put(c, (i - 2) * 0.07, 0.29, 0));
+  for (let s = 1; s < 4; s++) for (let i = 0; i < 5; i++) { const at = wsHandSpot(s, i, 5, y); put(0, at.x, at.z, WS_YAW[s], true); }
+  for (let k = 0; k < 3; k++) put(0, -0.3, -0.02, Math.PI / 2, true);
+  group.userData.display = shown;
+  return y;
+}
+// Patience: a Klondike game in progress, laid out on green baize.
+function buildPatience(group) {
+  const y = cardTable(group, ['#1f4a32', '#1a422c', '#24523a', '#173a26']), shown = [];
+  const put = (c, x, z, down) => { const m = crCard(c, c, 'french'); m.scale.set(1.22, 1, 1.22); m.position.set(x, y + 0.001 + shown.length * 0.0001, z); m.rotation.set(0, 0, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  const cols = [[39 + 12], [0, 1 * 13 + 11], [0, 0, 2 * 13 + 6, 3 * 13 + 5], [0, 0, 0, 13 + 9], [0, 0, 0, 0, 12], [0, 0, 0, 0, 0, 26 + 3, 2], [0, 0, 0, 0, 0, 0, 13 + 7, 6]];
+  cols.forEach((col, i) => col.forEach((c, j) => { const down = c === 0 && j < col.length - 1; put(down ? 0 : c, (i - 3) * 0.1, -0.17 + j * 0.026, down); }));
+  for (let k = 0; k < 8; k++) put(0, -0.3, -0.31, true);
+  put(3 * 13 + 3, -0.2, -0.31, false);
+  [0, 13, 26 + 1].forEach((c, s) => put(c, s * 0.1, -0.31, false));
+  group.userData.display = shown;
+  return y;
+}
+/* Ganjifa: round, hand-painted cards. A Mughal pack's eight suits, each with its own ground colour, shown with
+ * numerals and its two court cards, the mir (king) and the wazir (minister); and two Dashavatara cards. Our own
+ * paintings after the style, not copies of any pack. */
+const GJ_SUITS = [
+  { name: 'Slaves', ground: '#c9a33a', ink: '#3a1e0a' }, { name: 'Crowns', ground: '#7a2a1e', ink: '#f2d27a' },
+  { name: 'Swords', ground: '#2a3a5a', ink: '#e8e0c8' }, { name: 'Red gold', ground: '#9a1e1a', ink: '#f6c04a' },
+  { name: 'Harps', ground: '#2f5a3a', ink: '#f2e2b0' }, { name: 'Bills', ground: '#d9c79a', ink: '#5a2a10' },
+  { name: 'White gold', ground: '#5a4a6a', ink: '#ece8f2' }, { name: 'Cloth', ground: '#a8501e', ink: '#fbe7c0' },
+];
+function gjSign(g, k, x, y, s, ink) {
+  g.save(); g.translate(x, y); g.fillStyle = ink; g.strokeStyle = ink; g.lineWidth = Math.max(1.5, s * 0.08);
+  switch (k) {
+    case 0: g.beginPath(); g.arc(0, -s * 0.28, s * 0.16, 0, TAU); g.fill(); g.beginPath(); g.moveTo(-s * 0.26, s * 0.4); g.lineTo(0, -s * 0.1); g.lineTo(s * 0.26, s * 0.4); g.closePath(); g.fill(); break; // a figure
+    case 1: g.beginPath(); g.moveTo(-s * 0.36, s * 0.24); g.lineTo(-s * 0.36, -s * 0.12); g.lineTo(-s * 0.18, s * 0.04); g.lineTo(0, -s * 0.32); g.lineTo(s * 0.18, s * 0.04); g.lineTo(s * 0.36, -s * 0.12); g.lineTo(s * 0.36, s * 0.24); g.closePath(); g.fill(); break; // a crown
+    case 2: g.beginPath(); g.moveTo(-s * 0.3, s * 0.36); g.quadraticCurveTo(s * 0.1, s * 0.1, s * 0.34, -s * 0.38); g.stroke(); g.beginPath(); g.moveTo(-s * 0.36, s * 0.18); g.lineTo(-s * 0.1, s * 0.44); g.stroke(); break; // a curved sword
+    case 3: case 6: g.beginPath(); g.arc(0, 0, s * 0.34, 0, TAU); g.fill(); g.strokeStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(0, 0, s * 0.2, 0, TAU); g.stroke(); break; // a coin
+    case 4: g.beginPath(); g.moveTo(-s * 0.26, s * 0.36); g.quadraticCurveTo(-s * 0.36, -s * 0.36, s * 0.26, -s * 0.36); g.lineTo(s * 0.26, s * 0.36); g.closePath(); g.stroke(); for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(-s * 0.2 + i * 0.1 * s, -s * 0.2); g.lineTo(-s * 0.2 + i * 0.1 * s, s * 0.36); g.stroke(); } break; // a harp
+    case 5: g.fillRect(-s * 0.26, -s * 0.34, s * 0.52, s * 0.62); g.fillStyle = 'rgba(0,0,0,.3)'; for (let i = 0; i < 4; i++) g.fillRect(-s * 0.18, -s * 0.22 + i * s * 0.13, s * 0.36, s * 0.04); break; // a written bill
+    case 7: g.beginPath(); g.ellipse(0, 0, s * 0.36, s * 0.2, 0, 0, TAU); g.fill(); g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(-s * 0.22, 0, s * 0.08, s * 0.18, 0, 0, TAU); g.fill(); break; // a bolt of cloth
+  }
+  g.restore();
+}
+function gjFace(k, n) { // n: 1-10, or 11 the wazir, 12 the mir
+  const S = GJ_SUITS[k];
+  return tex(256, 256, (g, w, h) => {
+    g.fillStyle = '#1a120a'; g.fillRect(0, 0, w, h);
+    g.fillStyle = S.ground; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 4, 0, TAU); g.fill();
+    g.strokeStyle = '#e8c45a'; g.lineWidth = 5; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 12, 0, TAU); g.stroke();
+    g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 20, 0, TAU); g.stroke();
+    if (n <= 10) {
+      for (let i = 0; i < n; i++) { const a = i / n * TAU - Math.PI / 2, r = n === 1 ? 0 : 70; gjSign(g, k, w / 2 + Math.cos(a) * r, h / 2 + Math.sin(a) * r, n === 1 ? 110 : 44, S.ink); }
+    } else { // a court card: a seated figure under a canopy, the suit's sign beside him
+      g.fillStyle = S.ink; g.beginPath(); g.moveTo(w * 0.28, h * 0.36); g.quadraticCurveTo(w / 2, h * 0.16, w * 0.72, h * 0.36); g.lineTo(w * 0.72, h * 0.4); g.lineTo(w * 0.28, h * 0.4); g.fill();
+      g.fillStyle = '#ecd2ae'; g.beginPath(); g.arc(w / 2, h * 0.5, 20, 0, TAU); g.fill();
+      g.fillStyle = n === 12 ? '#e8c45a' : '#f2f0e6'; g.beginPath(); g.ellipse(w / 2, h * 0.43, 22, 12, 0, Math.PI, TAU); g.fill(); // turban
+      g.fillStyle = S.ink; g.beginPath(); g.moveTo(w * 0.36, h * 0.78); g.quadraticCurveTo(w / 2, h * 0.52, w * 0.64, h * 0.78); g.closePath(); g.fill();
+      gjSign(g, k, w * 0.74, h * 0.62, 48, S.ink);
+      if (n === 12) { g.fillStyle = '#e8c45a'; g.beginPath(); g.arc(w / 2, h * 0.5, 34, Math.PI * 1.1, Math.PI * 1.9); g.lineWidth = 4; g.strokeStyle = '#e8c45a'; g.stroke(); } // the mir's halo
+    }
+  });
+}
+function gjAvatar(kind) { // two Dashavatara suits: the fish (Matsya) and the tortoise (Kurma)
+  return tex(256, 256, (g, w, h) => {
+    g.fillStyle = '#1a120a'; g.fillRect(0, 0, w, h);
+    g.fillStyle = kind ? '#2a5a6a' : '#1e3a6a'; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 4, 0, TAU); g.fill();
+    g.strokeStyle = '#e8c45a'; g.lineWidth = 5; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 12, 0, TAU); g.stroke();
+    g.fillStyle = '#e8b83a'; g.strokeStyle = '#3a1e0a'; g.lineWidth = 3;
+    if (!kind) { g.beginPath(); g.ellipse(w / 2 - 10, h / 2, 70, 34, 0, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.moveTo(w / 2 + 56, h / 2); g.lineTo(w / 2 + 96, h / 2 - 34); g.lineTo(w / 2 + 96, h / 2 + 34); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#1a120a'; g.beginPath(); g.arc(w / 2 - 50, h / 2 - 8, 6, 0, TAU); g.fill(); }
+    else { g.beginPath(); g.ellipse(w / 2, h / 2, 64, 48, 0, 0, TAU); g.fill(); g.stroke(); g.strokeStyle = 'rgba(58,30,10,.6)'; for (let i = -1; i <= 1; i++) { g.beginPath(); g.moveTo(w / 2 + i * 30, h / 2 - 44); g.lineTo(w / 2 + i * 30, h / 2 + 44); g.stroke(); } g.fillStyle = '#e8b83a'; g.beginPath(); g.arc(w / 2 + 80, h / 2, 16, 0, TAU); g.fill(); }
+  });
+}
+function buildGanjifa(group) {
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.04, 0.78), new THREE.MeshLambertMaterial({ color: 0x241008 }));
+  base.position.y = TOP + 0.02; group.add(base);
+  const y0 = TOP + 0.041, edge = new THREE.MeshStandardMaterial({ color: 0x2a1a0c, roughness: 0.4 });
+  // A sloped board in dark cloth, so the round faces look at you: three rows of nine.
+  const board = new THREE.Group(); board.position.set(0, TOP + 0.21, -0.05); board.rotation.x = -0.5; group.add(board);
+  board.add(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.36, 0.02), new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.95 })));
+  const faces = [];
+  GJ_SUITS.forEach((S, k) => { faces.push(gjFace(k, 12), gjFace(k, 11), gjFace(k, [1, 3, 5, 7, 9, 4, 6, 10][k])); });
+  faces.push(gjAvatar(0), gjAvatar(1), gjFace(3, 10));
+  faces.forEach((map, i) => {
+    const r = 0.052, m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.003, 40), [edge, new THREE.MeshStandardMaterial({ map, roughness: 0.35, metalness: 0.05 }), edge]);
+    m.rotation.x = Math.PI / 2; m.rotation.y = rand(-0.3, 0.3);
+    m.position.set(-0.48 + (i % 9) * 0.12, 0.115 - Math.floor(i / 9) * 0.115, 0.013); board.add(m);
+  });
+  // A lacquered box for the pack, on the cloth in front.
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.14), new THREE.MeshStandardMaterial({ color: 0x6a1a10, roughness: 0.35 })); box.position.set(0.4, y0 + 0.025, 0.28); group.add(box);
+  glassCase(group, 1.3, 0.44, 0.85);
+  return y0;
+}

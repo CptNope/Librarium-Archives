@@ -180,6 +180,8 @@ window.addEventListener('keydown', e => {
     if (play.phase === 'choose' && /^Arrow/.test(e.code) && kbPlay(e.code)) { e.preventDefault(); return; }
     if (play.phase === 'choose' && !onButton && (e.code === 'Enter' || e.code === 'Space') && kbPlay(e.code)) { e.preventDefault(); return; }
     if (e.code === 'KeyM' && !e.ctrlKey && !e.metaKey && !e.altKey) { setMarks(!marksOn()); e.preventDefault(); return; }
+    if (e.code === 'Escape' && hudMore.classList.contains('open')) { hudMenu(false); return; }
+    if (e.code === 'Escape' && !$('#lm-rules').hidden) { $('#lm-rules').hidden = true; return; }
     if (e.code === 'Escape') { if (play.selected) { select(play.selected); play.kb = -1; play.hover = null; } else leaveGame(); }
     return;
   }

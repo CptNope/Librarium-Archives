@@ -2473,11 +2473,85 @@ test('Bézique: full deals between Scribes keep all 64 cards and end with brisqu
   BZ.setVariant('1000');
 });
 
+/* ---------------------------------------------------------- Euchre */
+
+const EU = rules.euchre;
+const eu = (r, su) => su * 13 + r; // nine 8, ten 9, jack 10, queen 11, king 12, ace 0; the Joker is 52
+test('Euchre: the Joker, the right bower and the left bower are the top trumps, and the left bower follows as a trump', () => {
+  EU.setVariant('joker'); EU.init(); EU.trump = 1; // hearts
+  const order = [52, eu(10, 1), eu(10, 2), eu(0, 1), eu(12, 1), eu(11, 1), eu(9, 1), eu(8, 1)];
+  for (let i = 1; i < order.length; i++) assert.ok(EU.power(order[i - 1]) > EU.power(order[i]), EU.cardName(order[i - 1]) + ' over ' + EU.cardName(order[i]));
+  assert.equal(EU.suitOf(eu(10, 2)), 1); assert.equal(EU.suitOf(52), 1); assert.equal(EU.suitOf(eu(10, 0)), 0);
+  EU.need = 'play'; EU.trick = [{ seat: 1, card: eu(8, 1) }]; EU.toMove = 0;
+  EU.hands[0] = [eu(10, 2), eu(0, 2), eu(12, 0)]; // a heart is led: the jack of diamonds must follow, the ace of diamonds may not
+  assert.deepEqual(EU.legal(0).map(m => m.card), [eu(10, 2)]);
+});
+test('Euchre: ordering up gives the dealer the turned card; a euchre scores 2 to the defenders', () => {
+  EU.setVariant('plain'); EU.init();
+  EU.dealer = 3; EU.deal(); while (EU.need !== 'order1') EU.deal();
+  const up = EU.up; EU.toMove = 0;
+  EU.apply({ pl: 0, seat: 0, kind: 'order' }); assert.equal(EU.trump, (up / 13) | 0); assert.equal(EU.need, 'alone');
+  EU.apply({ pl: 0, seat: 0, kind: 'alone', on: false }); assert.equal(EU.need, 'discard'); assert.equal(EU.toMove, 3); assert.ok(EU.hands[3].includes(up));
+  EU.apply({ pl: 1, seat: 3, kind: 'discard', card: EU.hands[3][0] }); assert.equal(EU.hands[3].length, 5); assert.equal(EU.need, 'play');
+  EU.tricks = [2, 3]; EU.maker = 0; EU.alone = -1; EU.score = [0, 0]; EU.endHand([]);
+  assert.deepEqual(EU.score, [0, 2]);
+  EU.tricks = [5, 0]; EU.maker = 2; EU.alone = 2; EU.score = [0, 0]; EU.decided = null; EU.endHand([]);
+  assert.deepEqual(EU.score, [4, 0]); // a lone march
+});
+test('Euchre: whole games between Scribes reach 10, with or without the Joker', () => {
+  rules.setLevel('fair');
+  for (const v of ['joker', 'plain']) for (let k = 0; k < 8; k++) {
+    EU.setVariant(v); EU.init(); let n = 0;
+    while (!EU.over && n++ < 4000) { const pl = EU.passTurn(); const m = Object.assign(EU.aiPlan()[0], { pl }); assert.ok(EU.legal(pl).some(x => x.kind === m.kind && x.card === m.card && x.suit === m.suit), JSON.stringify(m)); EU.apply(m); }
+    assert.ok(EU.over); assert.ok(Math.max(...EU.score) >= 10);
+  }
+  EU.setVariant('joker');
+});
+
+/* ---------------------------------------------------------- Patience */
+
+const KL = rules.patience;
+test('Patience: builds down in alternating colours, kings to empty columns, foundations up by suit', () => {
+  KL.init();
+  KL.tab = [[1 * 13 + 6], [], [0 * 13 + 5], [], [], [], []]; KL.down = [0, 0, 0, 0, 0, 0, 0]; // the seven of hearts, the six of spades
+  KL.found = [[], [], [], []]; KL.stock = []; KL.waste = [0 * 13 + 12, 2 * 13 + 0];
+  const ms = KL.legal(0).filter(m => m.kind === 'move');
+  assert.ok(ms.some(m => m.from === 't2' && m.to === 't0')); // black six on red seven
+  assert.ok(ms.some(m => m.from === 'w' && m.to === 'f2')); // the ace of diamonds goes up
+  KL.apply(ms.find(m => m.from === 'w' && m.to === 'f2'));
+  assert.ok(KL.legal(0).some(m => m.from === 'w' && m.card === 12 && m.to === 't1')); // now the king of spades may take an empty column
+  assert.ok(!KL.legal(0).some(m => m.from === 't0' && m.to === 't2')); // the seven of hearts will not go on the six of spades
+});
+test('Patience: an uncovered card turns over, and the waste turns over when the stock runs out', () => {
+  KL.init();
+  const col = KL.tab[1].slice(); KL.found = [[], [], [], []];
+  const m = { pl: 0, kind: 'move', from: 't1', n: 1, to: 't0', card: col[1] };
+  KL.tab[0] = [ (((col[1] / 13) | 0) % 3 === 0 ? 1 : 0) * 13 + (col[1] % 13) + 1 ]; KL.down[0] = 0; // a card of the other colour, one higher
+  if (col[1] % 13 < 12) { KL.apply(m); assert.equal(KL.down[1], 0); assert.equal(KL.tab[1].length, 1); }
+  KL.stock = [5]; KL.waste = []; KL.apply({ pl: 0, kind: 'draw', card: 5 });
+  assert.deepEqual(KL.legal(0).filter(x => x.kind === 'recycle').length, 1);
+  KL.apply({ pl: 0, kind: 'recycle' }); assert.deepEqual(KL.stock, [5]); assert.equal(KL.passes, 1);
+});
+test('Patience: the Hint player keeps all 52 cards in play and sometimes wins', () => {
+  let won = 0;
+  for (let k = 0; k < 60; k++) {
+    KL.setVariant('one'); KL.init(); let n = 0;
+    while (!KL.over && n++ < 2000) {
+      assert.equal(KL.tab.flat().length + KL.stock.length + KL.waste.length + KL.found.flat().length, 52);
+      let m = KL.aiPlan()[0]; if (KL.stuck() || (m.kind === 'recycle' && KL.passes > 6)) m = { pl: 0, kind: 'giveup' };
+      KL.apply(m);
+    }
+    if (!KL.over) KL.apply({ pl: 0, kind: 'giveup' });
+    if (KL.over.winner === 0) won++;
+  }
+  assert.ok(won > 5, `won ${won} of 60`);
+});
+
 /* ---------------------------------------------------------- Saved games
  * The hall saves an engine's plain data fields as JSON and restores them over a
  * fresh init(). Every game that offers saving must come back exactly. */
 
-const SAVED = ['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl',
+const SAVED = ['chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'euchre', 'patience', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl',
   'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong'];
 const dataFields = g => {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);

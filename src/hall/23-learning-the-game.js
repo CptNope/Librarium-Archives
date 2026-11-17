@@ -76,6 +76,7 @@ function renderMoves(now) {
   else ol.parentElement.scrollTop = ol.parentElement.scrollHeight;
 }
 $('#lm-movesBtn').addEventListener('click', () => {
+  hudMenu(false);
   const box = $('#lm-moves'), on = box.hidden;
   box.hidden = !on; $('#lm-movesBtn').setAttribute('aria-expanded', String(on));
   if (on) { $('#lm-rules').hidden = true; renderMoves(play.phase === 'replay' ? play.replayAt : undefined); }
@@ -222,11 +223,12 @@ function coachCheck() {
 function placeCoach() {
   const box = $('#lm-coach'); if (box.hidden) return;
   const app = root.getBoundingClientRect(), bar = $('#lm-hud .hudbottom').getBoundingClientRect();
-  if (app.width >= 1000) {
-    const top = $('#lm-hud .hudtop').getBoundingClientRect().bottom - app.top + 10;
+  const hudTop = $('#lm-hud .hudtop').getBoundingClientRect().bottom - app.top;
+  if (app.width >= 1000 && !root.classList.contains('lm-compact')) {
+    const top = hudTop + 10;
     Object.assign(box.style, { top: top + 'px', bottom: '', left: '', width: '', transform: '', maxHeight: Math.max(120, bar.top - app.top - top - 12) + 'px' });
   } else {
-    Object.assign(box.style, { top: 'auto', bottom: (app.bottom - bar.bottom) + 'px', left: (bar.left - app.left) + 'px', width: bar.width + 'px', transform: 'none', maxHeight: '45%' });
+    Object.assign(box.style, { top: 'auto', bottom: (app.bottom - bar.top + 8) + 'px', left: (bar.left - app.left) + 'px', width: bar.width + 'px', transform: 'none', maxHeight: Math.max(110, bar.top - app.top - hudTop - 16) + 'px' });
   }
 }
 addEventListener('resize', placeCoach);
@@ -237,6 +239,8 @@ $('#lm-coachOff').addEventListener('click', () => {
 });
 function renderRules(g) {
   const r = $('#lm-rules'); r.innerHTML = '';
+  const x = document.createElement('button'); x.className = 'panelclose'; x.id = 'lm-rulesClose'; x.setAttribute('aria-label', 'Close the rules'); x.textContent = '×';
+  x.addEventListener('click', () => { r.hidden = true; $('#lm-rulesBtn').focus({ preventScroll: true }); }); r.appendChild(x);
   const h = document.createElement('h3'); h.textContent = 'How to play ' + g.name; r.appendChild(h);
   const ul = document.createElement('ul'); g.rules.forEach(t => { const li = document.createElement('li'); li.textContent = asPack(t); ul.appendChild(li); }); r.appendChild(ul);
   if (PACK_TABLES[g.id]) { const pk = document.createElement('p'); pk.className = 'src'; pk.textContent = `Pack: ${PACK_LABEL[packNow]}. The Pack switch redraws the cards in another country's suits and court figures; the game itself does not change.`; r.appendChild(pk); }
@@ -254,7 +258,7 @@ function leaveGame() {
   if (mode !== 'play') return;
   play.token++; clearHighlights(); clearLastMove(); $('#lm-choices').hidden = true;
   if (play.P && play.P.leave) play.P.leave(play.ex);
-  $('#lm-coach').hidden = true; $('#lm-moves').hidden = true; $('#lm-choices').classList.remove('replaybar');
+  $('#lm-coach').hidden = true; $('#lm-moves').hidden = true; $('#lm-choices').classList.remove('replaybar'); hudMenu(false);
   mode = 'gallery'; packNow = 'french';
   $('#lm-hud').hidden = true; rail.hidden = false; $('#lm-hint').style.opacity = 1;
   root.classList.remove('playing');
@@ -264,7 +268,44 @@ function leaveGame() {
 $('#lm-leaveBtn').addEventListener('click', leaveGame);
 $('#lm-winLeave').addEventListener('click', leaveGame);
 $('#lm-againBtn').addEventListener('click', restartTable);
-$('#lm-rulesBtn').addEventListener('click', () => { $('#lm-rules').hidden = !$('#lm-rules').hidden; if (!$('#lm-rules').hidden) { $('#lm-moves').hidden = true; $('#lm-movesBtn').setAttribute('aria-expanded', 'false'); } });
+$('#lm-rulesBtn').addEventListener('click', () => { hudMenu(false); $('#lm-rules').hidden = !$('#lm-rules').hidden; if (!$('#lm-rules').hidden) { $('#lm-moves').hidden = true; $('#lm-movesBtn').setAttribute('aria-expanded', 'false'); } });
+// The Rules button shows whether the panel is open, however it was opened (the first visit, the help button, Escape).
+new MutationObserver(() => { $('#lm-rulesBtn').setAttribute('aria-expanded', String(!$('#lm-rules').hidden)); if (typeof coachAside === 'function') coachAside(); }).observe($('#lm-rules'), { attributes: true, attributeFilter: ['hidden'] });
+$('#lm-movesClose').addEventListener('click', () => { $('#lm-moves').hidden = true; $('#lm-movesBtn').setAttribute('aria-expanded', 'false'); $('#lm-movesBtn').focus({ preventScroll: true }); });
+
+/* The play screen's layout. Compact (a phone, or a window too short for the full bar) folds the secondary
+ * controls into the Options sheet; the bars' measured heights fit the rules, moves and guide panels between them. */
+const hudMore = $('#lm-hudMore'), hudMenuBtn = $('#lm-hudMenuBtn');
+function hudMenu(on) {
+  if (hudMore.classList.contains('open') === on) return;
+  hudMore.classList.toggle('open', on); hudMenuBtn.setAttribute('aria-expanded', String(on));
+  if (on) { $('#lm-rules').hidden = true; $('#lm-moves').hidden = true; $('#lm-movesBtn').setAttribute('aria-expanded', 'false'); }
+  coachAside();
+}
+// While the rules, the moves or the Options sheet are open, the guide's card waits out of the way.
+function coachAside() {
+  const busy = hudMore.classList.contains('open') || !$('#lm-rules').hidden || !$('#lm-moves').hidden;
+  $('#lm-coach').classList.toggle('aside', busy);
+}
+new MutationObserver(coachAside).observe($('#lm-moves'), { attributes: true, attributeFilter: ['hidden'] });
+hudMenuBtn.addEventListener('click', () => hudMenu(!hudMore.classList.contains('open')));
+hudMore.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); hudMenu(false); hudMenuBtn.focus({ preventScroll: true }); } });
+$('#lm-scene').addEventListener('pointerdown', () => hudMenu(false)); // a touch on the board puts the sheet away
+function layoutHud() {
+  const w = root.clientWidth || innerWidth, h = root.clientHeight || innerHeight, compact = w <= 720 || h <= 500;
+  if (root.classList.contains('lm-compact') !== compact) { root.classList.toggle('lm-compact', compact); if (!compact) hudMenu(false); }
+  // The bar of wings and exhibits along the bottom: the placard, the index, the passport and the walking pad sit above it.
+  if (!rail.hidden) { const app = root.getBoundingClientRect(); root.style.setProperty('--rail-h', Math.round(app.bottom - rail.getBoundingClientRect().top) + 'px'); }
+  if (mode !== 'play') return;
+  const app = root.getBoundingClientRect(), top = $('#lm-hud .hudtop').getBoundingClientRect(), bot = $('#lm-hud .hudbottom').getBoundingClientRect();
+  root.style.setProperty('--hud-top', Math.round(top.bottom - app.top) + 'px');
+  root.style.setProperty('--hud-bot', Math.round(app.bottom - bot.top) + 'px');
+  root.style.setProperty('--hud-free', Math.max(120, Math.round(bot.top - top.bottom - 24)) + 'px'); // room for the Options sheet
+  placeCoach();
+}
+if (window.ResizeObserver) { const ro = new ResizeObserver(() => layoutHud()); ro.observe(root); ro.observe(rail); ro.observe($('#lm-hud .hudtop')); ro.observe($('#lm-hud .hudbottom')); }
+addEventListener('resize', layoutHud);
+layoutHud();
 $('#lm-throwBtn').addEventListener('click', humanThrow);
 $('#lm-passBtn').addEventListener('click', () => {
   if (play.phase !== 'choose') return;
@@ -561,7 +602,7 @@ function finish(res) {
     save();
   }
   $('#lm-winRecord').textContent = play.hotseat ? 'A game between two visitors: it does not count toward your record against the Scribe.' : recordText(g.id).replace('Your record against the Scribe here', 'Your record at this table') + ` The Scribe was playing ${R.level()}.`;
-  setTimeout(() => { if (play.phase === 'over') { $('#lm-win').hidden = false; $('#lm-againBtn').focus({ preventScroll: true }); } }, res.sweep ? 900 : 300);
+  setTimeout(() => { if (play.phase === 'over') { hudMenu(false); $('#lm-win').hidden = false; $('#lm-againBtn').focus({ preventScroll: true }); } }, res.sweep ? 900 : 300);
 }
 // Ember marks show where the Scribe's last move went from and to.
 const lastMarks = [];
