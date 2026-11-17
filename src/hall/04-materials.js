@@ -8,6 +8,6 @@ const MAT = {
   brass: new THREE.MeshStandardMaterial({ color: 0xb98a30, metalness: 0.85, roughness: 0.35 }),
   ceiling: new THREE.MeshLambertMaterial({ color: 0x0c0907 }),
   runner: new THREE.MeshLambertMaterial({ map: runnerTex() }),
-  hit: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+  hit: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, visible: false }), // never drawn: the raycaster still finds it
 };
 

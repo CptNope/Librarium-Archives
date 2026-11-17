@@ -88,6 +88,47 @@ Every plinth goes up at once: they are plain blocks, and the walk, the camera, t
 
 Search games plan in a Web Worker so the hall keeps moving while the Scribe thinks. The worker is started from a Blob holding the very same `rules.js` (its text when it is written into the page, as in the single-file build; an `importScripts` of its address otherwise). Each turn it is sent the engine's plain state (`packState`), the player and the level. It returns the plan as plain moves, which the page plays. Hints go the same way, at Sharp. If a worker cannot start or does not answer within 20 seconds, the Scribe thinks on the page as before. Dice tables plan in an instant and stay on the page.
 
+### Drawing the hall quickly
+
+Every visible mesh costs a draw call, and before 0.37.0 the entrance alone asked for about 1,300 of them a frame. The hall now follows the [threejs-performance](https://github.com/CloudAI-X/threejs-skills) skill's rules, adapted to three.js r128:
+
+```mermaid
+flowchart LR
+    build["An exhibit is built"] --> merge["mergeExhibit<br/>static meshes with the same look<br/>become one mesh"]
+    shell["The hall's shelves, sconces<br/>and frames"] --> mergeHall["mergeStatic<br/>one mesh per look<br/>per 12 m of hall"]
+    merge --> frame
+    mergeHall --> frame
+    frame["Each frame"] --> cull["cullFar<br/>exhibits 46 m away or more<br/>are hidden"]
+    cull --> fog["The camera stops at 60 m,<br/>where the fog is total"]
+    fog --> res["adaptRes<br/>pixel ratio follows<br/>the frame time"]
+    res --> draw["renderer.render"]
+```
+
+- **Merging static geometry** (`src/hall/04b-merge.js`). After an exhibit is built, every mesh nothing can reach again is baked into one mesh per material look, placed by its matrix. Left alone: anything the build keeps a handle on in `group.userData` (pits, pegs, the board), cards (the Pack switch repaints their faces), meshes with `userData` of their own, transparent meshes, and meshes with several materials. The display set, hidden while a game is played, is merged separately and the display list is rewritten to match. Merged meshes get `matrixAutoUpdate = false` and their own copy of the material, so a piece that glows when it can be picked never lights up a merged wall. The hall's own furniture is merged the same way, in 12 m stretches so frustum culling still works.
+- **Hiding far exhibits** (`cullFar` in `26-loop.js`). Five times a second, every exhibit 46 m or more along the hall from the camera is hidden, except the table being played. By then the fog has hidden all but 2 per cent of it.
+- **A shorter camera** (`02-renderer.js`). The far plane is 60 m, where the fog is total.
+- **Fill rate** (`adaptRes`). The pixel ratio starts at the device's (at most 2) and steps down by 0.15 when frames average more than 22 ms, to no lower than 0.75; it steps back up after six seconds under 14 ms.
+- **No work the GPU can do.** The dust drifts in its vertex shader instead of being moved point by point on the CPU, and the walk reuses its vectors instead of making new ones each frame.
+- **Narrow picking.** Clicks are tested only against the hit boxes of the exhibits and the pieces that can move, never the whole scene. The hit boxes' material is invisible, so they cost no draw calls.
+
+Measured with `node tools/profile-hall.mjs` in the software-rendered test browser:
+
+Draw calls per frame, with every exhibit built:
+
+| Where | 0.36.0 | Culling only (`?nomerge`) | 0.37.0 |
+| --- | ---: | ---: | ---: |
+| The entrance | 1,319 | 1,008 | 424 |
+| Wing II | 751 | 428 | 215 |
+| Wing IV | 1,838 | 693 | 453 |
+| Wing VI | 969 | 597 | 314 |
+| The last exhibit | 52 | 51 | 24 |
+| Seated at Go | 285 | 203 | 178 |
+| Seated at Mahjong | 388 | 387 | 338 |
+
+Merging takes 2,607 of the 3,179 static meshes it finds, so the scene holds about 2,000 meshes instead of 4,700, and by the end of the walk the GPU holds about 400 geometries instead of 1,600. Loading takes about a second longer in the test browser, about 8 seconds instead of 7, for the merging. The render times the tool prints are for software rendering, where a frame now and then waits seconds on the GPU queue; read them as a rough guide.
+
+Add `?nomerge` to the address to turn merging off and compare.
+
 ## A turn at the table
 
 ```mermaid

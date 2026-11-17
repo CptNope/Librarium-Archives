@@ -3,6 +3,7 @@ const bootTimes = {}; // how long the exhibits took to build (read with ?debug)
 function buildExhibit(s) {
   if (!s || !s.build || s.built) return;
   s.built = true; s.surface = s.build(s.group); s.group.updateMatrixWorld(true);
+  mergeExhibit(s);
 }
 async function boot() {
   try { await Promise.race([Promise.all([document.fonts.load('64px "Almendra SC"'), document.fonts.load('20px "Amethysta"'), document.fonts.load('20px "Montserrat"')]), wait(2500)]); } catch (e) {}
@@ -31,6 +32,9 @@ async function boot() {
   const sconces = [];
   for (let z = -5, k = 0; z > HALL.zFar + 2; z -= 6, k++) if (HALL.dividers.every(d => Math.abs(z - d) > 1.5)) sconces.push([k % 2 ? 4.7 : -4.7, z]);
   sconces.forEach(([x, z]) => addCandle(x, z));
+  // The hall's own shelves, beams and sconces, merged in stretches of twelve metres so culling still trims them.
+  const exhibitGroups = new Set(STOPS.map(s => s.group).filter(Boolean));
+  mergeStatic(scene, { only: c => !exhibitGroups.has(c) && !c.isLight && !c.isPoints, protect: [floorMesh], cell: p => Math.floor(p.z / 12) });
   buildLightPools();
   buildDust();
   resize();
@@ -52,7 +56,7 @@ async function boot() {
 // Inspect the live state from the console with ?debug in the address.
 if (/[?&]debug\b/.test(location.search)) {
   window.__archives = {
-    renderer, scene, play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop, scribe, bootTimes, select,
+    renderer, scene, RES, mergeStats, play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop, scribe, bootTimes, select,
     // Put the camera at an exhibit straight away, without the glide (for slow test machines).
     jump(id) {
       const i = STOPS.findIndex(x => x.id === id); goStop(i, false); showPlacard(false);

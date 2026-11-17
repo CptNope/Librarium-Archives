@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.37.0: A faster hall
+
+Drawn with a quarter to a third of the draw calls, following the threejs-performance skill from [CloudAI-X/threejs-skills](https://github.com/CloudAI-X/threejs-skills).
+
+- **Merged static meshes.** Once an exhibit is built, its static meshes that share a look become one mesh. The hall's shelves, sconces and frames are merged in 12 m stretches. Pieces, cards and anything a table moves are left alone. `?nomerge` turns it off.
+- **Far exhibits hidden.** Exhibits 46 m or more away are hidden, where the fog has all but hidden them already, and the camera stops at 60 m.
+- **Adaptive resolution.** When frames run slow, the pixel ratio steps down, to no lower than 0.75, and climbs back when they are quick again. `?fixedres` holds it still.
+- **Less work each frame.** The dust drifts in its shader, the walk makes no new vectors, and the exhibits' invisible hit boxes are no longer drawn.
+- **Measuring.** `node tools/profile-hall.mjs` reports draw calls, triangles, textures, render time and memory at seven places. A browser test keeps the wings under 800 draw calls. The debug API now exposes `renderer`, `scene`, `RES` and `mergeStats`.
+- **Draw calls:** at the entrance, 1,319 down to 424; in Wing IV, 1,838 down to 453; in Wing VI, 969 down to 314. The before-and-after table is in the architecture guide.
+
 ## 0.36.0: The card room, part four
 
 - **Skat** (Wing IV), from Altenburg around 1810.

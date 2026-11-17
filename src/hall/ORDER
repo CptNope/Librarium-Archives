@@ -3,6 +3,7 @@
 02-renderer.js
 03-textures.js
 04-materials.js
+04b-merge.js
 05-hall.js
 06-lights.js
 07-dust.js

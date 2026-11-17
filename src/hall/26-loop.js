@@ -2,9 +2,39 @@
 const clock = new THREE.Clock();
 let t = 0;
 let lastStep = 0;
-function frame() {
+// Beyond 46 m the fog has swallowed 97% of an exhibit, so it is not drawn at all; the hall is a corridor, so
+// distance along it is enough. The camera's far plane is 60 m, where the fog is total.
+const CULL = 46; let cullClock = 0;
+function cullFar(dt) {
+  cullClock -= dt; if (cullClock > 0) return; cullClock = 0.2;
+  const z = camera.position.z;
+  for (const s of STOPS) {
+    const g = s.group; if (!g) continue;
+    const near = (mode === 'play' && play.ex === s) || Math.abs(g.position.z - z) < CULL;
+    if (g.visible !== near) g.visible = near;
+  }
+}
+const fwd = new THREE.Vector3(), side = new THREE.Vector3(); // reused every frame, not allocated
+/* Adaptive resolution. Shading cost grows with the square of the pixel ratio, so when frames run slow (under
+ * about 45 a second, over two seconds) the ratio steps down, as far as 0.75; when they run fast again for six
+ * seconds it steps back up, but never above a ratio that was too slow before. ?fixedres turns it off. */
+const RES = { max: renderer.getPixelRatio(), min: 0.75, now: renderer.getPixelRatio(), ceil: renderer.getPixelRatio(), ema: 16.7, last: 0, judged: 0, fastFor: 0, off: /[?&]fixedres\b/.test(location.search) };
+function adaptRes(now) {
+  if (RES.off) return;
+  const gap = RES.last ? now - RES.last : 16.7; RES.last = now;
+  if (gap > 250) return; // a stall, a hidden tab or a breakpoint, not the steady rate
+  RES.ema += (gap - RES.ema) * 0.05;
+  if (now - RES.judged < 2000) return;
+  RES.judged = now;
+  if (RES.ema > 22 && RES.now > RES.min) { RES.ceil = RES.now; RES.now = Math.max(RES.min, +(RES.now - 0.15).toFixed(2)); RES.fastFor = 0; }
+  else if (RES.ema < 14 && RES.now < Math.min(RES.max, RES.ceil)) { RES.fastFor += 2000; if (RES.fastFor >= 6000) { RES.now = Math.min(RES.max, RES.ceil, +(RES.now + 0.1).toFixed(2)); RES.fastFor = 0; } else return; }
+  else { RES.fastFor = 0; return; }
+  renderer.setPixelRatio(RES.now); // keeps the canvas's size; only the drawing buffer changes
+}
+function frame(now) {
   requestAnimationFrame(frame);
-  if (document.hidden) return;
+  if (document.hidden) { RES.last = 0; return; }
+  adaptRes(now || performance.now());
   step();
 }
 function step() {
@@ -23,7 +53,7 @@ function step() {
     if (m > dead) { const k = (m - dead) / (1 - dead) / m; jf = -joy.y * k; jt = joy.x * k; }
   }
   if (mode === 'gallery' && (keys.size || jf || jt)) {
-    const sp = 3.2 * dt, f = V3(-Math.sin(cam.yaw), 0, -Math.cos(cam.yaw)), r = V3(Math.cos(cam.yaw), 0, -Math.sin(cam.yaw));
+    const sp = 3.2 * dt, f = fwd.set(-Math.sin(cam.yaw), 0, -Math.cos(cam.yaw)), r = side.set(Math.cos(cam.yaw), 0, -Math.sin(cam.yaw));
     if (keys.has('f')) cam.pos.addScaledVector(f, sp); if (keys.has('b')) cam.pos.addScaledVector(f, -sp);
     if (keys.has('r')) cam.pos.addScaledVector(r, sp); if (keys.has('l')) cam.pos.addScaledVector(r, -sp);
     if (jf) cam.pos.addScaledVector(f, sp * jf);
@@ -41,14 +71,7 @@ function step() {
   if (view.panX || view.panY) { camera.translateX(view.panX); camera.translateY(view.panY); }
   updateViewShift(dt);
   updateLights(dt, t);
-  if (!reduceMotion && dust) {
-    const a = dust.geometry.attributes.position, b = dust.userData.base;
-    for (let i = 0; i < a.count; i++) {
-      a.array[i * 3] = b[i * 3] + Math.sin(t * 0.15 + i) * 0.25;
-      a.array[i * 3 + 1] = b[i * 3 + 1] + Math.sin(t * 0.1 + i * 1.7) * 0.3;
-    }
-    a.needsUpdate = true;
-  }
+  if (!reduceMotion && dust) dust.userData.time.value = t;
   if (mode === 'play' && (play.glowing.size || play.rings.length)) {
     const pulse = 0.42 + 0.18 * Math.sin(t * 5), all = marksOn();
     const hoverMove = play.hover && play.hover.userData.move;
@@ -67,6 +90,7 @@ function step() {
       r.scale.setScalar(r.userData.base * (hot ? 1.25 : 1));
     });
   }
+  cullFar(raw);
   renderer.render(scene, camera);
 }
 

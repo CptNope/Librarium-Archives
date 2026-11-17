@@ -85,6 +85,18 @@ test('the hall loads, and the passport has a stamp for every exhibit', { timeout
   assert.equal(await page.evaluate(() => document.getElementById('lm-passport').hidden), true);
 });
 
+test('the hall draws in few calls: static meshes are merged and far exhibits are culled', { timeout: LONG }, async () => {
+  // Before merging, the entrance took about 1,300 draw calls and Wing IV about 1,800.
+  const calls = async id => page.evaluate(async id => {
+    const M = window.__archives; if (id) M.jump(id);
+    await new Promise(r => setTimeout(r, 600)); // the far-exhibit cull runs five times a second
+    M.renderer.render(M.scene, M.camera); return M.renderer.info.render.calls;
+  }, id);
+  const merged = await page.evaluate(() => window.__archives.mergeStats.merged);
+  assert.ok(merged > 1000, `only ${merged} meshes merged away`);
+  for (const id of ['wing4', 'wing6']) { const n = await calls(id); assert.ok(n < 800, `${n} draw calls at ${id}`); }
+});
+
 test('chess: the Scribe answers from its worker; Undo, the move list, and a resumed game', { timeout: LONG * 3 }, async () => {
   await sit('newqueen'); await yourTurn();
   for (let k = 0; k < 2; k++) { await playAny(); await sleep(400); await yourTurn(); }
