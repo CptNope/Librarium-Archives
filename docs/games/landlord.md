@@ -4,7 +4,7 @@
 
 **Wing V · The Modern Board Game** · 1904 CE · United States
 
-[← Chinese Checkers](chinese.md) · [All games](README.md) · [Kalah →](kalah.md)
+[← Chinese Checkers](chinese.md) · [All games](README.md) · [Gin Rummy →](gin.md)
 
 | | |
 | --- | --- |

@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · c. 1810 CE · Altenburg, Saxony
 
-[← Cassino](cassino.md) · [All games](README.md) · [Snakes and Ladders →](snakes.md)
+[← Cassino](cassino.md) · [All games](README.md) · [Écarté →](ecarte.md)
 
 | | |
 | --- | --- |

@@ -2,7 +2,7 @@
 
 # Game by game
 
-One page for each of the hall's **84 exhibits**, 77 of them playable, in the order you walk them. Each page has the placard's history, a diagram of a turn, the rules as the table plays them and where they come from, what the table offers (the Scribe, a friend, Undo, Hint, saved games), how the Scribe plays and how strong it is, and the files that make it.
+One page for each of the hall's **88 exhibits**, 81 of them playable, in the order you walk them. Each page has the placard's history, a diagram of a turn, the rules as the table plays them and where they come from, what the table offers (the Scribe, a friend, Undo, Hint, saved games), how the Scribe plays and how strong it is, and the files that make it.
 
 The pages are written from the code and the other guides by `tools/build-docs.mjs`, so they change when the games do. For the reasoning behind the rule choices see [the exhibits guide](../exhibits.md); for the AI, [the Scribe](../scribe.md).
 
@@ -96,11 +96,15 @@ mindmap
       patience["Patience"]
       cassino["Cassino"]
       skat["Skat"]
+      ecarte["Écarté"]
       bezique["Bézique"]
       euchre["Euchre"]
       conquian["Conquian"]
       pinochle["Pinochle"]
       hearts["Hearts"]
+      gin["Gin Rummy"]
+      bridge["Contract Bridge"]
+      spades["Spades"]
       koikoi["Hanafuda (Koi-koi)"]
       ganjifa["Ganjifa (display)"]
       madiao["Ma Diao"]
@@ -173,7 +177,7 @@ Sow seeds round a row of pits and capture by count.
 
 Tricks, bidding, melds, rummy, fishing, combinations and patience, and cards made for other uses.
 
-[Playing Cards](cards.md) · [Karnöffel](karnoffel.md) · [Tarot (Tarocchi)](tarot.md) · [Primero](primero.md) · [Court Cards](courtcards.md) (display) · [Ombre](ombre.md) · [Cribbage](cribbage.md) · [Cards Not for Playing](notforplay.md) (display) · [Faro](faro.md) · [Scopa](scopa.md) · [Pope Joan](popejoan.md) · [Whist](whist.md) · [Patience](patience.md) · [Cassino](cassino.md) · [Skat](skat.md) · [Bézique](bezique.md) · [Euchre](euchre.md) · [Conquian](conquian.md) · [Pinochle](pinochle.md) · [Hearts](hearts.md) · [Hanafuda](koikoi.md) · [Ganjifa](ganjifa.md) (display) · [Ma Diao](madiao.md)
+[Playing Cards](cards.md) · [Karnöffel](karnoffel.md) · [Tarot (Tarocchi)](tarot.md) · [Primero](primero.md) · [Court Cards](courtcards.md) (display) · [Ombre](ombre.md) · [Cribbage](cribbage.md) · [Cards Not for Playing](notforplay.md) (display) · [Faro](faro.md) · [Scopa](scopa.md) · [Pope Joan](popejoan.md) · [Whist](whist.md) · [Patience](patience.md) · [Cassino](cassino.md) · [Skat](skat.md) · [Écarté](ecarte.md) · [Bézique](bezique.md) · [Euchre](euchre.md) · [Conquian](conquian.md) · [Pinochle](pinochle.md) · [Hearts](hearts.md) · [Gin Rummy](gin.md) · [Contract Bridge](bridge.md) · [Spades](spades.md) · [Hanafuda](koikoi.md) · [Ganjifa](ganjifa.md) (display) · [Ma Diao](madiao.md)
 
 ### Tiles
 
@@ -186,8 +190,8 @@ Dominoes and mahjong.
 ```mermaid
 pie showData
     title Rules status of the 73 exhibits
-    "Still played" : 23
-    "Rules survive in print" : 13
+    "Still played" : 26
+    "Rules survive in print" : 14
     "Modern reconstruction" : 7
     "Rules survive in writing" : 6
     "Rules reconstructed" : 5
@@ -220,8 +224,8 @@ pie showData
 xychart-beta
     title "Playable tables with each feature"
     x-axis ["Scribe", "Friend", "Undo", "Hint", "Saved", "Pack"]
-    y-axis "Tables" 0 --> 77
-    bar [75, 51, 37, 51, 54, 15]
+    y-axis "Tables" 0 --> 81
+    bar [79, 51, 37, 51, 58, 17]
 ```
 
 ## Wing I: The Dawn of Play
@@ -347,11 +351,11 @@ flowchart TB
     end
     subgraph r4[" "]
         direction LR
-        skat["Skat<br/>c. 1810 CE"] --> snakes["Snakes and Ladders<br/>18th–19th century CE"] --> bezique["Bézique<br/>1847 CE"] --> ludo["Ludo<br/>1896 CE"] --> mahjong["Mahjong<br/>mid-1800s CE"]
+        skat["Skat<br/>c. 1810 CE"] --> ecarte["Écarté<br/>19th century CE"] --> snakes["Snakes and Ladders<br/>18th–19th century CE"] --> bezique["Bézique<br/>1847 CE"] --> ludo["Ludo<br/>1896 CE"]
     end
     subgraph r5[" "]
         direction LR
-        out(["On to Wing V"])
+        mahjong["Mahjong<br/>mid-1800s CE"] --> out(["On to Wing V"])
     end
     r0 --> r1
     r1 --> r2
@@ -382,6 +386,7 @@ flowchart TB
 | [Patience](patience.md) | 1788 CE | Still played | · | · | ✓ | ✓ | ✓ |
 | [Cassino](cassino.md) | 1792 CE | Rules survive in print | ✓ | · | · | · | ✓ |
 | [Skat](skat.md) | c. 1810 CE | Still played | ✓ | · | · | · | ✓ |
+| [Écarté](ecarte.md) | 19th century CE | Rules survive in print | ✓ | · | · | · | ✓ |
 | [Snakes and Ladders](snakes.md) | 18th–19th century CE | Still played today | ✓ | ✓ | · | · | · |
 | [Bézique](bezique.md) | 1847 CE | Still played | ✓ | · | · | · | ✓ |
 | [Ludo](ludo.md) | 1896 CE | Still played | ✓ | ✓ | · | ✓ | · |
@@ -403,10 +408,15 @@ flowchart TB
     end
     subgraph r2[" "]
         direction LR
-        chinese["Chinese Checkers<br/>1892 CE"] --> landlord["The Landlord's Game<br/>1904 CE"] --> kalah["Kalah<br/>1940 CE"] --> hex["Hex<br/>1942 CE"] --> out(["On to Wing VI"])
+        chinese["Chinese Checkers<br/>1892 CE"] --> landlord["The Landlord's Game<br/>1904 CE"] --> gin["Gin Rummy<br/>1909 CE"] --> bridge["Contract Bridge<br/>1925 CE"] --> spades["Spades<br/>late 1930s CE"]
+    end
+    subgraph r3[" "]
+        direction LR
+        kalah["Kalah<br/>1940 CE"] --> hex["Hex<br/>1942 CE"] --> out(["On to Wing VI"])
     end
     r0 --> r1
     r1 --> r2
+    r2 --> r3
 ```
 
 | Exhibit | Date | Rules | Scribe | Friend | Undo | Hint | Saved |
@@ -422,6 +432,9 @@ flowchart TB
 | [Dots and Boxes](dotsboxes.md) | late 19th century CE | Rules survive in print | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Chinese Checkers](chinese.md) | 1892 CE | Rules survive in print | ✓ | · | ✓ | ✓ | ✓ |
 | [The Landlord's Game](landlord.md) | 1904 CE | Rules survive in the patent | ✓ | ✓ | · | · | · |
+| [Gin Rummy](gin.md) | 1909 CE | Still played | ✓ | · | · | · | ✓ |
+| [Contract Bridge](bridge.md) | 1925 CE | Still played | ✓ | · | · | · | ✓ |
+| [Spades](spades.md) | late 1930s CE | Still played | ✓ | · | · | · | ✓ |
 | [Kalah](kalah.md) | 1940 CE | Rules survive in print | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Hex](hex.md) | 1942 CE | Rules survive in print | ✓ | ✓ | ✓ | ✓ | ✓ |
 

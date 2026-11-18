@@ -36,6 +36,7 @@ build-cards.js
 card-packs.js
 build-card-room.js
 build-card-room-5.js
+build-card-room-6.js
 build-tarocchi-cards-for-the.js
 build-fox-and-geese.js
 build-draughts.js
@@ -137,6 +138,7 @@ table-hearts.js
 table-pinochle.js
 table-skat.js
 table-card-room-5.js
+table-card-room-6.js
 table-bezique.js
 table-registry.js
 13-camera.js

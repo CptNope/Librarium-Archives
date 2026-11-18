@@ -75,3 +75,7 @@ Each exhibit's page in [games/](games/README.md) repeats its placard, the rules 
 - Wikipedia: Faro (card game); pagat.com: Faro
 - Wikipedia: Pope Joan (card game); David Parlett, Pope Joan (parlettgames.uk)
 - Wikipedia: Madiao, after Andrew Lo's studies of Pan Zhiheng and Feng Menglong; The World of Playing Cards: Madiao
+- Wikipedia: Écarté; pagat.com: Écarté
+- Wikipedia: Gin rummy; pagat.com: Gin Rummy
+- Wikipedia: Contract bridge; ACBL: Bridge history myths
+- Wikipedia: Spades (card game)

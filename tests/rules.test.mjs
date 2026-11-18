@@ -3171,3 +3171,137 @@ test('Faro: a whole deal ends with every card out and the turn called', () => {
     assert.ok(FAG.over); assert.equal(FAG.out.length, 52); assert.ok(FAG.left.every(x => x === 0));
   }
 });
+
+/* ---------------------------------------------------------- Écarté */
+
+const ECG = rules.ecarte;
+const ec = (r, su) => su * 13 + r; // ace 0, seven 6 ... ten 9, jack 10, queen 11, king 12; spades, hearts, diamonds, clubs
+test('Écarté: king high and the ace below the jack; follow, head the trick, or trump', () => {
+  const P = ECG.power;
+  assert.ok(P(ec(12, 0)) > P(ec(11, 0)) && P(ec(10, 0)) > P(ec(0, 0)) && P(ec(0, 0)) > P(ec(9, 0)) && P(ec(9, 0)) > P(ec(6, 0)));
+  const L = (h, lead, t) => ECG.legalCards(h, lead, t).sort((a, b) => a - b);
+  assert.deepEqual(L([ec(6, 1), ec(10, 1), ec(11, 0)], ec(8, 1), 2), [ec(10, 1)], 'must win with the jack');
+  assert.deepEqual(L([ec(6, 1), ec(11, 0)], ec(8, 1), 2), [ec(6, 1)], 'must follow even when it cannot win');
+  assert.deepEqual(L([ec(11, 0), ec(7, 2)], ec(8, 1), 2), [ec(7, 2)], 'cannot follow: must trump');
+  assert.deepEqual(L([ec(11, 0), ec(7, 3)], ec(8, 1), 2), [ec(11, 0), ec(7, 3)].sort((a, b) => a - b), 'neither: any card');
+});
+test('Écarté: the point, the vole, and two against a player who played without proposing and lost', () => {
+  ECG.init(); ECG.score = [0, 0]; ECG.decided = null; ECG.vulnerable = -1;
+  ECG.tricks = [3, 2]; ECG.endDeal(); assert.deepEqual(ECG.score, [1, 0]);
+  ECG.score = [0, 0]; ECG.tricks = [5, 0]; ECG.endDeal(); assert.deepEqual(ECG.score, [2, 0]);
+  ECG.score = [0, 0]; ECG.vulnerable = 1; ECG.tricks = [3, 2]; ECG.endDeal(); assert.deepEqual(ECG.score, [2, 0]);
+});
+test('Écarté: whole games between Scribes reach 5, every card accounted for', () => {
+  for (const lv of ['fair', 'sharp']) for (let g = 0; g < 3; g++) {
+    rules.setLevel(lv); ECG.init(); let n = 0;
+    while (!ECG.over && n++ < 3000) {
+      const pl = ECG.passTurn();
+      for (const m0 of ECG.aiPlan(pl)) { const m = Object.assign({}, m0, { pl }); assert.ok(ECG.legal(pl).some(x => x.kind === m.kind && x.card === m.card), JSON.stringify(m)); ECG.apply(m); }
+      if (ECG.stage !== 'next') assert.equal(ECG.hands.flat().length + ECG.stock.length + ECG.discards.flat().length + ECG.played.length + 1, 32);
+    }
+    assert.ok(ECG.over); assert.ok(Math.max(...ECG.score) >= 5);
+  }
+});
+
+/* ---------------------------------------------------------- Gin Rummy */
+
+const GNG = rules.gin;
+const gc = (r, su) => su * 13 + r; // ace 0 (low) ... king 12
+test('Gin Rummy: the melds that leave least deadwood, with a card shared between a run and a set', () => {
+  const h = [gc(6, 0), gc(7, 0), gc(8, 0), gc(6, 1), gc(6, 2), gc(12, 3), gc(11, 3), gc(0, 1), gc(1, 2), gc(2, 3)];
+  const b = GNG.best(h);
+  assert.equal(b.dead, 7 + 7 + 10 + 10 + 1 + 2 + 3, JSON.stringify(b)); // the run 7-8-9 of spades: the other sevens are deadwood
+  assert.equal(GNG.best([gc(0, 0), gc(1, 0), gc(2, 0), gc(9, 1), gc(9, 2), gc(9, 3), gc(12, 0), gc(12, 1), gc(12, 2), gc(12, 3)]).dead, 0);
+});
+test('Gin Rummy: a knock, an undercut and gin score as they should', () => {
+  const scribe = [gc(12, 1), gc(12, 2), gc(1, 1), gc(7, 2), gc(8, 3), gc(5, 3), gc(6, 1), gc(2, 2), gc(10, 3), gc(11, 2)];
+  const dd = GNG.best(scribe).dead;
+  const fresh = () => { GNG.init(); GNG.score = [0, 0]; GNG.boxes = [0, 0]; GNG.decided = null; };
+  // You knock with the four of hearts over: runs of spades, a set of fives.
+  fresh(); GNG.hands = [[gc(0, 0), gc(1, 0), gc(2, 0), gc(4, 1), gc(4, 2), gc(4, 3), gc(9, 0), gc(10, 0), gc(11, 0), gc(3, 1)], scribe.slice()];
+  assert.equal(GNG.best(GNG.hands[0]).dead, 4);
+  GNG.showdown(0, []); assert.deepEqual(GNG.score, [dd - 4, 0]);
+  // Gin: 25 and all the other's deadwood.
+  fresh(); GNG.hands = [[gc(0, 0), gc(1, 0), gc(2, 0), gc(9, 1), gc(9, 2), gc(9, 3), gc(12, 0), gc(12, 1), gc(12, 2), gc(12, 3)], scribe.slice()];
+  GNG.showdown(0, []); assert.deepEqual(GNG.score, [25 + dd, 0]);
+  // Undercut: the knocker has as much deadwood as the other, or more.
+  fresh(); GNG.hands = [[gc(0, 0), gc(1, 0), gc(2, 0), gc(4, 1), gc(4, 2), gc(4, 3), gc(9, 0), gc(10, 0), gc(11, 0), gc(8, 1)], [gc(0, 1), gc(1, 1), gc(2, 1), gc(6, 2), gc(6, 3), gc(6, 0), gc(3, 2), gc(3, 3), gc(3, 0), gc(1, 3)]];
+  assert.equal(GNG.best(GNG.hands[0]).dead, 9); assert.equal(GNG.best(GNG.hands[1]).dead, 2);
+  GNG.showdown(0, []); assert.deepEqual(GNG.score, [0, 9 - 2 + 25]);
+});
+test('Gin Rummy: whole games between Scribes reach the limit, every card accounted for', () => {
+  for (const lv of ['fair', 'sharp']) for (let g = 0; g < 2; g++) {
+    rules.setLevel(lv); GNG.setVariant('50'); GNG.init(); let n = 0;
+    while (!GNG.over && n++ < 8000) {
+      const pl = GNG.passTurn();
+      for (const m0 of GNG.aiPlan(pl)) { const m = Object.assign({}, m0, { pl }); assert.ok(GNG.legal(pl).some(x => x.kind === m.kind && x.card === m.card), JSON.stringify(m) + GNG.stage); GNG.apply(m); }
+      if (GNG.stage !== 'next') assert.equal(GNG.hands.flat().length + GNG.stock.length + GNG.pile.length, 52);
+    }
+    assert.ok(GNG.over);
+  }
+  GNG.setVariant('100');
+});
+
+/* ---------------------------------------------------------- Spades */
+
+const SPG = rules.spades;
+const spc = (r, su) => su * 13 + r; // ace 0 (high) ... king 12; spades 0
+test('Spades: no spade led until broken; a made bid, bags, a set and nil', () => {
+  SPG.init(); SPG.need = 'play'; SPG.broken = false; SPG.trick = []; SPG.toMove = 0;
+  SPG.hands[0] = [spc(4, 0), spc(9, 1)]; assert.deepEqual(SPG.legal(0).map(m => m.card), [spc(9, 1)]);
+  SPG.hands[0] = [spc(4, 0), spc(7, 0)]; assert.equal(SPG.legal(0).length, 2, 'only spades: any');
+  SPG.bids = [3, 2, 0, 4]; SPG.taken = [5, 2, 0, 6];
+  assert.deepEqual(SPG.handScore(0), { pts: 3 * 10 + 2 + 100, bags: 2, parts: SPG.handScore(0).parts });
+  assert.equal(SPG.handScore(1).pts, 60 + 2);
+  SPG.bids = [4, 3, 2, 3]; SPG.taken = [1, 5, 2, 5]; assert.equal(SPG.handScore(0).pts, -60, 'set: 6 bid, 3 taken');
+  SPG.bids = [3, 3, 0, 3]; SPG.taken = [4, 3, 1, 5]; assert.equal(SPG.handScore(0).pts, 30 + 1 - 100 + 1, 'a broken nil');
+});
+test('Spades: whole games between Scribes', () => {
+  for (const lv of ['fair', 'sharp']) for (let g = 0; g < 2; g++) {
+    rules.setLevel(lv); SPG.setVariant('250'); SPG.init(); let n = 0;
+    while (!SPG.over && n++ < 6000) {
+      const pl = SPG.passTurn(), m = Object.assign({}, SPG.aiPlan(pl)[0], { pl });
+      assert.ok(SPG.legal(pl).some(x => x.kind === m.kind && x.card === m.card && x.n === m.n), JSON.stringify(m)); SPG.apply(m);
+    }
+    assert.ok(SPG.over);
+  }
+  SPG.setVariant('500');
+});
+
+/* ---------------------------------------------------------- Contract Bridge */
+
+const BRG = rules.bridge;
+const bid = (level, strain) => (level - 1) * 5 + strain; // clubs 0, diamonds 1, hearts 2, spades 3, no trumps 4
+test('Contract Bridge: contract scoring, with overtricks, the insult, slams and undertricks', () => {
+  const S = (b, d, v, t) => { const r = BRG.scoreDeal(b, d, v, t); return [r.below, r.above]; };
+  assert.deepEqual(S(bid(4, 3), 0, false, 10), [120, 0]);
+  assert.deepEqual(S(bid(3, 4), 0, true, 10), [100, 30]);
+  assert.deepEqual(S(bid(4, 2), 1, false, 8), [0, 300], 'four hearts doubled, two down, not vulnerable');
+  assert.deepEqual(S(bid(6, 4), 0, true, 12), [190, 750]);
+  assert.deepEqual(S(bid(1, 4), 2, false, 8), [160, 200 + 100], 'redoubled: 160 below, an overtrick 200 and the insult 100');
+  assert.deepEqual(S(bid(3, 0), 1, true, 6), [0, 200 + 300 + 300]);
+});
+test('Contract Bridge: the auction ends after three passes; the first of the side to name the strain declares', () => {
+  BRG.init(); BRG.need = 'auction'; BRG.calls = []; BRG.last = null; BRG.doubled = 0; BRG.dealer = 0; BRG.toMove = 0;
+  const call = (s, type, b) => BRG.apply({ pl: s ? 1 : 0, seat: s, kind: 'call', type, bid: b });
+  call(0, 'bid', bid(1, 2)); call(1, 'pass'); call(2, 'bid', bid(3, 2)); call(3, 'pass'); call(0, 'bid', bid(4, 2)); call(1, 'double');
+  assert.ok(BRG.legal(0).length === 0 && BRG.legalCalls(2).some(c => c.type === 'redouble'), 'North may redouble; it is not your call');
+  call(2, 'pass'); call(3, 'pass'); call(0, 'pass');
+  assert.equal(BRG.need, 'play'); assert.equal(BRG.declarer, 0); assert.equal(BRG.dummy, 2); assert.equal(BRG.doubled, 1); assert.equal(BRG.toMove, 1);
+  assert.equal(BRG.controls(2), true, 'you play the dummy');
+  BRG.init(); BRG.need = 'auction'; BRG.calls = []; BRG.last = null; BRG.toMove = BRG.dealer;
+  for (let k = 0; k < 4; k++) BRG.apply({ pl: 1, seat: BRG.toMove, kind: 'call', type: 'pass' });
+  assert.equal(BRG.need, 'next', 'passed out');
+});
+test('Contract Bridge: whole Chicago games and a rubber between Scribes', () => {
+  for (const [v, lv] of [['chicago', 'fair'], ['chicago', 'sharp'], ['rubber', 'fair']]) {
+    rules.setLevel(lv); BRG.setVariant(v); BRG.init(); let n = 0, deals = 0;
+    while (!BRG.over && n++ < 30000) {
+      const pl = BRG.passTurn(), m = Object.assign({}, BRG.aiPlan(pl)[0], { pl });
+      assert.ok(BRG.legal(pl).some(x => x.kind === m.kind && x.card === m.card && x.type === m.type && x.bid === m.bid), JSON.stringify(m)); BRG.apply(m);
+      if (BRG.need === 'next') deals++;
+    }
+    assert.ok(BRG.over, v); if (v === 'chicago') assert.equal(BRG.dealNo, 4);
+  }
+  BRG.setVariant('chicago');
+});
