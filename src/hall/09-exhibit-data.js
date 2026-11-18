@@ -292,9 +292,9 @@ const STOPS = [
     eyebrow: 'Wing IV · Librarium Archives', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
-      'Nineteen tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts, and International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Ombre, at its three-cornered table; Cribbage; Dominoes; Scopa; Tablut; Whist, with a Scribe as your partner; Patience, played alone; Cassino; Skat; Snakes and Ladders; Bézique; Ludo; and Mahjong, with three Scribes.'
+      'Twenty-two tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Primero, the ancestor of poker; International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Ombre, at its three-cornered table; Cribbage; Faro, against the bank; Dominoes; Scopa; Tablut; Pope Joan, on its board of eight compartments; Whist, with a Scribe as your partner; Patience, played alone; Cassino; Skat; Snakes and Ladders; Bézique; Ludo; and Mahjong, with three Scribes.'
     ],
-    facts: [['Tables', 'Fox and Geese, Chess, Draughts, International draughts, Pachisi, the Goose, Ombre, Cribbage, Dominoes, Scopa, Tablut, Whist, Patience, Cassino, Skat, Snakes and Ladders, Bézique, Ludo, Mahjong']],
+    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Primero, International draughts, Pachisi, the Goose, Ombre, Cribbage, Faro, Dominoes, Scopa, Tablut, Pope Joan, Whist, Patience, Cassino, Skat, Snakes and Ladders, Bézique, Ludo, Mahjong']],
   },
   { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
@@ -323,6 +323,16 @@ const STOPS = [
     ],
     facts: [['Board', '8 × 8, dark squares only'], ['Pieces', '12 each'], ['Capture', 'Compulsory, by jumping'], ['Win', 'Take or block every enemy piece']],
     build: buildDraughtsBoard },
+  { id: 'primero', wing: 4, title: 'Primero', date: '1526 CE', rail: 'Primero',
+    eyebrow: 'Italy, Spain and England', status: ['recon', 'Rules reconstructed'], game: 'primero',
+    note: 'The table plays the English game for two, as John Florio gives it, with one exchange of cards.',
+    body: [
+      'Primero, primiera in Italy, was the great gambling game of the 16th century. Each player holds four cards and vies, or bets, on them: the best hand takes the pot, unless a bold vie has made the others give up first. The earliest known account is Francesco Berni\'s mock-serious poem on the game, printed in Rome in 1526, and Girolamo Cardano called it the noblest card game of all.',
+      'It was played at the English court by Henry VIII\'s time. In Shakespeare\'s Henry VIII the king is left at primero with the Duke of Suffolk, and Falstaff, in The Merry Wives of Windsor, has never prospered since he forswore himself at primero. John Florio set out a game for two, at a shilling a stake, in 1591.',
+      'Its hands (a prime of all four suits, a flush, four of a kind) and its betting and bluffing make it the best-known forerunner of poker. By the later 1600s it had split into many local games and gone out of fashion.'
+    ],
+    facts: [['Pack', '40 cards'], ['Players', 'Two here, as Florio gives it'], ['Hands', 'Chorus, fluxus, supremus, primero, numerus'], ['Values', 'Seven 21, six 18, ace 16']],
+    build: buildPrimero },
   { id: 'idraughts', wing: 4, title: 'International Draughts', date: 'c. 1550 – 1700 CE', rail: 'International Draughts',
     eyebrow: 'The Netherlands · the ten-square board', status: ['known', 'Rules survive in writing'], game: 'idraughts',
     body: [
@@ -387,6 +397,16 @@ const STOPS = [
     ],
     facts: [['Card money', 'New France, 1685–1717'], ['Grace\'s Card', 'Ireland, c. 1689'], ['Admission cards', 'Philadelphia, 1765'], ['Why cards', 'Stiff, plain-backed, in every house']],
     build: buildNotForPlay },
+  { id: 'faro', wing: 4, title: 'Faro', date: '1688 CE', rail: 'Faro',
+    eyebrow: 'France, then the American West', status: ['known', 'Rules survive in print'], game: 'faro',
+    note: 'The bank only deals, so there is no Scribe to set here. Bets split between two ranks are left out.',
+    body: [
+      'Faro grew out of basset, a Venetian game brought to Paris in the 1670s. As pharaon it was first recorded in 1688; both games were soon banned in France and played anyway. In 18th-century England, where it was pharo, it was thought to give the punter the best odds of any banking game, so long as the bank was honest.',
+      'In America it became the gambling game of the 19th century, dealt in nearly every saloon of the West, where playing it was called bucking the tiger, after the tiger on the backs of early faro cards. A study of 1882 found more money bet on faro than on every other kind of gambling together.',
+      'The dealing box was meant to keep the dealer honest, and the case keeper let everyone see which ranks were still to come. Poker took its place in the early 20th century, and a few Nevada casinos kept a faro bank until 1985.'
+    ],
+    facts: [['Pack', '52 cards, in a dealing box'], ['Bets', 'On ranks, open or coppered, and high card'], ['Pays', 'Even money; the turn four for one'], ['Against', 'The bank']],
+    build: buildFaro },
   { id: 'dominoes', wing: 4, title: 'Dominoes', date: '18th century CE', rail: 'Dominoes',
     eyebrow: 'China, then Italy and France', status: ['known', 'Still played'], game: 'dominoes',
     body: [
@@ -413,6 +433,16 @@ const STOPS = [
     ],
     facts: [['Recorded', 'Carl Linnaeus, Lapland, 1732'], ['Board', '9 × 9, of reindeer hide'], ['Sides', 'King and 8 Swedes against 16 Muscovites']],
     build: buildTablut },
+  { id: 'popejoan', wing: 4, title: 'Pope Joan', date: '1732 CE', rail: 'Pope Joan',
+    eyebrow: 'England · on its own board', status: ['known', 'Rules survive in print'], game: 'popejoan',
+    note: 'Ten cards to each of four players and to the dead hand, with the turn-up added to it.',
+    body: [
+      'Pope Joan is the English cousin of the French nain jaune, the yellow dwarf, named after its seven of diamonds. Both are played for counters on a board of compartments. The earliest English mention, in 1732, calls the game Pope Julius; Pope Joan may come from the legend of a woman pope, or from nain jaune misheard. Its Pope is the nine of diamonds, a card also called the Curse of Scotland.',
+      'It was a family game of the 18th and 19th centuries, played on a round board with eight wells; some Victorian boards were lacquered wood and turned on a stand. It is played in Dickens\'s The Pickwick Papers (1836–37), and Hoyle\'s books printed its rules through the 1800s.',
+      'There is little skill in it: the cards run in sequences by themselves, and the only choice is which suit to start. The fun is in the board, where unclaimed stakes pile up from deal to deal until somebody plays the right card.'
+    ],
+    facts: [['Pack', '51 cards, no eight of diamonds'], ['Players', 'Four, and a dead hand'], ['Board', 'Pope, Matrimony, Intrigue, Ace, King, Queen, Jack, Game'], ['Win', 'Most counters after four deals']],
+    build: buildPopejoan },
   { id: 'whist', wing: 4, title: 'Whist', date: '1742 CE', rail: 'Whist',
     eyebrow: 'England · Hoyle\'s treatise', status: ['known', 'Rules in print since 1742'], game: 'whist',
     body: [
@@ -615,9 +645,9 @@ const STOPS = [
     eyebrow: 'Wing VI · Librarium Archives', status: null, begin: 'mutorere',
     body: [
       'The other wings follow one long road, from Egypt and Mesopotamia through Europe to the shop shelf. But play has many homelands. This wing gathers games from the Pacific, Africa and Asia: some ancient, some first written down by visitors, all still played today.',
-      'All sixteen tables are open: Mū tōrere from Aotearoa New Zealand, Shogi, Gomoku and Hanafuda from Japan, Jungle from China, Nard from Iran and the Caucasus, Makruk from Thailand, Bagh-chal from Nepal, Kōnane from Hawaiʻi, Yut Nori and Janggi from Korea, Fanorona from Madagascar, Bao from the Swahili coast, Morabaraba from southern Africa, and Seega and Tâb from Egypt.'
+      'All seventeen tables are open: Mū tōrere from Aotearoa New Zealand, Shogi, Gomoku and Hanafuda from Japan, Ma Diao and Jungle from China, Nard from Iran and the Caucasus, Makruk from Thailand, Bagh-chal from Nepal, Kōnane from Hawaiʻi, Yut Nori and Janggi from Korea, Fanorona from Madagascar, Bao from the Swahili coast, Morabaraba from southern Africa, and Seega and Tâb from Egypt.'
     ],
-    facts: [['Tables', 'Mū tōrere, Shogi, Gomoku, Hanafuda, Jungle, Nard, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega, Tâb']],
+    facts: [['Tables', 'Mū tōrere, Shogi, Gomoku, Hanafuda, Ma Diao, Jungle, Nard, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega, Tâb']],
   },
   { id: 'mutorere', wing: 6, title: 'Mū tōrere', date: 'first described in 1917', rail: 'Mū tōrere',
     eyebrow: 'Aotearoa New Zealand · Māori', status: ['known', 'Still played'], game: 'mutorere',
@@ -662,6 +692,16 @@ const STOPS = [
     ],
     facts: [['Mughal pack', '96 cards, eight suits'], ['Court cards', 'Mir and wazir'], ['Dashavatara', 'Ten suits, the avatars of Vishnu'], ['Players', 'Three or more']],
     build: buildGanjifa },
+  { id: 'madiao', wing: 6, title: 'Ma Diao', date: 'by c. 1600 CE', rail: 'Ma Diao',
+    eyebrow: 'China · the late Ming', status: ['recon', 'Rules partly reconstructed'], game: 'madiao',
+    note: 'The table plays the heart of the game, eight tricks with the banker needing two, and its main payments. The faces are our own drawings, not copies of a pack.',
+    body: [
+      'Ma diao was the great card game of late Ming China. It was played with forty money cards in four suits, Cash, Strings of cash, Myriads and Tens of Myriads, the units a merchant counted in. The pack was recorded in the 15th century, and the writers Pan Zhiheng and Feng Menglong set down the rules in the early 17th.',
+      'Three players stand together against the banker, who has to take two of the eight tricks; the name is often read as a horse with one leg lifted. The high cards showed heroes of the novel Water Margin. The Kangxi Emperor banned the making and selling of the cards in 1691, but officials and even the imperial family went on playing.',
+      'Under the Qing the rules grew ever more elaborate. Later games dropped the Tens suit, and games of drawing and discarding with several three-suited packs led, in the 19th century, to mahjong, whose circles, bamboo and characters still echo the coins, strings and myriads.'
+    ],
+    facts: [['Pack', '40 money cards, four suits'], ['Players', 'Four: a banker against three'], ['Banker', 'Must take two of eight tricks'], ['Descendant', 'Mahjong']],
+    build: buildMadiao },
   { id: 'makruk', wing: 6, title: 'Makruk', date: 'traditional', rail: 'Makruk',
     eyebrow: 'Thailand', status: ['known', 'Still played'], game: 'makruk',
     body: [

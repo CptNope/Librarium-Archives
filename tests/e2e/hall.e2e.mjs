@@ -25,7 +25,7 @@ let server, browser, page, base;
 const errors = [];
 
 // Every table a test touches is marked as seen, so its rules panel stays shut; the Scribe plays Gentle to keep it quick.
-const SEEN = ['newqueen', 'chess', 'dotsboxes', 'ur', 'bao', 'scopa', 'patience', 'cassino'];
+const SEEN = ['newqueen', 'chess', 'dotsboxes', 'ur', 'bao', 'scopa', 'patience', 'cassino', 'faro'];
 async function open(path = 'index.html') {
   page = await browser.newPage({ viewport: { width: 900, height: 560 } });
   page.on('pageerror', e => errors.push(String(e).slice(0, 300)));
@@ -206,6 +206,20 @@ test('cassino: a card with several plays offers them as buttons, and Another car
     await sleep(500); await yourTurn();
     assert.equal(await page.evaluate(() => window.__archives.play.game.stage), 'pick');
   }
+  await leave();
+});
+
+test('faro: a check placed on the layout, a turn dealt, and the bets settled', { timeout: LONG * 2 }, async () => {
+  await sit('faro'); await yourTurn();
+  const ok = await page.evaluate(() => { const P = window.__archives.play; return P.moves.filter(m => m.kind === 'bet').every(m => P.P.meshesFor(m)[0]); });
+  assert.ok(ok, 'every rank on the layout can be clicked');
+  await page.evaluate(() => { const P = window.__archives.play; window.__archives.choose(P.moves.find(m => m.kind === 'bet')); });
+  await sleep(300); await yourTurn();
+  assert.equal(await page.evaluate(() => window.__archives.play.game.checks), 49);
+  await page.evaluate(() => { const P = window.__archives.play; window.__archives.choose(P.moves.find(m => m.kind === 'deal')); });
+  await sleep(800); await yourTurn();
+  const g = await page.evaluate(() => { const G = window.__archives.play.game; return { turn: G.turnNo, total: G.checks + G.staked(), out: G.out.length }; });
+  assert.equal(g.turn, 1); assert.equal(g.out, 3); assert.ok(g.total >= 48 && g.total <= 51, JSON.stringify(g));
   await leave();
 });
 

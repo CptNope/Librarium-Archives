@@ -3036,3 +3036,138 @@ test('Koi-koi: Sharp counts what a play leaves the opponent', () => {
   assert.ok(t >= 0 && Number.isFinite(t));
   K.hands[0] = []; assert.equal(K.threat(1, seen, [], []), 0); // nothing in their hand, nothing to fear
 });
+
+/* ---------------------------------------------------------- Primero */
+
+const PRI = rules.primero;
+const pc = (r, su) => su * 13 + r; // ace 0, two 1 ... seven 6, jack 10, queen 11, king 12; spades, hearts, diamonds, clubs
+test('Primero: the hands rank chorus, fluxus, supremus, primero, numerus, and count 21, 18, 16 ...', () => {
+  const v = h => PRI.value(h);
+  assert.deepEqual(v([pc(6, 0), pc(6, 1), pc(6, 2), pc(6, 3)]), { type: 4, pts: 84 }); // four sevens
+  assert.deepEqual(v([pc(6, 1), pc(5, 1), pc(0, 1), pc(10, 1)]), { type: 3, pts: 65 }); // a flush in hearts
+  assert.deepEqual(v([pc(0, 2), pc(5, 2), pc(6, 2), pc(3, 0)]), { type: 2, pts: 55 }); // ace, six, seven of diamonds
+  assert.deepEqual(v([pc(6, 0), pc(5, 1), pc(0, 2), pc(6, 3)]), { type: 1, pts: 76 }); // a prime
+  assert.deepEqual(v([pc(6, 0), pc(5, 0), pc(1, 1), pc(2, 1)]), { type: 0, pts: 39 }); // a point of 39 in spades
+  assert.ok(PRI.key([pc(6, 0), pc(5, 0), pc(0, 0), pc(4, 1)]) > PRI.key([pc(10, 0), pc(11, 1), pc(12, 2), pc(1, 3)]), 'a fifty-five beats a prime');
+  assert.ok(PRI.key([pc(0, 2), pc(5, 2), pc(6, 2), pc(3, 0)]) > PRI.key([pc(6, 0), pc(5, 1), pc(0, 2), pc(6, 3)]));
+});
+test('Primero: vying, seeing and folding move the counters; the pack is forty cards', () => {
+  rules.setLevel('fair');
+  PRI.setVariant('ten'); PRI.init();
+  assert.equal(PRI.hands[0].length + PRI.hands[1].length + PRI.stock.length, 40);
+  assert.equal(PRI.pot, 2); assert.deepEqual(PRI.purse, [29, 29]);
+  const s = PRI.toMove, o = 1 - s;
+  PRI.apply({ pl: s, kind: 'vie' }); assert.equal(PRI.pot, 3);
+  assert.ok(PRI.legal(o).some(m => m.kind === 'see') && PRI.legal(o).some(m => m.kind === 'fold'));
+  PRI.apply({ pl: o, kind: 'fold' });
+  assert.equal(PRI.purse[s], 31); assert.equal(PRI.purse[o], 29); assert.equal(PRI.stage, 'next');
+});
+test('Primero: whole games between Scribes, counters kept', () => {
+  for (const v of ['ten', 'out']) for (let g = 0; g < 4; g++) {
+    PRI.setVariant(v); PRI.init(); let n = 0;
+    while (!PRI.over && n++ < 6000) {
+      const pl = PRI.passTurn();
+      for (const m0 of PRI.aiPlan(pl)) { const m = Object.assign({}, m0, { pl }); assert.ok(PRI.legal(pl).some(x => x.kind === m.kind && x.card === m.card), JSON.stringify(m)); PRI.apply(m); }
+      assert.equal(PRI.purse[0] + PRI.purse[1] + PRI.pot, 60);
+    }
+    assert.ok(PRI.over);
+  }
+});
+
+/* ---------------------------------------------------------- Ma Diao */
+
+const MDG = rules.madiao;
+test('Ma Diao: forty cards; Cash runs backwards; only a higher card of the suit led takes the trick', () => {
+  MDG.init();
+  assert.equal(MDG.hands.flat().length + MDG.stock.length, 40);
+  assert.equal(MDG.cardName(10), 'Zero Cash'); assert.equal(MDG.cardName(0), '9 Cash'); assert.equal(MDG.cardName(39), 'Myriad Myriads');
+  assert.ok(MDG.power(10) > MDG.power(0)); // Zero Cash over 9 Cash
+  MDG.need = 'play'; MDG.trick = []; MDG.toMove = 0; MDG.banker = 0;
+  MDG.hands = [[13], [15], [30], [12]]; // 3 Strings led; West has 5 Strings, North a Ten, East 2 Strings
+  MDG.apply({ pl: 0, seat: 0, kind: 'play', card: 13 });
+  assert.equal(MDG.toMove, 3, 'play goes counter-clockwise, to East');
+  MDG.apply({ pl: 1, seat: 3, kind: 'play', card: 12 }); assert.equal(MDG.trick[1].up, false, 'a lower card goes face down');
+  MDG.apply({ pl: 1, seat: 2, kind: 'play', card: 30 }); assert.equal(MDG.trick[2].up, false, 'another suit goes face down');
+  MDG.apply({ pl: 1, seat: 1, kind: 'play', card: 15 });
+  assert.equal(MDG.lastTrick.winner, 1);
+});
+test('Ma Diao: a banker short of two tricks pays each player; three tricks are paid', () => {
+  MDG.init(); MDG.banker = 0;
+  MDG.tricks = [1, 3, 2, 2]; MDG.won = [[{ card: 5, cards: [] }], [{ card: 14, cards: [] }, { card: 15, cards: [] }, { card: 16, cards: [] }], [{ card: 31, cards: [] }, { card: 32, cards: [] }], [{ card: 2, cards: [] }, { card: 3, cards: [] }]];
+  assert.deepEqual(MDG.payments().pay, [-4, 2, 1, 1]);
+  MDG.tricks = [2, 2, 2, 2]; MDG.won = [[{ card: 37, cards: [] }, { card: 3, cards: [] }], [{ card: 4, cards: [] }, { card: 6, cards: [] }], [{ card: 21, cards: [] }, { card: 22, cards: [] }], [{ card: 12, cards: [] }, { card: 13, cards: [] }]];
+  assert.deepEqual(MDG.payments().pay, [9, -3, -3, -3], 'the banker wins with the Hundred Myriads and takes exactly two');
+});
+test('Ma Diao: whole games of four deals, each player banking once', () => {
+  rules.setLevel('fair');
+  for (let g = 0; g < 4; g++) {
+    MDG.init(); let n = 0; const banked = new Set([MDG.banker]);
+    while (!MDG.over && n++ < 3000) {
+      const pl = MDG.passTurn(), m = Object.assign({}, MDG.aiPlan(pl)[0], { pl });
+      assert.ok(MDG.legal(pl).some(x => x.kind === m.kind && x.card === m.card), JSON.stringify(m)); MDG.apply(m);
+      if (MDG.need === 'play') banked.add(MDG.banker);
+    }
+    assert.ok(MDG.over); assert.equal(banked.size, 4); assert.equal(MDG.score.reduce((a, b) => a + b, 0), 0);
+  }
+});
+
+/* ---------------------------------------------------------- Pope Joan */
+
+const PJG = rules.popejoan;
+const pj = (r, su) => su * 13 + r; // ace 0 (low) ... king 12; spades, hearts, diamonds, clubs
+test('Pope Joan: a run goes up the suit through every hand and stops at the dead hand; honours win their wells', () => {
+  PJG.init(); PJG.trump = 0; PJG.board = { pope: 6, matrimony: 2, intrigue: 2, ace: 1, king: 1, queen: 1, jack: 1, game: 1 }; PJG.purse = [30, 30, 30, 30]; PJG.honours = {}; PJG.played = []; PJG.playedBy = [];
+  PJG.hands = [[pj(8, 0), pj(10, 0), pj(11, 0), pj(2, 1)], [pj(9, 0), pj(3, 1)], [pj(5, 1)], [pj(12, 1)], [pj(12, 0), pj(4, 1)]];
+  PJG.need = 'lead'; PJG.toMove = 0;
+  assert.deepEqual(PJG.legal(0).map(m => m.card), [pj(8, 0), pj(2, 1)], 'the lowest card of each suit');
+  const r = PJG.apply({ pl: 0, seat: 0, kind: 'lead', card: pj(8, 0) });
+  // nine of spades (West), ten (you), queen (you): the king is in the dead hand, so the queen stops it.
+  assert.deepEqual(PJG.played, [pj(8, 0), pj(9, 0), pj(10, 0), pj(11, 0)]);
+  assert.equal(PJG.toMove, 0);
+  assert.equal(PJG.board.jack, 0); assert.equal(PJG.board.queen, 0); assert.equal(PJG.board.intrigue, 0, 'queen and jack of trumps: Intrigue');
+  assert.equal(PJG.purse[0], 30 + 1 + 1 + 2); assert.ok(/Intrigue/.test(r.note));
+});
+test('Pope Joan: the first out takes Game and a counter for each card held; the Pope\'s holder pays nothing', () => {
+  PJG.init(); PJG.trump = 3; PJG.board = { pope: 6, matrimony: 2, intrigue: 2, ace: 1, king: 1, queen: 1, jack: 1, game: 4 }; PJG.purse = [30, 30, 30, 30]; PJG.played = []; PJG.playedBy = []; PJG.honours = {};
+  PJG.hands = [[pj(12, 1)], [pj(2, 0), pj(3, 0)], [PJG.POPE, pj(4, 0)], [pj(5, 0)], [pj(6, 0)]];
+  PJG.need = 'lead'; PJG.toMove = 0; PJG.dealNo = 1;
+  PJG.apply({ pl: 0, seat: 0, kind: 'lead', card: pj(12, 1) });
+  assert.equal(PJG.need, 'next');
+  assert.deepEqual(PJG.purse, [30 + 4 + 2 + 1, 28, 30, 29]);
+});
+test('Pope Joan: whole games, every counter accounted for', () => {
+  rules.setLevel('fair');
+  for (const v of ['4', '8']) for (let g = 0; g < 3; g++) {
+    PJG.setVariant(v); PJG.init(); let n = 0;
+    while (!PJG.over && n++ < 3000) {
+      const pl = PJG.passTurn(), m = Object.assign({}, PJG.aiPlan(pl)[0], { pl });
+      assert.ok(PJG.legal(pl).some(x => x.kind === m.kind && x.card === m.card), JSON.stringify(m)); PJG.apply(m);
+      assert.equal(PJG.purse.reduce((a, b) => a + b, 0) + Object.values(PJG.board).reduce((a, b) => a + b, 0), 120);
+    }
+    assert.ok(PJG.over); assert.equal(PJG.dealNo, +v);
+  }
+});
+
+/* ---------------------------------------------------------- Faro */
+
+const FAG = rules.faro;
+test('Faro: the bank\'s card loses, yours wins, a copper reverses, a split costs half', () => {
+  FAG.init(); FAG.checks = 50; FAG.left = Array(13).fill(4);
+  FAG.box = [3 * 13 + 4, 13 + 9, 2, 13 + 5, 0 + 7, 26 + 7, 1, 2 * 13 + 1, 3 * 13 + 1];
+  FAG.apply({ pl: 0, kind: 'bet', rank: 4 }); FAG.apply({ pl: 0, kind: 'bet', rank: 9 }); FAG.apply({ pl: 0, kind: 'bet', rank: 9 });
+  FAG.apply({ pl: 0, kind: 'deal' }); // the bank's five, your ten
+  assert.equal(FAG.checks, 50 - 1 - 2 + 4);
+  FAG.apply({ pl: 0, kind: 'copper' }); FAG.apply({ pl: 0, kind: 'bet', rank: 2 }); FAG.apply({ pl: 0, kind: 'copper' });
+  FAG.apply({ pl: 0, kind: 'deal' }); // the bank's three: a coppered bet on the three wins
+  assert.equal(FAG.checks, 51 - 1 + 2);
+  for (let k = 0; k < 4; k++) FAG.apply({ pl: 0, kind: 'bet', rank: 7 });
+  FAG.apply({ pl: 0, kind: 'deal' }); // a split in eights: the bank takes two of four
+  assert.equal(FAG.bets[7].n, 2);
+});
+test('Faro: a whole deal ends with every card out and the turn called', () => {
+  for (let g = 0; g < 20; g++) {
+    FAG.init(); let n = 0;
+    while (!FAG.over && n++ < 2000) { const m = FAG.aiPlan(0)[0]; assert.ok(FAG.legal(0).some(x => x.kind === m.kind && x.rank === m.rank), JSON.stringify(m)); FAG.apply(m); }
+    assert.ok(FAG.over); assert.equal(FAG.out.length, 52); assert.ok(FAG.left.every(x => x === 0));
+  }
+});

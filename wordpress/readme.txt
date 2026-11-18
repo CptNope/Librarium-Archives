@@ -14,14 +14,14 @@ A walkable 3D archive of the oldest board and card games, with tables visitors c
 
 Visitors walk a candlelit library hall in six wings, read the history of each game on its placard, and sit down to play:
 
-80 exhibits, 73 of them playable:
+84 exhibits, 77 of them playable:
 
 * Wing I, The Dawn of Play: Senet, the Royal Game of Ur, Hazard at the first dice, and Hounds and Jackals (playable, Senet and Hounds and Jackals as modern reconstructions); Mehen, the Başur Höyük pieces.
 * Wing II, Strategy Takes the Table: Go, Ludus latrunculorum, Duodecim scripta, Patolli, Nine Men's Morris, Oware, Alquerque, Brandubh and Hnefatafl (playable; latrunculi, duodecim scripta, patolli and hnefatafl as modern reconstructions); Petteia, Liubo.
 * Wing III, Kings, Cards and Courts: Tables (backgammon), Chaturanga, Shatranj, Xiangqi, Chaturaji, Rithmomachia, medieval chess on the Lewis Chessmen, Courier chess, Four Seasons chess, Piquet at the playing cards, Karnöffel and tarocchi (all playable; Karnöffel partly reconstructed; Chaturanga, Rithmomachia and medieval chess as modern reconstructions).
-* Wing IV, Printed Boards and Parlour Tables: Fox and Geese, chess, Draughts, International draughts, Pachisi, the Game of the Goose, Ombre, Cribbage, Dominoes, Scopa, Tablut, Whist, Patience, Cassino, Skat, Snakes and Ladders, Bézique, Ludo and Mahjong (playable); Court Cards and Cards Not for Playing (on display).
+* Wing IV, Printed Boards and Parlour Tables: Fox and Geese, chess, Draughts, Primero, International draughts, Pachisi, the Game of the Goose, Ombre, Cribbage, Faro, Dominoes, Scopa, Tablut, Pope Joan, Whist, Patience, Cassino, Skat, Snakes and Ladders, Bézique, Ludo and Mahjong (playable); Court Cards and Cards Not for Playing (on display).
 * Wing V, The Modern Board Game: the Mansion of Happiness, Euchre, Conquian, the Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord's Game, Kalah and Hex (all playable).
-* Wing VI, Games of the World: Mū tōrere, Shogi, Gomoku, Hanafuda (koi-koi), Jungle, Nard, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega and Tâb (playable); Ganjifa (on display).
+* Wing VI, Games of the World: Mū tōrere, Shogi, Gomoku, Hanafuda (koi-koi), Ma Diao, Jungle, Nard, Makruk, Bagh-chal, Kōnane, Yut Nori, Janggi, Fanorona, Bao, Morabaraba, Seega and Tâb (playable); Ganjifa (on display).
 
 The hall ends at a lectern of Librarium's own games.
 
@@ -55,6 +55,9 @@ None. The released plugin bundles three.js and its fonts, sends nothing anywhere
 (A development build made without the bundled files falls back to three.js from cdnjs.cloudflare.com and the fonts from fonts.googleapis.com.)
 
 == Changelog ==
+
+= 0.38.0 =
+* The card room, part five: Primero, the ancestor of poker; Faro, against the bank; Pope Joan on its board of eight compartments; and Ma Diao, the Ming money-card game behind mahjong.
 
 = 0.37.0 =
 * The hall draws faster: static meshes are merged, far exhibits are hidden, and the resolution adapts to the frame rate.

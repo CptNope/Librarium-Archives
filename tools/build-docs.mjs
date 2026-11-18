@@ -164,7 +164,7 @@ function page(st, i) {
       o.push('');
     }
     o.push('## At the table', '', '| | |', '| --- | --- |');
-    o.push(`| The Scribe | ${g.solo ? 'None: Patience is played alone' : 'Gentle, Fair or Sharp (see [the Scribe](../scribe.md#levels))'} |`);
+    o.push(`| The Scribe | ${g.solo ? (g.id === 'faro' ? 'None: the bank only deals' : 'None: Patience is played alone') : 'Gentle, Fair or Sharp (see [the Scribe](../scribe.md#levels))'} |`);
     o.push(`| Pass-and-play with a friend | ${yes(HOT.has(g.id))} |`);
     o.push(`| Undo | ${yes(UNDO.has(g.id))} |`);
     o.push(`| Hint | ${yes(canHint(g))} |`);
@@ -172,7 +172,7 @@ function page(st, i) {
     if (PACK_TABLES[g.id]) o.push('| Pack switch | Yes |');
     o.push('', 'Keys, the move list, replays and the guide are the same at every table: see [Visiting the Archives](../visiting.md#at-a-table).', '');
     const sc = mine(scribeRows, st), meth = methodOf(st);
-    if (NOTES[g.id]) o.push(g.solo ? '## Hint' : '## How the Scribe plays', '', NOTES[g.id], '');
+    if (NOTES[g.id]) o.push(g.solo ? (canHint(g) ? '## Hint' : '## The odds') : '## How the Scribe plays', '', NOTES[g.id], '');
     else if ((sc.length || meth) && !g.solo) {
       o.push('## How the Scribe plays', '');
       if (meth) o.push(`**Method:** ${meth.name}${meth.about.length ? ': ' + meth.about.join('; ') : ''}. See [the Scribe](../scribe.md).`, '');

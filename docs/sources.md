@@ -71,3 +71,7 @@ Each exhibit's page in [games/](games/README.md) repeats its placard, the rules 
 - David Parlett, history of Skat (parlettgames.uk); pagat.com: Skat (the international rules of 1999)
 - Wikipedia: Pinochle; pagat.com: Two-player Pinochle
 - Wikipedia: Hearts (card game), after *The Standard Hoyle* (1887)
+- Wikipedia: Primero; Justin du Coeur, a reconstruction of Primero after Cardano, Florio and Minsheu; pagat.com: Primero
+- Wikipedia: Faro (card game); pagat.com: Faro
+- Wikipedia: Pope Joan (card game); David Parlett, Pope Joan (parlettgames.uk)
+- Wikipedia: Madiao, after Andrew Lo's studies of Pan Zhiheng and Feng Menglong; The World of Playing Cards: Madiao

@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · c. 1100s – 1500s CE · France, Spain and England
 
-[← The New Queen](newqueen.md) · [All games](README.md) · [International Draughts →](idraughts.md)
+[← The New Queen](newqueen.md) · [All games](README.md) · [Primero →](primero.md)
 
 | | |
 | --- | --- |
