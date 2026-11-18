@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.39.0: The card room, part six
+
+Four card games of the 19th and 20th centuries, two of them for four.
+
+- **Écarté** (Wing IV, 19th century): the French game for two that gave the exchange its name. Propose or play, accept or refuse, discard and draw, then five tricks where you must head the trick if you can. A turned or held king of trumps scores, the vole scores double, and a player who played or refused and lost pays two.
+- **Gin Rummy** (Wing V, 1909): ten cards, the upcard, a draw and a discard, and the knock. Your hand is laid out in its best melds as you play, the layoffs are found for you, and gin and undercuts score 25.
+- **Contract Bridge** (Wing V, 1925): a full auction with doubles and redoubles, chosen as a level and then a strain; the dummy laid face up; and contract scoring with vulnerability, slams and honours. Chicago (four deals) or a rubber. When your side wins the contract you play both hands.
+- **Spades** (Wing V, late 1930s): partnerships, bids from nil to thirteen, spades broken before they are led, bags, and the game to 500 or 250.
+- The Scribe: a natural bidding system for bridge, aimed at the contract the partnership's points and fit call for; nil bids and bag-dodging at Spades; exact play of sampled deals at Écarté. At gin, Sharp plays as Fair: the look-ahead searches tried there played no better. Measured strengths are in the Scribe guide.
+- 88 exhibits, 81 of them playable; 331 rules tests, and a browser test of the two-step bid.
+
 ## 0.38.0: The card room, part five
 
 Four older card games, three of them with a board or a box of their own.

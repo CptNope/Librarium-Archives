@@ -231,6 +231,10 @@ Saved games store the engine's plain data fields as JSON. Typed-array boards, Se
 | Ma Diao | `madiao` | Cards: four seats, a banker against three, no need to follow | Cheap wins against the banker, partners left alone; Sharp samples the unseen cards | `passTurn`, `scribeName`, a `first` getter, face-down plays |
 | Pope Joan | `popejoan` | Cards: four seats and a dead hand, runs, a staking board | Longest run and honours first; Sharp samples the unseen hands | `passTurn`, `variants`, a `first` getter; runs played out in one move |
 | Faro | `faro` | Cards: betting against a bank that only deals | None (the bank does not choose) | `solo`, labelled bets on the layout's ranks, coppers and calls |
+| Écarté | `ecarte` | Cards: two players, proposals and exchange, a duty to head the trick | Hand worth; Sharp solves sampled deals exactly | a `first` getter, labelled proposals and a marked exchange |
+| Gin Rummy | `gin` | Cards: rummy with knocking | Least deadwood, then a safe discard (Sharp as Fair) | `variants`, a `first` getter, a labelled knock that then takes a card |
+| Spades | `spades` | Cards: four seats, partnerships, bids with nil | Bids by sure tricks; ducks for bags; Sharp samples the unseen cards | `passTurn`, `variants`, `scribeName` per seat, labelled bids |
+| Contract Bridge | `bridge` | Cards: four seats, an auction, a dummy, Chicago or rubber scoring | A natural bidding system aimed at the partnership's contract; Whist's book in play; Sharp samples the hidden hands | `passTurn`, `variants`, a two-step bid (a level, then a strain, by `followUp`), you play dummy for your side |
 | Patience | `patience` | Cards: solo (Klondike) | Hint heuristic only (no opponent) | `solo`, `variants`, a presenter with `oneClick` |
 | Scopa | `scopa` | Cards: fishing (captures by value or sum) | Sweep-risk estimate; Sharp counts the cards taken | `passTurn`, `variants`, rings for the set a card takes |
 | Xiangqi | `xiangqi` | Chess family | Search | |

@@ -2,7 +2,7 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**84 exhibits, 77 of them playable.** Each one also has [a page of its own](games/README.md), with a turn diagram, the rules as played and the Scribe's notes. The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**88 exhibits, 81 of them playable.** Each one also has [a page of its own](games/README.md), with a turn diagram, the rules as played and the Scribe's notes. The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
@@ -10,8 +10,8 @@ pie showData
     "Wing I · 4 of 6" : 6
     "Wing II · 9 of 11" : 11
     "Wing III · 12 of 12" : 12
-    "Wing IV · 22 of 24" : 24
-    "Wing V · 13 of 13" : 13
+    "Wing IV · 23 of 25" : 25
+    "Wing V · 16 of 16" : 16
     "Wing VI · 17 of 18" : 18
 ```
 
@@ -166,6 +166,7 @@ timeline
     1788 CE : Patience
     1792 CE : Cassino
     c. 1810 CE : Skat
+    19th century CE : Écarté
     1847 CE : Bézique
     mid-1800s CE : Mahjong
     1896 CE : Ludo
@@ -192,6 +193,7 @@ timeline
 | Ombre | early 1600s CE (Spain); English rules 1660 | Survive in print; still played as l'Hombre | Playable: three-handed at a three-cornered table, Entrada and Solo |
 | Cassino | 1792 CE (Robert Long) | Survive in print | Playable: two-handed, to 21, sweeps optional |
 | Skat | c. 1810 CE (Altenburg) | Still played; international rules of 1999 | Playable: three-handed, bidding, the skat, suit, grand and null |
+| Écarté | 19th century CE (Paris); Cavendish 1886 | Survive in print | Playable: two-handed, proposals and the exchange, to 5 |
 | Patience | 1788 CE (first in print, Germany) | Still played | Playable: Klondike, draw one or three, played alone, without the Scribe |
 | Snakes and Ladders (gyan chaupar) | 18th–19th century CE | Still played | Playable, with virtues and vices from an old Indian board |
 | Bézique | 1847 CE (Paris); England 1861 | Still played | Playable: two-handed Bézique with two packs, to 1,000 or one deal |
@@ -220,6 +222,7 @@ Rule choices:
 - **Primero:** John Florio's English game for two, with Cardano's and Minsheu's hands and values: a 40-card pack, an ante of one, two cards and a round of vying (vie, see, vie again, pass or fold; two vies a round), two more cards, one exchange of up to two cards, and a second round in which three counters, the rest, end the vying. Hands rank chorus, fluxus, supremus (ace, six and seven of a suit, 55), primero and numerus; ties go to the elder hand. Ten hands of 30 counters each, or until one player is out.
 - **Faro:** after Wikipedia and pagat.com: the soda burned, then twenty-four turns of the bank's card and yours, and the last turn with the hock. Bets on a rank, open or coppered (a copper reverses the bet), at most ten checks a rank, and the high card bar; a split takes half the bet on that rank (at least one). Calling the turn pays four for one, or one for one with a pair among the three. Bets split between two ranks are left out, and the bank is never short of money. The game is one deal from the box with 50 checks.
 - **Pope Joan:** after Parlett and Wikipedia: the dealer dresses the board (Pope 6, Matrimony and Intrigue 2, the others 1), ten cards each and ten to the dead hand, which also takes the turned-up trump. A turned honour or Pope wins its well for the dealer at once. Runs go up the suit until a king, the dead hand or the missing eight of diamonds; Matrimony and Intrigue need both their cards played by one player. The first player out takes Game and a counter for each card still held, except from the Pope's holder. Four or eight deals; unclaimed stakes stay on the board.
+- **Écarté:** after Wikipedia: 32 cards ranking king, queen, jack, ace, ten down to seven; five each, a turned king scoring 1 for the dealer; the non-dealer proposes or plays, the dealer accepts or refuses, and after an accepted proposal the proposer exchanges first and the dealer must take at least one card; the king of trumps is announced for its holder. Follow suit and head the trick if you can, trump if you cannot follow. The point 1, the vole 2, and 2 against a player who played without proposing, or refused the first proposal, and lost. Game to 5.
 - **Ludo:** two players, red and yellow, from opposite corners. A six brings a token out or moves one, and earns another throw; landing on an enemy token sends it to its yard; your home column is safe; the finish needs the exact throw. There are no blocks or safe squares on the track.
 - **Mahjong:** a basic Chinese game with the 136 tiles (no flowers or seasons). Go out with four sets and a pair, seven pairs or the thirteen orphans. You may claim a discard for a pung or kong from anyone, a chow only from the player on your left, and a win from anyone; a win beats a pung or kong, which beats a chow. A kong draws a replacement tile. There is no scoring: whoever goes out first wins the hand, and an empty wall is a draw.
 
@@ -238,6 +241,9 @@ timeline
     late 19th century CE : Dots and Boxes
     1892 CE : Chinese checkers
     1904 CE : The Landlord's Game
+    1909 CE : Gin Rummy
+    1925 CE : Contract Bridge
+    late 1930s CE : Spades
     1940 CE : Kalah
     1942 CE : Hex
 ```
@@ -255,6 +261,9 @@ timeline
 | Dots and Boxes | late 19th century CE | Survive in print (Lucas's *pipopipette*) | Playable, on a 4 × 4 or 5 × 5 grid of boxes |
 | Chinese checkers (Stern-Halma) | 1892 CE | Still played | Playable, two players with ten marbles each |
 | The Landlord's Game | 1904 CE | Survive in the patent | Playable, on a board read from the patent drawing |
+| Gin Rummy | 1909 CE (New York) | Still played | Playable: two-handed, knocking, gin and undercuts, to 100 or 50 |
+| Contract Bridge | 1925 CE (Vanderbilt's scoring) | Still played | Playable: four seats, a full auction, dummy, Chicago or a rubber |
+| Spades | late 1930s CE (Cincinnati) | Still played | Playable: four seats in partnerships, bidding with nil, bags, to 500 or 250 |
 | Kalah | 1940 CE | Survive in print | Playable, with 3, 4 or 6 seeds a pit |
 | Hex | 1942 CE | Still played | Playable on 7 × 7, 9 × 9 or 11 × 11; the swap rule is optional |
 
@@ -273,6 +282,9 @@ Rule choices:
 - **The Landlord's Game** follows U.S. Patent 748,626 (1904). The board's forty spaces, prices, rents and taxes are read from the patent drawing: Mother Earth, 22 lots priced at ten times their number, four absolute necessities, four railroads, three luxuries, two franchises, Legacy, the Public Park and poorhouse, the jail, and Lord Blueblood's No Trespassing corner. The rules are the patent's, for two players: lot tickets at the start, buy or rent, $100 wages, $5 taxes and fares, $50 luxuries worth $60 at the end, franchise charters, jail with a $50 fine or a double, railroad rides on a double, Bank notes at $5 interest, and the poorhouse. It is three times round by default, or five as in the patent (a table variant). The patent's rule for two checkers sharing a lot is left out, and loans and repayments are made for you.
 - **Kalah:** sow anticlockwise past your own store but never the Scribe's; a last seed in your store moves again, and one in your own empty pit captures the pit opposite (if it holds seeds). When a side is empty, the other side keeps its seeds.
 - **Hex:** red (you) joins the near and far edges, blue the sides, and you always move first. The swap rule is off by default, so the first move's advantage is yours; turn it on above the board and the Scribe may take your first stone, reflected across the board into blue, after which you move again.
+- **Gin Rummy:** Wikipedia's standard game: ten cards each, the upcard offered first to the non-dealer, a draw and a discard each turn (not the card just taken from the pile), a knock at 10 or less, gin with none. The defender lays off on the knocker's melds (found for you, and never on a gin). The knocker scores the difference; gin scores 25 more; an undercut scores the difference and 25. A hand with two cards left in the stock is void. To 100 (or 50), with 100 for the game and 25 for each hand won.
+- **Contract Bridge:** the laws as Wikipedia gives them: the auction with doubles and redoubles, the declarer as the first of the side to name the strain, the dummy laid down after the opening lead, and contract scoring with vulnerability, overtricks, undertricks, the insult, slams and honours. When your side wins the contract you play both your hand and North's. Chicago is the default (four deals, vulnerability by deal, 300 or 500 for a game and 50 for a part score); a rubber is the best of three games, with 700 or 500. A deal passed out is dealt again.
+- **Spades:** after Wikipedia and pagat.com: partnerships, bids of nil to thirteen, spades not led until broken, 10 a trick bid, 1 a bag and 100 off at ten bags, nil 100 either way (the nil bidder's tricks count as bags, not towards the partner's bid), and the game to 500 (or 250) or down to −200. Blind nil is left out.
 
 ## Wing VI: Games of the World
 

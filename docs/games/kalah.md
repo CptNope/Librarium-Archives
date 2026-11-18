@@ -4,7 +4,7 @@
 
 **Wing V · The Modern Board Game** · 1940 CE · United States
 
-[← The Landlord's Game](landlord.md) · [All games](README.md) · [Hex →](hex.md)
+[← Spades](spades.md) · [All games](README.md) · [Hex →](hex.md)
 
 | | |
 | --- | --- |

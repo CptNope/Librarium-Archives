@@ -1717,7 +1717,7 @@ const PACK_WORDS = {
   latin: { suits: ['swords', 'cups', 'coins', 'batons'], courts: [['knave', 'knaves'], ['knight', 'knights'], ['king', 'kings']] },
 };
 // The tables that offer the switch, and the pack each game is played with by default.
-const PACK_TABLES = { piquet: 'french', whist: 'french', cribbage: 'french', bezique: 'french', scopa: 'latin', euchre: 'french', karnoffel: 'german', ombre: 'french', conquian: 'french', cassino: 'french', hearts: 'french', pinochle: 'french', skat: 'french', primero: 'french', popejoan: 'french' };
+const PACK_TABLES = { piquet: 'french', whist: 'french', cribbage: 'french', bezique: 'french', scopa: 'latin', euchre: 'french', karnoffel: 'german', ombre: 'french', conquian: 'french', cassino: 'french', hearts: 'french', pinochle: 'french', skat: 'french', primero: 'french', popejoan: 'french', ecarte: 'french', gin: 'french' };
 let packNow = 'french';
 const packFor = g => (PACK_TABLES[g.id] ? ((store.packs || {})[g.id] || PACK_TABLES[g.id]) : 'french');
 function packText(text, from, to) {
@@ -2433,6 +2433,58 @@ function buildFaro(group) {
 }
 // The copper: a hexagonal token laid on a bet to reverse it.
 function faCopper() { return new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.002, 6), new THREE.MeshStandardMaterial({ color: 0xb06a3a, roughness: 0.35, metalness: 0.6 })); }
+/* --- Card batch six: Écarté (Wing IV), Gin Rummy, Contract Bridge and Spades (Wing V). */
+
+// Écarté: a hand of five each, the turned-up trump beside the talon, and the king of trumps held and shown.
+function buildEcarte(group) {
+  const y = cardTable(group, ['#2a2a4a', '#242442', '#323256', '#1f1f3a']), shown = [];
+  const put = (c, x, z, ry, down) => { const m = crCard(c, c, 'french'); m.position.set(x, y + 0.001 + shown.length * 0.0002, z); m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  [13 + 12, 13 + 0, 13 + 9, 39 + 12, 26 + 11].forEach((c, i) => put(c, (i - 2) * 0.075, 0.3, 0, false)); // the king of trumps, hearts
+  for (let i = 0; i < 5; i++) put(0, (i - 2) * 0.06, -0.3, Math.PI, true);
+  for (let k = 0; k < 12; k++) put(0, -0.42, 0.0, Math.PI / 2, true);
+  put(13 + 7, -0.32, 0.0, 0.15, false); // the turned card: the eight of hearts
+  group.userData.display = shown;
+  return y;
+}
+
+// Gin Rummy: a gin hand laid down, three melds and nothing over, beside the stock and the discard pile.
+function buildGin(group) {
+  const y = cardTable(group, ['#1e4a44', '#1a423c', '#24524c', '#163a34']), shown = [];
+  const put = (c, x, z, ry, down) => { const m = crCard(c, c, 'french'); m.position.set(x, y + 0.001 + shown.length * 0.0002, z); m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  const melds = [[1, 14, 40], [13 + 5, 13 + 6, 13 + 7, 13 + 8], [26 + 10, 26 + 11, 26 + 12]];
+  let x = -0.34; melds.forEach(m => { m.forEach((c, j) => put(c, x + j * 0.03, 0.26, 0, false)); x += m.length * 0.03 + 0.07; });
+  for (let i = 0; i < 10; i++) put(0, (i - 4.5) * 0.04, -0.3, Math.PI, true);
+  for (let k = 0; k < 20; k++) put(0, -0.1, -0.02 + k * 0.0002, 0, true);
+  put(39 + 9, 0.08, -0.02, 0.06, false);
+  group.userData.display = shown;
+  return y;
+}
+
+// Spades and Bridge sit four round a whist table. Spades on display: the ace of spades on a trick it has just
+// trumped. Bridge on display: dummy's hand face up in North's place, and the opening lead.
+function buildSpades(group) {
+  const y = cardTable(group, ['#24243a', '#1f1f33', '#2c2c46', '#1a1a2c'], 1.1, 0.96), shown = [];
+  const put = (c, at, ry, down) => { const m = crCard(c, c, 'french'); m.position.copy(at); m.position.y += shown.length * 0.0002; m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  for (let s = 0; s < 4; s++) for (let i = 0; i < 10; i++) put(0, wsHandSpot(s, i, 10, y + 0.001), WS_YAW[s], true);
+  [13 + 12, 13 + 4, 0, 13 + 9].forEach((c, s) => put(c, wsTrickSpot(s, y + 0.001 + s * 0.0004), WS_YAW[s] + (s - 1.5) * 0.1, false));
+  group.userData.display = shown;
+  return y;
+}
+function bridgeDummySpot(seat, i, n, y) { // dummy laid out face up, a little nearer the middle than a hand
+  const p = wsHandSpot(seat, i, n, y);
+  if (seat === 2) p.z += 0.05; else if (seat === 0) p.z -= 0.05; else p.x += seat === 1 ? 0.05 : -0.05;
+  return p;
+}
+function buildBridge(group) {
+  const y = cardTable(group, ['#1f3a2a', '#1a3424', '#264232', '#162e20'], 1.1, 0.96), shown = [];
+  const put = (c, at, ry, down) => { const m = crCard(c, c, 'french'); m.position.copy(at); m.position.y += shown.length * 0.0002; m.rotation.set(0, ry, down ? Math.PI : 0); group.add(m); shown.push(m); return m; };
+  const dummy = [0, 12, 11, 4, 13 + 12, 13 + 3, 26 + 0, 26 + 10, 26 + 6, 39 + 11, 39 + 8, 39 + 2, 39 + 1];
+  dummy.forEach((c, i) => put(c, bridgeDummySpot(2, i, 13, y + 0.001), 0, false));
+  for (const s of [0, 1, 3]) for (let i = 0; i < (s === 1 ? 12 : 13); i++) put(0, wsHandSpot(s, i, s === 1 ? 12 : 13, y + 0.001), WS_YAW[s], true);
+  put(13 + 10, wsTrickSpot(1, y + 0.002), WS_YAW[1], false); // West's opening lead
+  group.userData.display = shown;
+  return y;
+}
 /* --- Tarocchi cards for the table: original faces in an old Italian manner */
 const TC_W = 0.07, TC_H = 0.11;
 const tcGeo = new THREE.BoxGeometry(TC_W, 0.0016, TC_H);
@@ -4377,9 +4429,9 @@ const STOPS = [
     eyebrow: 'Wing IV · Librarium Archives', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
-      'Twenty-two tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Primero, the ancestor of poker; International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Ombre, at its three-cornered table; Cribbage; Faro, against the bank; Dominoes; Scopa; Tablut; Pope Joan, on its board of eight compartments; Whist, with a Scribe as your partner; Patience, played alone; Cassino; Skat; Snakes and Ladders; Bézique; Ludo; and Mahjong, with three Scribes.'
+      'Twenty-three tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Primero, the ancestor of poker; International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Ombre, at its three-cornered table; Cribbage; Faro, against the bank; Dominoes; Scopa; Tablut; Pope Joan, on its board of eight compartments; Whist, with a Scribe as your partner; Patience, played alone; Cassino; Skat; Écarté; Snakes and Ladders; Bézique; Ludo; and Mahjong, with three Scribes.'
     ],
-    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Primero, International draughts, Pachisi, the Goose, Ombre, Cribbage, Faro, Dominoes, Scopa, Tablut, Pope Joan, Whist, Patience, Cassino, Skat, Snakes and Ladders, Bézique, Ludo, Mahjong']],
+    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Primero, International draughts, Pachisi, the Goose, Ombre, Cribbage, Faro, Dominoes, Scopa, Tablut, Pope Joan, Whist, Patience, Cassino, Skat, Écarté, Snakes and Ladders, Bézique, Ludo, Mahjong']],
   },
   { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
@@ -4567,6 +4619,16 @@ const STOPS = [
     ],
     facts: [['Pack', '32 cards'], ['Players', 'Three: a declarer against two'], ['Trumps', 'The four jacks, then the suit'], ['To win', '61 of 120 card points']],
     build: buildSkat },
+  { id: 'ecarte', wing: 4, title: 'Écarté', date: '19th century CE', rail: 'Écarté',
+    eyebrow: 'France, the salons and the clubs', status: ['known', 'Rules survive in print'], game: 'ecarte',
+    note: 'Holding the king of trumps is announced for you.',
+    body: [
+      'Écarté is a French game for two, a sharp, quick descendant of the old trick-taking game of triomphe. Its name means discarded: before play, either player may ask to throw away cards and draw new ones, and the other may agree or refuse, and refusing is a risk. In every suit the king ranks highest and the ace sits between the ten and the jack.',
+      'It was a great gambling game of 19th-century Paris, where onlookers might advise the players, and it crossed to the London clubs, which forbade that: Cavendish described the rules played there in 1886. It turns up in fiction from Poe\'s "William Wilson" (1839), whose hero cheats at it, to Dumas\'s The Count of Monte Cristo and Conan Doyle\'s Brigadier Gerard.',
+      'It survived in Germany into the 1960s, and in a few French cercles de jeu into this century.'
+    ],
+    facts: [['Pack', '32 cards; king high, ace below the jack'], ['Players', 'Two'], ['Score', 'The point 1, the vole 2'], ['Game', '5 points']],
+    build: buildEcarte },
   { id: 'snakes', wing: 4, title: 'Snakes and Ladders', date: '18th–19th century CE', rail: 'Snakes and Ladders',
     eyebrow: 'India, then England', status: ['known', 'Still played today'], game: 'snakes',
     body: [
@@ -4606,9 +4668,9 @@ const STOPS = [
     eyebrow: 'Wing V · Librarium Archives', status: null, begin: 'mansion',
     body: [
       'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
-      'All thirteen tables are open: the Mansion of Happiness, Euchre, Conquian, the Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
+      'All sixteen tables are open: the Mansion of Happiness, Euchre, Conquian, the Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Gin Rummy, Contract Bridge, Spades, Kalah and Hex.'
     ],
-    facts: [['Tables', 'Mansion of Happiness, Euchre, Conquian, Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex']],
+    facts: [['Tables', 'Mansion of Happiness, Euchre, Conquian, Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Gin Rummy, Contract Bridge, Spades, Kalah, Hex']],
   },
   { id: 'mansion', wing: 5, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
     eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'], game: 'mansion',
@@ -4710,6 +4772,34 @@ const STOPS = [
     ],
     facts: [['Patent', 'U.S. 748,626, 1904'], ['Inventor', 'Lizzie Magie'], ['Descendant', 'Monopoly (1935)']],
     build: buildLandlord },
+  { id: 'gin', wing: 5, title: 'Gin Rummy', date: '1909 CE', rail: 'Gin Rummy',
+    eyebrow: 'New York, then Hollywood', status: ['known', 'Still played'], game: 'gin',
+    body: [
+      'Gin rummy was worked out in New York in 1909, or a year or two later, by Elwood T. Baker, a whist and bridge player, and his son C. Graham Baker, who named it gin, after the drink. It came from the older rummies: pagat.com names Conquian and the American game of rum, and David Parlett sees Conquian as its forerunner.',
+      'For thirty years it stayed a New York game. Then in 1941 it became a Hollywood craze, and from there it spread across the country; the next year The Bridge World published laws for it. A survey of 1947 found that as many people had learned gin during the Second World War as had learned pinochle, cribbage, poker and bridge put together.',
+      'Ten cards, one draw and one discard a turn, and the knock: stop the hand whenever your unmatched cards come to ten or less, and hope the other player cannot undercut you.'
+    ],
+    facts: [['Players', 'Two'], ['Deal', 'Ten cards each'], ['Knock', 'Deadwood 10 or less; gin with none'], ['Game', '100 points']],
+    build: buildGin },
+  { id: 'bridge', wing: 5, title: 'Contract Bridge', date: '1925 CE', rail: 'Contract Bridge',
+    eyebrow: 'From whist, by way of London and New York', status: ['known', 'Still played'], game: 'bridge',
+    note: 'The Scribes bid a simple natural system of their own: points, five-card majors, 1NT on 15 to 17.',
+    body: [
+      'Bridge grew out of whist. Biritch, or Russian whist, brought in the dummy hand, no-trump play and the score kept above and below the line; John Collinson printed its rules in London in 1886. Bridge whist was the rage of Britain and America in the 1890s, and London\'s Portland Club took it up in 1894. Auction bridge, from 1904, let the players bid against each other for the right to name trumps.',
+      'Contract bridge added one idea: only the tricks you bid count towards a game, so the auction became the heart of the game. Players had tried it before, but in 1925, on a cruise, Harold Vanderbilt rewrote the scoring and added vulnerability, and his rules swept the world. By 1941 a survey found bridge played in 44 per cent of American households.',
+      'The first official world championship was held in Budapest in 1937, and the World Bridge Federation was founded in 1958. Today bridge is a mind sport, played in clubs, at tournaments and online.'
+    ],
+    facts: [['Players', 'Four, in two partnerships'], ['Auction', 'One to seven, clubs to no trumps'], ['Dummy', 'Declarer\'s partner, face up'], ['Game here', 'Chicago (four deals) or a rubber']],
+    build: buildBridge },
+  { id: 'spades', wing: 5, title: 'Spades', date: 'late 1930s CE', rail: 'Spades',
+    eyebrow: 'Cincinnati, then the world', status: ['known', 'Still played'], game: 'spades',
+    body: [
+      'Spades is a whist game with a bridge-like bid, simplified: spades are always trumps, and each player says how many tricks they will take. The bridge writer George Coffin traced it to Cincinnati, Ohio, between 1937 and 1939.',
+      'American soldiers carried it round the world in the Second World War, and veterans brought it home, where with the GI Bill it took hold in colleges and home games. It stayed popular wherever American troops were stationed.',
+      'Its scoring punishes greed as well as failure: every trick over the bid is a bag, and ten bags cost a hundred points. The nil bid, promising to take nothing, turns a hopeless hand into a hundred.'
+    ],
+    facts: [['Players', 'Four, in two partnerships'], ['Trumps', 'Always spades'], ['Score', '10 a trick bid; bags cost 100 at ten'], ['Game', '500 points']],
+    build: buildSpades },
   { id: 'kalah', wing: 5, title: 'Kalah', date: '1940 CE', rail: 'Kalah',
     eyebrow: 'United States', status: ['known', 'Rules survive in print'], game: 'kalah',
     body: [
@@ -4949,7 +5039,7 @@ const SENET = Object.assign(SENET_RULES, {
   pieceH: 0,
 });
 const R = window.LibrariumRules;
-const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet, bezique: R.bezique, scopa: R.scopa, euchre: R.euchre, patience: R.patience, karnoffel: R.karnoffel, ombre: R.ombre, conquian: R.conquian, cassino: R.cassino, hearts: R.hearts, pinochle: R.pinochle, skat: R.skat, nard: R.nard, xii: R.xii, koikoi: R.koikoi, idraughts: R.idraughts, hnefatafl: R.hnefatafl, primero: R.primero, madiao: R.madiao, popejoan: R.popejoan, faro: R.faro };
+const GAMES = { ur: UR, senet: SENET, morris: R.morris, oware: R.oware, brandubh: R.brandubh, tables: R.tables, shatranj: R.shatranj, foxgeese: R.foxgeese, draughts: R.draughts, goose: R.goose, reversi: R.reversi, dotsboxes: R.dotsboxes, halma: R.halma, go: R.go, alquerque: R.alquerque, xiangqi: R.xiangqi, snakes: R.snakes, tarocchi: R.tarocchi, mutorere: R.mutorere, konane: R.konane, fanorona: R.fanorona, chess: R.chess, shogi: R.shogi, yut: R.yut, pachisi: R.pachisi, mahjong: R.mahjong, bao: R.bao, landlord: R.landlord, chinese: R.chinese, hex: R.hex, gomoku: R.gomoku, dominoes: R.dominoes, tablut: R.tablut, makruk: R.makruk, kalah: R.kalah, cribbage: R.cribbage, morabaraba: R.morabaraba, ludo: R.ludo, janggi: R.janggi, chaturaji: R.chaturaji, seega: R.seega, tab: R.tab, baghchal: R.baghchal, fourseasons: R.fourseasons, hounds: R.hounds, latrunculi: R.latrunculi, patolli: R.patolli, mansion: R.mansion, lifegame: R.lifegame, jungle: R.jungle, chaturanga: R.chaturanga, whist: R.whist, rithmo: R.rithmo, lewischess: R.lewischess, courier: R.courier, hazard: R.hazard, piquet: R.piquet, bezique: R.bezique, scopa: R.scopa, euchre: R.euchre, patience: R.patience, karnoffel: R.karnoffel, ombre: R.ombre, conquian: R.conquian, cassino: R.cassino, hearts: R.hearts, pinochle: R.pinochle, skat: R.skat, nard: R.nard, xii: R.xii, koikoi: R.koikoi, idraughts: R.idraughts, hnefatafl: R.hnefatafl, primero: R.primero, madiao: R.madiao, popejoan: R.popejoan, faro: R.faro, ecarte: R.ecarte, gin: R.gin, spades: R.spades, bridge: R.bridge };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /* --------------------------------------------------------- tweens */
@@ -8693,6 +8783,252 @@ const FARO_P = {
     return [['Checks', G.checks], ['On the layout', G.staked()], `turn ${G.turnNo} of 25 · won ${G.won}, lost ${G.lost}`];
   },
 };
+// Écarté: your five cards near you and the Scribe's across the table, the talon on the left with the turned-up
+// trump beside it, and the discards on the right. Tricks go to the winner's side.
+const ECARTE_P = {
+  camW: 1.05,
+  intro() { const G = GAMES.ecarte; return `${G.dealer ? 'The Scribe deals' : 'You deal'}; the ${G.cardName(G.turnUp)} is turned up. ${G.dealNote} ` + this.prompt(); },
+  prompt() { return GAMES.ecarte.prompt0(); },
+  choosePrompt() { return GAMES.ecarte.prompt0(); },
+  setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.ecarte.surface + 0.001,
+  card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); m.scale.set(1.2, 1, 1.2); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
+  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.072 : 0.092), this.y() + i * 0.0004, pl ? -0.28 : 0.3); },
+  talonSpot: k => V3(-0.42, GAMES.ecarte.surface + 0.001 + k * 0.0012, 0),
+  discardSpot(k) { return V3(0.44, this.y() + k * 0.0012, -0.02 + k * 0.003); },
+  pileSpot(pl, k) { return V3(0.22 + k * 0.012, this.y() + 0.001 + k * 0.0016, pl ? -0.13 : 0.13); },
+  trickSpot(pl) { return V3(0.02, this.y() + 0.002, pl ? -0.06 : 0.06); },
+  down(m) { m.rotation.set(0, Math.PI / 2, Math.PI); },
+  redeal() {
+    const G = GAMES.ecarte;
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map(); this.nDis = 0; this.piles = [0, 0];
+    G.stock.forEach((c, k) => { const m = this.card(c); this.down(m); m.position.copy(this.talonSpot(k)); });
+    const up = this.card(G.turnUp); up.position.copy(V3(-0.3, this.y() + 0.001, 0)); up.rotation.set(0, 0.15, 0);
+    [0, 1].forEach(p => G.discards[p].forEach(c => { const m = this.card(c); this.down(m); m.position.copy(this.discardSpot(this.nDis++)); }));
+    const done = G.played.slice(0, G.played.length - G.trick.length);
+    let won = [0, 0]; for (let t = 0; t * 2 < done.length; t++) { const w = won[0] < G.tricks[0] ? 0 : 1; won[w]++; done.slice(t * 2, t * 2 + 2).forEach(c => { const m = this.card(c); m.position.copy(this.pileSpot(w, this.piles[w])); this.down(m); }); this.piles[w]++; }
+    G.trick.forEach(t => { const m = this.card(t.card); m.position.copy(this.trickSpot(t.seat)); m.rotation.set(0, 0, 0); });
+    this.layHand(0, true); this.layHand(1, true);
+  },
+  layHand(pl, instant) {
+    const G = GAMES.ecarte, h = G.hands[pl];
+    return Promise.all(h.map((c, i) => {
+      const m = this.card(c), to = this.handSpot(pl, i, h.length);
+      if (pl === 0 && G.stage === 'exchange' && G.toMove === 0 && G.marked.includes(c)) { to.z -= 0.045; to.y += 0.006; }
+      m.rotation.set(0, pl ? Math.PI : 0, pl ? Math.PI : 0);
+      if (instant) { m.position.copy(to); return null; }
+      return hop(m, to, 0.22, 0.01);
+    }));
+  },
+  meshesFor(m) { return (m.kind === 'card' || m.kind === 'mark') && m.pl === 0 ? [this.mesh.get(m.card)] : []; },
+  ringFor: () => null,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.ecarte, tok = play.token;
+    const res = G.apply(m);
+    for (const e of res.events || []) {
+      if (tok !== play.token) return res;
+      if (e.type === 'deal') { this.redeal(); sfx.card(); continue; }
+      if (e.type === 'mark') { if (G.toMove === 0) await this.layHand(0); continue; }
+      if (e.type === 'exchange') {
+        sfx.card();
+        await Promise.all(e.out.map(c => { const mc = this.card(c); this.down(mc); return hop(mc, this.discardSpot(this.nDis++), 0.3, 0.03); }));
+        await this.layHand(e.seat);
+        continue;
+      }
+      if (e.type === 'king') { const k = this.card(G.trump * 13 + 12); await hop(k, k.position.clone().add(V3(0, 0.03, e.seat ? 0.04 : -0.04)), 0.3, 0.02); if (e.seat) { tween(0.3, t => { k.rotation.z = Math.PI * (1 - t); }); await wait(900); tween(0.3, t => { k.rotation.z = Math.PI * t; }); } await this.layHand(e.seat); continue; }
+      if (e.type === 'play') {
+        const mc = this.card(e.card); sfx.card();
+        if (mc.rotation.z !== 0) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        await hop(mc, this.trickSpot(e.seat), 0.3, 0.05); mc.rotation.set(0, (Math.random() - 0.5) * 0.15, 0);
+        await this.layHand(e.seat);
+      }
+      if (e.type === 'trick') {
+        await wait(650); if (tok !== play.token) return res;
+        const k = this.piles[e.winner]++;
+        await Promise.all(G.lastTrick.cards.map((c, j) => { const mc = this.card(c); tween(0.3, t => { mc.rotation.z = Math.PI * t; }); return hop(mc, this.pileSpot(e.winner, k).add(V3(0, j * 0.0004, 0)), 0.32, 0.03); }));
+        G.lastTrick.cards.forEach(c => this.down(this.card(c)));
+      }
+    }
+    return res;
+  },
+  score() {
+    const G = GAMES.ecarte, T = G.SUITS[G.trump];
+    return [['You', G.score[0]], ['Scribe', G.score[1]], `to 5 · ${T} trumps · tricks ${G.tricks[0]}–${G.tricks[1]}${G.vulnerable >= 0 ? ` · ${G.vulnerable ? 'the Scribe' : 'you'} at risk` : ''}`];
+  },
+};
+
+// Gin Rummy: your hand near you, sorted melds first then deadwood, the Scribe's across the table, and the stock
+// and discard pile between. At a knock both hands are laid out face up, melds apart from deadwood.
+const GIN_P = {
+  camW: 1.15,
+  intro() { const G = GAMES.gin; return `${G.dealer ? 'The Scribe deals' : 'You deal'}. ` + this.prompt(); },
+  prompt() { return GAMES.gin.prompt0(); },
+  choosePrompt() { return GAMES.gin.prompt0(); },
+  setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+  leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+  y: () => GAMES.gin.surface + 0.001,
+  card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); m.scale.set(1.1, 1, 1.1); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
+  stockSpot: k => V3(-0.1, GAMES.gin.surface + 0.001 + k * 0.0012, -0.02),
+  pileSpot(k) { return V3(0.1, this.y() + k * 0.0009, -0.02); },
+  // Your hand in the order the best melds suggest: each meld together, then the deadwood, with gaps between.
+  order(p) {
+    const G = GAMES.gin, h = G.hands[p], b = G.best(h), groups = b.melds.map(m => m.slice().sort((x, y) => x - y)), dead = b.deadwood.slice().sort((x, y) => (x % 13) - (y % 13) || x - y);
+    groups.push(dead); return groups.filter(g => g.length);
+  },
+  layHand(p, instant) {
+    const G = GAMES.gin, open = p === 0 || (G.stage === 'next' && G.show), jobs = [];
+    const groups = p === 0 || open ? this.order(p) : [G.hands[p].slice()], gap = 0.025, w = p ? 0.05 : 0.062;
+    const n = groups.reduce((t, g) => t + g.length, 0), total = (n - 1) * w + (groups.length - 1) * gap;
+    let x = -total / 2, i = 0;
+    for (const g of groups) {
+      for (const c of g) {
+        const m = this.card(c), to = V3(x, this.y() + i * 0.0004, p ? -0.3 : 0.32);
+        if (p === 0 && G.taken === c) to.z -= 0.02; // the card just taken
+        m.rotation.set(0, p ? Math.PI : 0, open ? 0 : Math.PI);
+        if (instant) m.position.copy(to); else jobs.push(hop(m, to, 0.2, 0.008));
+        x += w; i++;
+      }
+      x += gap;
+    }
+    return Promise.all(jobs);
+  },
+  redeal() {
+    const G = GAMES.gin;
+    (this.cards || []).forEach(m => this.ex.group.remove(m));
+    this.cards = []; this.mesh = new Map();
+    G.stock.forEach((c, k) => { const m = this.card(c); m.rotation.set(0, 0, Math.PI); m.position.copy(this.stockSpot(k)); });
+    G.pile.forEach((c, k) => { const m = this.card(c); m.rotation.set(0, (k % 3 - 1) * 0.05, 0); m.position.copy(this.pileSpot(k)); });
+    this.layHand(0, true); this.layHand(1, true);
+  },
+  meshesFor(m) {
+    const G = GAMES.gin;
+    if (m.pl !== 0) return [];
+    if (m.kind === 'draw') return [this.mesh.get(G.stock[G.stock.length - 1])];
+    if (m.kind === 'take') return [this.mesh.get(G.pile[G.pile.length - 1])];
+    if (m.kind === 'discard' || m.kind === 'knock') return [this.mesh.get(m.card)];
+    return [];
+  },
+  ringFor: () => null,
+  fromFor: () => null,
+  async play(m) {
+    const G = GAMES.gin, tok = play.token;
+    const res = G.apply(m);
+    for (const e of res.events || []) {
+      if (tok !== play.token) return res;
+      if (e.type === 'deal') { this.redeal(); sfx.card(); continue; }
+      if (e.type === 'draw') {
+        const mc = this.card(e.card); sfx.card();
+        if (e.seat === 0 && !e.fromPile) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        if (e.seat === 1 && e.fromPile) tween(0.3, k => { mc.rotation.z = Math.PI * k; });
+        await this.layHand(e.seat);
+        continue;
+      }
+      if (e.type === 'discard') {
+        const mc = this.card(e.card); sfx.card();
+        if (e.seat === 1) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        await hop(mc, this.pileSpot(G.pile.length - 1), 0.3, 0.04); mc.rotation.set(0, (Math.random() - 0.5) * 0.12, 0);
+        await this.layHand(e.seat);
+        continue;
+      }
+      if (e.type === 'knock') { const mc = this.card(e.card); sfx.card(); mc.rotation.set(0, 0.3, Math.PI); await hop(mc, this.pileSpot(G.pile.length).add(V3(0.05, 0, 0.02)), 0.3, 0.04); continue; }
+      if (e.type === 'show') { await Promise.all([this.layHand(0), this.layHand(1)]); }
+    }
+    return res;
+  },
+  score() {
+    const G = GAMES.gin, d = G.best(G.hands[0]).dead;
+    return [['You', G.score[0]], ['Scribe', G.score[1]], `to ${G.limit} · hand ${G.handNo} · your deadwood ${d} · stock ${G.stock.length}`];
+  },
+};
+
+// Spades and Bridge: four hands round a whist table, each side's tricks in a pile on the right.
+function fourHandsPresenter(id, opts) {
+  return Object.assign({
+    camW: 1.25,
+    prompt() { return GAMES[id].prompt0(); },
+    choosePrompt() { return GAMES[id].prompt0(); },
+    setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
+    leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
+    y: () => GAMES[id].surface + 0.001,
+    card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
+    pileSpot(side, k) { return V3(0.22 + (k % 7) * 0.016, this.y() + 0.001 + k * 0.0018, side ? -0.25 : 0.25); },
+    faceUp(seat) { return seat === 0; },
+    handSpot(seat, i, n) { return wsHandSpot(seat, i, n, this.y()); },
+    handYaw(seat) { return WS_YAW[seat]; },
+    redeal() {
+      const G = GAMES[id];
+      (this.cards || []).forEach(m => this.ex.group.remove(m));
+      this.cards = []; this.mesh = new Map(); this.piles = [0, 0];
+      for (let s = 0; s < 4; s++) this.layHand(s, true);
+      const done = G.played.slice(0, G.played.length - G.trick.length);
+      const taken = this.sideTricks(G); let won = [0, 0];
+      for (let t = 0; t * 4 < done.length; t++) { const side = won[0] < taken[0] ? 0 : 1; won[side]++; const k = this.piles[side]++, to = this.pileSpot(side, k); done.slice(t * 4, t * 4 + 4).forEach((c, j) => { const m = this.card(c); m.position.set(to.x, to.y + j * 0.0004, to.z); m.rotation.set(0, Math.PI / 2, Math.PI); }); }
+      G.trick.forEach((t, j) => { const m = this.card(t.card); m.position.copy(wsTrickSpot(t.seat, this.y() + 0.002 + j * 0.0005)); m.rotation.set(0, WS_YAW[t.seat], 0); });
+    },
+    layHand(seat, instant) {
+      const G = GAMES[id], h = G.hands[seat], jobs = [];
+      h.forEach((c, i) => {
+        const m = this.card(c), to = this.handSpot(seat, i, h.length);
+        m.rotation.set(0, this.handYaw(seat), this.faceUp(seat) ? 0 : Math.PI);
+        if (instant) m.position.copy(to); else jobs.push(hop(m, to, 0.2, 0.008));
+      });
+      return Promise.all(jobs);
+    },
+    meshesFor(m) { return m.kind === 'play' && m.pl === 0 ? [this.mesh.get(m.card)] : []; },
+    ringFor: () => null,
+    fromFor: () => null,
+    async play(m) {
+      const G = GAMES[id], tok = play.token, before = G.trick.length;
+      const res = G.apply(m);
+      for (const e of res.events || []) {
+        if (tok !== play.token) return res;
+        if (e.type === 'deal') { this.redeal(); sfx.card(); continue; }
+        if (e.type === 'contract' || e.type === 'dummy') { sfx.card(); await Promise.all([0, 1, 2, 3].map(s => this.layHand(s))); continue; }
+        if (e.type === 'play') {
+          const mc = this.card(e.card), flip = mc.rotation.z !== 0, at = wsTrickSpot(e.seat, this.y() + 0.002 + before * 0.0005);
+          sfx.card();
+          if (flip) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+          await hop(mc, at, 0.3, 0.05);
+          mc.rotation.set(0, WS_YAW[e.seat] + (Math.random() - 0.5) * 0.2, 0);
+          await this.layHand(e.seat);
+        }
+        if (e.type === 'trick') {
+          await wait(700); if (tok !== play.token) return res;
+          const side = e.winner & 1, k = this.piles[side]++, to = this.pileSpot(side, k);
+          const cards = G.lastTrick.cards.map(c => this.card(c));
+          await Promise.all(cards.map((mc, j) => { tween(0.3, t => { mc.rotation.z = Math.PI * t; }); return hop(mc, V3(to.x, to.y + j * 0.0004, to.z), 0.35, 0.03); }));
+          cards.forEach(mc => { mc.rotation.set(0, Math.PI / 2 + (k % 2) * 0.08, Math.PI); });
+        }
+      }
+      return res;
+    },
+  }, opts);
+}
+const SPADES_P = fourHandsPresenter('spades', {
+  intro() { const G = GAMES.spades; return `You sit South with North, your partner. ${G.dealer ? G.SEATS[G.dealer] + ' deals' : 'You deal'}. ` + this.prompt(); },
+  sideTricks: G => [G.taken[0] + G.taken[2], G.taken[1] + G.taken[3]],
+  score() {
+    const G = GAMES.spades, b = s => (G.bids[s] === null ? '–' : G.bids[s] === 0 ? 'nil' : G.bids[s]);
+    return [['You and North', G.score[0]], ['West and East', G.score[1]], `to ${G.limit} · bids ${b(0)}+${b(2)} v ${b(1)}+${b(3)} · tricks ${G.taken[0] + G.taken[2]}–${G.taken[1] + G.taken[3]} · bags ${G.bags[0]}–${G.bags[1]}`];
+  },
+});
+const BRIDGE_P = fourHandsPresenter('bridge', {
+  intro() { const G = GAMES.bridge; return `You sit South, with North as your partner. ${G.dealer ? G.SEATS[G.dealer] + ' deals' : 'You deal'}. ` + this.prompt(); },
+  sideTricks: G => G.tricks,
+  // Face up: your own hand; North's whenever your side has the contract; and the dummy once the first card is led.
+  faceUp(seat) { const G = GAMES.bridge; return seat === 0 || (G.need === 'play' && G.declarer >= 0 && (G.declarer & 1) === 0 && seat === 2) || (G.dummyShown && seat === G.dummy) || (G.need === 'next' && G.nTricks === 13); },
+  handSpot(seat, i, n) { const G = GAMES.bridge; return G.dummyShown && seat === G.dummy && seat !== 0 ? bridgeDummySpot(seat, i, n, this.y()) : wsHandSpot(seat, i, n, this.y()); },
+  handYaw(seat) { const G = GAMES.bridge; return seat === 2 && this.faceUp(2) ? 0 : WS_YAW[seat]; },
+  score() {
+    const G = GAMES.bridge, f = n => n.toLocaleString('en-GB');
+    const c = G.contract ? `${G.bidName(G.contract.bid)}${G.doubled === 2 ? 'XX' : G.doubled === 1 ? 'X' : ''} by ${G.declarer === 0 ? 'you' : G.SEATS[G.declarer]}` : 'the auction';
+    const v = G.variant === 'chicago' ? `deal ${G.dealNo} of 4` : `games ${G.games[0]}–${G.games[1]}`;
+    return [['You and North', f(G.total[0])], ['West and East', f(G.total[1])], `${v} · ${c} · tricks ${G.tricks[0]}–${G.tricks[1]}`];
+  },
+});
 // Bézique: two packs on one table. Each hand of eight, the melds laid face up in front of it, the stock with the
 // trump card turned across it at the side, the trick in the middle and each player's tricks in a pile on the right.
 const BEZIQUE_P = {
@@ -8778,7 +9114,7 @@ const BEZIQUE_P = {
     return [['You', G.total[0] + live * G.score[0]], ['Scribe', G.total[1] + live * G.score[1]], `${G.variant === 'deal' ? 'one deal' : 'to 1,000'} · trumps ${trumps} · stock ${G.stock.length + (G.turnUp === null ? 0 : 1)}`];
   },
 };
-const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P, bezique: BEZIQUE_P, scopa: SCOPA_P, euchre: EUCHRE_P, patience: PATIENCE_P, karnoffel: KARNOFFEL_P, ombre: OMBRE_P, conquian: CONQUIAN_P, cassino: CASSINO_P, hearts: HEARTS_P, pinochle: PINOCHLE_P, skat: SKAT_P, nard: NARD_P, xii: XII_P, koikoi: KOIKOI_P, idraughts: IDRAUGHTS_P, hnefatafl: HNEFATAFL_P, primero: PRIMERO_P, madiao: MADIAO_P, popejoan: POPEJOAN_P, faro: FARO_P };
+const PRES = { ur: racePresenter(UR), senet: racePresenter(SENET), morris: MORRIS_P, oware: OWARE_P, brandubh: BRANDUBH_P, tables: TABLES_P, shatranj: SHATRANJ_P, foxgeese: FOXGEESE_P, draughts: DRAUGHTS_P, goose: racePresenter(GOOSE), reversi: REVERSI_P, dotsboxes: DOTS_P, halma: HALMA_P, go: GO_P, alquerque: ALQUERQUE_P, xiangqi: XIANGQI_P, snakes: racePresenter(SNAKES), tarocchi: TAROCCHI_P, mutorere: MUTORERE_P, konane: KONANE_P, fanorona: FANORONA_P, chess: CHESS_P, shogi: SHOGI_P, yut: YUT_P, pachisi: PACHISI_P, mahjong: MAHJONG_P, bao: BAO_P, landlord: LANDLORD_P, chinese: CHINESE_P, hex: HEX_P, gomoku: GOMOKU_P, dominoes: DOMINOES_P, tablut: TABLUT_P, makruk: MAKRUK_P, kalah: KALAH_P, cribbage: CRIBBAGE_P, morabaraba: MORABARABA_P, ludo: LUDO_P, janggi: JANGGI_P, chaturaji: CHATURAJI_P, seega: SEEGA_P, tab: TAB_P, baghchal: BAGHCHAL_P, fourseasons: FOURSEASONS_P, hounds: HOUNDS_P, latrunculi: LATRUNCULI_P, patolli: PATOLLI_P, mansion: MANSION_P, lifegame: LIFEGAME_P, jungle: JUNGLE_P, chaturanga: CHATURANGA_P, whist: WHIST_P, rithmo: RITHMO_P, lewischess: LEWIS_P, courier: COURIER_P, hazard: HAZARD_P, piquet: PIQUET_P, bezique: BEZIQUE_P, scopa: SCOPA_P, euchre: EUCHRE_P, patience: PATIENCE_P, karnoffel: KARNOFFEL_P, ombre: OMBRE_P, conquian: CONQUIAN_P, cassino: CASSINO_P, hearts: HEARTS_P, pinochle: PINOCHLE_P, skat: SKAT_P, nard: NARD_P, xii: XII_P, koikoi: KOIKOI_P, idraughts: IDRAUGHTS_P, hnefatafl: HNEFATAFL_P, primero: PRIMERO_P, madiao: MADIAO_P, popejoan: POPEJOAN_P, faro: FARO_P, ecarte: ECARTE_P, gin: GIN_P, spades: SPADES_P, bridge: BRIDGE_P };
 
 /* --------------------------------------------------------- camera */
 const cam = { pos: new THREE.Vector3(0, 1.62, 2.4), yaw: 0, pitch: -0.02 };
@@ -9389,7 +9725,7 @@ const UNDO_OK = new Set(['patience', 'chess', 'xiangqi', 'janggi', 'makruk', 'sh
 // At dice tables the Hint weighs the moves this throw allows; where the moves are fixed (the Goose, Snakes and
 // Ladders, the Mansion, Hazard's bets) there is nothing to weigh.
 const DICE_HINT = new Set(['ur', 'senet', 'tables', 'nard', 'xii', 'yut', 'pachisi', 'ludo', 'patolli', 'tab', 'hounds', 'lifegame']);
-const canHint = g => !!g.aiPlan && (g.dice ? DICE_HINT.has(g.id) : !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'bezique', 'scopa', 'euchre', 'karnoffel', 'ombre', 'conquian', 'cassino', 'hearts', 'pinochle', 'skat', 'primero', 'madiao', 'popejoan', 'faro', 'fourseasons', 'chaturaji'].includes(g.id));
+const canHint = g => !!g.aiPlan && (g.dice ? DICE_HINT.has(g.id) : !['mahjong', 'landlord', 'cribbage', 'tarocchi', 'dominoes', 'piquet', 'bezique', 'scopa', 'euchre', 'karnoffel', 'ombre', 'conquian', 'cassino', 'hearts', 'pinochle', 'skat', 'primero', 'madiao', 'popejoan', 'faro', 'ecarte', 'gin', 'spades', 'bridge', 'fourseasons', 'chaturaji'].includes(g.id));
 function copyState(g) {
   const out = {}, d = Object.getOwnPropertyDescriptors(g);
   for (const k of Object.keys(d)) if ('value' in d[k] && typeof d[k].value !== 'function' && k !== 'rules' && k !== 'source' && k !== 'surface') out[k] = d[k].value;
@@ -9453,7 +9789,7 @@ $('#lm-hintBtn').addEventListener('click', async () => {
  * A long game against the Scribe is kept in this browser at the start of each of
  * your turns (between tricks, at card tables), and comes back when you sit down
  * again. Only the engine's own state is kept; the table is rebuilt from it. */
-const SAVE_OK = new Set(['primero', 'madiao', 'popejoan', 'faro', 'hearts', 'pinochle', 'skat', 'karnoffel', 'ombre', 'conquian', 'cassino', 'chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'euchre', 'patience', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl', 'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong']);
+const SAVE_OK = new Set(['ecarte', 'gin', 'spades', 'bridge', 'primero', 'madiao', 'popejoan', 'faro', 'hearts', 'pinochle', 'skat', 'karnoffel', 'ombre', 'conquian', 'cassino', 'chess', 'xiangqi', 'janggi', 'makruk', 'shatranj', 'chaturanga', 'lewischess', 'courier', 'rithmo', 'whist', 'piquet', 'bezique', 'scopa', 'euchre', 'patience', 'draughts', 'tablut', 'halma', 'reversi', 'idraughts', 'hnefatafl', 'jungle', 'mutorere', 'oware', 'kalah', 'go', 'morris', 'morabaraba', 'brandubh', 'foxgeese', 'dotsboxes', 'alquerque', 'konane', 'fanorona', 'shogi', 'bao', 'chinese', 'hex', 'gomoku', 'seega', 'baghchal', 'latrunculi', 'mahjong']);
 const SAVE_VERSION = 1;
 // Mahjong is kept only when it is your turn to discard: the table is laid out again from the hands, melds and discards.
 GAMES.mahjong.saveable = function () { return this.need.type === 'discard' && this.need.seat === 0 && this.winner === null; };

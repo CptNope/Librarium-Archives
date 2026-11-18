@@ -14,13 +14,13 @@ export const FAMILIES = [
   ['Territory and enclosure', 'Surround, close in or flip to own the most of the board.', ['go', 'dotsboxes', 'reversi']],
   ['Running and jumping races', 'Move a whole army across the board by steps and chains of hops.', ['halma', 'chinese']],
   ['Mancala', 'Sow seeds round a row of pits and capture by count.', ['oware', 'kalah', 'bao']],
-  ['Cards', 'Tricks, bidding, melds, rummy, fishing, combinations and patience, and cards made for other uses.', ['cards', 'karnoffel', 'tarot', 'primero', 'courtcards', 'ombre', 'cribbage', 'notforplay', 'faro', 'scopa', 'popejoan', 'whist', 'patience', 'cassino', 'skat', 'bezique', 'euchre', 'conquian', 'pinochle', 'hearts', 'koikoi', 'ganjifa', 'madiao']],
+  ['Cards', 'Tricks, bidding, melds, rummy, fishing, combinations and patience, and cards made for other uses.', ['cards', 'karnoffel', 'tarot', 'primero', 'courtcards', 'ombre', 'cribbage', 'notforplay', 'faro', 'scopa', 'popejoan', 'whist', 'patience', 'cassino', 'skat', 'ecarte', 'bezique', 'euchre', 'conquian', 'pinochle', 'hearts', 'gin', 'bridge', 'spades', 'koikoi', 'ganjifa', 'madiao']],
   ['Tiles', 'Dominoes and mahjong.', ['dominoes', 'mahjong']],
 ];
 
 // Other names an exhibit goes by in docs/exhibits.md and docs/scribe.md, beyond its title and its engine's name.
 export const ALIASES = {
-  ur: ['Ur', 'Royal Game of Ur'], scopa: ['Scopa'], euchre: ['Euchre'], bezique: ['Bézique'], karnoffel: ['Karnöffel'], ombre: ['Ombre'], conquian: ['Conquian'], cassino: ['Cassino'], skat: ['Skat'], pinochle: ['Pinochle'], hearts: ['Hearts'], primero: ['Primero', 'Primiera'], faro: ['Faro', 'Pharaon'], popejoan: ['Pope Joan'], madiao: ['Ma Diao', 'Madiao'],
+  ur: ['Ur', 'Royal Game of Ur'], scopa: ['Scopa'], euchre: ['Euchre'], bezique: ['Bézique'], karnoffel: ['Karnöffel'], ombre: ['Ombre'], conquian: ['Conquian'], cassino: ['Cassino'], skat: ['Skat'], pinochle: ['Pinochle'], hearts: ['Hearts'], primero: ['Primero', 'Primiera'], faro: ['Faro', 'Pharaon'], popejoan: ['Pope Joan'], madiao: ['Ma Diao', 'Madiao'], ecarte: ['Écarté', 'Ecarte'], gin: ['Gin Rummy', 'Gin'], bridge: ['Contract Bridge', 'Bridge'], spades: ['Spades'],
   dice: ['Hazard', 'The first dice'], hounds: ['Hounds and Jackals'], go: ['Go', 'Weiqi'], latrunculi: ['Latrunculi', 'Ludus latrunculorum'],
   xii: ['Duodecim scripta', 'Ludus duodecim scriptorum'], morris: ['Morris', "Nine Men's Morris"], oware: ['Oware', 'Mancala'],
   lewis: ['Medieval chess', 'Lewis chessmen'], cards: ['Piquet', 'Playing cards'], tarot: ['Tarocchi', 'Tarot'], newqueen: ['Chess', 'The New Queen'],
@@ -33,6 +33,52 @@ export const ALIASES = {
 
 // Turn diagrams written by hand, keyed by engine id. Each is the body of a mermaid flowchart.
 export const FLOWS = {
+  ecarte: `flowchart TD
+    D(["Five cards each; trumps turned; a turned king scores 1"]) --> P{"Non-dealer: propose, or play?"}
+    P -->|propose| R{"Dealer: accept?"}
+    R -->|yes| X["Proposer exchanges, then the dealer"] --> P
+    R -->|no| K
+    P -->|play| K["The king of trumps scores 1 for its holder"]
+    K --> T["Five tricks: follow and head the trick, or trump"]
+    T --> S["The point 1, the vole 2; 2 against a loser who played or refused"]
+    S --> G{"Anyone at 5?"}
+    G -->|no| D
+    G -->|yes| E(["First to 5 wins"])`,
+  gin: `flowchart TD
+    D(["Ten cards each; a card turned up"]) --> U["Take the upcard, or pass"]
+    U --> T["Draw from the stock or the pile"]
+    T --> X["Discard"]
+    X --> K{"Deadwood 10 or less, and knocking?"}
+    K -->|no| S{"Two cards left in the stock?"}
+    S -->|no| T
+    S -->|yes| V["The hand is void"] --> D
+    K -->|yes| L["Melds down; the defender lays off"]
+    L --> P["Difference in deadwood; gin 25 more; undercut 25"]
+    P --> G{"Anyone at 100?"}
+    G -->|no| D
+    G -->|yes| E(["100 for the game, 25 a hand won"])`,
+  bridge: `flowchart TD
+    D(["Thirteen cards each"]) --> A["The auction: pass, bid, double or redouble"]
+    A --> Q{"Three passes after a bid?"}
+    Q -->|no| A
+    Q -->|four passes| D
+    Q -->|yes| C["The contract and declarer"]
+    C --> L["Opening lead; dummy goes face up"]
+    L --> T["Thirteen tricks, declarer playing both hands"]
+    T --> S["Tricks bid towards game; over- and undertricks, slams, honours"]
+    S --> G{"Four deals, or a rubber won?"}
+    G -->|no| D
+    G -->|yes| E(["Higher total wins"])`,
+  spades: `flowchart TD
+    D(["Thirteen cards each"]) --> B["Each bids tricks, or nil"]
+    B --> L["Lead: no spades until broken"]
+    L --> F["Follow suit if you can; spades trump"]
+    F --> M{"Thirteen tricks played?"}
+    M -->|no| L
+    M -->|yes| S["10 a trick bid, or minus; bags; nil 100"]
+    S --> G{"A side at 500, or down to −200?"}
+    G -->|no| D
+    G -->|yes| E(["Higher score wins"])`,
   primero: `flowchart TD
     A(["Both ante a counter; two cards each"]) --> V["Vie, see, vie again, pass or fold"]
     V -->|a fold| W

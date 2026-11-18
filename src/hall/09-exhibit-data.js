@@ -292,9 +292,9 @@ const STOPS = [
     eyebrow: 'Wing IV · Librarium Archives', status: null, begin: 'foxgeese',
     body: [
       'Printing changed how people played. Rules were set down in books, boards were sold as printed sheets, and court games became family games at the kitchen table. This wing follows chess\'s new queen and the rise of draughts, and games that travelled from India and China into parlours around the world.',
-      'Twenty-two tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Primero, the ancestor of poker; International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Ombre, at its three-cornered table; Cribbage; Faro, against the bank; Dominoes; Scopa; Tablut; Pope Joan, on its board of eight compartments; Whist, with a Scribe as your partner; Patience, played alone; Cassino; Skat; Snakes and Ladders; Bézique; Ludo; and Mahjong, with three Scribes.'
+      'Twenty-three tables are open: Fox and Geese, where you play the fox; modern chess, at the New Queen; Draughts; Primero, the ancestor of poker; International draughts on its board of a hundred squares; Pachisi; the Game of the Goose; Ombre, at its three-cornered table; Cribbage; Faro, against the bank; Dominoes; Scopa; Tablut; Pope Joan, on its board of eight compartments; Whist, with a Scribe as your partner; Patience, played alone; Cassino; Skat; Écarté; Snakes and Ladders; Bézique; Ludo; and Mahjong, with three Scribes.'
     ],
-    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Primero, International draughts, Pachisi, the Goose, Ombre, Cribbage, Faro, Dominoes, Scopa, Tablut, Pope Joan, Whist, Patience, Cassino, Skat, Snakes and Ladders, Bézique, Ludo, Mahjong']],
+    facts: [['Tables', 'Fox and Geese, Chess, Draughts, Primero, International draughts, Pachisi, the Goose, Ombre, Cribbage, Faro, Dominoes, Scopa, Tablut, Pope Joan, Whist, Patience, Cassino, Skat, Écarté, Snakes and Ladders, Bézique, Ludo, Mahjong']],
   },
   { id: 'foxgeese', wing: 4, title: 'Fox and Geese', date: 'by c. 1300 CE', rail: 'Fox and Geese',
     eyebrow: 'Northern Europe · Middle Ages', status: ['known', 'Rules survive in tradition'], game: 'foxgeese',
@@ -482,6 +482,16 @@ const STOPS = [
     ],
     facts: [['Pack', '32 cards'], ['Players', 'Three: a declarer against two'], ['Trumps', 'The four jacks, then the suit'], ['To win', '61 of 120 card points']],
     build: buildSkat },
+  { id: 'ecarte', wing: 4, title: 'Écarté', date: '19th century CE', rail: 'Écarté',
+    eyebrow: 'France, the salons and the clubs', status: ['known', 'Rules survive in print'], game: 'ecarte',
+    note: 'Holding the king of trumps is announced for you.',
+    body: [
+      'Écarté is a French game for two, a sharp, quick descendant of the old trick-taking game of triomphe. Its name means discarded: before play, either player may ask to throw away cards and draw new ones, and the other may agree or refuse, and refusing is a risk. In every suit the king ranks highest and the ace sits between the ten and the jack.',
+      'It was a great gambling game of 19th-century Paris, where onlookers might advise the players, and it crossed to the London clubs, which forbade that: Cavendish described the rules played there in 1886. It turns up in fiction from Poe\'s "William Wilson" (1839), whose hero cheats at it, to Dumas\'s The Count of Monte Cristo and Conan Doyle\'s Brigadier Gerard.',
+      'It survived in Germany into the 1960s, and in a few French cercles de jeu into this century.'
+    ],
+    facts: [['Pack', '32 cards; king high, ace below the jack'], ['Players', 'Two'], ['Score', 'The point 1, the vole 2'], ['Game', '5 points']],
+    build: buildEcarte },
   { id: 'snakes', wing: 4, title: 'Snakes and Ladders', date: '18th–19th century CE', rail: 'Snakes and Ladders',
     eyebrow: 'India, then England', status: ['known', 'Still played today'], game: 'snakes',
     body: [
@@ -521,9 +531,9 @@ const STOPS = [
     eyebrow: 'Wing V · Librarium Archives', status: null, begin: 'mansion',
     body: [
       'With cheap colour printing, board games became products. Publishers in Salem, Springfield, London and Ravensburg sold games about virtue, money and getting ahead, and inventors patented their ideas. This wing runs from the first American board games to the ancestors of games still on the shelf, and ends with Librarium\'s own.',
-      'All thirteen tables are open: the Mansion of Happiness, Euchre, Conquian, the Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah and Hex.'
+      'All sixteen tables are open: the Mansion of Happiness, Euchre, Conquian, the Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Gin Rummy, Contract Bridge, Spades, Kalah and Hex.'
     ],
-    facts: [['Tables', 'Mansion of Happiness, Euchre, Conquian, Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Kalah, Hex']],
+    facts: [['Tables', 'Mansion of Happiness, Euchre, Conquian, Checkered Game of Life, Pinochle, Reversi, Halma, Hearts, Dots and Boxes, Chinese checkers, the Landlord\'s Game, Gin Rummy, Contract Bridge, Spades, Kalah, Hex']],
   },
   { id: 'mansion', wing: 5, title: 'The Mansion of Happiness', date: '1843 CE', rail: 'Mansion of Happiness',
     eyebrow: 'Salem, Massachusetts', status: ['known', 'Rules survive in print'], game: 'mansion',
@@ -625,6 +635,34 @@ const STOPS = [
     ],
     facts: [['Patent', 'U.S. 748,626, 1904'], ['Inventor', 'Lizzie Magie'], ['Descendant', 'Monopoly (1935)']],
     build: buildLandlord },
+  { id: 'gin', wing: 5, title: 'Gin Rummy', date: '1909 CE', rail: 'Gin Rummy',
+    eyebrow: 'New York, then Hollywood', status: ['known', 'Still played'], game: 'gin',
+    body: [
+      'Gin rummy was worked out in New York in 1909, or a year or two later, by Elwood T. Baker, a whist and bridge player, and his son C. Graham Baker, who named it gin, after the drink. It came from the older rummies: pagat.com names Conquian and the American game of rum, and David Parlett sees Conquian as its forerunner.',
+      'For thirty years it stayed a New York game. Then in 1941 it became a Hollywood craze, and from there it spread across the country; the next year The Bridge World published laws for it. A survey of 1947 found that as many people had learned gin during the Second World War as had learned pinochle, cribbage, poker and bridge put together.',
+      'Ten cards, one draw and one discard a turn, and the knock: stop the hand whenever your unmatched cards come to ten or less, and hope the other player cannot undercut you.'
+    ],
+    facts: [['Players', 'Two'], ['Deal', 'Ten cards each'], ['Knock', 'Deadwood 10 or less; gin with none'], ['Game', '100 points']],
+    build: buildGin },
+  { id: 'bridge', wing: 5, title: 'Contract Bridge', date: '1925 CE', rail: 'Contract Bridge',
+    eyebrow: 'From whist, by way of London and New York', status: ['known', 'Still played'], game: 'bridge',
+    note: 'The Scribes bid a simple natural system of their own: points, five-card majors, 1NT on 15 to 17.',
+    body: [
+      'Bridge grew out of whist. Biritch, or Russian whist, brought in the dummy hand, no-trump play and the score kept above and below the line; John Collinson printed its rules in London in 1886. Bridge whist was the rage of Britain and America in the 1890s, and London\'s Portland Club took it up in 1894. Auction bridge, from 1904, let the players bid against each other for the right to name trumps.',
+      'Contract bridge added one idea: only the tricks you bid count towards a game, so the auction became the heart of the game. Players had tried it before, but in 1925, on a cruise, Harold Vanderbilt rewrote the scoring and added vulnerability, and his rules swept the world. By 1941 a survey found bridge played in 44 per cent of American households.',
+      'The first official world championship was held in Budapest in 1937, and the World Bridge Federation was founded in 1958. Today bridge is a mind sport, played in clubs, at tournaments and online.'
+    ],
+    facts: [['Players', 'Four, in two partnerships'], ['Auction', 'One to seven, clubs to no trumps'], ['Dummy', 'Declarer\'s partner, face up'], ['Game here', 'Chicago (four deals) or a rubber']],
+    build: buildBridge },
+  { id: 'spades', wing: 5, title: 'Spades', date: 'late 1930s CE', rail: 'Spades',
+    eyebrow: 'Cincinnati, then the world', status: ['known', 'Still played'], game: 'spades',
+    body: [
+      'Spades is a whist game with a bridge-like bid, simplified: spades are always trumps, and each player says how many tricks they will take. The bridge writer George Coffin traced it to Cincinnati, Ohio, between 1937 and 1939.',
+      'American soldiers carried it round the world in the Second World War, and veterans brought it home, where with the GI Bill it took hold in colleges and home games. It stayed popular wherever American troops were stationed.',
+      'Its scoring punishes greed as well as failure: every trick over the bid is a bag, and ten bags cost a hundred points. The nil bid, promising to take nothing, turns a hopeless hand into a hundred.'
+    ],
+    facts: [['Players', 'Four, in two partnerships'], ['Trumps', 'Always spades'], ['Score', '10 a trick bid; bags cost 100 at ten'], ['Game', '500 points']],
+    build: buildSpades },
   { id: 'kalah', wing: 5, title: 'Kalah', date: '1940 CE', rail: 'Kalah',
     eyebrow: 'United States', status: ['known', 'Rules survive in print'], game: 'kalah',
     body: [

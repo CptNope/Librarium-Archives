@@ -25,7 +25,7 @@ let server, browser, page, base;
 const errors = [];
 
 // Every table a test touches is marked as seen, so its rules panel stays shut; the Scribe plays Gentle to keep it quick.
-const SEEN = ['newqueen', 'chess', 'dotsboxes', 'ur', 'bao', 'scopa', 'patience', 'cassino', 'faro'];
+const SEEN = ['newqueen', 'chess', 'dotsboxes', 'ur', 'bao', 'scopa', 'patience', 'cassino', 'faro', 'bridge'];
 async function open(path = 'index.html') {
   page = await browser.newPage({ viewport: { width: 900, height: 560 } });
   page.on('pageerror', e => errors.push(String(e).slice(0, 300)));
@@ -220,6 +220,24 @@ test('faro: a check placed on the layout, a turn dealt, and the bets settled', {
   await sleep(800); await yourTurn();
   const g = await page.evaluate(() => { const G = window.__archives.play.game; return { turn: G.turnNo, total: G.checks + G.staked(), out: G.out.length }; });
   assert.equal(g.turn, 1); assert.equal(g.out, 3); assert.ok(g.total >= 48 && g.total <= 51, JSON.stringify(g));
+  await leave();
+});
+
+test('bridge: a bid is a level, then a strain; Back returns to the auction', { timeout: LONG * 2 }, async () => {
+  await sit('bridge'); await yourTurn();
+  const need = await page.evaluate(() => window.__archives.play.game.need);
+  if (need === 'auction') {
+    await page.evaluate(() => { const P = window.__archives.play; window.__archives.choose(P.moves.find(m => m.kind === 'level')); });
+    await sleep(400); await yourTurn();
+    const labels = await page.evaluate(() => [...document.querySelectorAll('#lm-choices button')].map(b => b.textContent));
+    assert.ok(labels.includes('Back') && labels.some(l => /NT$/.test(l)), labels.join(' / '));
+    await page.evaluate(() => [...document.querySelectorAll('#lm-choices button')].find(b => b.textContent === 'Back').click());
+    await sleep(400); await yourTurn();
+    const again = await page.evaluate(() => [...document.querySelectorAll('#lm-choices button')].map(b => b.textContent));
+    assert.ok(again.includes('Pass'), again.join(' / '));
+    await page.evaluate(() => [...document.querySelectorAll('#lm-choices button')].find(b => b.textContent === 'Pass').click());
+    await sleep(600); await yourTurn();
+  }
   await leave();
 });
 

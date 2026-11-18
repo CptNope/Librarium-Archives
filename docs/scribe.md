@@ -23,11 +23,12 @@ mindmap
       plays only from what it can see
       Tarocchi · Dominoes · Cribbage · Mahjong
       Whist · Piquet · Euchre · Bézique · Scopa · Hanafuda
-      Conquian · Cassino · Pinochle
+      Conquian · Cassino · Pinochle · Gin Rummy
     Sampling the unseen cards
       deals what it cannot see at random and plays each deal out, as Tarocchi's Sharp does
       Karnöffel · Ombre · Skat · Hearts
       Primero · Ma Diao · Pope Joan
+      Écarté · Spades · Contract Bridge
     Rules of thumb
       scored moves for dice games
       Senet · Ur · Tables
@@ -120,6 +121,10 @@ The Scribe never looks at the visitor's hand or the deck. Each game's Scribe wor
 | Primero | Deals out the cards it cannot see many times (its own cards to come, and a hand for you, each improved by a quick exchange) to judge how often its hand wins. It vies when it expects to win well over half the time, vies the rest when far ahead, sees when the pot pays for the risk, and vies on nothing now and then. In the exchange it tries every discard of up to two cards against many draws. Sharp deals more often, reads your vies (a player who vies twice is seldom weak) and bluffs a little more; Gentle often plays at random |
 | Ma Diao | The three players work together against the banker: each beats the banker's card with its cheapest winner, leaves a partner's winning card alone and throws its weakest card face down. The banker wins tricks cheaply until it has its two. Anyone leads a top card it holds, as a sure trick. Sharp deals the unseen cards (the other hands, the stock and the cards thrown face down) many times, plays each deal out and picks the card that pays it most |
 | Pope Joan | The only choice is which suit to lead. Fair leads the suit that lets it play the most cards in a row, above all a run up to its own king or through the honours it holds. Sharp deals the unseen hands, the dead hand included, many times and plays the deal out from each choice, to see which wins it most counters. Gentle often leads at random |
+| Écarté | Counts its hand (trumps by rank, side kings, guarded queens) and plays without proposing, or refuses, when that promises three tricks; in an exchange it keeps trumps and kings. The rules leave few choices in play: it leads its best trump when long in them, otherwise its strongest side card, and follows as cheaply as allowed. Sharp deals your hand at random many times, solves each deal exactly from both sides, and plays (or proposes, or refuses) by how often it wins the point |
+| Gin Rummy | Takes the upcard or the discard when it fits a meld or nearly does; throws the card that leaves least deadwood, keeping pairs and near-runs, and avoids feeding you cards next to those you took from the pile. Knocks as soon as it can. Sharp plays as Fair: a one-draw look-ahead and searches that played whole hands out were tried, and none played better |
+| Spades | Bids its sure and likely tricks (aces, guarded kings, high and long spades, short suits to ruff with) and nil with almost nothing. Plays Whist's book, but ducks for bags once its side has made the bid, covers a partner's nil and leads low into an opponent's. Sharp deals the unseen cards round many times and plays each deal out, for the card that scores its side best |
+| Contract Bridge | Bids a simple natural system: high-card points and a point for each card over four; opens 1NT on 15–17 even, five-card majors, a pre-empt with seven cards; overcalls good five-card suits; then aims, with its partner's calls read for the least they promise, at a part score, game (3NT on 25 high-card points, four of a major on 26, five of a minor on 29) or slam (33 and 37), bidding towards it a step at a time and doubling opponents who outbid their points. Plays Whist's book, with no-trump play and an opening lead from partner's suit or the fourth best of the longest. Sharp, as declarer or defender, deals the hidden hands many times and plays each deal out, valuing tricks and making or beating the contract |
 | Mahjong | Each of the three Scribes counts how far its hand is from ready (shanten) and keeps the discards that leave the most useful draws open. It claims only when a claim brings its hand closer |
 
 ## Hints
@@ -169,6 +174,10 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Primero | 160–33, 7 even | 165–123, 12 even | 200 and 300 games of ten hands, seats swapped |
 | Ma Diao (one seat at the level, three at the level below) | +2.8 stakes a game, wins 36% | +1.5 stakes a game, wins 30% | 300 and 200 games of four deals; an even seat wins about 1 in 4 |
 | Pope Joan (one seat at the level, three at the level below) | +4.4 counters a game | +2.0 counters a game | 400 and 200 games of four deals; the cards decide most of it |
+| Écarté | 165–135 | 170–130 | 300 games each, to 5; the deal decides much |
+| Gin Rummy | 147–53 | as Fair | 200 games to 100; at gin Sharp plays as Fair |
+| Spades (both seats of a side at one level) | 73–27 | 44–16 | 100 and 60 games to 250 |
+| Contract Bridge (both seats of a side at one level) | 41–17, 2 level | 28–12 | 60 and 40 Chicago games of four deals |
 | Hazard | about 50% | 56% | 4,000 each; the dice decide almost everything |
 | Nard | 58% | 59% | 100 each |
 | Duodecim scripta | 59% | 56% | 100 each |
@@ -183,7 +192,7 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Yut Nori | about 55% | | hundreds |
 | Mū tōrere | | | Sharp looks 16 moves ahead and never loses |
 
-Known weak spots: in Brandubh the visitor's side still wins most games against Sharp. The attackers now value the squares diagonally in from each corner and see when the king is one move from a corner, but in Scribe-against-Scribe games the defenders still win most often: on a 7 × 7 board, with these reconstructed rules, the king has a short road out. The Sharp level of Janggi and Rithmomachia is barely stronger than Fair in short matches; playing captures out at the end of the search was tried at both and dropped, since it cost more depth than it gained (on a busy or slower machine it made Janggi weaker). These are on the [roadmap](roadmap.md).
+Known weak spots: in Brandubh the visitor's side still wins most games against Sharp. The attackers now value the squares diagonally in from each corner and see when the king is one move from a corner, but in Scribe-against-Scribe games the defenders still win most often: on a 7 × 7 board, with these reconstructed rules, the king has a short road out. The Sharp level of Janggi and Rithmomachia is barely stronger than Fair in short matches; playing captures out at the end of the search was tried at both and dropped, since it cost more depth than it gained (on a busy or slower machine it made Janggi weaker). At Gin Rummy, Sharp plays as Fair: a one-draw look-ahead, and a search that played whole hands out against sampled hands for the visitor, were both tried and played no better than Fair's rules, the second because a random hand is a poor guess at one that has been played for several turns. These are on the [roadmap](roadmap.md).
 
 ## Game by game
 

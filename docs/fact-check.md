@@ -133,3 +133,20 @@ Pope Joan's first printing in Hoyle is given as 1814 (Wikipedia) and 1826 (Parle
 - [Faro (card game)](https://en.wikipedia.org/wiki/Faro_(card_game)), Wikipedia, and [Faro](https://pagat.com/banking/faro.html), pagat.com
 - [Pope Joan (card game)](https://en.wikipedia.org/wiki/Pope_Joan_(card_game)), Wikipedia, and [Pope Joan](https://www.parlettgames.uk/histocs/popejoan.html), David Parlett
 - [Madiao](https://en.wikipedia.org/wiki/Madiao), Wikipedia, and [Madiao](https://www.wopc.co.uk/explore/game/madiao/), The World of Playing Cards
+
+## The card room, part six (0.39.0)
+
+| Placard | Claims | Source |
+| --- | --- | --- |
+| Écarté | A French game for two, a derivative of triomphe; the name means discarded; king high, the ace between ten and jack; a gambling game of 19th-century Paris; French onlookers might advise, English clubs forbade it; Cavendish's account of the London clubs, 1886; Poe's "William Wilson" (1839), Dumas, Conan Doyle's Brigadier Gerard; played in Germany into the 1960s and in some French cercles de jeu this century | Wikipedia, Écarté; pagat.com, Écarté |
+| Gin Rummy | Devised in New York by Elwood T. Baker and his son C. Graham Baker, 1909 (Wikipedia) or about 1911 (pagat.com); named after the drink; from Conquian and rum; a New York game until the Hollywood craze of 1941; laws in The Bridge World, 1942; the survey of 1947 | Wikipedia, Gin rummy; pagat.com, Gin Rummy |
+| Contract Bridge | Biritch with dummy, no-trumps and above-and-below-the-line scoring, Collinson 1886; bridge whist in the 1890s and the Portland Club, 1894; auction bridge 1904; bidding to game known before, the name in print about 1920; Vanderbilt's scoring and vulnerability on his 1925 cruise; 44 per cent of US households in 1941; Budapest 1937; the WBF, 1958 | Wikipedia, Contract bridge; ACBL, Bridge history myths |
+| Spades | Spades always trump, each player bids tricks; traced by George Coffin to Cincinnati, 1937–39; spread by soldiers in the Second World War, then in colleges with the GI Bill; bags and nil | Wikipedia, Spades (card game) |
+
+The date of gin rummy is given as 1909 (Wikipedia) and about 1911 (pagat.com), so the placard says 1909 "or a year or two later". Bridge: the ACBL corrects the myth that Vanderbilt invented contract bridge; the placard credits him only with the scoring and vulnerability. The placards do not repeat the common story that he did it on board the SS Finland, which the sources checked here do not state.
+
+- [Écarté](https://en.wikipedia.org/wiki/%C3%89cart%C3%A9), Wikipedia, and [Écarté](https://www.pagat.com/trumps/ecarte.html), pagat.com
+- [Gin rummy](https://en.wikipedia.org/wiki/Gin_rummy), Wikipedia, and [Gin Rummy](https://www.pagat.com/rummy/ginrummy.html), pagat.com
+- [Contract bridge](https://en.wikipedia.org/wiki/Contract_bridge), Wikipedia, and [Bridge history myths](https://acbl.org/bridge-history-myths/), ACBL
+- [Spades (card game)](https://en.wikipedia.org/wiki/Spades_(card_game)), Wikipedia
+

@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · 18th–19th century CE · India, then England
 
-[← Skat](skat.md) · [All games](README.md) · [Bézique →](bezique.md)
+[← Écarté](ecarte.md) · [All games](README.md) · [Bézique →](bezique.md)
 
 | | |
 | --- | --- |
