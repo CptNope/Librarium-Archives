@@ -2,7 +2,7 @@
 
 # Game by game
 
-One page for each of the hall's **80 exhibits**, 73 of them playable, in the order you walk them. Each page has the placard's history, a diagram of a turn, the rules as the table plays them and where they come from, what the table offers (the Scribe, a friend, Undo, Hint, saved games), how the Scribe plays and how strong it is, and the files that make it.
+One page for each of the hall's **84 exhibits**, 77 of them playable, in the order you walk them. Each page has the placard's history, a diagram of a turn, the rules as the table plays them and where they come from, what the table offers (the Scribe, a friend, Undo, Hint, saved games), how the Scribe plays and how strong it is, and the files that make it.
 
 The pages are written from the code and the other guides by `tools/build-docs.mjs`, so they change when the games do. For the reasoning behind the rule choices see [the exhibits guide](../exhibits.md); for the AI, [the Scribe](../scribe.md).
 
@@ -84,11 +84,14 @@ mindmap
       cards["Playing Cards"]
       karnoffel["Karnöffel"]
       tarot["Tarot (Tarocchi)"]
+      primero["Primero"]
       courtcards["Court Cards (display)"]
       ombre["Ombre"]
       cribbage["Cribbage"]
       notforplay["Cards Not for Playing (display)"]
+      faro["Faro"]
       scopa["Scopa"]
+      popejoan["Pope Joan"]
       whist["Whist"]
       patience["Patience"]
       cassino["Cassino"]
@@ -100,6 +103,7 @@ mindmap
       hearts["Hearts"]
       koikoi["Hanafuda (Koi-koi)"]
       ganjifa["Ganjifa (display)"]
+      madiao["Ma Diao"]
     f11["Tiles"]
       dominoes["Dominoes"]
       mahjong["Mahjong"]
@@ -169,7 +173,7 @@ Sow seeds round a row of pits and capture by count.
 
 Tricks, bidding, melds, rummy, fishing, combinations and patience, and cards made for other uses.
 
-[Playing Cards](cards.md) · [Karnöffel](karnoffel.md) · [Tarot (Tarocchi)](tarot.md) · [Court Cards](courtcards.md) (display) · [Ombre](ombre.md) · [Cribbage](cribbage.md) · [Cards Not for Playing](notforplay.md) (display) · [Scopa](scopa.md) · [Whist](whist.md) · [Patience](patience.md) · [Cassino](cassino.md) · [Skat](skat.md) · [Bézique](bezique.md) · [Euchre](euchre.md) · [Conquian](conquian.md) · [Pinochle](pinochle.md) · [Hearts](hearts.md) · [Hanafuda](koikoi.md) · [Ganjifa](ganjifa.md) (display)
+[Playing Cards](cards.md) · [Karnöffel](karnoffel.md) · [Tarot (Tarocchi)](tarot.md) · [Primero](primero.md) · [Court Cards](courtcards.md) (display) · [Ombre](ombre.md) · [Cribbage](cribbage.md) · [Cards Not for Playing](notforplay.md) (display) · [Faro](faro.md) · [Scopa](scopa.md) · [Pope Joan](popejoan.md) · [Whist](whist.md) · [Patience](patience.md) · [Cassino](cassino.md) · [Skat](skat.md) · [Bézique](bezique.md) · [Euchre](euchre.md) · [Conquian](conquian.md) · [Pinochle](pinochle.md) · [Hearts](hearts.md) · [Hanafuda](koikoi.md) · [Ganjifa](ganjifa.md) (display) · [Ma Diao](madiao.md)
 
 ### Tiles
 
@@ -183,21 +187,21 @@ Dominoes and mahjong.
 pie showData
     title Rules status of the 73 exhibits
     "Still played" : 23
-    "Rules survive in print" : 11
+    "Rules survive in print" : 13
     "Modern reconstruction" : 7
     "Rules survive in writing" : 6
-    "Rules reconstructed" : 4
+    "Rules reconstructed" : 5
     "Still played today" : 4
     "Rules survive in tradition" : 4
     "Rules lost" : 2
     "Partly reconstructed" : 2
+    "Rules partly reconstructed" : 2
     "Game unknown" : 1
     "Still rolled today" : 1
     "Rules mostly lost" : 1
     "Rules survive in modern backgammon" : 1
     "Rules in print, 1616" : 1
     "Earliest games lost" : 1
-    "Rules partly reconstructed" : 1
     "Still played as a card game" : 1
     "Still played, and the ancestor of Ludo" : 1
     "Packs survive" : 1
@@ -216,8 +220,8 @@ pie showData
 xychart-beta
     title "Playable tables with each feature"
     x-axis ["Scribe", "Friend", "Undo", "Hint", "Saved", "Pack"]
-    y-axis "Tables" 0 --> 73
-    bar [72, 51, 37, 51, 50, 13]
+    y-axis "Tables" 0 --> 77
+    bar [75, 51, 37, 51, 54, 15]
 ```
 
 ## Wing I: The Dawn of Play
@@ -327,28 +331,33 @@ Printing changed how people played. Rules were set down in books, boards were so
 flowchart TB
     subgraph r0[" "]
         direction LR
-        in(["From Wing III"]) --> foxgeese["Fox and Geese<br/>by c. 1300 CE"] --> newqueen["The New Queen<br/>c. 1475 CE"] --> draughts["Draughts<br/>c. 1100s – 1500s CE"] --> idraughts["International Draughts<br/>c. 1550 – 1700 CE"]
+        in(["From Wing III"]) --> foxgeese["Fox and Geese<br/>by c. 1300 CE"] --> newqueen["The New Queen<br/>c. 1475 CE"] --> draughts["Draughts<br/>c. 1100s – 1500s CE"] --> primero["Primero<br/>1526 CE"]
     end
     subgraph r1[" "]
         direction LR
-        pachisi["Pachisi (Chaupar)<br/>16th century CE"] --> courtcards[/"Court Cards<br/>c. 1565 CE<br/>on display"/] --> goose["Game of the Goose<br/>c. 1575 CE"] --> ombre["Ombre<br/>early 1600s CE"] --> cribbage["Cribbage<br/>1630s CE"]
+        idraughts["International Draughts<br/>c. 1550 – 1700 CE"] --> pachisi["Pachisi (Chaupar)<br/>16th century CE"] --> courtcards[/"Court Cards<br/>c. 1565 CE<br/>on display"/] --> goose["Game of the Goose<br/>c. 1575 CE"] --> ombre["Ombre<br/>early 1600s CE"]
     end
     subgraph r2[" "]
         direction LR
-        notforplay[/"Cards Not for Playing<br/>1685 – 1805 CE<br/>on display"/] --> dominoes["Dominoes<br/>18th century CE"] --> scopa["Scopa<br/>18th century CE"] --> tablut["Tablut<br/>1732 CE"] --> whist["Whist<br/>1742 CE"]
+        cribbage["Cribbage<br/>1630s CE"] --> notforplay[/"Cards Not for Playing<br/>1685 – 1805 CE<br/>on display"/] --> faro["Faro<br/>1688 CE"] --> dominoes["Dominoes<br/>18th century CE"] --> scopa["Scopa<br/>18th century CE"]
     end
     subgraph r3[" "]
         direction LR
-        patience["Patience<br/>1788 CE"] --> cassino["Cassino<br/>1792 CE"] --> skat["Skat<br/>c. 1810 CE"] --> snakes["Snakes and Ladders<br/>18th–19th century CE"] --> bezique["Bézique<br/>1847 CE"]
+        tablut["Tablut<br/>1732 CE"] --> popejoan["Pope Joan<br/>1732 CE"] --> whist["Whist<br/>1742 CE"] --> patience["Patience<br/>1788 CE"] --> cassino["Cassino<br/>1792 CE"]
     end
     subgraph r4[" "]
         direction LR
-        ludo["Ludo<br/>1896 CE"] --> mahjong["Mahjong<br/>mid-1800s CE"] --> out(["On to Wing V"])
+        skat["Skat<br/>c. 1810 CE"] --> snakes["Snakes and Ladders<br/>18th–19th century CE"] --> bezique["Bézique<br/>1847 CE"] --> ludo["Ludo<br/>1896 CE"] --> mahjong["Mahjong<br/>mid-1800s CE"]
+    end
+    subgraph r5[" "]
+        direction LR
+        out(["On to Wing V"])
     end
     r0 --> r1
     r1 --> r2
     r2 --> r3
     r3 --> r4
+    r4 --> r5
 ```
 
 | Exhibit | Date | Rules | Scribe | Friend | Undo | Hint | Saved |
@@ -356,6 +365,7 @@ flowchart TB
 | [Fox and Geese](foxgeese.md) | by c. 1300 CE | Rules survive in tradition | ✓ | · | ✓ | ✓ | ✓ |
 | [The New Queen](newqueen.md) | c. 1475 CE | Rules survive in writing | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Draughts](draughts.md) | c. 1100s – 1500s CE | Rules survive in tradition | ✓ | ✓ | ✓ | ✓ | ✓ |
+| [Primero](primero.md) | 1526 CE | Rules reconstructed | ✓ | · | · | · | ✓ |
 | [International Draughts](idraughts.md) | c. 1550 – 1700 CE | Rules survive in writing | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Pachisi (Chaupar)](pachisi.md) | 16th century CE | Still played, and the ancestor of Ludo | ✓ | ✓ | · | ✓ | · |
 | [Court Cards](courtcards.md) | c. 1565 CE | Packs survive (display) |  |  |  |  |  |
@@ -363,9 +373,11 @@ flowchart TB
 | [Ombre](ombre.md) | early 1600s CE | Rules survive in print | ✓ | · | · | · | ✓ |
 | [Cribbage](cribbage.md) | 1630s CE | Still played | ✓ | · | · | · | · |
 | [Cards Not for Playing](notforplay.md) | 1685 – 1805 CE | Examples survive (display) |  |  |  |  |  |
+| [Faro](faro.md) | 1688 CE | Rules survive in print | · | · | · | · | ✓ |
 | [Dominoes](dominoes.md) | 18th century CE | Still played | ✓ | · | · | · | · |
 | [Scopa](scopa.md) | 18th century CE | Still played across Italy | ✓ | · | · | · | ✓ |
 | [Tablut](tablut.md) | 1732 CE | Rules partly read | ✓ | ✓ | ✓ | ✓ | ✓ |
+| [Pope Joan](popejoan.md) | 1732 CE | Rules survive in print | ✓ | · | · | · | ✓ |
 | [Whist](whist.md) | 1742 CE | Rules in print since 1742 | ✓ | · | · | ✓ | ✓ |
 | [Patience](patience.md) | 1788 CE | Still played | · | · | ✓ | ✓ | ✓ |
 | [Cassino](cassino.md) | 1792 CE | Rules survive in print | ✓ | · | · | · | ✓ |
@@ -425,15 +437,15 @@ flowchart TB
     end
     subgraph r1[" "]
         direction LR
-        ganjifa[/"Ganjifa<br/>16th century CE<br/>on display"/] --> makruk["Makruk<br/>traditional"] --> baghchal["Bagh-chal (Tigers and Goats)<br/>traditional"] --> jungle["Jungle (Dou Shou Qi)<br/>20th century"] --> konane["Kōnane<br/>by 1778–79"]
+        ganjifa[/"Ganjifa<br/>16th century CE<br/>on display"/] --> madiao["Ma Diao<br/>by c. 1600 CE"] --> makruk["Makruk<br/>traditional"] --> baghchal["Bagh-chal (Tigers and Goats)<br/>traditional"] --> jungle["Jungle (Dou Shou Qi)<br/>20th century"]
     end
     subgraph r2[" "]
         direction LR
-        yut["Yut Nori<br/>traditional"] --> janggi["Janggi<br/>traditional"] --> fanorona["Fanorona<br/>traditional"] --> bao["Bao<br/>in verse by the 1820s"] --> morabaraba["Morabaraba<br/>traditional"]
+        konane["Kōnane<br/>by 1778–79"] --> yut["Yut Nori<br/>traditional"] --> janggi["Janggi<br/>traditional"] --> fanorona["Fanorona<br/>traditional"] --> bao["Bao<br/>in verse by the 1820s"]
     end
     subgraph r3[" "]
         direction LR
-        seega["Seega<br/>recorded in the 1820s"] --> tab["Tâb<br/>recorded in the 1820s"] --> nard["Nard (Long Nardy)<br/>traditional"] --> out(["The lectern"])
+        morabaraba["Morabaraba<br/>traditional"] --> seega["Seega<br/>recorded in the 1820s"] --> tab["Tâb<br/>recorded in the 1820s"] --> nard["Nard (Long Nardy)<br/>traditional"] --> out(["The lectern"])
     end
     r0 --> r1
     r1 --> r2
@@ -447,6 +459,7 @@ flowchart TB
 | [Gomoku](gomoku.md) | named renju in 1899 | Still played | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Hanafuda](koikoi.md) | Edo period onward | Still played | ✓ | · | · | ✓ | · |
 | [Ganjifa](ganjifa.md) | 16th century CE | Still painted by hand (display) |  |  |  |  |  |
+| [Ma Diao](madiao.md) | by c. 1600 CE | Rules partly reconstructed | ✓ | · | · | · | ✓ |
 | [Makruk](makruk.md) | traditional | Still played | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Bagh-chal](baghchal.md) | traditional | Still played | ✓ | ✓ | ✓ | ✓ | ✓ |
 | [Jungle](jungle.md) | 20th century | Still played | ✓ | ✓ | ✓ | ✓ | ✓ |

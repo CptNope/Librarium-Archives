@@ -14,13 +14,13 @@ export const FAMILIES = [
   ['Territory and enclosure', 'Surround, close in or flip to own the most of the board.', ['go', 'dotsboxes', 'reversi']],
   ['Running and jumping races', 'Move a whole army across the board by steps and chains of hops.', ['halma', 'chinese']],
   ['Mancala', 'Sow seeds round a row of pits and capture by count.', ['oware', 'kalah', 'bao']],
-  ['Cards', 'Tricks, bidding, melds, rummy, fishing, combinations and patience, and cards made for other uses.', ['cards', 'karnoffel', 'tarot', 'courtcards', 'ombre', 'cribbage', 'notforplay', 'scopa', 'whist', 'patience', 'cassino', 'skat', 'bezique', 'euchre', 'conquian', 'pinochle', 'hearts', 'koikoi', 'ganjifa']],
+  ['Cards', 'Tricks, bidding, melds, rummy, fishing, combinations and patience, and cards made for other uses.', ['cards', 'karnoffel', 'tarot', 'primero', 'courtcards', 'ombre', 'cribbage', 'notforplay', 'faro', 'scopa', 'popejoan', 'whist', 'patience', 'cassino', 'skat', 'bezique', 'euchre', 'conquian', 'pinochle', 'hearts', 'koikoi', 'ganjifa', 'madiao']],
   ['Tiles', 'Dominoes and mahjong.', ['dominoes', 'mahjong']],
 ];
 
 // Other names an exhibit goes by in docs/exhibits.md and docs/scribe.md, beyond its title and its engine's name.
 export const ALIASES = {
-  ur: ['Ur', 'Royal Game of Ur'], scopa: ['Scopa'], euchre: ['Euchre'], bezique: ['Bézique'], karnoffel: ['Karnöffel'], ombre: ['Ombre'], conquian: ['Conquian'], cassino: ['Cassino'], skat: ['Skat'], pinochle: ['Pinochle'], hearts: ['Hearts'],
+  ur: ['Ur', 'Royal Game of Ur'], scopa: ['Scopa'], euchre: ['Euchre'], bezique: ['Bézique'], karnoffel: ['Karnöffel'], ombre: ['Ombre'], conquian: ['Conquian'], cassino: ['Cassino'], skat: ['Skat'], pinochle: ['Pinochle'], hearts: ['Hearts'], primero: ['Primero', 'Primiera'], faro: ['Faro', 'Pharaon'], popejoan: ['Pope Joan'], madiao: ['Ma Diao', 'Madiao'],
   dice: ['Hazard', 'The first dice'], hounds: ['Hounds and Jackals'], go: ['Go', 'Weiqi'], latrunculi: ['Latrunculi', 'Ludus latrunculorum'],
   xii: ['Duodecim scripta', 'Ludus duodecim scriptorum'], morris: ['Morris', "Nine Men's Morris"], oware: ['Oware', 'Mancala'],
   lewis: ['Medieval chess', 'Lewis chessmen'], cards: ['Piquet', 'Playing cards'], tarot: ['Tarocchi', 'Tarot'], newqueen: ['Chess', 'The New Queen'],
@@ -33,6 +33,48 @@ export const ALIASES = {
 
 // Turn diagrams written by hand, keyed by engine id. Each is the body of a mermaid flowchart.
 export const FLOWS = {
+  primero: `flowchart TD
+    A(["Both ante a counter; two cards each"]) --> V["Vie, see, vie again, pass or fold"]
+    V -->|a fold| W
+    V --> D["Two more cards each"]
+    D --> X["Each may discard up to two and draw"]
+    X --> V2["Vie again; the rest (three) ends the vying"]
+    V2 -->|a fold| W
+    V2 --> S["Show: chorus, fluxus, supremus, primero, numerus"]
+    S --> W["The winner takes the pot"]
+    W --> G{"Ten hands played, or someone out?"}
+    G -->|no| A
+    G -->|yes| E(["More counters wins"])`,
+  madiao: `flowchart TD
+    D(["Eight cards each; the cut names the first leader"]) --> L["Lead any card"]
+    L --> F["Each in turn, counter-clockwise: beat it face up, or throw a card face down"]
+    F --> T["The highest card of the suit led takes the trick and leads"]
+    T --> M{"Eight tricks played?"}
+    M -->|no| L
+    M -->|yes| P["The banker needs two; three tricks, top cards and the Hundred Myriads are paid"]
+    P --> G{"All four have banked?"}
+    G -->|no| D
+    G -->|yes| E(["Highest total wins"])`,
+  popejoan: `flowchart TD
+    B(["The dealer dresses the board; ten cards each and a dead hand; trumps turned"]) --> L["Lead the lowest card of a suit"]
+    L --> R["Whoever holds the next card up plays it, honours winning their wells"]
+    R --> S{"A king, or the next card in the dead hand?"}
+    S -->|no| R
+    S -->|yes| O{"Someone out of cards?"}
+    O -->|no| N["The player of the stop leads again"] --> L
+    O -->|yes| G["They take Game and a counter for each card still held"]
+    G --> Q{"Four deals played?"}
+    Q -->|no| B
+    Q -->|yes| E(["Most counters wins"])`,
+  faro: `flowchart TD
+    S(["The soda is burned; fifty checks"]) --> B["Bet on ranks, open or coppered, and high card"]
+    B --> T["The dealer draws the bank's card, then yours"]
+    T --> P["Bets on the bank's rank lose, on yours win; a split costs half"]
+    P --> Q{"Three cards left?"}
+    Q -->|no| B
+    Q -->|yes| C["Call the turn, or let it go"]
+    C --> H["The last turn and the hock"]
+    H --> E(["More than fifty checks beats the bank"])`,
   go: `flowchart TD
     S(["Your turn: black"]) --> P["Place a stone on an empty point, or pass"]
     P --> C{"Does it take the last liberty of enemy stones?"}
@@ -459,6 +501,7 @@ export const WIN = {
 
 // Notes for a game that the other guides do not cover, printed under "How the Scribe plays".
 export const NOTES = {
+  faro: 'There is no Scribe at this table: the bank only deals, and the cards decide. The odds are the game\'s own: a split costs half the bet, and calling the turn pays four for one against odds of five to one.',
   patience: 'There is no Scribe at this table. Hint suggests a move by rule of thumb (a card up to a foundation, then a move that turns over a hidden card, then the waste, then the stock). Played on its own, that rule wins about 36% of draw-one deals and 10% of draw-three deals, over 300 deals each.',
 };
 

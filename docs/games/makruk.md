@@ -4,7 +4,7 @@
 
 **Wing VI · Games of the World** · traditional · Thailand
 
-[← Ganjifa](ganjifa.md) · [All games](README.md) · [Bagh-chal →](baghchal.md)
+[← Ma Diao](madiao.md) · [All games](README.md) · [Bagh-chal →](baghchal.md)
 
 | | |
 | --- | --- |

@@ -2,7 +2,7 @@
 
 The Archives are one long hall in six wings, walked in date order from the first board games to games still played around the world today. Each exhibit has a placard (history, dates and how sure we are of the rules) and, where the rules are known well enough, a table where the visitor plays the Scribe.
 
-**80 exhibits, 73 of them playable.** Each one also has [a page of its own](games/README.md), with a turn diagram, the rules as played and the Scribe's notes. The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
+**84 exhibits, 77 of them playable.** Each one also has [a page of its own](games/README.md), with a turn diagram, the rules as played and the Scribe's notes. The hall ends at a lectern featuring Librarium's own games (Phoenix Farm, Calendra, The Great Chase and Royal Threadcount) under an arch signed *Different fables for different tables*.
 
 ```mermaid
 pie showData
@@ -10,9 +10,9 @@ pie showData
     "Wing I · 4 of 6" : 6
     "Wing II · 9 of 11" : 11
     "Wing III · 12 of 12" : 12
-    "Wing IV · 19 of 21" : 21
+    "Wing IV · 22 of 24" : 24
     "Wing V · 13 of 13" : 13
-    "Wing VI · 16 of 17" : 17
+    "Wing VI · 17 of 18" : 18
 ```
 
 ```mermaid
@@ -152,14 +152,16 @@ timeline
     12th–16th century CE : Draughts
     c. 1550–1700 CE : International draughts
     c. 1475 CE : The New Queen (chess)
+    1526 CE : Primero
     16th century CE : Pachisi
     c. 1565 CE : Court Cards
     c. 1575 CE : The Game of the Goose
     early 1600s CE : Ombre
     1630s CE : Cribbage
     1685–1805 CE : Cards Not for Playing
+    1688 CE : Faro
     18th century CE : Dominoes : Scopa : Snakes and Ladders
-    1732 CE : Tablut
+    1732 CE : Tablut : Pope Joan
     1742 CE : Whist (Hoyle)
     1788 CE : Patience
     1792 CE : Cassino
@@ -175,19 +177,22 @@ timeline
 | The New Queen (chess) | c. 1475 CE | Survive in writing (*Scachs d'amor*; Lucena) | Playable as modern chess; the old firzan and the new queen stand beside the board |
 | Draughts | c. 1100s–1500s CE | English draughts (checkers) | Playable |
 | International draughts | c. 1550–1700 CE (the Netherlands) | Survive in writing (FMJD) | Playable, as white |
+| Primero | 1526 CE (Berni); Florio 1591 | Reconstructed (du Coeur, pagat.com) | Playable: the English game for two, with vying, one exchange and the rest |
 | Pachisi (chaupar) | 16th century CE | Still played; ancestor of Ludo | Playable for two (you play two partner colours), short or full game |
 | Court Cards | c. 1565 CE (Rouen) | Packs survive | Display: an easel of court figures from French, English, German and Italian packs, and a double-ended queen |
 | The Game of the Goose | c. 1575 CE | Survive in print | Playable |
 | Cribbage | 1630s CE | Still played | Playable: two-player six-card cribbage, to 61 or 121, pegged on a board |
 | Cards Not for Playing | 1685–1805 CE | Examples survive | Display: card money, Grace's Card, an admission card, Voltaire's note, an invitation |
+| Faro | 1688 CE (pharaon); the American West | Survive in print | Playable against the bank: flat and coppered bets, high card and calling the turn, with a case keeper |
 | Dominoes | 18th century CE (Europe) | Still played | Playable: the two-player Draw game |
 | Scopa | 18th century CE (Naples) | Still played | Playable: two-player Scopa to 11 or 21, with Italian cards |
 | Tablut | recorded 1732 CE (Linnaeus) | Partly reconstructed | Playable, as the king's side |
+| Pope Joan | 1732 CE (Pope Julius) | Survive in print | Playable: four players and a dead hand, on a board of eight compartments |
 | Whist | 1742 CE (Hoyle) | Survive in print; short whist still played | Playable: you and a Scribe partner against two Scribes |
 | Ombre | early 1600s CE (Spain); English rules 1660 | Survive in print; still played as l'Hombre | Playable: three-handed at a three-cornered table, Entrada and Solo |
 | Cassino | 1792 CE (Robert Long) | Survive in print | Playable: two-handed, to 21, sweeps optional |
 | Skat | c. 1810 CE (Altenburg) | Still played; international rules of 1999 | Playable: three-handed, bidding, the skat, suit, grand and null |
-| Patience | 1788 CE (first in print, Germany) | Still played | Playable: Klondike, draw one or three, the hall's one table without the Scribe |
+| Patience | 1788 CE (first in print, Germany) | Still played | Playable: Klondike, draw one or three, played alone, without the Scribe |
 | Snakes and Ladders (gyan chaupar) | 18th–19th century CE | Still played | Playable, with virtues and vices from an old Indian board |
 | Bézique | 1847 CE (Paris); England 1861 | Still played | Playable: two-handed Bézique with two packs, to 1,000 or one deal |
 | Ludo | 1896 CE | Still played | Playable: red against yellow, one die |
@@ -206,12 +211,15 @@ Rule choices:
 - **Whist:** short whist as on pagat.com: thirteen cards each, the dealer's last card turned for trumps, a point for every trick over six, honours (4 for all four, 2 for three; not for a side at four), tricks before honours, and one game to 5 points rather than a rubber. Gentle and Fair Scribes play some cards carelessly; Sharp plays every card by the book (cash winners, second hand low, third hand high, ruff when an opponent is winning).
 - **Scopa:** two players with the 40-card Italian pack, as on pagat.com. A card must take a single card of its value if there is one, otherwise any set adding up to it; clearing the table is a scopa except on the last play. A table dealt with three or four kings is dealt again. Hands score cards, coins, the settebello and the primiera; the first to 11 (or 21) wins, and a tie at the target plays another hand.
 - **Bézique:** two-handed Bézique with 64 cards, as on pagat.com: one meld after each trick won while the stock lasts, chosen from a list; a card may count again in another kind of meld but never the same kind, a marriage cannot be taken out of a sequence, and every meld needs a card from the hand. The seven of trumps scores 10 when turned up, swapped or shown. After the stock, melds return to the hand and you must follow suit, win if you can, and trump if void. Brisques and the last trick score 10 each; a game is to 1,000, or one deal.
-- **The Pack switch** at Piquet, Karnöffel, Whist, Cribbage, Scopa, Bézique, Euchre, Ombre, Cassino, Conquian, Skat, Pinochle and Hearts redraws the cards in French, German, Swiss or Latin suits, and the messages name them to match (leaves, bells and acorns; Ober and Unter; cups, coins and swords). The suits are matched as players matched them: spades with leaves, shields and swords; hearts with hearts, roses and cups; diamonds with bells and coins; clubs with acorns and batons. The game does not change.
+- **The Pack switch** at Piquet, Karnöffel, Primero, Whist, Cribbage, Scopa, Bézique, Euchre, Ombre, Cassino, Conquian, Skat, Pinochle, Pope Joan and Hearts redraws the cards in French, German, Swiss or Latin suits, and the messages name them to match (leaves, bells and acorns; Ober and Unter; cups, coins and swords). The suits are matched as players matched them: spades with leaves, shields and swords; hearts with hearts, roses and cups; diamonds with bells and coins; clubs with acorns and batons. The game does not change.
 - **Patience:** Klondike, after the usual rules: build down in alternating colours, kings to empty columns, foundations up by suit, unlimited passes through the stock (draw one or three). Cards may come back down from a foundation. Once every card is face up and the stock is spent, the rest go up by themselves. There is no Scribe; Undo and Hint are open, and Give up ends the game.
 - **Euchre:** four-handed, after pagat.com, with American scoring to 10: one round of ordering up the turned card, then a round of naming another suit; everyone passing twice throws the deal in (no "stick the dealer"). Going alone is declared once trumps are made rather than with the bid. With the Joker (the Best Bower, top trump), a Joker turned up makes the dealer's side the makers and the dealer names trumps.
 - **Ombre:** three-handed, after pagat.com and Wikipedia. A 40-card pack; nine cards each and a talon of thirteen. Bids, low to high: Entrada (name trumps, exchange) and Solo (name trumps, no exchange); a pass is final, and if all three pass the deal moves on. The Ombre exchanges first at Entrada, then each defender in turn from what is left. Matadors (spadille, manille, basta) are forced only by a higher matador. Sacada: each defender pays the stake (1, or 3 at Solo); puesta: the Ombre pays each; codille: the Ombre pays each, and the defender with most twice. Vuelta, the lower bids, the vole and the surrender are left out. Six or twelve deals.
 - **Cassino:** two-handed, after Wikipedia and pagat.com: four cards each and four to the table, then four each until the pack is spent; pairing (court cards one at a time), combining, single builds that anyone may raise while holding the new total, and multiple builds that cannot be raised. As Hoyle recommends, the owner of a build may not trail. Combining a build with loose cards is left out. Scoring 11 a deal; sweeps are an option. Game to 21.
 - **Skat:** the international rules of 1999 after pagat.com: the auction (middlehand to forehand, then rearhand to the survivor; forehand may play at 18 if nobody bids), picking up the skat or playing hand, suit games, grand and null with their values, matadors with or without, schneider and schwarz, and the overbid rule. Announced schneider and schwarz, the open games and null ouvert are left out, and so is the extra 50 a won game earns in tournament scoring. Six or twelve deals; the highest score wins.
+- **Primero:** John Florio's English game for two, with Cardano's and Minsheu's hands and values: a 40-card pack, an ante of one, two cards and a round of vying (vie, see, vie again, pass or fold; two vies a round), two more cards, one exchange of up to two cards, and a second round in which three counters, the rest, end the vying. Hands rank chorus, fluxus, supremus (ace, six and seven of a suit, 55), primero and numerus; ties go to the elder hand. Ten hands of 30 counters each, or until one player is out.
+- **Faro:** after Wikipedia and pagat.com: the soda burned, then twenty-four turns of the bank's card and yours, and the last turn with the hock. Bets on a rank, open or coppered (a copper reverses the bet), at most ten checks a rank, and the high card bar; a split takes half the bet on that rank (at least one). Calling the turn pays four for one, or one for one with a pair among the three. Bets split between two ranks are left out, and the bank is never short of money. The game is one deal from the box with 50 checks.
+- **Pope Joan:** after Parlett and Wikipedia: the dealer dresses the board (Pope 6, Matrimony and Intrigue 2, the others 1), ten cards each and ten to the dead hand, which also takes the turned-up trump. A turned honour or Pope wins its well for the dealer at once. Runs go up the suit until a king, the dead hand or the missing eight of diamonds; Matrimony and Intrigue need both their cards played by one player. The first player out takes Game and a counter for each card still held, except from the Pope's holder. Four or eight deals; unclaimed stakes stay on the board.
 - **Ludo:** two players, red and yellow, from opposite corners. A six brings a token out or moves one, and earns another throw; landing on an enemy token sends it to its yard; your home column is safe; the finish needs the exact throw. There are no blocks or safe squares on the track.
 - **Mahjong:** a basic Chinese game with the 136 tiles (no flowers or seasons). Go out with four sets and a pair, seven pairs or the thirteen orphans. You may claim a discard for a pung or kong from anyone, a chow only from the player on your left, and a win from anyone; a win beats a pung or kong, which beats a chow. A kong draws a replacement tile. There is no scoring: whoever goes out first wins the hand, and an empty wall is a draw.
 
@@ -277,6 +285,7 @@ mindmap
       Shogi
       Gomoku
       Hanafuda
+      Ma Diao
       Jungle
       Yut Nori
       Janggi
@@ -305,6 +314,7 @@ mindmap
 | Gomoku | named renju in 1899 | Still played | Playable, freestyle on 15 × 15 |
 | Hanafuda (koi-koi) | Edo period onward | Still played | Playable: koi-koi, with flower cards drawn in our own style |
 | Ganjifa | 16th century CE (Mughal India) | Still painted by hand | Display: round lacquered cards of all eight Mughal suits, with mir and wazir, and two Dashavatara cards |
+| Ma Diao | by c. 1600 CE (late Ming) | Partly reconstructed (Andrew Lo, after Pan Zhiheng and Feng Menglong) | Playable: a banker against three, eight tricks, with money cards drawn in our own style |
 | Jungle (dou shou qi) | 20th century | Still played | Playable on the 7 × 9 board with two rivers |
 | Makruk | traditional | Still played | Playable, with the counting rules kept for you |
 | Bagh-chal | traditional | Still played | Playable as either side |
@@ -323,6 +333,7 @@ Rule choices:
 - **Mū tōrere:** a man may move into the centre only from an arm next to an enemy man, the rule most often given today (without it the first player can win at once). House rule: thirty moves each is a draw; perfect play draws anyway.
 - **Shogi:** drops follow the full rules (no second unpromoted pawn on a file, no dead pieces, no pawn-drop mate). Promotion is automatic whenever it is allowed, and a 150-move limit replaces the repetition rule.
 - **Gomoku:** freestyle: five or more in a row wins, with none of renju's restrictions on black.
+- **Ma Diao:** after the summaries of Andrew Lo's work on Wikipedia and The World of Playing Cards: four players with the 40 money cards, eight each and eight in the stock, counter-clockwise play, a banker who must take two tricks, and each player banking once. No need to follow suit; a card of the suit led that beats the trick is played face up, any other face down. The payments kept are the banker's minimum, three or more tricks, tricks taken with a suit's top card, the Hundred Myriads taking exactly two tricks, and all eight; the hands that end a deal at once, and the card under the stock, are left out.
 - **Jungle:** modern Chinese rules. Blue moves first; animals step one square orthogonally and take equal or lower ranks; the rat takes the elephant (only from land), swims, and blocks leaps; the lion and the tiger both leap the rivers along rows and columns (some sets allow only the lion sideways). An animal in an enemy trap has no rank. Win by entering the den or taking every animal. A threefold repetition, a side with no move, or 50 moves each without a capture is a draw.
 - **Makruk:** Thai rules: no castling, no double pawn step, promotion on the sixth rank to a met, stalemate drawn. The counts: once no unpromoted pawn is left, mate must come within 64 moves; once a side has only its khun, the other must mate within a limit set by its pieces (8 with two rueas, 16 with one, 22 with two khons, 32 with two horses, 44 with one khon, otherwise 64), counted from the number of pieces on the board.
 - **Kōnane:** black lifts a stone from the centre or a corner, white lifts one beside the gap, and from then on every move is a capture. Multiple jumps run in a straight line and may stop anywhere. The first player who cannot capture loses.

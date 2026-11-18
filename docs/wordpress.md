@@ -84,8 +84,8 @@ Every exhibit can be a `start` value. ▶ marks a playable table.
 | I | *(blank: the entrance)* · `senet` ▶ · `mehen` · `basur` · `ur` ▶ · `dice` ▶ (Hazard) · `hounds` ▶ |
 | II | `wing2` · `petteia` · `liubo` · `go` ▶ · `latrunculi` ▶ · `xii` ▶ · `patolli` ▶ · `morris` ▶ · `oware` ▶ · `alquerque` ▶ · `brandubh` ▶ · `hnefatafl` ▶ |
 | III | `wing3` · `tables` ▶ · `chaturanga` ▶ · `shatranj` ▶ · `xiangqi` ▶ · `chaturaji` ▶ · `rithmo` ▶ · `lewis` ▶ (medieval chess) · `courier` ▶ · `fourseasons` ▶ · `cards` ▶ (Piquet) · `karnoffel` ▶ · `tarot` ▶ (tarocchi) |
-| IV | `wing4` · `foxgeese` ▶ · `newqueen` ▶ (chess) · `draughts` ▶ · `idraughts` ▶ (International draughts) · `pachisi` ▶ · `courtcards` · `goose` ▶ · `ombre` ▶ · `cribbage` ▶ · `notforplay` · `dominoes` ▶ · `scopa` ▶ · `tablut` ▶ · `whist` ▶ · `patience` ▶ · `cassino` ▶ · `skat` ▶ · `snakes` ▶ · `bezique` ▶ · `ludo` ▶ · `mahjong` ▶ |
+| IV | `wing4` · `foxgeese` ▶ · `newqueen` ▶ (chess) · `draughts` ▶ · `primero` ▶ · `idraughts` ▶ (International draughts) · `pachisi` ▶ · `courtcards` · `goose` ▶ · `ombre` ▶ · `cribbage` ▶ · `notforplay` · `faro` ▶ · `dominoes` ▶ · `scopa` ▶ · `tablut` ▶ · `popejoan` ▶ (Pope Joan) · `whist` ▶ · `patience` ▶ · `cassino` ▶ · `skat` ▶ · `snakes` ▶ · `bezique` ▶ · `ludo` ▶ · `mahjong` ▶ |
 | V | `wing5` · `mansion` ▶ · `euchre` ▶ · `conquian` ▶ · `lifegame` ▶ · `pinochle` ▶ · `reversi` ▶ · `halma` ▶ · `hearts` ▶ · `dotsboxes` ▶ · `chinese` ▶ · `landlord` ▶ · `kalah` ▶ · `hex` ▶ |
-| VI | `wing6` · `mutorere` ▶ · `shogi` ▶ · `gomoku` ▶ · `koikoi` ▶ (Hanafuda) · `ganjifa` · `makruk` ▶ · `baghchal` ▶ · `jungle` ▶ · `konane` ▶ · `yut` ▶ · `janggi` ▶ · `fanorona` ▶ · `bao` ▶ · `morabaraba` ▶ · `seega` ▶ · `tab` ▶ · `nard` ▶ |
+| VI | `wing6` · `mutorere` ▶ · `shogi` ▶ · `gomoku` ▶ · `koikoi` ▶ (Hanafuda) · `ganjifa` · `madiao` ▶ (Ma Diao) · `makruk` ▶ · `baghchal` ▶ · `jungle` ▶ · `konane` ▶ · `yut` ▶ · `janggi` ▶ · `fanorona` ▶ · `bao` ▶ · `morabaraba` ▶ · `seega` ▶ · `tab` ▶ · `nard` ▶ |
 
 The Tarot exhibit's table is the game `tarocchi`, and the New Queen's is `chess`.

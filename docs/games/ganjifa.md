@@ -4,7 +4,7 @@
 
 **Wing VI · Games of the World** · 16th century CE · Persia and Mughal India
 
-[← Hanafuda](koikoi.md) · [All games](README.md) · [Makruk →](makruk.md)
+[← Hanafuda](koikoi.md) · [All games](README.md) · [Ma Diao →](madiao.md)
 
 | | |
 | --- | --- |

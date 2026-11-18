@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · c. 1550 – 1700 CE · The Netherlands · the ten-square board
 
-[← Draughts](draughts.md) · [All games](README.md) · [Pachisi (Chaupar) →](pachisi.md)
+[← Primero](primero.md) · [All games](README.md) · [Pachisi (Chaupar) →](pachisi.md)
 
 | | |
 | --- | --- |

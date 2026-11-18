@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.38.0: The card room, part five
+
+Four older card games, three of them with a board or a box of their own.
+
+- **Primero** (Wing IV, 1526): the 16th-century vying game behind poker, in John Florio's English form for two. Two cards and a round of vying, two more, an exchange of up to two, and a last round where the rest (three counters) ends the vying. Hands from chorus and fluxus down to supremus, primero and numerus, with Cardano's values.
+- **Faro** (Wing IV, 1688): bucking the tiger against the bank. Checks on a layout of spades, open or coppered, the high card bar, splits, and calling the turn, with a dealing box and a case keeper whose beads slide along as the ranks come out. The bank only deals, so there is no Scribe to set.
+- **Pope Joan** (Wing IV, 1732): four players and a dead hand round a lacquered board of eight compartments. Runs play themselves out; you choose which suit to start, and the Pope, Matrimony and Intrigue pile up from deal to deal.
+- **Ma Diao** (Wing VI, late Ming): the forty money cards of Cash, Strings, Myriads and Tens, drawn in our own style, on long narrow cards. A banker against three, eight tricks, no need to follow, and cards that cannot win go face down. Each player banks once.
+- Chips and counters at these tables are one instanced mesh per table, so a full pot costs one draw call.
+- The Scribe: sampling for Primero's betting and exchange; a coalition against the banker at Ma Diao; the longest run at Pope Joan; Sharp samples the unseen cards at all three. Measured strengths are in the Scribe guide.
+- 84 exhibits, 77 of them playable; 320 rules tests. Placards checked against Wikipedia, pagat.com, David Parlett and The World of Playing Cards (docs/fact-check.md).
+
 ## 0.37.0: A faster hall
 
 Drawn with a quarter to a third of the draw calls, following the threejs-performance skill from [CloudAI-X/threejs-skills](https://github.com/CloudAI-X/threejs-skills).

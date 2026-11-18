@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · 1742 CE · England · Hoyle's treatise
 
-[← Tablut](tablut.md) · [All games](README.md) · [Patience →](patience.md)
+[← Pope Joan](popejoan.md) · [All games](README.md) · [Patience →](patience.md)
 
 | | |
 | --- | --- |

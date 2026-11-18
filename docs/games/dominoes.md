@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · 18th century CE · China, then Italy and France
 
-[← Cards Not for Playing](notforplay.md) · [All games](README.md) · [Scopa →](scopa.md)
+[← Faro](faro.md) · [All games](README.md) · [Scopa →](scopa.md)
 
 | | |
 | --- | --- |

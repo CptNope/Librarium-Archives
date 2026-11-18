@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · 1732 CE · Lapland · recorded by Linnaeus
 
-[← Scopa](scopa.md) · [All games](README.md) · [Whist →](whist.md)
+[← Scopa](scopa.md) · [All games](README.md) · [Pope Joan →](popejoan.md)
 
 | | |
 | --- | --- |

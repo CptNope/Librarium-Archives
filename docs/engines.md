@@ -227,6 +227,10 @@ Saved games store the engine's plain data fields as JSON. Typed-array boards, Se
 | Skat | `skat` | Cards: three seats, an auction, the skat, suit, grand and null | Strength by game; Sharp samples the hidden hands in play | `passTurn`, `variants`, a `first` getter (a Scribe may open), labelled bids and a marked discard |
 | Pinochle | `pinochle` | Cards: tricks and melds (Bézique's engine) | Card-keeping heuristic | `passTurn`, `variants`, a `meld` stage, `face(id)` for doubled cards |
 | Hearts | `hearts` | Cards: four seats, trick avoidance, passing | Ducking and dumping; Sharp samples the unseen cards | `passTurn`, `variants`, a `first` getter, a marked pass |
+| Primero | `primero` | Cards: vying (betting) and an exchange, two players | Win chances by sampling the unseen cards; Sharp reads vies and tries each exchange | `variants`, a `first` getter, labelled vies and a marked exchange |
+| Ma Diao | `madiao` | Cards: four seats, a banker against three, no need to follow | Cheap wins against the banker, partners left alone; Sharp samples the unseen cards | `passTurn`, `scribeName`, a `first` getter, face-down plays |
+| Pope Joan | `popejoan` | Cards: four seats and a dead hand, runs, a staking board | Longest run and honours first; Sharp samples the unseen hands | `passTurn`, `variants`, a `first` getter; runs played out in one move |
+| Faro | `faro` | Cards: betting against a bank that only deals | None (the bank does not choose) | `solo`, labelled bets on the layout's ranks, coppers and calls |
 | Patience | `patience` | Cards: solo (Klondike) | Hint heuristic only (no opponent) | `solo`, `variants`, a presenter with `oneClick` |
 | Scopa | `scopa` | Cards: fishing (captures by value or sum) | Sweep-risk estimate; Sharp counts the cards taken | `passTurn`, `variants`, rings for the set a card takes |
 | Xiangqi | `xiangqi` | Chess family | Search | |

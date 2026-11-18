@@ -118,3 +118,18 @@ Not used: the popular claims that pinochle was once America's most popular card 
 - [Pinochle](https://en.wikipedia.org/wiki/Pinochle), Wikipedia, and [Two-player Pinochle](https://pagat.com/marriage/pin2hand.html), pagat.com
 - [Hearts (card game)](https://en.wikipedia.org/wiki/Hearts_(card_game)), Wikipedia
 
+## The card room, part five (0.38.0)
+
+| Placard | Claims | Source |
+| --- | --- | --- |
+| Primero | The great gambling game of the 16th century; Berni's poem printed in Rome in 1526 the earliest known account; Cardano called it the noblest card game; Henry VIII left at primero with the Duke of Suffolk, and Falstaff's oath, in Shakespeare; Florio's two-player game at a shilling a stake, 1591; the forerunner of poker; split into local games and out of fashion by the later 1600s | Wikipedia, Primero; Justin du Coeur's reconstruction; pagat.com |
+| Faro | From basset, brought to Paris by the Venetian ambassador in 1672; pharaon first recorded 1688; both banned in France; "pharo" in England, thought to give the best odds of any banking game when honest (Gilly Williams, 1752); nearly every gambling hall of the West; "bucking the tiger" after early card backs; the 1882 study; poker took over in the early 20th century; Nevada casinos until 1985 | Wikipedia, Faro (card game); pagat.com, Faro |
+| Pope Joan | The English counterpart of nain jaune, named after the seven of diamonds; the OED's 1732 mention as Pope Julius; the name's two explanations; the nine of diamonds also the Curse of Scotland; round boards with eight compartments, some lacquered and revolving; *The Pickwick Papers*; Hoyle's rules through the 1800s | Wikipedia, Pope Joan (card game); David Parlett, Pope Joan |
+| Ma Diao | Forty money cards in four suits; the pack recorded by Lu Rong in the 15th century, the rules by Pan Zhiheng and Feng Menglong in the early 17th; three against the banker, who needs two tricks; Water Margin heroes on the high cards; the Kangxi Emperor's ban of 1691, ignored at court; ever more elaborate under the Qing; Tens dropped in later games, and three-suited games leading to mahjong | Wikipedia, Madiao (after Andrew Lo); The World of Playing Cards, Madiao |
+
+Pope Joan's first printing in Hoyle is given as 1814 (Wikipedia) and 1826 (Parlett), so the placard says only that Hoyle's books printed the rules through the 1800s. Faro's last bank: Wikipedia has a few Las Vegas and Reno casinos until 1985, pagat.com the last bank in Ely in 1975 and a short revival in Reno to 1985; the placard follows the first. Ma Diao's rules are reconstructed from 17th-century accounts by modern historians, chiefly Andrew Lo, and the table keeps to the core that the summaries agree on.
+
+- [Primero](https://en.wikipedia.org/wiki/Primero), Wikipedia, and [Primero](https://jducoeur.com/game-hist/game-recon-primero.html), Justin du Coeur
+- [Faro (card game)](https://en.wikipedia.org/wiki/Faro_(card_game)), Wikipedia, and [Faro](https://pagat.com/banking/faro.html), pagat.com
+- [Pope Joan (card game)](https://en.wikipedia.org/wiki/Pope_Joan_(card_game)), Wikipedia, and [Pope Joan](https://www.parlettgames.uk/histocs/popejoan.html), David Parlett
+- [Madiao](https://en.wikipedia.org/wiki/Madiao), Wikipedia, and [Madiao](https://www.wopc.co.uk/explore/game/madiao/), The World of Playing Cards

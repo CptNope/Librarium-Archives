@@ -27,6 +27,7 @@ mindmap
     Sampling the unseen cards
       deals what it cannot see at random and plays each deal out, as Tarocchi's Sharp does
       Karnöffel · Ombre · Skat · Hearts
+      Primero · Ma Diao · Pope Joan
     Rules of thumb
       scored moves for dice games
       Senet · Ur · Tables
@@ -116,6 +117,9 @@ The Scribe never looks at the visitor's hand or the deck. Each game's Scribe wor
 | Hazard | Always calls a main of 7, the caster's best. Fair stakes 2; Sharp stakes 1, since the caster has the worse of every bet, unless it is behind near the end |
 | Nard, Duodecim scripta | Every legal full turn, scored for the race, points held ahead of the enemy (Nard), lone pieces the enemy can reach weighed by what a hit would cost, and, in Duodecim scripta, pieces spread over the last six spaces so exact throws can bear them off |
 | Hanafuda (koi-koi) | Takes the most valuable cards and yaku in the making; a card that will not match goes to the table only if its month is spent. Sharp also weighs each card a play leaves on the field by the chance you hold one of its month (counted from the cards it cannot see) and the yaku it would build for you. It stops at 7 points or with few cards left; Sharp calls koi-koi when it is ahead and the visitor is far from a yaku |
+| Primero | Deals out the cards it cannot see many times (its own cards to come, and a hand for you, each improved by a quick exchange) to judge how often its hand wins. It vies when it expects to win well over half the time, vies the rest when far ahead, sees when the pot pays for the risk, and vies on nothing now and then. In the exchange it tries every discard of up to two cards against many draws. Sharp deals more often, reads your vies (a player who vies twice is seldom weak) and bluffs a little more; Gentle often plays at random |
+| Ma Diao | The three players work together against the banker: each beats the banker's card with its cheapest winner, leaves a partner's winning card alone and throws its weakest card face down. The banker wins tricks cheaply until it has its two. Anyone leads a top card it holds, as a sure trick. Sharp deals the unseen cards (the other hands, the stock and the cards thrown face down) many times, plays each deal out and picks the card that pays it most |
+| Pope Joan | The only choice is which suit to lead. Fair leads the suit that lets it play the most cards in a row, above all a run up to its own king or through the honours it holds. Sharp deals the unseen hands, the dead hand included, many times and plays the deal out from each choice, to see which wins it most counters. Gentle often leads at random |
 | Mahjong | Each of the three Scribes counts how far its hand is from ready (shanten) and keeps the discards that leave the most useful draws open. It claims only when a claim brings its hand closer |
 
 ## Hints
@@ -162,6 +166,9 @@ Every Scribe is checked by simulation, playing level against level with seats sw
 | Skat (one seat at the level, two at the level below) | wins 49 of 100 games | wins 36 of 60 games | a third is level for three players |
 | Pinochle | 136–14 | 90–60 | 150 games each, to 1,000 |
 | Hearts (one seat at the level, three at the level below) | wins 53 of 100 games | wins 36 of 60 games | a quarter is level for four players |
+| Primero | 160–33, 7 even | 165–123, 12 even | 200 and 300 games of ten hands, seats swapped |
+| Ma Diao (one seat at the level, three at the level below) | +2.8 stakes a game, wins 36% | +1.5 stakes a game, wins 30% | 300 and 200 games of four deals; an even seat wins about 1 in 4 |
+| Pope Joan (one seat at the level, three at the level below) | +4.4 counters a game | +2.0 counters a game | 400 and 200 games of four deals; the cards decide most of it |
 | Hazard | about 50% | 56% | 4,000 each; the dice decide almost everything |
 | Nard | 58% | 59% | 100 each |
 | Duodecim scripta | 59% | 56% | 100 each |

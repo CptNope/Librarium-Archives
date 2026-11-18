@@ -4,7 +4,7 @@
 
 **Wing IV · Printed Boards and Parlour Tables** · 1685 – 1805 CE · Money, letters and tickets
 
-[← Cribbage](cribbage.md) · [All games](README.md) · [Dominoes →](dominoes.md)
+[← Cribbage](cribbage.md) · [All games](README.md) · [Faro →](faro.md)
 
 | | |
 | --- | --- |
