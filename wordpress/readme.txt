@@ -25,7 +25,7 @@ Visitors walk a candlelit library hall in six wings, read the history of each ga
 
 The hall ends at a lectern of Librarium's own games.
 
-The Archives have their own soundtrack: an orchestral opening theme and music for each wing, which plays from the visitor's first click and can be turned off with its own button. The music files (about 20 MB) ship with the plugin and stream from it as they play.
+The Archives have their own soundtrack: an orchestral opening theme and music for each wing, which plays from the visitor's first click; its own button opens a panel to pause, skip or pick any piece. The music files (about 20 MB) ship with the plugin and stream from it as they play.
 
 Visitors walk with the arrow keys or WASD, or on phones and tablets with an on-screen joystick or by tapping the floor, and pinch to zoom. The Scribe plays at three levels. Two visitors can play each other on one screen at most two-player tables, dice games included, and games are saved as they go. Visitor progress (exhibits visited, records at each table, saved games) is kept in the visitor's own browser only; the plugin stores nothing on the server.
 
@@ -57,6 +57,9 @@ None. The released plugin bundles three.js and its fonts, sends nothing anywhere
 (A development build made without the bundled files falls back to three.js from cdnjs.cloudflare.com and the fonts from fonts.googleapis.com.)
 
 == Changelog ==
+
+= 0.41.0 =
+* The soundtrack panel: pause, skip, seek or pick any piece of the music.
 
 = 0.40.0 =
 * The soundtrack: an opening theme and two pieces of music for each wing, with a button of its own.

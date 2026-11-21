@@ -15,7 +15,20 @@ The Archives have their own music: an opening theme with a chanted Latin choir, 
 | The tour reading a placard aloud | lower still, under the voice |
 | The tab hidden | paused |
 
-The music button (a pair of notes, top right, left of the speaker) turns the music on and off and is remembered. It is apart from the speaker button, which still mutes the sound effects and the read-aloud voice. On a phone at a table the music button is folded away to leave room for the table's own bar; the music carries on, and you can turn it off in the hall. Hovering the button shows the name of the piece playing.
+## The soundtrack panel
+
+The music button (a pair of notes, top right, left of the speaker) opens the soundtrack panel. Hovering the button names the piece playing; a slash across it means the music is paused.
+
+| In the panel | What it does |
+| --- | --- |
+| The piece playing | Its title and take, a bar to drag (or arrow along) to any point in it, and the time |
+| Play / Pause | Pause keeps your place; Play picks up there. Paused is remembered for your next visit |
+| Previous / Next | The piece before or after in the list. Previous goes back to the start of the piece first, if it is more than a few seconds in |
+| **Follow the hall** | The music of wherever you walk, as in the table above. This is how a visit starts |
+| **In order** | Every piece in turn, down the list, wherever you are. Picking a piece, Previous or Next switches to this; Follow the hall switches back |
+| The list | All fourteen pieces by wing, each with its length. Pick one to hear it at once; the one playing is marked |
+
+Esc or × closes the panel; the music carries on. The speaker button is apart from all this: it still mutes the sound effects and the read-aloud voice. On a phone at a table the music button folds away to leave room for the table's own bar; the music carries on, and the panel is there again in the hall.
 
 ## The tracks
 

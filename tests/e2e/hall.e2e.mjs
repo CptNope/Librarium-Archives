@@ -65,7 +65,14 @@ before(async () => {
     let f = join(ROOT, url);
     if (f.startsWith(ROOT) && existsSync(f) && statSync(f).isDirectory()) f = join(f, 'index.html'); // as a host would: the service worker caches ./
     if (!f.startsWith(ROOT) || !existsSync(f)) { res.writeHead(404); return res.end(); }
-    res.writeHead(200, { 'content-type': TYPES[extname(f)] || 'application/octet-stream' });
+    // Byte ranges, as any web host serves them: a browser needs them to seek in a piece of music.
+    const type = TYPES[extname(f)] || 'application/octet-stream', size = statSync(f).size, r = /bytes=(\d*)-(\d*)/.exec(req.headers.range || '');
+    if (r) {
+      const from = r[1] ? +r[1] : 0, to = r[2] ? +r[2] : size - 1;
+      res.writeHead(206, { 'content-type': type, 'accept-ranges': 'bytes', 'content-range': `bytes ${from}-${to}/${size}`, 'content-length': to - from + 1 });
+      return createReadStream(f, { start: from, end: to }).pipe(res);
+    }
+    res.writeHead(200, { 'content-type': type, 'accept-ranges': 'bytes', 'content-length': size });
     createReadStream(f).pipe(res);
   }).listen(0);
   base = `http://localhost:${server.address().port}`;
@@ -241,18 +248,42 @@ test('bridge: a bid is a level, then a strain; Back returns to the auction', { t
   await leave();
 });
 
-test('the soundtrack: the opening at the first click, then the music of the wing, with its own button', { timeout: LONG * 2 }, async () => {
+test('the soundtrack: the opening at the first click, the music of the wing, and the panel to pick from', { timeout: LONG * 2 }, async () => {
   await page.close(); await open();
-  const music = () => page.evaluate(() => ({ track: window.__archives.music.track, on: window.__archives.music.on, hidden: document.querySelector('#lm-musicBtn').hidden }));
+  const music = () => page.evaluate(() => { const m = window.__archives.music; return { track: m.track, on: m.on, follow: m.follow }; });
+  const click = sel => page.evaluate(sel => document.querySelector(sel).click(), sel);
+  const until = (fn, arg) => page.waitForFunction(fn, arg, { timeout: LONG });
   assert.equal((await music()).track, null); // nothing before the visitor does something
   await page.mouse.click(450, 200);
-  await page.waitForFunction(() => window.__archives.music.decks.some(d => d.name === 'opening-a' && d.time > 0), null, { timeout: LONG });
+  await until(() => window.__archives.music.decks.some(d => d.name === 'opening-a' && d.time > 0));
   await page.evaluate(() => { const M = window.__archives; M.jump('tables'); M.music.skip(); }); // into Wing III, and the overture ends
-  await page.waitForFunction(() => window.__archives.music.track === 'wing3-a', null, { timeout: LONG });
-  await page.evaluate(() => document.getElementById('lm-musicBtn').click());
-  assert.deepEqual(await music(), { track: null, on: false, hidden: false });
-  await page.evaluate(() => document.getElementById('lm-musicBtn').click());
-  await page.waitForFunction(() => window.__archives.music.track === 'wing3-b', null, { timeout: LONG }); // the other take
+  await until(() => window.__archives.music.track === 'wing3-a');
+  // The panel: every piece listed, the one playing marked.
+  await click('#lm-musicBtn');
+  assert.equal(await page.evaluate(() => !document.getElementById('lm-music').hidden), true);
+  assert.equal(await page.evaluate(() => document.querySelectorAll('#lm-musicList button').length), 14);
+  assert.equal(await page.evaluate(() => document.querySelector('#lm-musicList [aria-current]').dataset.track), 'wing3-a');
+  // Pause keeps the place; Play picks up there.
+  await page.waitForFunction(() => window.__archives.music.time > 1, null, { timeout: LONG });
+  await click('#lm-musicPlay');
+  assert.deepEqual(await music(), { track: 'wing3-a', on: false, follow: true });
+  const at = await page.evaluate(() => window.__archives.music.time);
+  await click('#lm-musicPlay');
+  await until(() => window.__archives.music.on);
+  assert.ok(await page.evaluate(() => window.__archives.music.time) >= at);
+  // Next, or a piece picked from the list, plays the list in order.
+  await click('#lm-musicNext');
+  assert.deepEqual(await music(), { track: 'wing3-b', on: true, follow: false });
+  assert.equal(await page.evaluate(() => document.getElementById('lm-musicOrder').getAttribute('aria-pressed')), 'true');
+  await click('#lm-musicList [data-track="opening-b"]');
+  await until(() => window.__archives.music.track === 'opening-b' && window.__archives.music.time > 0.5);
+  await page.evaluate(() => window.__archives.music.skip());
+  await until(() => window.__archives.music.track === 'wing1-a'); // the next down the list, not the wing's
+  // Follow the hall: back to the music of the wing the visitor stands in.
+  await click('#lm-musicFollow');
+  await until(() => /^wing3-/.test(window.__archives.music.track));
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(() => document.getElementById('lm-music').hidden), true);
   // Without the files (a build that leaves them out), the button goes away.
   await page.close(); page = null;
   page = await browser.newPage({ viewport: { width: 900, height: 560 } });

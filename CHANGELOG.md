@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.41.0: The soundtrack panel
+
+Every piece of the soundtrack, to pick from.
+
+- **The music button opens a panel**: the piece playing with a bar to seek, Play and Pause (pause keeps your place, and is remembered), Previous and Next, and all fourteen pieces listed by wing with their lengths.
+- **Follow the hall or In order.** A visit starts following the hall, as before. Picking a piece, Previous or Next plays the list in order from there, wherever you walk; Follow the hall goes back to the music of where you are.
+- Esc or × closes the panel and the music carries on. On a phone the panel is full width.
+- The browser tests' server answers byte ranges, as a host does, so music can seek in the tests.
+
 ## 0.40.0: The soundtrack
 
 The Archives have music of their own: an opening theme and two pieces for each wing, made with Suno for Librarium Games.
