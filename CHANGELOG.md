@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.40.0: The soundtrack
+
+The Archives have music of their own: an opening theme and two pieces for each wing, made with Suno for Librarium Games.
+
+- **The opening theme**, an orchestral overture with a male choir chanting original Latin, plays at your first click, tap or key. Coming back to the entrance from further in brings it back in a second take.
+- **Each wing has two pieces** in the sound of its time and place: frame drum and oud for the first boards, guqin and lyre for strategy, hurdy-gurdy and lute for the courts, harpsichord and strings for the parlour tables, piano and clarinet for the modern board game, kora, koto and marimba for the games of the world. They take turns, and walking into another wing crossfades to its music.
+- The music drops while you sit at a table or the tour reads aloud, and pauses with the tab.
+- **A music button** (two notes, left of the speaker) turns it on and off, apart from the sound effects, and is remembered. Hover it for the name of the piece.
+- The files stream as they play, nothing loads before, and they are MP3s of about 100 kbps levelled to one loudness: 20 MB for all fourteen. The WordPress plugin ships them; the service worker leaves them to the network. `tools/encode-music.mjs` remakes them from the masters.
+
 ## 0.39.0: The card room, part six
 
 Four card games of the 19th and 20th centuries, two of them for four.

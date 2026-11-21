@@ -40,6 +40,8 @@
 #lm-app .iconbtn{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-family:var(--f-display);font-size:18px;color:var(--gold)}
 #lm-app .fsbtn{right:calc(62px + env(safe-area-inset-right,0px));display:grid;place-items:center}
 #lm-app .soundbtn{right:calc(108px + env(safe-area-inset-right,0px));display:grid;place-items:center}
+#lm-app .musicbtn{right:calc(154px + env(safe-area-inset-right,0px));display:grid;place-items:center}
+#lm-app .musicbtn .mute{display:none}#lm-app .musicbtn.off .mute{display:inline}#lm-app .musicbtn.off{color:var(--dust)}
 #lm-app .soundbtn .mute{display:none}#lm-app .soundbtn.off .mute{display:inline}#lm-app .soundbtn.off .wave{display:none}#lm-app .soundbtn.off{color:var(--dust)}
 
 /* Placard */
@@ -261,21 +263,22 @@
 /* The play screen at any size. layoutHud() (23-learning-the-game.js) measures the two bars into --hud-top and
  * --hud-bot, so the rules, moves and guide panels always fit between them and never cover a control. Each panel
  * has its own close button. While playing, the help button goes (Rules does its job) and the bar leaves room for
- * the sound and full-screen buttons. */
+ * the music, sound and full-screen buttons. On a phone the music button waits in the hall. */
 #lm-app .hudmore{display:contents}
 #lm-app .hudmenu{display:none}
 #lm-app .panelclose{position:sticky;top:0;float:right;margin:-6px -8px 4px 10px;width:36px;height:36px;border:1px solid var(--line);background:var(--panel);color:var(--parchment);font-size:20px;line-height:1;border-radius:2px;z-index:1}
 #lm-app .panelclose:hover{color:var(--gold);border-color:var(--gold)}
 #lm-app.playing #lm-helpBtn{display:none}
-#lm-app.playing .hudtop{right:calc(112px + env(safe-area-inset-right,0px))}
+#lm-app.playing .hudtop{right:calc(158px + env(safe-area-inset-right,0px))}
 #lm-app.playing .fsbtn{right:calc(16px + env(safe-area-inset-right,0px))}
 #lm-app.playing .soundbtn{right:calc(62px + env(safe-area-inset-right,0px))}
+#lm-app.playing .musicbtn{right:calc(108px + env(safe-area-inset-right,0px))}
 #lm-app #lm-rulesBtn[aria-expanded="true"],#lm-app #lm-movesBtn[aria-expanded="true"],#lm-app .hudmenu[aria-expanded="true"]{color:#1a120a;background:var(--gold);border-color:var(--gold)}
 
 /* Compact: a phone, or any window too short for the full bar (layoutHud sets the class). The top bar keeps the
  * table's name, the score, Options and Leave; the Scribe's level, the game and pack switches, Moves, Hints and
  * Rules fold into the Options sheet, which wraps instead of running off the edge. */
-#lm-app.lm-compact.playing .fsbtn{display:none}
+#lm-app.lm-compact.playing .fsbtn,#lm-app.lm-compact.playing .musicbtn{display:none}
 #lm-app.lm-compact.playing .soundbtn{right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px))}
 #lm-app.lm-compact .hudtop{top:calc(10px + env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));right:calc(58px + env(safe-area-inset-right,0px));gap:6px 8px}
 #lm-app.lm-compact .hudtitle{flex:1 1 120px;min-width:0;width:auto;margin-right:0;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

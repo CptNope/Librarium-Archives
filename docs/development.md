@@ -33,6 +33,8 @@ tools/build-js.mjs            Joins src/ into js/ (--check fails if js/ is out o
 tests/plugin-render.test.php  Renders the shortcode with stubbed WordPress functions
 tools/build-artifact.mjs      Inlines everything into dist/artifact.html
 tools/build-wp.mjs            Builds the WordPress plugin into dist/librarium-archives.zip
+tools/encode-music.mjs        Re-encodes the soundtrack's masters into music/ (needs ffmpeg)
+music/                        The soundtrack: 14 MP3 files (docs/soundtrack.md)
 wordpress/                    Plugin PHP, Elementor widget and readme.txt
 embed-demo.html               A stand-in WordPress page that embeds the Archives
 docs/                         This documentation

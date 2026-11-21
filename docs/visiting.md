@@ -93,7 +93,9 @@ Games against the Scribe are kept as you play at every two-player table without 
 
 ## Sound
 
-Every sound is made on the spot in the browser: sticks, dice, pieces, Go stones, cards, and a low room tone with the odd candle crackle. Nothing plays until your first click, tap or key; the speaker button (top right) mutes everything and is remembered, and sound pauses while the tab is hidden.
+Every sound effect is made on the spot in the browser: sticks, dice, pieces, Go stones, cards, and a low room tone with the odd candle crackle. Nothing plays until your first click, tap or key; the speaker button (top right) mutes the effects and the read-aloud voice, is remembered, and sound pauses while the tab is hidden.
+
+The Archives also have their own soundtrack. Your first click starts the opening theme; after it, each wing has two pieces of its own that take turns, and walking into another wing fades from one wing's music to the next. The music drops while you sit at a table or the tour reads aloud. The button with two notes, left of the speaker, turns the music on and off on its own; hover it to see what is playing. More in [The soundtrack](soundtrack.md).
 
 ## Your progress
 

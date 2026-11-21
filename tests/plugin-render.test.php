@@ -38,6 +38,8 @@ if ( 'render' === $mode ) {
 	check( 'wraps the Archives in .lm-embed with the height', strpos( $html, '<div class="lm-embed" style="--lm-height:720px">' ) === 0 );
 	check( 'passes the start exhibit', strpos( $html, 'data-start="tables"' ) !== false );
 	check( 'passes the shop link', strpos( $html, 'data-shop="https://librarium.games/marketplace/"' ) !== false );
+	check( 'points the soundtrack at the plugin', strpos( $html, 'data-music="https://example.test/wp-content/plugins/librarium-archives/assets/music/"' ) !== false );
+	check( 'ships the soundtrack', is_readable( $plugin . 'assets/music/opening-a.mp3' ) );
 	check( 'includes the Archives markup', strpos( $html, 'id="lm-scene"' ) !== false && strpos( $html, 'id="lm-hud"' ) !== false );
 	check( 'has no script tags in the markup', stripos( $html, '<script' ) === false );
 	check( 'enqueues the assets', in_array( 'librarium-archives', $GLOBALS['enqueued'], true ) );
