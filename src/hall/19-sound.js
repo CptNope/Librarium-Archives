@@ -1,7 +1,8 @@
 /* ------------------------------------------------------------- sound
  * Every sound is made on the spot with the Web Audio API, so there are no
  * audio files to license or load. Nothing plays until the visitor's first
- * click, tap or key, as browsers require; the speaker button mutes it all. */
+ * click, tap or key, as browsers require; the speaker button mutes it all. The
+ * soundtrack is apart from this, with its own button (19b-music.js). */
 const sfx = (() => {
   let ctx = null, master = null, noiseBuf = null, room = null, crackle = null;
   let on = store.sound !== false;
@@ -85,7 +86,7 @@ const sfx = (() => {
 const soundBtn = $('#lm-soundBtn');
 function renderSoundBtn() {
   soundBtn.setAttribute('aria-pressed', String(sfx.on));
-  soundBtn.setAttribute('aria-label', sfx.on ? 'Sound on. Mute' : 'Sound off. Turn on');
+  soundBtn.setAttribute('aria-label', sfx.on ? 'Sound effects on. Mute' : 'Sound effects off. Turn on');
   soundBtn.classList.toggle('off', !sfx.on);
 }
 soundBtn.addEventListener('click', () => { sfx.set(!sfx.on); renderSoundBtn(); });

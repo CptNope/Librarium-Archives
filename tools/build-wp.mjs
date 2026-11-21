@@ -3,7 +3,7 @@
 // dist/librarium-archives.zip.
 //
 //   wordpress/                  plugin PHP and readme
-//   css/, js/                   the Archives, copied to assets/
+//   css/, js/, music/           the Archives and its soundtrack, copied to assets/
 //   index.html                  its <!-- artifact:body --> markup, minus scripts, becomes templates/archives.html
 //   vendor/three.min.js         bundled if present (CI downloads it); otherwise the plugin falls back to the CDN
 //   vendor/fonts/               bundled if present (tools/fetch-fonts.mjs); otherwise the fonts come from Google
@@ -22,6 +22,7 @@ mkdirSync(join(out, 'templates'), { recursive: true });
 cpSync(join(root, 'wordpress'), out, { recursive: true });
 cpSync(join(root, 'css', 'archives.css'), join(out, 'assets', 'css', 'archives.css'));
 for (const f of ['rules.js', 'archives.js']) cpSync(join(root, 'js', f), join(out, 'assets', 'js', f));
+if (existsSync(join(root, 'music'))) cpSync(join(root, 'music'), join(out, 'assets', 'music'), { recursive: true }); // the soundtrack
 
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 const body = html.match(/<!-- artifact:body -->([\s\S]*?)<!-- \/artifact:body -->/);

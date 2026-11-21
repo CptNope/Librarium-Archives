@@ -219,6 +219,7 @@ erDiagram
     STORE {
         string level "gentle, fair or sharp"
         bool sound "false when muted"
+        bool music "false when the soundtrack is off"
     }
     STORE ||--o{ OPPONENT : "opponent[game id]"
     STORE ||--o{ SAVE : "saves[game id]"
@@ -248,4 +249,6 @@ erDiagram
 
 ## Sound
 
-Every sound is synthesised on the spot with the Web Audio API (the `sfx` module): sticks, dice, pieces, stones, cards, and a low room tone with the odd candle crackle. There are no audio files to license or load. Nothing plays until the visitor's first click, tap or key, the speaker button mutes everything and is remembered, and sound pauses while the tab is hidden.
+Every sound effect is synthesised on the spot with the Web Audio API (the `sfx` module): sticks, dice, pieces, stones, cards, and a low room tone with the odd candle crackle. There are no files for these. Nothing plays until the visitor's first click, tap or key, the speaker button mutes the effects and is remembered, and sound pauses while the tab is hidden.
+
+The soundtrack is the one set of audio files: fourteen pieces in `music/`, streamed by the `music` module (`19b-music.js`) with its own button. The opening theme plays at the first click, then each wing's two pieces in turn, crossfading as the visitor walks between wings and dropping while they sit at a table. See [The soundtrack](soundtrack.md).

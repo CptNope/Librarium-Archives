@@ -17,7 +17,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OUT = join(ROOT, 'test-results'); mkdirSync(OUT, { recursive: true });
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.mp3': 'audio/mpeg' };
 const LONG = 300000;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -239,6 +239,31 @@ test('bridge: a bid is a level, then a strain; Back returns to the auction', { t
     await sleep(600); await yourTurn();
   }
   await leave();
+});
+
+test('the soundtrack: the opening at the first click, then the music of the wing, with its own button', { timeout: LONG * 2 }, async () => {
+  await page.close(); await open();
+  const music = () => page.evaluate(() => ({ track: window.__archives.music.track, on: window.__archives.music.on, hidden: document.querySelector('#lm-musicBtn').hidden }));
+  assert.equal((await music()).track, null); // nothing before the visitor does something
+  await page.mouse.click(450, 200);
+  await page.waitForFunction(() => window.__archives.music.decks.some(d => d.name === 'opening-a' && d.time > 0), null, { timeout: LONG });
+  await page.evaluate(() => { const M = window.__archives; M.jump('tables'); M.music.skip(); }); // into Wing III, and the overture ends
+  await page.waitForFunction(() => window.__archives.music.track === 'wing3-a', null, { timeout: LONG });
+  await page.evaluate(() => document.getElementById('lm-musicBtn').click());
+  assert.deepEqual(await music(), { track: null, on: false, hidden: false });
+  await page.evaluate(() => document.getElementById('lm-musicBtn').click());
+  await page.waitForFunction(() => window.__archives.music.track === 'wing3-b', null, { timeout: LONG }); // the other take
+  // Without the files (a build that leaves them out), the button goes away.
+  await page.close(); page = null;
+  page = await browser.newPage({ viewport: { width: 900, height: 560 } });
+  page.on('pageerror', e => errors.push(String(e).slice(0, 300)));
+  if (existsSync(join(ROOT, 'vendor/three.min.js'))) await page.route('**/three.min.js', r => r.fulfill({ path: join(ROOT, 'vendor/three.min.js'), contentType: 'text/javascript' }));
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
+  await page.route('**/music/**', r => r.fulfill({ status: 404, body: '' }));
+  await page.goto(`${base}/index.html?debug`, { timeout: LONG });
+  await page.waitForFunction(() => window.__archives && document.querySelector('#lm-loader.done'), null, { timeout: LONG });
+  await page.mouse.click(450, 200);
+  await page.waitForFunction(() => document.querySelector('#lm-musicBtn').hidden, null, { timeout: LONG });
 });
 
 test('the single-file build loads and its Scribe thinks in a worker too', { timeout: LONG * 2 }, async () => {

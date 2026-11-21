@@ -201,7 +201,7 @@ function librarium_archives_render( $atts = array() ) {
 	$markup = file_get_contents( $template ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 	$markup = str_replace(
 		'<div id="lm-app">',
-		'<div id="lm-app" data-start="' . esc_attr( $start ) . '" data-shop="' . esc_attr( $shop ) . '">',
+		'<div id="lm-app" data-start="' . esc_attr( $start ) . '" data-shop="' . esc_attr( $shop ) . '" data-music="' . esc_url( LIBRARIUM_ARCHIVES_URL . 'assets/music/' ) . '">',
 		$markup
 	);
 

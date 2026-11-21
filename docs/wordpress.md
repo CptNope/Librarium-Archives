@@ -56,6 +56,7 @@ sequenceDiagram
 | **Scoped styles** | Every rule is scoped under `#lm-app` and every id is prefixed `lm-`, so the theme and the Archives don't restyle each other. The phone layout responds to the box's width (a container query), not the window's |
 | **Assets only where needed** | Loaded on pages whose content holds the shortcode (in the head), or when the widget or shortcode renders (in the footer) |
 | **Self-contained** | three.js r128 is bundled in the plugin; nothing loads from a CDN except Google Fonts |
+| **The soundtrack** | The music ships in the plugin's `assets/music/` (about 20 MB) and the markup points the hall at it with `data-music`. Nothing is fetched until the visitor's first click starts the opening theme, and then only the piece playing, as it plays. Visitors turn it off with its own button ([The soundtrack](soundtrack.md)) |
 | **One per page** | The markup uses fixed ids, so a second copy renders nothing for visitors and a notice for editors |
 | **In the Elementor editor** | The widget shows a placeholder; the 3D hall runs on the live page |
 

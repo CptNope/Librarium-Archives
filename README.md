@@ -49,7 +49,7 @@ flowchart LR
     rules --> tests["node --test<br/>rules, simulations, timing"]
 ```
 
-No bundler, no framework, no audio files: a static page on three.js, with every sound synthesised in the browser.
+No bundler, no framework: a static page on three.js, with every sound effect synthesised in the browser and an original soundtrack streamed from `music/`.
 
 ## Documentation
 
@@ -58,6 +58,7 @@ No bundler, no framework, no audio files: a static page on three.js, with every 
 | [Visiting the Archives](docs/visiting.md) | Controls on touch and keyboard, getting around, the guided tour and passport, playing at a table (keyboard play included), playing a friend, saved games, options, sound |
 | [Game by game](docs/games/README.md) | A page for each of the 88 exhibits: history, a turn diagram, the rules as played, table features, the Scribe's play and strength, the source files |
 | [The exhibits](docs/exhibits.md) | All 88 exhibits by wing, with timelines, rule status and the rule choices at each table |
+| [The soundtrack](docs/soundtrack.md) | The opening theme and the music of each wing: what plays where, the tracks, the files |
 | [The Scribe](docs/scribe.md) | How the AI plays each game, its three levels, and measured strength |
 | [Architecture](docs/architecture.md) | Files, modules, the turn loop, table phases, conventions, stored progress |
 | [Rule engines and presenters](docs/engines.md) | The contract every game implements, a feature matrix of all 73, and how to add a game |

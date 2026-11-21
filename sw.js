@@ -21,6 +21,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   const ours = url.origin === location.origin, fonts = /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname), three = url.hostname === 'cdnjs.cloudflare.com';
   if (!ours && !fonts && !three) return;
+  if (/\/music\//.test(url.pathname)) return; // the soundtrack streams in pieces (range requests), which a cache can't hold
   if (req.mode === 'navigate') { // the page: fresh if possible
     e.respondWith(patient(req, 6000).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put('index.html', copy)); return r; })
       .catch(async () => (await caches.match('index.html')) || fetch(req)));
