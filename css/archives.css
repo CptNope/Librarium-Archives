@@ -41,8 +41,48 @@
 #lm-app .fsbtn{right:calc(62px + env(safe-area-inset-right,0px));display:grid;place-items:center}
 #lm-app .soundbtn{right:calc(108px + env(safe-area-inset-right,0px));display:grid;place-items:center}
 #lm-app .musicbtn{right:calc(154px + env(safe-area-inset-right,0px));display:grid;place-items:center}
+#lm-app .musicbtn[aria-expanded="true"]{color:#1a120a;background:var(--gold);border-color:var(--gold)}
 #lm-app .musicbtn .mute{display:none}#lm-app .musicbtn.off .mute{display:inline}#lm-app .musicbtn.off{color:var(--dust)}
 #lm-app .soundbtn .mute{display:none}#lm-app .soundbtn.off .mute{display:inline}#lm-app .soundbtn.off .wave{display:none}#lm-app .soundbtn.off{color:var(--dust)}
+
+/* The soundtrack panel, under the music button: what is playing, the controls, and every piece by wing. */
+#lm-app .jukebox{position:absolute;top:calc(62px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));width:min(340px,calc(100% - 32px));max-height:calc(100% - 62px - var(--rail-h,80px) - 14px);display:flex;flex-direction:column;background:rgba(18,13,10,.97);border:1px solid var(--line);box-shadow:0 18px 60px rgba(0,0,0,.6);z-index:7}
+#lm-app.playing .jukebox{max-height:calc(100% - 76px)}
+#lm-app .jukebox[hidden]{display:none}
+#lm-app .jukehead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 12px 10px 16px;border-bottom:1px solid var(--line)}
+#lm-app .jukehead h2{margin:0;font-family:var(--f-display);font-size:20px;font-weight:400;color:var(--parchment)}
+#lm-app .jukenow{display:grid;gap:8px;padding:14px 16px 14px;border-bottom:1px solid var(--line)}
+#lm-app .jukename{margin:0;display:grid;gap:2px;min-width:0}
+#lm-app .jukename #lm-musicNow{font-family:var(--f-display);font-size:17px;line-height:1.25;color:var(--gold);text-wrap:balance}
+#lm-app .juketake{font-family:var(--f-ui);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dust)}
+#lm-app .jukenow input[type=range]{width:100%;margin:4px 0 0;accent-color:var(--gold);height:22px;cursor:pointer}
+#lm-app .jukenow input[type=range]:disabled{opacity:.4;cursor:default}
+#lm-app .jukenow input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#lm-app .juketime{display:flex;justify-content:space-between;margin-top:-6px;font-family:var(--f-ui);font-size:11px;font-variant-numeric:tabular-nums;color:var(--dust)}
+#lm-app .juketransport{display:flex;justify-content:center;align-items:center;gap:14px}
+#lm-app .juketransport button{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--parchment);cursor:pointer}
+#lm-app .juketransport button:hover{color:var(--gold);border-color:var(--gold)}
+#lm-app .juketransport .jukeplay{width:50px;height:50px;color:#1a120a;background:var(--gold);border-color:var(--gold)}
+#lm-app .juketransport .jukeplay:hover{color:#1a120a;filter:brightness(1.08)}
+#lm-app .jukeplay .pa,#lm-app .jukeplay.pause .pl{display:none}#lm-app .jukeplay.pause .pa{display:inline}
+#lm-app .jukemode{justify-content:center}
+#lm-app .jukelist{list-style:none;margin:0;padding:8px 8px 12px;overflow:auto;overscroll-behavior:contain}
+#lm-app .jukelist ul{list-style:none;margin:0 0 6px;padding:0}
+#lm-app .jukelist h3{display:flex;align-items:baseline;gap:8px;margin:8px 8px 4px;font-family:var(--f-ui);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dust)}
+#lm-app .jukelist h3 .r{flex:0 0 1.6em;font-family:var(--f-display);font-size:16px;letter-spacing:0;text-transform:none;color:var(--gold)}
+#lm-app .jukelist button{display:grid;grid-template-columns:1.6em 1fr auto;align-items:center;gap:8px;width:100%;min-height:38px;padding:0 8px;border:1px solid transparent;background:none;color:var(--parchment);font-family:var(--f-body);font-size:14.5px;text-align:left;cursor:pointer}
+#lm-app .jukelist button:hover{border-color:var(--line);color:var(--gold)}
+#lm-app .jukelist button[aria-current]{background:rgba(246,160,26,.12);border-color:var(--line);color:var(--gold)}
+#lm-app .jukelist .len{font-family:var(--f-ui);font-size:11px;font-variant-numeric:tabular-nums;color:var(--dust)}
+#lm-app .jukelist .eq{display:flex;align-items:flex-end;gap:2px;height:12px;visibility:hidden}
+#lm-app .jukelist .eq i{width:3px;height:100%;background:currentColor;transform-origin:bottom;animation:lm-eq .9s ease-in-out infinite alternate}
+#lm-app .jukelist .eq i:nth-child(2){animation-delay:-.3s}#lm-app .jukelist .eq i:nth-child(3){animation-delay:-.6s}
+#lm-app .jukelist button[aria-current] .eq{visibility:visible}
+#lm-app .jukelist button.paused .eq i{animation-play-state:paused;transform:scaleY(.35)}
+@keyframes lm-eq{from{transform:scaleY(.25)}to{transform:scaleY(1)}}
+@media (prefers-reduced-motion:reduce){#lm-app .jukelist .eq i{animation:none;transform:scaleY(.6)}}
+@container archives (max-width:720px){#lm-app .jukebox{left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));width:auto}}
+#lm-app.lm-compact.playing .jukebox{display:none}
 
 /* Placard */
 #lm-app .placard{position:absolute;top:calc(72px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(var(--rail-h,80px) + 16px);width:min(380px,calc(100vw - 32px));display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:3px;box-shadow:0 20px 60px rgba(0,0,0,.55);backdrop-filter:blur(6px);transition:opacity .35s,transform .35s}
