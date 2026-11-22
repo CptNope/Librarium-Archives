@@ -96,7 +96,10 @@ const crBackMat = new THREE.MeshStandardMaterial({ roughness: 0.6, map: cardTex(
 }, 140, 210) });
 // A card: c is its face (suit * 13 + rank, see card-packs.js), id what the game calls it if that differs (Bézique's
 // two packs), and style the pack it is drawn in, the table's own unless said.
-function crCard(c, id = c, style = packNow) { const face = new THREE.MeshStandardMaterial({ map: crFace(c, style), roughness: 0.55 }); const m = new THREE.Mesh(crGeo, [tcEdgeMat, tcEdgeMat, face, crBackMat, tcEdgeMat, tcEdgeMat]); m.userData.mats = [face]; m.userData.c = id; m.userData.face = c; return m; }
+// A negative c is a card back with no face: online, a card the player may not see (server/referee.mjs).
+function crCard(c, id = c, style = packNow) {
+  if (c < 0) { const m = new THREE.Mesh(crGeo, [tcEdgeMat, tcEdgeMat, crBackMat, crBackMat, tcEdgeMat, tcEdgeMat]); m.userData.mats = []; m.userData.c = id; m.userData.face = null; return m; }
+  const face = new THREE.MeshStandardMaterial({ map: crFace(c, style), roughness: 0.55 }); const m = new THREE.Mesh(crGeo, [tcEdgeMat, tcEdgeMat, face, crBackMat, tcEdgeMat, tcEdgeMat]); m.userData.mats = [face]; m.userData.c = id; m.userData.face = c; return m; }
 // Pegging holes: each player has a lane of sixty, thirty up the board and thirty back.
 const CRB_X0 = -0.5, CRB_Z0 = 0.3, CRB_DZ = 0.0205;
 function crHole(pl, s) {

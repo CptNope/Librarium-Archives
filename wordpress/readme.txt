@@ -60,6 +60,9 @@ Online play is off unless you set the shortcode's online attribute (or the widge
 
 == Changelog ==
 
+= 0.43.0 =
+* Online card tables: Gin Rummy and Écarté, with each player's hand kept on their own device.
+
 = 0.42.0 =
 * Online play: two people on two devices at fifty tables, with the game refereed by your own free Cloudflare server (off until you set its address).
 

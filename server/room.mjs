@@ -6,15 +6,14 @@
  * token, given when the seat is taken and kept by that player's browser, so the same player can come back
  * after a lost connection and nobody else can take their seat.
  *
- * Every state a player is sent goes through viewOf(game, seat, state) first: today the whole state, as every
- * online table shows everything to both players; for card games it will be that seat's view, with the other
- * hand and the stock face down (docs/online.md).
+ * Every state a player is sent is that seat's view (Referee.snapshotFor, eventsFor): at a card table, the other
+ * hand, the stock and anything else face down are sent as card backs, never as the cards (docs/online.md).
  *
  * Messages from a player:  { t: 'throw' } { t: 'choose', i } { t: 'pass' } { t: 'again' } { t: 'leave' } and 'ping'
  * Messages to a player:    welcome, snapshot, events, presence, error, full, gone, replaced, left (see docs/online.md) */
 import { DurableObject } from 'cloudflare:workers';
 import R from '../js/rules.js';
-import { Referee, viewOf } from './referee.mjs';
+import { Referee } from './referee.mjs';
 
 const HOUR = 3600 * 1000;
 const WAIT_FOR_FRIEND = 24 * HOUR; // an unused room, or one both players have left, is cleared after a day
@@ -41,20 +40,9 @@ export class Room extends DurableObject {
   sendTo(seat, msg) { for (const ws of this.sockets(seat)) this.send(ws, msg); }
   online(seat) { return this.sockets(seat).length > 0; }
 
-  // What one seat is shown of the game.
-  snapshotFor(seat) {
-    const s = this.ref.snapshot();
-    s.state = viewOf(this.ref.id, seat, s.state);
-    if (s.cur !== seat) s.moves = []; // the other player's choices are theirs
-    return s;
-  }
-  eventsFor(seat, events) {
-    return events.map(e => {
-      if (e.type === 'move') return Object.assign({}, e, { before: viewOf(this.ref.id, seat, e.before), state: viewOf(this.ref.id, seat, e.state) });
-      if (e.type === 'turn' && e.seat !== seat) { const o = Object.assign({}, e); delete o.moves; return o; }
-      return e;
-    });
-  }
+  // What one seat is shown of the game: the referee's view for that seat (the other hand face down).
+  snapshotFor(seat) { return this.ref.snapshotFor(seat); }
+  eventsFor(seat, events) { return this.ref.eventsFor(seat, events); }
   broadcast(events) { for (const seat of [0, 1]) this.sendTo(seat, { t: 'events', events: this.eventsFor(seat, events) }); }
 
   async fetch(req) {

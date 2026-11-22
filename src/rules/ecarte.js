@@ -68,7 +68,7 @@
     },
     sortAll() { for (const h of this.hands) h.sort((a, b) => ecSuit(a) - ecSuit(b) || ecPow(a) - ecPow(b)); },
     who(p) { return p === 0 ? 'You' : 'The Scribe'; },
-    prompt0() {
+    prompt0(p = 0) { // p: the player reading it (online, either seat)
       const T = EC_SUIT[this.trump];
       switch (this.stage) {
         case 'next': return this.notes.join(' ') + (this.decided ? ' Press See the result.' : ' Press Next deal when you are ready.');
@@ -77,7 +77,7 @@
         case 'exchange': return `Click the cards to discard (${this.toMove === this.dealer ? 'at least one' : 'one or more'}), then exchange them.${this.marked.length ? ` ${this.marked.length} marked.` : ''}`;
         default: {
           if (!this.trick.length) return `${T[0].toUpperCase() + T.slice(1)} are trumps. Lead any card.`;
-          const lead = this.trick[0].card, ms = ecLegal(this.hands[0], lead, this.trump);
+          const lead = this.trick[0].card, ms = ecLegal(this.hands[p], lead, this.trump);
           return ecSuit(ms[0]) === ecSuit(lead) ? (ms.some(c => ecPow(c) > ecPow(lead)) ? 'Follow suit, and win the trick: you must if you can.' : 'Follow suit.') : ecSuit(ms[0]) === this.trump ? 'You cannot follow: you must trump.' : 'You can neither follow nor trump: play any card.';
         }
       }
@@ -134,10 +134,11 @@
         const got = out.map(() => this.stock.pop()); h.push(...got); this.sortAll(); this.marked = []; this.exchanged[p] += out.length;
         events.push({ type: 'exchange', seat: p, out, got });
         const note = p ? `The Scribe discards ${out.length} and draws ${out.length}.` : `You discard ${out.length} and draw the ${got.map(ecName).join(', the ')}.`;
-        if (p === this.elder) { this.toMove = this.dealer; return { note, events }; }
+        const pub = `${this.who(p)} ${p ? 'discards' : 'discard'} ${out.length} and ${p ? 'draws' : 'draw'} ${out.length}.`; // for the other player, online
+        if (p === this.elder) { this.toMove = this.dealer; return { note, publicNote: pub, events }; }
         this.stage = 'propose'; this.toMove = this.elder;
-        if (this.stock.length < 2) return { note: note + ' The stock is spent.' + this.startPlay(events), events };
-        return { note, events };
+        if (this.stock.length < 2) { const more = ' The stock is spent.' + this.startPlay(events); return { note: note + more, publicNote: pub + more, events }; }
+        return { note, publicNote: pub, events };
       }
       // A card played.
       const c = m.card, h = this.hands[p]; h.splice(h.indexOf(c), 1);

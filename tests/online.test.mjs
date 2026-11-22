@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { Referee, ONLINE } from '../server/referee.mjs';
+import { Referee, ONLINE, VIEWS as VIEWS_ } from '../server/referee.mjs';
 
 const R = createRequire(import.meta.url)('../js/rules.js');
 const pick = a => a[(Math.random() * a.length) | 0];
@@ -54,13 +54,13 @@ function stateOf(g) {
 }
 
 test('the referee refuses tables that cannot be played online', () => {
-  assert.throws(() => new Referee(R, 'gin', {}), /cannot be played online/);
+  assert.throws(() => new Referee(R, 'cribbage', {}), /cannot be played online/);
   assert.throws(() => new Referee(R, 'landlord', {}), /cannot be played online/);
 });
 
 test('every online table plays out between two people, surviving sleep, and the page keeps in step', { timeout: 600000 }, () => {
   const report = [];
-  for (const id of ONLINE) {
+  for (const id of [...ONLINE].filter(x => !VIEWS_[x])) { // card tables: their own test, below
     let done = 0, act = 0, mv = 0, ok = 0;
     for (let n = 0; n < 3; n++) {
       const { ref, actions, moves, matched } = playOut(id);
@@ -96,4 +96,74 @@ test('the host\'s variant carries to the referee', () => {
   ref.start();
   assert.equal(ref.snapshot().settings.variant, '7');
   assert.equal(ref.engine.n, 7);
+});
+
+// Card tables: what each seat is sent. Every game is played out at random by two people through the referee,
+// and each seat's messages are checked as that seat's page would get them.
+import { VIEWS } from '../server/referee.mjs';
+const getAt = (o, p) => p.reduce((x, k) => (x == null ? x : x[k]), o);
+function cardsAt(st, paths) { const out = []; for (const p of paths) { const x = getAt(st, p); if (Array.isArray(x)) out.push(...x); else if (x != null) out.push(x); } return out.filter(v => typeof v === 'number'); }
+
+test('card tables: no card a seat has not seen ever reaches it, and its page keeps in step', { timeout: 600000 }, () => {
+  const report = [];
+  for (const id of Object.keys(VIEWS)) {
+    const spec = VIEWS[id], name = c => R[id].cardName(c);
+    let checked = 0, moves = 0, inStep = 0, games = 0;
+    for (let n = 0; n < 4; n++) {
+      const ref = new Referee(R, id, {});
+      const first = ref.start();
+      // Each seat's page, and the cards that seat has seen (its own, and everything shown on the table).
+      const pages = [0, 1].map(() => { const g = Object.create(R[id]); g.surface = 0; if (g.variants) g.setVariant(g.variant); g.init(); return g; });
+      const seen = [new Set(), new Set()];
+      const look = (seat, raw) => { const hid = new Set(spec.hidden(seat, raw).map(p => p.join('.'))); cardsAt(raw, spec.cards(raw).filter(p => !hid.has(p.join('.')))).forEach(v => seen[seat].add(v)); };
+      // Nothing in what a seat is sent may be, or name, a card hidden from it that it has never seen.
+      const check = (seat, raw, msg) => {
+        look(seat, raw);
+        const secret = cardsAt(raw, spec.hidden(seat, raw)).filter(v => v >= 0 && !seen[seat].has(v));
+        const text = JSON.stringify(msg);
+        for (const v of secret) {
+          const nm = name(v);
+          if (nm && !nm.startsWith(' ')) assert.ok(!text.includes(nm), `${id}: seat ${seat} was sent "${nm}", which it may not see`);
+        }
+        const st = msg.state || msg.snap?.state;
+        if (st) { const shown = new Set(cardsAt(st, spec.cards(st)).filter(v => v >= 0)); for (const v of secret) assert.ok(!shown.has(v), `${id}: seat ${seat} was sent card ${v} face up`); }
+        if (msg.move) for (const f of spec.moveCards) for (const v of [].concat(msg.move[f] ?? [])) assert.ok(!secret.includes(v), `${id}: seat ${seat} was sent card ${v} in a move`);
+        checked++;
+      };
+      for (const seat of [0, 1]) { const snap = ref.snapshotFor(seat); check(seat, ref.state(), { snap }); Object.assign(pages[seat], R.unpackState(snap.state)); }
+      const deliver = evs => {
+        for (const seat of [0, 1]) for (const e of ref.eventsFor(seat, evs)) {
+          if (e.type === 'turn' && e.moves) { look(seat, ref.state()); e.moves.forEach(m => spec.moveCards.forEach(f => [].concat(m[f] ?? []).forEach(v => seen[seat].add(v)))); }
+          if (e.type !== 'move') continue;
+          const raw = evs.find(x => x.type === 'move' && JSON.stringify(x.move) === JSON.stringify(e.move) || x.type === 'move' && x.seat === e.seat && x.state && JSON.stringify(ref.eventsFor(seat, [x])[0]) === JSON.stringify(e));
+          look(seat, raw.state); // what the move brings into view may already show in "before"
+          check(seat, raw.before, { state: e.before, move: e.move, note: e.note });
+          check(seat, raw.state, { state: e.state, note: e.note });
+          // The page plays the move on the server's "before" and should land on its "after".
+          const page = pages[seat]; moves++;
+          Object.assign(page, R.unpackState(e.before));
+          const was = Math.random; Math.random = () => 0.5;
+          try { page.apply(Object.assign({}, e.move)); } catch (err) { /* laid out again from the server's state */ } finally { Math.random = was; }
+          const mine = R.packState(stateOf(page));
+          if (Object.keys(e.state).every(k => JSON.stringify(mine[k]) === JSON.stringify(e.state[k]))) inStep++;
+          Object.assign(page, R.unpackState(e.state));
+        }
+      };
+      deliver(first);
+      let a = 0;
+      while (ref.phase !== 'over' && a++ < 2500) {
+        // Every field of the state is accounted for: a card place, or public.
+        const known = new Set(spec.public.concat(spec.cards(ref.state()).map(p => String(p[0]))));
+        for (const k of Object.keys(ref.state())) assert.ok(known.has(k), `${id}: the field "${k}" is not listed as cards or public`);
+        const s = ref.cur;
+        if (ref.phase === 'throw') deliver(ref.throw(s));
+        else if (ref.moves.length) deliver(ref.choose(s, (Math.random() * ref.moves.length) | 0));
+        else deliver(ref.choose(s, 0, true));
+      }
+      if (ref.phase === 'over') games++;
+    }
+    report.push(`${id}: ${games}/4 finished, ${checked} messages checked, page in step after ${Math.round(100 * inStep / moves)}% of ${moves} moves`);
+    assert.ok(inStep / moves > 0.8, `${id}: the page should play most moves itself`);
+  }
+  console.log(report.join('\n'));
 });

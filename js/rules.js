@@ -10709,13 +10709,13 @@
     sort(p) { const h = this.hands[p]; h.sort((a, b) => gnSuit(a) - gnSuit(b) || gnRank(a) - gnRank(b)); },
     who(p) { return p === 0 ? 'You' : 'The Scribe'; },
     canKnock(p, c) { const h = this.hands[p].filter(x => x !== c); return gnBest(h).dead <= 10; },
-    prompt0() {
+    prompt0(p = 0) { // p: the player reading it (online, either seat)
       const up = this.pile[this.pile.length - 1];
       if (this.stage === 'next') return this.notes.join(' ') + (this.decided ? ' Press See the result.' : ' Press Next hand when you are ready.');
       if (this.stage === 'upcard') return `The ${gnName(up)} is turned up. Take it (click it), or pass.`;
       if (this.stage === 'draw') return `Draw from the stock or take the ${gnName(up)}: click one.`;
       if (this.knocking) return 'Click the card to discard face down and knock.';
-      const h = this.hands[0], d = Math.min(...h.filter(c => c !== this.taken).map(c => gnBest(h.filter(x => x !== c)).dead));
+      const h = this.hands[p], d = Math.min(...h.filter(c => c !== this.taken).map(c => gnBest(h.filter(x => x !== c)).dead));
       return `Discard a card: click it. Your best discard leaves ${d} in deadwood${d <= 10 ? ', low enough to knock' : ' (10 or less to knock)'}.`;
     },
     legal(pl) {
@@ -10752,7 +10752,8 @@
         this.stage = 'discard'; this.knocking = false;
         events.push({ type: 'draw', seat: p, card: c, fromPile });
         const note = fromPile ? `${this.who(p)} ${p ? 'takes' : 'take'} the ${gnName(c)}.` : `${m.why ? 'Both passed. ' : ''}${this.who(p)} ${p ? 'draws' : 'draw'} from the stock${p ? '' : `: the ${gnName(c)}`}.`;
-        return { note, events };
+        // publicNote: what the other player is told (online), without the card drawn blind.
+        return { note, publicNote: fromPile ? note : `${m.why ? 'Both passed. ' : ''}${this.who(p)} ${p ? 'draws' : 'draw'} from the stock.`, events };
       }
       // A discard, or a knock.
       const c = m.card, h = this.hands[p]; h.splice(h.indexOf(c), 1);
@@ -10906,7 +10907,7 @@
     },
     sortAll() { for (const h of this.hands) h.sort((a, b) => ecSuit(a) - ecSuit(b) || ecPow(a) - ecPow(b)); },
     who(p) { return p === 0 ? 'You' : 'The Scribe'; },
-    prompt0() {
+    prompt0(p = 0) { // p: the player reading it (online, either seat)
       const T = EC_SUIT[this.trump];
       switch (this.stage) {
         case 'next': return this.notes.join(' ') + (this.decided ? ' Press See the result.' : ' Press Next deal when you are ready.');
@@ -10915,7 +10916,7 @@
         case 'exchange': return `Click the cards to discard (${this.toMove === this.dealer ? 'at least one' : 'one or more'}), then exchange them.${this.marked.length ? ` ${this.marked.length} marked.` : ''}`;
         default: {
           if (!this.trick.length) return `${T[0].toUpperCase() + T.slice(1)} are trumps. Lead any card.`;
-          const lead = this.trick[0].card, ms = ecLegal(this.hands[0], lead, this.trump);
+          const lead = this.trick[0].card, ms = ecLegal(this.hands[p], lead, this.trump);
           return ecSuit(ms[0]) === ecSuit(lead) ? (ms.some(c => ecPow(c) > ecPow(lead)) ? 'Follow suit, and win the trick: you must if you can.' : 'Follow suit.') : ecSuit(ms[0]) === this.trump ? 'You cannot follow: you must trump.' : 'You can neither follow nor trump: play any card.';
         }
       }
@@ -10972,10 +10973,11 @@
         const got = out.map(() => this.stock.pop()); h.push(...got); this.sortAll(); this.marked = []; this.exchanged[p] += out.length;
         events.push({ type: 'exchange', seat: p, out, got });
         const note = p ? `The Scribe discards ${out.length} and draws ${out.length}.` : `You discard ${out.length} and draw the ${got.map(ecName).join(', the ')}.`;
-        if (p === this.elder) { this.toMove = this.dealer; return { note, events }; }
+        const pub = `${this.who(p)} ${p ? 'discards' : 'discard'} ${out.length} and ${p ? 'draws' : 'draw'} ${out.length}.`; // for the other player, online
+        if (p === this.elder) { this.toMove = this.dealer; return { note, publicNote: pub, events }; }
         this.stage = 'propose'; this.toMove = this.elder;
-        if (this.stock.length < 2) return { note: note + ' The stock is spent.' + this.startPlay(events), events };
-        return { note, events };
+        if (this.stock.length < 2) { const more = ' The stock is spent.' + this.startPlay(events); return { note: note + more, publicNote: pub + more, events }; }
+        return { note, publicNote: pub, events };
       }
       // A card played.
       const c = m.card, h = this.hands[p]; h.splice(h.indexOf(c), 1);
