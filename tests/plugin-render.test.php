@@ -41,7 +41,7 @@ if ( 'render' === $mode ) {
 	check( 'passes the shop link', strpos( $html, 'data-shop="https://librarium.games/marketplace/"' ) !== false );
 	check( 'points the soundtrack at the plugin', strpos( $html, 'data-music="https://example.test/wp-content/plugins/librarium-archives/assets/music/"' ) !== false );
 	check( 'passes the online server, without its trailing slash', strpos( $html, 'data-online="https://librarium-online.example.workers.dev"' ) !== false );
-	check( 'ships the soundtrack', is_readable( $plugin . 'assets/music/opening-a.mp3' ) );
+	check( 'ships the soundtrack', is_readable( $plugin . 'assets/music/lobby-a.mp3' ) && is_readable( $plugin . 'assets/music/credits-a.mp3' ) );
 	check( 'includes the Archives markup', strpos( $html, 'id="lm-scene"' ) !== false && strpos( $html, 'id="lm-hud"' ) !== false );
 	check( 'has no script tags in the markup', stripos( $html, '<script' ) === false );
 	check( 'enqueues the assets', in_array( 'librarium-archives', $GLOBALS['enqueued'], true ) );

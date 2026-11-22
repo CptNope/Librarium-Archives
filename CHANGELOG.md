@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.44.0: The entrance hall's music, and the credits
+
+A quieter welcome, and the bold theme saved for the end.
+
+- **The entrance hall has music of its own**: soft and slow, after the calm travelling music of open-world role-playing games. Warm low strings, harp, flute and oboe, and a distant choir that hums and sings a little Latin. No drums or brass. Two takes (3:35, 3:28) fade in at your first click and take turns while you are at the entrance. Walking back to the entrance from a wing brings them back.
+- **The credits.** **Roll the credits** on the lectern at the end of the hall, or at the foot of the soundtrack panel, rolls them over the hall like the end of a film. They list who the Archives were made for, every exhibit wing by wing, the soundtrack, and what the hall is built with. The roll takes about a hundred seconds and can be paused, scrolled or closed at any point. With reduced motion it stays still for you to scroll.
+- **The main theme plays under the credits.** The orchestral overture that used to open the visit, now called Librarium (Main Theme), plays when the credits roll. Closing them crossfades back to the music of where you stand.
+- The soundtrack panel lists sixteen pieces: the entrance hall, the six wings, and the main theme under Credits. `music/opening-*.mp3` are now `music/credits-*.mp3`.
+- `tools/encode-music.mjs` skips masters that are missing, so one piece can be added or replaced on its own.
+
 ## 0.43.0: Online card tables, Gin Rummy and Écarté
 
 The first card tables online. Each player's hand stays on their own device.

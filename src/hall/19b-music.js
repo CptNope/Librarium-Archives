@@ -1,23 +1,25 @@
 /* ------------------------------------------------------------- music
- * The soundtrack: an opening theme and two pieces for each wing, made for the Archives (docs/soundtrack.md).
- * The opening plays at the visitor's first click, tap or key, as browsers require. When it ends, the music of
- * the wing they are standing in follows, and each wing's two pieces take turns. Walking into another wing
- * crossfades to its music once they have been there a moment, so passing an arch does not chop and change (the
- * first hearing of the opening always plays to its end); coming back to the entrance from further in brings
- * the opening back. That is "Follow the hall". The music button opens the soundtrack panel, where the visitor
- * can pause, skip, seek, or pick any piece; once they pick, the music plays through the list "In order" until
- * they choose to follow the hall again. It drops while the visitor sits at a table or the tour reads aloud,
+ * The soundtrack: two pieces for the entrance hall, two for each wing, and the main theme, which plays under
+ * the credits, all made for the Archives (docs/soundtrack.md). The entrance hall's music fades in at the
+ * visitor's first click, tap or key, as browsers require. Each place's two pieces take turns, and walking into
+ * another wing, or back to the entrance, crossfades to its music once the visitor has been there a moment, so
+ * passing an arch does not chop and change. That is "Follow the hall". The credits play the main theme, and
+ * closing them goes back to the music of where the visitor stands. The music button opens the soundtrack
+ * panel, where the visitor can pause, skip, seek, or pick any piece; once they pick, the music plays through
+ * the list "In order" until they choose to follow the hall again. It drops while the visitor sits at a table or the tour reads aloud,
  * and pauses with the tab. The files stream from music/ beside the page (data-music on #lm-app points
  * elsewhere, as the WordPress plugin does), so nothing loads until it plays; if they are not there, the
  * button goes away. */
 const MUSIC_WINGS = ['The First Boards', 'Strategy Takes the Table', 'Kings, Cards and Courts', 'Printed Boards and Parlour Tables', 'The Modern Board Game', 'Games of the World'];
 // Every piece in list order, with its length (seconds) so the list can show it before anything has loaded.
-const MUSIC_TRACKS = [['opening-a', 107], ['opening-b', 98], ['wing1-a', 103], ['wing1-b', 139], ['wing2-a', 174], ['wing2-b', 188],
-  ['wing3-a', 158], ['wing3-b', 152], ['wing4-a', 135], ['wing4-b', 127], ['wing5-a', 145], ['wing5-b', 149], ['wing6-a', 166], ['wing6-b', 60]]
+// Each piece's set: 'lobby' (the entrance hall), 'w0' to 'w5' (the wings), or 'credits'.
+const MUSIC_TRACKS = [['lobby-a', 215], ['lobby-b', 208], ['wing1-a', 103], ['wing1-b', 139], ['wing2-a', 174], ['wing2-b', 188],
+  ['wing3-a', 158], ['wing3-b', 152], ['wing4-a', 135], ['wing4-b', 127], ['wing5-a', 145], ['wing5-b', 149], ['wing6-a', 166], ['wing6-b', 60],
+  ['credits-a', 107], ['credits-b', 98]]
   .map(([name, len]) => {
-    const opening = name.startsWith('opening'), w = opening ? -1 : +name[4] - 1;
-    return { name, len, set: opening ? 'opening' : 'w' + w, take: name.endsWith('-a') ? 'First take' : 'Second take',
-      title: opening ? 'Librarium (Opening Theme)' : `Wing ${ROMAN_WINGS[w + 1]}: ${MUSIC_WINGS[w]}` };
+    const kind = name.replace(/-.$/, ''), w = kind.startsWith('wing') ? +kind[4] - 1 : -1;
+    return { name, len, set: w >= 0 ? 'w' + w : kind, take: name.endsWith('-a') ? 'First take' : 'Second take',
+      title: kind === 'lobby' ? 'The Entrance Hall' : kind === 'credits' ? 'Librarium (Main Theme)' : `Wing ${ROMAN_WINGS[w + 1]}: ${MUSIC_WINGS[w]}` };
   });
 const trackOf = name => MUSIC_TRACKS.find(t => t.name === name);
 const clockOf = s => { s = Math.max(0, Math.round(s || 0)); return `${(s / 60) | 0}:${String(s % 60).padStart(2, '0')}`; };
@@ -28,8 +30,8 @@ const music = (() => {
   for (const t of MUSIC_TRACKS) (SETS[t.set] = SETS[t.set] || []).push(t.name);
   const VOL = 0.5, SEATED = 0.45, READING = 0.35, FADE = 2.5, QUICK = 0.6, SETTLE = 2.5;
   const turn = {}; // the next take to play from each set
-  let on = store.music !== false, unlocked = false, broken = false, follow = true;
-  let ctx = null, decks = [], cur = null, playing = null, want = null, wantSince = 0, leftEntrance = false, overture = false, timer = 0, fade = FADE;
+  let on = store.music !== false, unlocked = false, broken = false, follow = true, rolling = false, followAfter = true;
+  let ctx = null, decks = [], cur = null, playing = null, want = null, wantSince = 0, timer = 0, fade = FADE;
   const listeners = [];
   const changed = () => listeners.forEach(fn => fn());
 
@@ -54,33 +56,27 @@ const music = (() => {
     decks = [deck(), deck()];
   }
   const entranceZ = () => HALL.zNear - LAYOUT.first / 2; // before the first exhibit
-  function zone() {
-    const z = cam.pos.z;
-    if (z > entranceZ()) return leftEntrance ? 'opening' : (playing === 'opening' ? 'opening' : 'w0');
-    const w = Math.min(5, wingOf(z));
-    if (w > 0) leftEntrance = true;
-    return 'w' + w;
-  }
-  // Start one piece: crossfading from the last, or at full level for the overture.
-  function play(name, { first = false, quick = false } = {}) {
+  const zone = () => { const z = cam.pos.z; return z > entranceZ() ? 'lobby' : 'w' + Math.min(5, wingOf(z)); };
+  // Start one piece, crossfading from the last.
+  function play(name, { quick = false } = {}) {
     if (broken || !on || !unlocked) return;
     const t = trackOf(name), d = decks.find(x => x !== cur) || decks[0];
     if (cur) cur.to = 0;
     fade = quick ? QUICK : FADE;
     d.name = name; d.el.src = BASE + name + '.mp3'; d.el.currentTime = 0;
-    d.mix = first ? 1 : 0; d.to = 1;
+    d.mix = 0; d.to = 1;
     const p = d.el.play(); if (p && p.catch) p.catch(() => {});
-    cur = d; playing = t.set; overture = first;
+    cur = d; playing = t.set;
     turn[t.set] = (SETS[t.set].indexOf(name) + 1) % SETS[t.set].length;
-    if (t.set === 'opening') leftEntrance = false;
     mixNow(); changed();
   }
   const fromSet = (set, opts) => play(SETS[set][turn[set] || 0], opts);
-  // A piece ended. In order: the next in the list. Following the hall: the other take of where the visitor
-  // is, and after the opening, the first wing's music.
+  // A piece ended. Under the credits: the main theme's other take. In order: the next in the list. Following
+  // the hall: the other take of where the visitor is.
   function ended() {
-    if (!follow) { step(1, false); return; }
-    const z = zone(); fromSet(z === 'opening' && playing === 'opening' ? 'w0' : z);
+    if (rolling) fromSet('credits');
+    else if (!follow) step(1, false);
+    else fromSet(zone());
   }
   function step(by, quick = true) {
     const i = cur ? MUSIC_TRACKS.findIndex(t => t.name === cur.name) : -1;
@@ -107,8 +103,8 @@ const music = (() => {
       else if (d.mix > d.to) { d.mix = Math.max(d.to, d.mix - dt / fade); if (d.mix === 0 && d !== cur) { d.el.pause(); d.name = null; } }
     }
     mixNow();
-    // Seated, the visitor stays put and the music carries on. The overture always plays to its end.
-    if (follow && mode !== 'play' && !overture) {
+    // Seated, the visitor stays put and the music carries on.
+    if (follow && mode !== 'play') {
       const z = zone(), now = performance.now();
       if (z !== want) { want = z; wantSince = now; }
       else if (z !== playing && now - wantSince > SETTLE * 1000) fromSet(z);
@@ -129,24 +125,37 @@ const music = (() => {
   function wake() {
     if (decks.length) return;
     make();
-    const spare = decks[1]; spare.el.src = BASE + 'opening-b.mp3';
+    const spare = decks[1]; spare.el.src = BASE + 'lobby-b.mp3';
     const p = spare.el.play(); if (p && p.then) p.then(() => { if (spare !== cur) spare.el.pause(); }).catch(() => {});
   }
   const api = {
     get on() { return on; },
     get broken() { return broken; },
     get follow() { return follow; },
+    get rolling() { return rolling; },
     get track() { return cur ? cur.name : null; },
     get time() { return cur ? cur.el.currentTime : 0; },
     get length() { return cur ? (isFinite(cur.el.duration) ? cur.el.duration : trackOf(cur.name).len) : 0; },
     get decks() { return decks.map(d => ({ name: d.name, mix: +d.mix.toFixed(2), to: d.to, time: +d.el.currentTime.toFixed(1), paused: d.el.paused, gain: d.gain ? +d.gain.gain.value.toFixed(3) : d.el.volume })); },
     onChange(fn) { listeners.push(fn); },
     skip() { if (cur) cur.el.currentTime = Math.max(0, api.length - 1); }, // the end of the piece playing (for tests)
-    // The first click, tap or key: the opening.
+    // The first click, tap or key: the music of where the visitor is (the entrance hall, unless a link
+    // brought them further in).
     unlock() {
       if (unlocked) return; unlocked = true;
-      if (!on || broken) return;
-      run(); play('opening-a', { first: true });
+      if (!on || broken || rolling) return;
+      run(); fromSet(zone());
+    },
+    // The credits: the main theme from its start, while they roll; then back to what was playing before
+    // (the music of where the visitor stands, when following the hall). Paused music stays paused.
+    credits(v) {
+      if (v === rolling || broken) return;
+      rolling = v;
+      if (v) {
+        followAfter = follow; follow = false; unlocked = true; turn.credits = 0;
+        if (on) { run(); fromSet('credits', { quick: true }); } else changed();
+      } else if (followAfter) api.setFollow(true);
+      else changed();
     },
     // Pause keeps the place; playing again picks up where it left off.
     set(v) {
@@ -155,12 +164,12 @@ const music = (() => {
       if (!v) { for (const d of decks) d.el.pause(); changed(); return; }
       run();
       if (cur) { const p = cur.el.play(); if (p && p.catch) p.catch(() => {}); changed(); }
-      else fromSet(follow ? zone() : 'opening');
+      else fromSet(rolling ? 'credits' : follow ? zone() : 'lobby');
     },
     // The visitor picks a piece: it plays now, and the list plays on in order from it.
     choose(name) {
       if (broken) return;
-      unlocked = true; follow = false;
+      unlocked = true; follow = false; followAfter = false;
       if (!on) { on = true; store.music = true; save(); }
       run(); play(name, { quick: true });
     },
@@ -171,8 +180,8 @@ const music = (() => {
     },
     seek(frac) { if (cur && isFinite(cur.el.duration)) { cur.el.currentTime = Math.max(0, Math.min(0.999, frac)) * cur.el.duration; changed(); } },
     setFollow(v) {
-      follow = v; changed();
-      if (v && on && unlocked && !broken) { run(); overture = false; const z = zone(); if (z !== playing) fromSet(z, { quick: true }); }
+      follow = v; if (rolling) followAfter = v; changed();
+      if (v && on && unlocked && !broken && !rolling) { run(); const z = zone(); if (z !== playing) fromSet(z, { quick: true }); }
     },
   };
   document.addEventListener('visibilitychange', () => {
@@ -229,9 +238,9 @@ if (musicBtn && musicPanel) {
   for (const t of MUSIC_TRACKS) {
     if (!groups[t.set]) {
       const li = document.createElement('li'), h = document.createElement('h3'), r = document.createElement('span'), n = document.createElement('span'), ul = document.createElement('ul');
-      const w = t.set === 'opening' ? -1 : +t.set[1];
-      r.className = 'r'; r.textContent = w < 0 ? '★' : ROMAN_WINGS[w + 1]; r.setAttribute('aria-hidden', 'true');
-      n.textContent = w < 0 ? 'Opening theme' : `Wing ${ROMAN_WINGS[w + 1]}: ${MUSIC_WINGS[w]}`;
+      const w = t.set[0] === 'w' ? +t.set[1] : -1;
+      r.className = 'r'; r.textContent = w >= 0 ? ROMAN_WINGS[w + 1] : t.set === 'lobby' ? '⌂' : '★'; r.setAttribute('aria-hidden', 'true');
+      n.textContent = w >= 0 ? `Wing ${ROMAN_WINGS[w + 1]}: ${MUSIC_WINGS[w]}` : t.set === 'lobby' ? 'The Entrance Hall' : 'Credits: Librarium (Main Theme)';
       h.append(r, n); li.append(h, ul); list.appendChild(li); groups[t.set] = ul;
     }
     const li = document.createElement('li'), b = document.createElement('button');

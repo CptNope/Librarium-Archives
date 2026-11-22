@@ -25,7 +25,7 @@ Visitors walk a candlelit library hall in six wings, read the history of each ga
 
 The hall ends at a lectern of Librarium's own games.
 
-The Archives have their own soundtrack: an orchestral opening theme and music for each wing, which plays from the visitor's first click; its own button opens a panel to pause, skip or pick any piece. The music files (about 20 MB) ship with the plugin and stream from it as they play.
+The Archives have their own soundtrack: quiet music for the entrance hall, music for each wing, and an orchestral main theme under the credits, from the visitor's first click; its own button opens a panel to pause, skip or pick any piece. The music files (about 25 MB) ship with the plugin and stream from it as they play.
 
 Visitors walk with the arrow keys or WASD, or on phones and tablets with an on-screen joystick or by tapping the floor, and pinch to zoom. The Scribe plays at three levels. Two visitors can play each other on one screen at most two-player tables, dice games included, and games are saved as they go. Visitor progress (exhibits visited, records at each table, saved games) is kept in the visitor's own browser only; the plugin stores nothing on the server.
 
@@ -60,6 +60,9 @@ Online play is off unless you set the shortcode's online attribute (or the widge
 
 == Changelog ==
 
+= 0.44.0 =
+* New music for the entrance hall, softer, with a hushed choir; the bold opening theme now plays under a credits roll at the end of the hall.
+
 = 0.43.0 =
 * Online card tables: Gin Rummy and Écarté, with each player's hand kept on their own device.
 
@@ -70,7 +73,7 @@ Online play is off unless you set the shortcode's online attribute (or the widge
 * The soundtrack panel: pause, skip, seek or pick any piece of the music.
 
 = 0.40.0 =
-* The soundtrack: an opening theme and two pieces of music for each wing, with a button of its own.
+* The soundtrack: music for the entrance hall and each wing, and the main theme under the credits, with a button of its own.
 
 = 0.39.0 =
 * The card room, part six: Écarté, Gin Rummy, Contract Bridge and Spades.

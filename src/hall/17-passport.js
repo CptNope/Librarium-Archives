@@ -111,6 +111,10 @@ function renderPlacard(s) {
     b.addEventListener('click', () => startGame(s)); act.appendChild(b);
   } else if (s.link) {
     const a = document.createElement('a'); a.className = 'btn primary'; a.href = s.link[1]; a.target = '_blank'; a.rel = 'noopener'; a.textContent = s.link[0]; act.appendChild(a);
+    if (s.id === 'next' && creditsBox) { // the end of the hall: the credits
+      const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.textContent = 'Roll the credits';
+      b.addEventListener('click', () => credits.open(true)); act.appendChild(b);
+    }
   } else if (s.begin) {
     const i = STOPS.findIndex(x => x.id === s.begin);
     const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Begin with ' + STOPS[i].rail;

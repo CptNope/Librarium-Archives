@@ -248,20 +248,20 @@ test('bridge: a bid is a level, then a strain; Back returns to the auction', { t
   await leave();
 });
 
-test('the soundtrack: the opening at the first click, the music of the wing, and the panel to pick from', { timeout: LONG * 2 }, async () => {
+test('the soundtrack: the entrance hall at the first click, the music of the wing, the panel to pick from, and the credits', { timeout: LONG * 2 }, async () => {
   await page.close(); await open();
   const music = () => page.evaluate(() => { const m = window.__archives.music; return { track: m.track, on: m.on, follow: m.follow }; });
   const click = sel => page.evaluate(sel => document.querySelector(sel).click(), sel);
   const until = (fn, arg) => page.waitForFunction(fn, arg, { timeout: LONG });
   assert.equal((await music()).track, null); // nothing before the visitor does something
   await page.mouse.click(450, 200);
-  await until(() => window.__archives.music.decks.some(d => d.name === 'opening-a' && d.time > 0));
-  await page.evaluate(() => { const M = window.__archives; M.jump('tables'); M.music.skip(); }); // into Wing III, and the overture ends
+  await until(() => window.__archives.music.decks.some(d => d.name === 'lobby-a' && d.time > 0));
+  await page.evaluate(() => window.__archives.jump('tables')); // into Wing III: its music follows after a moment
   await until(() => window.__archives.music.track === 'wing3-a');
   // The panel: every piece listed, the one playing marked.
   await click('#lm-musicBtn');
   assert.equal(await page.evaluate(() => !document.getElementById('lm-music').hidden), true);
-  assert.equal(await page.evaluate(() => document.querySelectorAll('#lm-musicList button').length), 14);
+  assert.equal(await page.evaluate(() => document.querySelectorAll('#lm-musicList button').length), 16);
   assert.equal(await page.evaluate(() => document.querySelector('#lm-musicList [aria-current]').dataset.track), 'wing3-a');
   // Pause keeps the place; Play picks up there.
   await page.waitForFunction(() => window.__archives.music.time > 1, null, { timeout: LONG });
@@ -275,15 +275,22 @@ test('the soundtrack: the opening at the first click, the music of the wing, and
   await click('#lm-musicNext');
   assert.deepEqual(await music(), { track: 'wing3-b', on: true, follow: false });
   assert.equal(await page.evaluate(() => document.getElementById('lm-musicOrder').getAttribute('aria-pressed')), 'true');
-  await click('#lm-musicList [data-track="opening-b"]');
-  await until(() => window.__archives.music.track === 'opening-b' && window.__archives.music.time > 0.5);
+  await click('#lm-musicList [data-track="credits-b"]');
+  await until(() => window.__archives.music.track === 'credits-b' && window.__archives.music.time > 0.5);
   await page.evaluate(() => window.__archives.music.skip());
-  await until(() => window.__archives.music.track === 'wing1-a'); // the next down the list, not the wing's
+  await until(() => window.__archives.music.track === 'lobby-a'); // the next down the list (round to the top), not the wing's
   // Follow the hall: back to the music of the wing the visitor stands in.
   await click('#lm-musicFollow');
   await until(() => /^wing3-/.test(window.__archives.music.track));
+  // The credits: the main theme while they roll; Esc closes them and the wing's music comes back.
+  await click('#lm-musicCredits');
+  assert.equal(await page.evaluate(() => !document.getElementById('lm-credits').hidden && document.getElementById('lm-music').hidden), true);
+  await until(() => window.__archives.music.track === 'credits-a' && window.__archives.music.rolling);
+  assert.ok(await page.evaluate(() => document.querySelectorAll('#lm-creditsBody .crwing li').length) > 80, 'every exhibit is in the credits');
+  await page.waitForFunction(() => document.getElementById('lm-creditsRoll').scrollTop > 20, null, { timeout: LONG }); // it rolls
   await page.keyboard.press('Escape');
-  assert.equal(await page.evaluate(() => document.getElementById('lm-music').hidden), true);
+  assert.equal(await page.evaluate(() => document.getElementById('lm-credits').hidden), true);
+  await until(() => /^wing3-/.test(window.__archives.music.track) && window.__archives.music.follow && !window.__archives.music.rolling);
   // Without the files (a build that leaves them out), the button goes away.
   await page.close(); page = null;
   page = await browser.newPage({ viewport: { width: 900, height: 560 } });

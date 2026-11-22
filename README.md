@@ -59,7 +59,7 @@ No bundler, no framework: a static page on three.js, with every sound effect syn
 | [Game by game](docs/games/README.md) | A page for each of the 88 exhibits: history, a turn diagram, the rules as played, table features, the Scribe's play and strength, the source files |
 | [The exhibits](docs/exhibits.md) | All 88 exhibits by wing, with timelines, rule status and the rule choices at each table |
 | [Online play](docs/online.md) | Playing a friend on another device: rooms and codes, how the server referees, setting it up on Cloudflare's free plan |
-| [The soundtrack](docs/soundtrack.md) | The opening theme and the music of each wing: what plays where, the tracks, the files |
+| [The soundtrack](docs/soundtrack.md) | The entrance hall's music, each wing's, and the main theme under the credits: what plays where, the credits roll, the tracks, the files |
 | [The Scribe](docs/scribe.md) | How the AI plays each game, its three levels, and measured strength |
 | [Architecture](docs/architecture.md) | Files, modules, the turn loop, table phases, conventions, stored progress |
 | [Rule engines and presenters](docs/engines.md) | The contract every game implements, a feature matrix of all 73, and how to add a game |
