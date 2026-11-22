@@ -76,7 +76,7 @@ flowchart LR
 | Option | Where | Choices |
 | --- | --- | --- |
 | The Scribe's level | every table | Gentle · Fair (default) · Sharp |
-| Opponent | two-player tables with nothing hidden (the chess family, Go, draughts, mancala, tafl and the rest) and the two-player dice games, where each player throws for themselves | The Scribe · A friend (pass-and-play on one screen; the Scribe's level is hidden and the game is not added to your record) |
+| Opponent | two-player tables with nothing hidden (the chess family, Go, draughts, mancala, tafl and the rest) and the two-player dice games, where each player throws for themselves | The Scribe · A friend (pass-and-play on one screen; the Scribe's level is hidden and the game is not added to your record) · Online, where the site has an online server (a friend on another device: [Online play](online.md)) |
 | Board size | Dots and Boxes | 4 × 4 · 5 × 5 |
 | | Hex | 7 × 7 · 9 × 9 · 11 × 11 |
 | Game length | Pachisi | short (two pieces each) · full (four) |
@@ -86,6 +86,10 @@ flowchart LR
 | Months | Hanafuda (koi-koi) | 3 · 6 (default) · 12 |
 
 Choosing a variant or an opponent restarts the game, and every choice is remembered.
+
+## Playing online
+
+Where the site has an online server, the Opponent row at the two-player board and dice tables also offers **Online**: a friend on another phone or computer. One of you opens a room and sends the other its six-letter code or link; the friend sits down across the table from you, and you take turns, each throwing your own dice. A dropped connection or a reload comes back to the same seat. Online games don't count toward your record, and there are no hints or take-backs. More in [Online play](online.md).
 
 ## Saved games
 

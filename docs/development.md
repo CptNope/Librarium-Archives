@@ -29,6 +29,9 @@ js/rules.js                   Built from src/rules: 62 rule engines and the Scri
 js/archives.js                Built from src/hall: the three.js hall, its tables and systems
 tests/rules.test.mjs          Rule tests, simulated games and AI timing checks
 tests/e2e/hall.e2e.mjs        Browser tests (Playwright)
+tests/online.test.mjs         The online referee: every online table played out in Node (part of npm test)
+tests/online-run.mjs          npm run test:online: a local online server, two WebSocket players, and (--e2e) the hall
+server/                       The online game server: a Cloudflare Worker and its rooms (docs/online.md)
 tools/build-js.mjs            Joins src/ into js/ (--check fails if js/ is out of date)
 tests/plugin-render.test.php  Renders the shortcode with stubbed WordPress functions
 tools/build-artifact.mjs      Inlines everything into dist/artifact.html

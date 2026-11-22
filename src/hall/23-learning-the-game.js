@@ -66,10 +66,10 @@ function renderMoves(now) {
     if (e.pl === 0 && (k === 1 || h[k - 1].pl !== 0)) turn++;
     const li = document.createElement('li'); li.className = (e.pl === 0 ? 'you' : 'scribe') + (k === now ? ' now' : '');
     const n = document.createElement('span'); n.className = 'n'; n.textContent = e.pl === 0 && (k === 1 || h[k - 1].pl !== 0) ? turn + '.' : '';
-    const w = document.createElement('span'); w.className = 'w'; w.textContent = e.pl === 0 ? 'You' : asFriend('Scribe');
+    const w = document.createElement('span'); w.className = 'w'; w.textContent = seatLabel(e.pl);
     const t = document.createElement('span'); t.className = 't';
     if (e.text) { const b = document.createElement('b'); b.textContent = e.text; t.appendChild(b); }
-    if (e.note) { const i = document.createElement('i'); i.textContent = (e.text ? ' · ' : '') + asFriend(e.note); t.appendChild(i); }
+    if (e.note) { const i = document.createElement('i'); i.textContent = (e.text ? ' · ' : '') + forSeat(e.note); t.appendChild(i); }
     li.append(n, w, t); ol.appendChild(li);
   });
   if (now !== undefined) { const on = ol.querySelector('.now'); if (on) on.scrollIntoView({ block: 'nearest' }); }
@@ -256,6 +256,7 @@ function renderRules(g) {
 }
 function leaveGame() {
   if (mode !== 'play') return;
+  if (play.online && !net.switching) onlineLeave();
   play.token++; clearHighlights(); clearLastMove(); $('#lm-choices').hidden = true;
   if (play.P && play.P.leave) play.P.leave(play.ex);
   $('#lm-coach').hidden = true; $('#lm-moves').hidden = true; $('#lm-choices').classList.remove('replaybar'); hudMenu(false);
@@ -267,7 +268,7 @@ function leaveGame() {
 }
 $('#lm-leaveBtn').addEventListener('click', leaveGame);
 $('#lm-winLeave').addEventListener('click', leaveGame);
-$('#lm-againBtn').addEventListener('click', restartTable);
+$('#lm-againBtn').addEventListener('click', () => (play.online ? onlineAgain() : restartTable()));
 $('#lm-rulesBtn').addEventListener('click', () => { hudMenu(false); $('#lm-rules').hidden = !$('#lm-rules').hidden; if (!$('#lm-rules').hidden) { $('#lm-moves').hidden = true; $('#lm-movesBtn').setAttribute('aria-expanded', 'false'); } });
 // The Rules button shows whether the panel is open, however it was opened (the first visit, the help button, Escape).
 new MutationObserver(() => { $('#lm-rulesBtn').setAttribute('aria-expanded', String(!$('#lm-rules').hidden)); if (typeof coachAside === 'function') coachAside(); }).observe($('#lm-rules'), { attributes: true, attributeFilter: ['hidden'] });
@@ -314,15 +315,16 @@ $('#lm-passBtn').addEventListener('click', () => {
 });
 
 const asFriend = t => (play.hotseat && mode === 'play' && t ? String(t).replace(/The Scribe/g, 'Your friend').replace(/the Scribe/g, 'your friend').replace(/\bScribe\b/g, 'Friend') : t);
-function setMsg(who, text) {
-  who = asFriend(who); text = asPack(asFriend(text));
+function setMsg(who, text, raw) { // raw: already worded for this player (online messages)
+  if (!raw) { who = asFriend(who); text = forSeat(text); }
+  text = asPack(text);
   const m = $('#lm-msg'); m.innerHTML = '';
   const w = document.createElement('span'); w.className = 'who'; w.textContent = who; m.appendChild(w);
   m.appendChild(document.createTextNode(text));
 }
 function updateScore() {
   const s = $('#lm-score'); s.innerHTML = '';
-  const add = ([label, val]) => { const el = document.createElement('b'); el.textContent = val; s.append(asFriend(label) + ' ', el); };
+  const add = ([label, val]) => { const el = document.createElement('b'); el.textContent = val; s.append(forSeat(label) + ' ', el); };
   if (play.P.scores) { // more than two players
     const list = play.P.scores(), tail = typeof list[list.length - 1] === 'string' ? list.pop() : '';
     list.forEach((x, k) => { if (k) s.append('  ·  '); add(x); });
@@ -423,18 +425,19 @@ function renderChoices(moves) {
   for (const m of list) { const b = document.createElement('button'); b.className = 'btn' + (/^Mahjong/.test(m.label) ? ' primary' : ''); b.textContent = asPack(m.label); b.addEventListener('click', () => choose(m)); box.appendChild(b); }
 }
 // Whose turn the message names: you, or in pass-and-play the friend in the Scribe's seat.
-const turnName = () => (play.cur === 1 ? 'Your friend\'s turn' : 'Your turn');
-function offer(moves, text) {
+const turnName = () => (play.online ? (play.cur === play.online.seat ? 'Your turn' : 'Your friend\'s turn') : play.cur === 1 ? 'Your friend\'s turn' : 'Your turn');
+function offer(moves, text, raw) {
   play.moves = moves; play.phase = 'choose'; play.kb = -1;
   renderChoices(moves);
   $('#lm-passBtn').disabled = !(play.game.canPass || moves.some(m => m.pass));
   highlight(moves);
-  setMsg(turnName(), text);
+  setMsg(turnName(), text, raw);
   refreshAids();
   coachCheck();
 }
 async function humanThrow() {
   if (play.phase !== 'throw') return;
+  if (play.online) return onlineThrow();
   play.phase = 'rolling'; $('#lm-throwBtn').disabled = true;
   const g = play.game, tok = play.token, pl = play.cur || 0, you = pl ? 'Your friend' : 'You';
   const r = g.roll();
@@ -456,6 +459,7 @@ async function humanThrow() {
 }
 async function choose(m) {
   if (play.phase !== 'choose') return;
+  if (play.online) return onlineChoose(m);
   play.phase = 'anim'; clearHighlights(); clearLastMove();
   $('#lm-choices').hidden = true;
   $('#lm-passBtn').disabled = true; refreshAids();
@@ -592,8 +596,8 @@ function finish(res) {
   clearSave(g.id);
   $('#lm-coach').hidden = true;
   $('#lm-replayBtn').hidden = !(play.history && play.history.length > 1);
-  $('#lm-winTitle').textContent = asFriend(res.title || (res.winner === 0 ? 'You win' : res.winner === 1 ? 'The Scribe wins' : 'A draw'));
-  $('#lm-winText').textContent = asFriend(res.text || (res.winner === 0
+  $('#lm-winTitle').textContent = forSeat(res.title || (res.winner === 0 ? 'You win' : res.winner === 1 ? 'The Scribe wins' : 'A draw'));
+  $('#lm-winText').textContent = forSeat(res.text || (res.winner === 0
     ? `All ${g.N} of your pieces are home. The Scribe bows and resets the board.`
     : `The Scribe brought all ${g.N} pieces home first. You bore off ${g.home(0)}.`));
   if (!play.hotseat) {
@@ -601,7 +605,7 @@ function finish(res) {
     if (res.winner === 0) { store.best = store.best || {}; const lv = R.LEVELS.indexOf(R.level()); store.best[g.id] = Math.max(store.best[g.id] ?? -1, lv); } // the passport's seal
     save();
   }
-  $('#lm-winRecord').textContent = play.hotseat ? 'A game between two visitors: it does not count toward your record against the Scribe.' : recordText(g.id).replace('Your record against the Scribe here', 'Your record at this table') + ` The Scribe was playing ${R.level()}.`;
+  $('#lm-winRecord').textContent = play.online ? (net.friend ? 'A game online: it does not count toward your record against the Scribe. Play again starts a new game for you both.' : 'Your friend has left the room.') : play.hotseat ? 'A game between two visitors: it does not count toward your record against the Scribe.' : recordText(g.id).replace('Your record against the Scribe here', 'Your record at this table') + ` The Scribe was playing ${R.level()}.`;
   setTimeout(() => { if (play.phase === 'over') { hudMenu(false); $('#lm-win').hidden = false; $('#lm-againBtn').focus({ preventScroll: true }); } }, res.sweep ? 900 : 300);
 }
 // Ember marks show where the Scribe's last move went from and to.

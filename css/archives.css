@@ -212,6 +212,20 @@
 #lm-app .win h3{font-family:var(--f-display);font-weight:400;color:var(--gold);font-size:34px;margin:0}
 #lm-app .win p{margin:10px 0 20px}
 #lm-app .win .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+/* The online panel: open a room, or join one with its code. Over the hall as well as a table. */
+#lm-app .win.online{z-index:9}
+#lm-app .win.online h3{font-size:28px}
+#lm-app .win.online .card{display:grid;gap:12px}
+#lm-app .win.online p{margin:0}
+#lm-app .win.online .btn.quiet{border-color:var(--line);color:var(--dust)}
+#lm-app .onjoin{display:grid;gap:8px;margin-top:6px}
+#lm-app .onjoin label{font-size:13px;color:var(--dust)}
+#lm-app .onjoin input{width:9.5ch;padding:9px 10px;background:rgba(0,0,0,.35);border:1px solid var(--line);color:var(--parchment);font:600 18px/1 var(--f-ui);letter-spacing:.18em;text-transform:uppercase;text-align:center}
+#lm-app .onjoin input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#lm-app .oncode{font:600 34px/1.1 var(--f-ui);letter-spacing:.22em;color:var(--gold);user-select:all;font-variant-numeric:tabular-nums}
+#lm-app .onsmall{font-size:12.5px;color:var(--dust)}
+#lm-app .onerr{color:#ff9a7a;font-size:14px}
+#lm-app .level .room{font-size:12.5px;color:var(--dust);letter-spacing:0;text-transform:none}
 
 #lm-app .loader{position:absolute;inset:0;display:grid;place-items:center;background:var(--ink);font-family:var(--f-display);color:var(--gold);font-size:22px;transition:opacity .8s}
 #lm-app .loader small{display:block;font-family:var(--f-ui);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--dust);margin-top:10px;text-align:center}

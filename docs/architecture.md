@@ -129,6 +129,10 @@ Merging takes 2,607 of the 3,179 static meshes it finds, so the scene holds abou
 
 Add `?nomerge` to the address to turn merging off and compare.
 
+## Online play
+
+Online, the turn loop below runs on the server instead of the page. `server/referee.mjs` is the same loop without its waits and animations, for two people; the page (`23b-online.js`) sends the player's throw or chosen move, and plays each move the server reports with the table's own presenter, from the server's state before it to the server's state after it. `choose()` and `humanThrow()` hand over to the online module when `play.online` is set, and `startGame()` lays the table out from the server's game. See [Online play](online.md).
+
 ## A turn at the table
 
 ```mermaid

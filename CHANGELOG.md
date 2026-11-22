@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.42.0: Online play
+
+Two people can now play from two devices. Fifty tables offer it: the board games and the race games that already seated two at one screen.
+
+- **Play online** from the Opponent row: one player opens a room and sends its six-letter code or a link; the friend sits down across the table, with the camera on the far side and the messages turned round for them.
+- **The server referees.** The game is kept on a small Cloudflare Worker, one Durable Object per room, on the free plan. It throws the dice, checks every move against the rules (the same `js/rules.js` as the page), and sends each player only their own view: the system the card tables will use to keep the other hand hidden.
+- **Moves animate** as they do against the Scribe: each page plays the server's moves on its own copy of the game and then takes the server's state.
+- **Dropped connections** reconnect by themselves, and a reload or the code again comes back to the same seat. Rooms clear a day after their last use.
+- Online games don't count toward your record against the Scribe, with no hints or take-backs.
+- The website and the WordPress plugin offer online play once given the server's address (`data-online`, or the shortcode's `online` attribute and the widget's **Online play server**). `docs/online.md` covers setting the server up on Cloudflare's free plan, and a workflow deploys it from `main` once the repository has a Cloudflare token.
+- Tests: the referee plays every online table out at random in Node (`npm test`), a local server plays whole games between two WebSocket players (`npm run test:online`), and the hall plays online in Chromium as host and as guest (`npm run test:online -- --e2e`).
+
 ## 0.41.0: The soundtrack panel
 
 Every piece of the soundtrack, to pick from.

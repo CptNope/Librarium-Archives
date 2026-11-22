@@ -143,6 +143,29 @@
     </div>
   </section>
 
+  <div class="win online" id="lm-online" role="dialog" aria-labelledby="lm-onlineTitle" hidden>
+    <div class="card">
+      <h3 id="lm-onlineTitle">Play online</h3>
+      <p id="lm-onIntro"></p>
+      <div id="lm-onStart">
+        <div class="row"><button class="btn primary" id="lm-onOpen">Open a room</button></div>
+        <form class="onjoin" id="lm-onJoinForm">
+          <label for="lm-onCode">Or join a friend's room with its code</label>
+          <div class="row"><input id="lm-onCode" maxlength="7" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="K7MXQ2" aria-describedby="lm-onErr"><button class="btn" type="submit">Join</button></div>
+        </form>
+        <p class="onsmall">The game is kept on the Archives' server, which throws the dice for you both. Nothing about you is sent: only the room's code and your moves.</p>
+      </div>
+      <div id="lm-onWait" hidden>
+        <p>Give your friend this code, or send them the link:</p>
+        <p class="oncode" id="lm-onCodeShow"></p>
+        <div class="row"><button class="btn" id="lm-onCopy">Copy the link</button></div>
+        <p class="onsmall" id="lm-onStatus" aria-live="polite">Waiting for your friend to join…</p>
+      </div>
+      <p class="onerr" id="lm-onErr" role="alert" hidden></p>
+      <div class="row"><button class="btn quiet" id="lm-onCancel">Cancel</button></div>
+    </div>
+  </div>
+
   <div class="loader" id="lm-loader"><div>Lighting the lamps…<small>Librarium Archives</small></div></div>
 </div>
 

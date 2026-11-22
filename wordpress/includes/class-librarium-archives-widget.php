@@ -96,6 +96,17 @@ class Librarium_Archives_Widget extends Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'online',
+			array(
+				'label'       => esc_html__( 'Online play server', 'librarium-archives' ),
+				'description' => esc_html__( 'The address of your Librarium Online server, so visitors can play a friend on another device. Leave empty to offer no online play.', 'librarium-archives' ),
+				'type'        => Controls_Manager::URL,
+				'options'     => false,
+				'default'     => array( 'url' => '' ),
+			)
+		);
+
 		$this->end_controls_section();
 	}
 
@@ -109,6 +120,7 @@ class Librarium_Archives_Widget extends Widget_Base {
 			: '80vh';
 		$shop     = isset( $settings['shop_url']['url'] ) ? $settings['shop_url']['url'] : '';
 		$start    = isset( $settings['start'] ) ? $settings['start'] : '';
+		$online   = isset( $settings['online']['url'] ) ? $settings['online']['url'] : '';
 
 		if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
 			$exhibits = librarium_archives_exhibits();
@@ -128,6 +140,7 @@ class Librarium_Archives_Widget extends Widget_Base {
 				'height'   => $height,
 				'start'    => $start,
 				'shop_url' => $shop,
+				'online'   => $online,
 			)
 		);
 	}
