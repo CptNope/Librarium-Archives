@@ -3,13 +3,13 @@
 const ECARTE_P = {
   camW: 1.05,
   intro() { const G = GAMES.ecarte; return `${G.dealer ? 'The Scribe deals' : 'You deal'}; the ${G.cardName(G.turnUp)} is turned up. ${G.dealNote} ` + this.prompt(); },
-  prompt() { return GAMES.ecarte.prompt0(); },
-  choosePrompt() { return GAMES.ecarte.prompt0(); },
+  prompt() { return GAMES.ecarte.prompt0(ME()); },
+  choosePrompt() { return GAMES.ecarte.prompt0(ME()); },
   setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
   y: () => GAMES.ecarte.surface + 0.001,
   card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); m.scale.set(1.2, 1, 1.2); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
-  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.072 : 0.092), this.y() + i * 0.0004, pl ? -0.28 : 0.3); },
+  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl === ME() ? 0.092 : 0.072), this.y() + i * 0.0004, pl ? -0.28 : 0.3); },
   talonSpot: k => V3(-0.42, GAMES.ecarte.surface + 0.001 + k * 0.0012, 0),
   discardSpot(k) { return V3(0.44, this.y() + k * 0.0012, -0.02 + k * 0.003); },
   pileSpot(pl, k) { return V3(0.22 + k * 0.012, this.y() + 0.001 + k * 0.0016, pl ? -0.13 : 0.13); },
@@ -31,13 +31,13 @@ const ECARTE_P = {
     const G = GAMES.ecarte, h = G.hands[pl];
     return Promise.all(h.map((c, i) => {
       const m = this.card(c), to = this.handSpot(pl, i, h.length);
-      if (pl === 0 && G.stage === 'exchange' && G.toMove === 0 && G.marked.includes(c)) { to.z -= 0.045; to.y += 0.006; }
-      m.rotation.set(0, pl ? Math.PI : 0, pl ? Math.PI : 0);
+      if (pl === ME() && G.stage === 'exchange' && G.toMove === pl && G.marked.includes(c)) { to.z += pl ? 0.045 : -0.045; to.y += 0.006; }
+      m.rotation.set(0, pl ? Math.PI : 0, pl === ME() ? 0 : Math.PI); // your own hand face up, from either seat
       if (instant) { m.position.copy(to); return null; }
       return hop(m, to, 0.22, 0.01);
     }));
   },
-  meshesFor(m) { return (m.kind === 'card' || m.kind === 'mark') && m.pl === 0 ? [this.mesh.get(m.card)] : []; },
+  meshesFor(m) { return (m.kind === 'card' || m.kind === 'mark') && m.pl === ME() ? [this.mesh.get(m.card)] : []; },
   ringFor: () => null,
   fromFor: () => null,
   async play(m) {
@@ -46,14 +46,16 @@ const ECARTE_P = {
     for (const e of res.events || []) {
       if (tok !== play.token) return res;
       if (e.type === 'deal') { this.redeal(); sfx.card(); continue; }
-      if (e.type === 'mark') { if (G.toMove === 0) await this.layHand(0); continue; }
+      if (e.type === 'mark') { if (G.toMove === ME()) await this.layHand(ME()); continue; }
       if (e.type === 'exchange') {
         sfx.card();
         await Promise.all(e.out.map(c => { const mc = this.card(c); this.down(mc); return hop(mc, this.discardSpot(this.nDis++), 0.3, 0.03); }));
         await this.layHand(e.seat);
         continue;
       }
-      if (e.type === 'king') { const k = this.card(G.trump * 13 + 12); await hop(k, k.position.clone().add(V3(0, 0.03, e.seat ? 0.04 : -0.04)), 0.3, 0.02); if (e.seat) { tween(0.3, t => { k.rotation.z = Math.PI * (1 - t); }); await wait(900); tween(0.3, t => { k.rotation.z = Math.PI * t; }); } await this.layHand(e.seat); continue; }
+      if (e.type === 'king') {
+        if (!G.hands[e.seat].includes(G.trump * 13 + 12)) continue; // online, the other player's king stays a back here: the note says it
+        const k = this.card(G.trump * 13 + 12); await hop(k, k.position.clone().add(V3(0, 0.03, e.seat ? 0.04 : -0.04)), 0.3, 0.02); if (e.seat !== ME()) { tween(0.3, t => { k.rotation.z = Math.PI * (1 - t); }); await wait(900); tween(0.3, t => { k.rotation.z = Math.PI * t; }); } await this.layHand(e.seat); continue; }
       if (e.type === 'play') {
         const mc = this.card(e.card); sfx.card();
         if (mc.rotation.z !== 0) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
@@ -80,8 +82,8 @@ const ECARTE_P = {
 const GIN_P = {
   camW: 1.15,
   intro() { const G = GAMES.gin; return `${G.dealer ? 'The Scribe deals' : 'You deal'}. ` + this.prompt(); },
-  prompt() { return GAMES.gin.prompt0(); },
-  choosePrompt() { return GAMES.gin.prompt0(); },
+  prompt() { return GAMES.gin.prompt0(ME()); },
+  choosePrompt() { return GAMES.gin.prompt0(ME()); },
   setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
   y: () => GAMES.gin.surface + 0.001,
@@ -94,14 +96,14 @@ const GIN_P = {
     groups.push(dead); return groups.filter(g => g.length);
   },
   layHand(p, instant) {
-    const G = GAMES.gin, open = p === 0 || (G.stage === 'next' && G.show), jobs = [];
-    const groups = p === 0 || open ? this.order(p) : [G.hands[p].slice()], gap = 0.025, w = p ? 0.05 : 0.062;
+    const G = GAMES.gin, me = ME(), open = p === me || (G.stage === 'next' && G.show), jobs = [];
+    const groups = open ? this.order(p) : [G.hands[p].slice()], gap = 0.025, w = p === me ? 0.062 : 0.05;
     const n = groups.reduce((t, g) => t + g.length, 0), total = (n - 1) * w + (groups.length - 1) * gap;
     let x = -total / 2, i = 0;
     for (const g of groups) {
       for (const c of g) {
         const m = this.card(c), to = V3(x, this.y() + i * 0.0004, p ? -0.3 : 0.32);
-        if (p === 0 && G.taken === c) to.z -= 0.02; // the card just taken
+        if (p === me && G.taken === c) to.z += p ? 0.02 : -0.02; // the card just taken
         m.rotation.set(0, p ? Math.PI : 0, open ? 0 : Math.PI);
         if (instant) m.position.copy(to); else jobs.push(hop(m, to, 0.2, 0.008));
         x += w; i++;
@@ -120,7 +122,7 @@ const GIN_P = {
   },
   meshesFor(m) {
     const G = GAMES.gin;
-    if (m.pl !== 0) return [];
+    if (m.pl !== ME()) return [];
     if (m.kind === 'draw') return [this.mesh.get(G.stock[G.stock.length - 1])];
     if (m.kind === 'take') return [this.mesh.get(G.pile[G.pile.length - 1])];
     if (m.kind === 'discard' || m.kind === 'knock') return [this.mesh.get(m.card)];
@@ -136,14 +138,14 @@ const GIN_P = {
       if (e.type === 'deal') { this.redeal(); sfx.card(); continue; }
       if (e.type === 'draw') {
         const mc = this.card(e.card); sfx.card();
-        if (e.seat === 0 && !e.fromPile) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
-        if (e.seat === 1 && e.fromPile) tween(0.3, k => { mc.rotation.z = Math.PI * k; });
+        if (e.seat === ME() && !e.fromPile) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        if (e.seat !== ME() && e.fromPile) tween(0.3, k => { mc.rotation.z = Math.PI * k; });
         await this.layHand(e.seat);
         continue;
       }
       if (e.type === 'discard') {
         const mc = this.card(e.card); sfx.card();
-        if (e.seat === 1) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        if (e.seat !== ME()) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
         await hop(mc, this.pileSpot(G.pile.length - 1), 0.3, 0.04); mc.rotation.set(0, (Math.random() - 0.5) * 0.12, 0);
         await this.layHand(e.seat);
         continue;
@@ -154,7 +156,7 @@ const GIN_P = {
     return res;
   },
   score() {
-    const G = GAMES.gin, d = G.best(G.hands[0]).dead;
+    const G = GAMES.gin, d = G.best(G.hands[ME()]).dead;
     return [['You', G.score[0]], ['Scribe', G.score[1]], `to ${G.limit} · hand ${G.handNo} · your deadwood ${d} · stock ${G.stock.length}`];
   },
 };

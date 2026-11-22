@@ -104,7 +104,7 @@ assert.equal(health.ok, true);
 const ghost = client(`${WS}/rooms/ZZZZZZ`); await ghost.opened;
 assert.equal((await ghost.next(m => m.t === 'gone')).t, 'gone');
 // A table that cannot be played online.
-assert.equal((await fetch(`${BASE}/rooms`, { method: 'POST', body: JSON.stringify({ game: 'gin' }) })).status, 400);
+assert.equal((await fetch(`${BASE}/rooms`, { method: 'POST', body: JSON.stringify({ game: 'cribbage' }) })).status, 400);
 for (const g of GAMES) console.log(`${g}: played through the server in ${await playGame(g)} actions`);
 console.log('online server: all checks passed');
 process.exit(0);

@@ -3514,7 +3514,10 @@ const crBackMat = new THREE.MeshStandardMaterial({ roughness: 0.6, map: cardTex(
 }, 140, 210) });
 // A card: c is its face (suit * 13 + rank, see card-packs.js), id what the game calls it if that differs (Bézique's
 // two packs), and style the pack it is drawn in, the table's own unless said.
-function crCard(c, id = c, style = packNow) { const face = new THREE.MeshStandardMaterial({ map: crFace(c, style), roughness: 0.55 }); const m = new THREE.Mesh(crGeo, [tcEdgeMat, tcEdgeMat, face, crBackMat, tcEdgeMat, tcEdgeMat]); m.userData.mats = [face]; m.userData.c = id; m.userData.face = c; return m; }
+// A negative c is a card back with no face: online, a card the player may not see (server/referee.mjs).
+function crCard(c, id = c, style = packNow) {
+  if (c < 0) { const m = new THREE.Mesh(crGeo, [tcEdgeMat, tcEdgeMat, crBackMat, crBackMat, tcEdgeMat, tcEdgeMat]); m.userData.mats = []; m.userData.c = id; m.userData.face = null; return m; }
+  const face = new THREE.MeshStandardMaterial({ map: crFace(c, style), roughness: 0.55 }); const m = new THREE.Mesh(crGeo, [tcEdgeMat, tcEdgeMat, face, crBackMat, tcEdgeMat, tcEdgeMat]); m.userData.mats = [face]; m.userData.c = id; m.userData.face = c; return m; }
 // Pegging holes: each player has a lane of sixty, thirty up the board and thirty back.
 const CRB_X0 = -0.5, CRB_Z0 = 0.3, CRB_DZ = 0.0205;
 function crHole(pl, s) {
@@ -8788,13 +8791,13 @@ const FARO_P = {
 const ECARTE_P = {
   camW: 1.05,
   intro() { const G = GAMES.ecarte; return `${G.dealer ? 'The Scribe deals' : 'You deal'}; the ${G.cardName(G.turnUp)} is turned up. ${G.dealNote} ` + this.prompt(); },
-  prompt() { return GAMES.ecarte.prompt0(); },
-  choosePrompt() { return GAMES.ecarte.prompt0(); },
+  prompt() { return GAMES.ecarte.prompt0(ME()); },
+  choosePrompt() { return GAMES.ecarte.prompt0(ME()); },
   setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
   y: () => GAMES.ecarte.surface + 0.001,
   card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); m.scale.set(1.2, 1, 1.2); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } return m; },
-  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.072 : 0.092), this.y() + i * 0.0004, pl ? -0.28 : 0.3); },
+  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl === ME() ? 0.092 : 0.072), this.y() + i * 0.0004, pl ? -0.28 : 0.3); },
   talonSpot: k => V3(-0.42, GAMES.ecarte.surface + 0.001 + k * 0.0012, 0),
   discardSpot(k) { return V3(0.44, this.y() + k * 0.0012, -0.02 + k * 0.003); },
   pileSpot(pl, k) { return V3(0.22 + k * 0.012, this.y() + 0.001 + k * 0.0016, pl ? -0.13 : 0.13); },
@@ -8816,13 +8819,13 @@ const ECARTE_P = {
     const G = GAMES.ecarte, h = G.hands[pl];
     return Promise.all(h.map((c, i) => {
       const m = this.card(c), to = this.handSpot(pl, i, h.length);
-      if (pl === 0 && G.stage === 'exchange' && G.toMove === 0 && G.marked.includes(c)) { to.z -= 0.045; to.y += 0.006; }
-      m.rotation.set(0, pl ? Math.PI : 0, pl ? Math.PI : 0);
+      if (pl === ME() && G.stage === 'exchange' && G.toMove === pl && G.marked.includes(c)) { to.z += pl ? 0.045 : -0.045; to.y += 0.006; }
+      m.rotation.set(0, pl ? Math.PI : 0, pl === ME() ? 0 : Math.PI); // your own hand face up, from either seat
       if (instant) { m.position.copy(to); return null; }
       return hop(m, to, 0.22, 0.01);
     }));
   },
-  meshesFor(m) { return (m.kind === 'card' || m.kind === 'mark') && m.pl === 0 ? [this.mesh.get(m.card)] : []; },
+  meshesFor(m) { return (m.kind === 'card' || m.kind === 'mark') && m.pl === ME() ? [this.mesh.get(m.card)] : []; },
   ringFor: () => null,
   fromFor: () => null,
   async play(m) {
@@ -8831,14 +8834,16 @@ const ECARTE_P = {
     for (const e of res.events || []) {
       if (tok !== play.token) return res;
       if (e.type === 'deal') { this.redeal(); sfx.card(); continue; }
-      if (e.type === 'mark') { if (G.toMove === 0) await this.layHand(0); continue; }
+      if (e.type === 'mark') { if (G.toMove === ME()) await this.layHand(ME()); continue; }
       if (e.type === 'exchange') {
         sfx.card();
         await Promise.all(e.out.map(c => { const mc = this.card(c); this.down(mc); return hop(mc, this.discardSpot(this.nDis++), 0.3, 0.03); }));
         await this.layHand(e.seat);
         continue;
       }
-      if (e.type === 'king') { const k = this.card(G.trump * 13 + 12); await hop(k, k.position.clone().add(V3(0, 0.03, e.seat ? 0.04 : -0.04)), 0.3, 0.02); if (e.seat) { tween(0.3, t => { k.rotation.z = Math.PI * (1 - t); }); await wait(900); tween(0.3, t => { k.rotation.z = Math.PI * t; }); } await this.layHand(e.seat); continue; }
+      if (e.type === 'king') {
+        if (!G.hands[e.seat].includes(G.trump * 13 + 12)) continue; // online, the other player's king stays a back here: the note says it
+        const k = this.card(G.trump * 13 + 12); await hop(k, k.position.clone().add(V3(0, 0.03, e.seat ? 0.04 : -0.04)), 0.3, 0.02); if (e.seat !== ME()) { tween(0.3, t => { k.rotation.z = Math.PI * (1 - t); }); await wait(900); tween(0.3, t => { k.rotation.z = Math.PI * t; }); } await this.layHand(e.seat); continue; }
       if (e.type === 'play') {
         const mc = this.card(e.card); sfx.card();
         if (mc.rotation.z !== 0) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
@@ -8865,8 +8870,8 @@ const ECARTE_P = {
 const GIN_P = {
   camW: 1.15,
   intro() { const G = GAMES.gin; return `${G.dealer ? 'The Scribe deals' : 'You deal'}. ` + this.prompt(); },
-  prompt() { return GAMES.gin.prompt0(); },
-  choosePrompt() { return GAMES.gin.prompt0(); },
+  prompt() { return GAMES.gin.prompt0(ME()); },
+  choosePrompt() { return GAMES.gin.prompt0(ME()); },
   setup(ex) { ex.group.userData.display.forEach(m => { m.visible = false; }); this.ex = ex; this.redeal(); },
   leave(ex) { ex.group.userData.display.forEach(m => { m.visible = true; }); (this.cards || []).forEach(m => ex.group.remove(m)); this.cards = []; },
   y: () => GAMES.gin.surface + 0.001,
@@ -8879,14 +8884,14 @@ const GIN_P = {
     groups.push(dead); return groups.filter(g => g.length);
   },
   layHand(p, instant) {
-    const G = GAMES.gin, open = p === 0 || (G.stage === 'next' && G.show), jobs = [];
-    const groups = p === 0 || open ? this.order(p) : [G.hands[p].slice()], gap = 0.025, w = p ? 0.05 : 0.062;
+    const G = GAMES.gin, me = ME(), open = p === me || (G.stage === 'next' && G.show), jobs = [];
+    const groups = open ? this.order(p) : [G.hands[p].slice()], gap = 0.025, w = p === me ? 0.062 : 0.05;
     const n = groups.reduce((t, g) => t + g.length, 0), total = (n - 1) * w + (groups.length - 1) * gap;
     let x = -total / 2, i = 0;
     for (const g of groups) {
       for (const c of g) {
         const m = this.card(c), to = V3(x, this.y() + i * 0.0004, p ? -0.3 : 0.32);
-        if (p === 0 && G.taken === c) to.z -= 0.02; // the card just taken
+        if (p === me && G.taken === c) to.z += p ? 0.02 : -0.02; // the card just taken
         m.rotation.set(0, p ? Math.PI : 0, open ? 0 : Math.PI);
         if (instant) m.position.copy(to); else jobs.push(hop(m, to, 0.2, 0.008));
         x += w; i++;
@@ -8905,7 +8910,7 @@ const GIN_P = {
   },
   meshesFor(m) {
     const G = GAMES.gin;
-    if (m.pl !== 0) return [];
+    if (m.pl !== ME()) return [];
     if (m.kind === 'draw') return [this.mesh.get(G.stock[G.stock.length - 1])];
     if (m.kind === 'take') return [this.mesh.get(G.pile[G.pile.length - 1])];
     if (m.kind === 'discard' || m.kind === 'knock') return [this.mesh.get(m.card)];
@@ -8921,14 +8926,14 @@ const GIN_P = {
       if (e.type === 'deal') { this.redeal(); sfx.card(); continue; }
       if (e.type === 'draw') {
         const mc = this.card(e.card); sfx.card();
-        if (e.seat === 0 && !e.fromPile) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
-        if (e.seat === 1 && e.fromPile) tween(0.3, k => { mc.rotation.z = Math.PI * k; });
+        if (e.seat === ME() && !e.fromPile) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        if (e.seat !== ME() && e.fromPile) tween(0.3, k => { mc.rotation.z = Math.PI * k; });
         await this.layHand(e.seat);
         continue;
       }
       if (e.type === 'discard') {
         const mc = this.card(e.card); sfx.card();
-        if (e.seat === 1) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        if (e.seat !== ME()) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
         await hop(mc, this.pileSpot(G.pile.length - 1), 0.3, 0.04); mc.rotation.set(0, (Math.random() - 0.5) * 0.12, 0);
         await this.layHand(e.seat);
         continue;
@@ -8939,7 +8944,7 @@ const GIN_P = {
     return res;
   },
   score() {
-    const G = GAMES.gin, d = G.best(G.hands[0]).dead;
+    const G = GAMES.gin, d = G.best(G.hands[ME()]).dead;
     return [['You', G.score[0]], ['Scribe', G.score[1]], `to ${G.limit} · hand ${G.handNo} · your deadwood ${d} · stock ${G.stock.length}`];
   },
 };
@@ -9599,10 +9604,10 @@ const HOTSEAT = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draug
   // dice games too: each player throws for themselves
   'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard', 'landlord']);
 const friendOn = g => HOTSEAT.has(g.id) && ((store.opponent || {})[g.id] === 'friend');
-function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex); }
+function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; return startGame(ex); }
 function renderVariants(g) {
   const box = $('#lm-variant'); box.innerHTML = '';
-  box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !play.resumed && !PACK_TABLES[g.id];
+  box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !onlineOk(g) && !play.resumed && !PACK_TABLES[g.id];
   $('#lm-level').hidden = !!play.hotseat || !!g.solo; // no Scribe to set at a solo table, or against a friend
   if (play.online) { // online: the room, and a way out of it; the host's variant and rules hold for the game
     const label = document.createElement('span'); label.textContent = 'Online'; box.appendChild(label);
@@ -9617,11 +9622,14 @@ function renderVariants(g) {
       b.addEventListener('click', () => { if ((friendOn(g) ? 'friend' : 'scribe') === id) return; store.opponent = Object.assign(store.opponent || {}, { [g.id]: id }); save(); restartTable(); });
       box.appendChild(b);
     }
-    if (onlineOk(g)) { // on another device: opens the online panel
-      const b = document.createElement('button'); b.textContent = 'Online'; b.setAttribute('aria-pressed', 'false'); b.id = 'lm-onlineBtn';
-      b.title = 'Play a friend on another phone or computer';
-      b.addEventListener('click', () => { hudMenu(false); openOnline(g); }); box.appendChild(b);
-    }
+  } else if (onlineOk(g)) { // a card table: the Scribe here, or a friend online (each hand stays on its own device)
+    const label = document.createElement('span'); label.textContent = 'Opponent'; box.appendChild(label);
+    const b = document.createElement('button'); b.textContent = 'The Scribe'; b.setAttribute('aria-pressed', 'true'); box.appendChild(b);
+  }
+  if (onlineOk(g)) { // on another device: opens the online panel
+    const b = document.createElement('button'); b.textContent = 'Online'; b.setAttribute('aria-pressed', 'false'); b.id = 'lm-onlineBtn';
+    b.title = 'Play a friend on another phone or computer';
+    b.addEventListener('click', () => { hudMenu(false); openOnline(g); }); box.appendChild(b);
   }
   if (PACK_TABLES[g.id]) { // the same game in another country's cards: redrawn in place, nothing restarts
     box.hidden = false;
@@ -10832,7 +10840,11 @@ function clearHighlights() {
  * the same seat. */
 // The tables the server will play: the same list as server/referee.mjs (a test keeps the two in step).
 const ONLINE_GAMES = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier', 'idraughts', 'hnefatafl',
-  'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard']);
+  'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard',
+  'gin', 'ecarte']);
+// The seat at this screen: 0 against the Scribe, or online the seat this player took. A card table shows this
+// seat's hand face up, and the other face down (online, as card backs: the page is never sent those cards).
+const ME = () => (play.online ? play.online.seat : 0);
 const onlineServer = () => { // data-online on #lm-app (WordPress), or the site's <meta name="librarium-online">
   const meta = document.querySelector('meta[name="librarium-online"]');
   const s = (root.dataset.online || (meta && meta.content) || '').trim().replace(/\/+$/, ''); return /^https?:\/\/[^\s"'<>]+$/.test(s) ? s : ''; };
@@ -11009,7 +11021,9 @@ async function onlineSnapshot(msg) {
   closeOnlinePanel();
   play.online = { seat: net.seat, code: net.code, game: snap.id, settings: snap.settings, snap };
   if (mode === 'play') {
-    if (play.ex === ex) { restartTable(); return; }
+    // Wait for the table to be laid out before the next message: the friend may move first (the elder at
+    // Écarté), and that move must find the table ready, not be overtaken by the opening turn.
+    if (play.ex === ex) { await restartTable(); return; }
     net.switching = true; leaveGame(); net.switching = false;
   }
   stopTour(); goStop(STOPS.indexOf(ex), false); showPlacard(false);
@@ -11040,14 +11054,14 @@ function onlineTurn(e) {
   }
   if (e.phase === 'throw') {
     play.phase = 'throw'; $('#lm-throwBtn').disabled = false;
-    setMsg('Your turn', hello + note + (e.prompt || (e.first ? P.intro() : P.prompt())), true);
+    setMsg('Your turn', hello + note + asFriend(e.prompt || P.prompt()), true);
     $('#lm-throwBtn').focus({ preventScroll: true });
     return;
   }
   const moves = e.moves || [];
   let say;
   if (net.lastRoll && g.dice) { say = net.lastRoll + ' ' + (P.choosePrompt ? P.choosePrompt(moves) : `Choose a glowing piece${moves.length === 1 ? ' (only one can move)' : ''}.`); net.lastRoll = ''; }
-  else say = e.prompt || (e.first ? P.intro() : P.prompt());
+  else say = asFriend(e.prompt || P.prompt()); // written for this player's seat (P.prompt reads ME())
   offer(moves, hello + note + say, true);
   if (e.canPass) $('#lm-passBtn').disabled = false;
 }
@@ -11074,7 +11088,10 @@ async function onlineEvent(e) {
   // A move: play it on this page's copy of the game, from the server's state just before it, then take the
   // server's state after it (they agree; if ever they do not, the table is laid out again from the server's).
   play.phase = 'anim'; clearHighlights(); $('#lm-choices').hidden = true; $('#lm-passBtn').disabled = true; $('#lm-throwBtn').disabled = true;
-  Object.assign(g, R.unpackState(e.before));
+  // At a card table the "before" can show a card that was a back here until now (one played from the other hand):
+  // lay the table out from it first, so the move starts from the right card.
+  if (sameAsServer(g, e.before)) Object.assign(g, R.unpackState(e.before));
+  else { Object.assign(g, R.unpackState(e.before)); P.setup(play.ex); }
   const remote = e.seat !== me, text = moveText(g, e.move);
   const from = remote && P.fromFor ? P.fromFor(e.move) : null, to = remote && P.ringFor ? P.ringFor(e.move) : null;
   clearLastMove();

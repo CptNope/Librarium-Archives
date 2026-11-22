@@ -12,7 +12,11 @@
  * the same seat. */
 // The tables the server will play: the same list as server/referee.mjs (a test keeps the two in step).
 const ONLINE_GAMES = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier', 'idraughts', 'hnefatafl',
-  'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard']);
+  'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard',
+  'gin', 'ecarte']);
+// The seat at this screen: 0 against the Scribe, or online the seat this player took. A card table shows this
+// seat's hand face up, and the other face down (online, as card backs: the page is never sent those cards).
+const ME = () => (play.online ? play.online.seat : 0);
 const onlineServer = () => { // data-online on #lm-app (WordPress), or the site's <meta name="librarium-online">
   const meta = document.querySelector('meta[name="librarium-online"]');
   const s = (root.dataset.online || (meta && meta.content) || '').trim().replace(/\/+$/, ''); return /^https?:\/\/[^\s"'<>]+$/.test(s) ? s : ''; };
@@ -189,7 +193,9 @@ async function onlineSnapshot(msg) {
   closeOnlinePanel();
   play.online = { seat: net.seat, code: net.code, game: snap.id, settings: snap.settings, snap };
   if (mode === 'play') {
-    if (play.ex === ex) { restartTable(); return; }
+    // Wait for the table to be laid out before the next message: the friend may move first (the elder at
+    // Écarté), and that move must find the table ready, not be overtaken by the opening turn.
+    if (play.ex === ex) { await restartTable(); return; }
     net.switching = true; leaveGame(); net.switching = false;
   }
   stopTour(); goStop(STOPS.indexOf(ex), false); showPlacard(false);
@@ -220,14 +226,14 @@ function onlineTurn(e) {
   }
   if (e.phase === 'throw') {
     play.phase = 'throw'; $('#lm-throwBtn').disabled = false;
-    setMsg('Your turn', hello + note + (e.prompt || (e.first ? P.intro() : P.prompt())), true);
+    setMsg('Your turn', hello + note + asFriend(e.prompt || P.prompt()), true);
     $('#lm-throwBtn').focus({ preventScroll: true });
     return;
   }
   const moves = e.moves || [];
   let say;
   if (net.lastRoll && g.dice) { say = net.lastRoll + ' ' + (P.choosePrompt ? P.choosePrompt(moves) : `Choose a glowing piece${moves.length === 1 ? ' (only one can move)' : ''}.`); net.lastRoll = ''; }
-  else say = e.prompt || (e.first ? P.intro() : P.prompt());
+  else say = asFriend(e.prompt || P.prompt()); // written for this player's seat (P.prompt reads ME())
   offer(moves, hello + note + say, true);
   if (e.canPass) $('#lm-passBtn').disabled = false;
 }
@@ -254,7 +260,10 @@ async function onlineEvent(e) {
   // A move: play it on this page's copy of the game, from the server's state just before it, then take the
   // server's state after it (they agree; if ever they do not, the table is laid out again from the server's).
   play.phase = 'anim'; clearHighlights(); $('#lm-choices').hidden = true; $('#lm-passBtn').disabled = true; $('#lm-throwBtn').disabled = true;
-  Object.assign(g, R.unpackState(e.before));
+  // At a card table the "before" can show a card that was a back here until now (one played from the other hand):
+  // lay the table out from it first, so the move starts from the right card.
+  if (sameAsServer(g, e.before)) Object.assign(g, R.unpackState(e.before));
+  else { Object.assign(g, R.unpackState(e.before)); P.setup(play.ex); }
   const remote = e.seat !== me, text = moveText(g, e.move);
   const from = remote && P.fromFor ? P.fromFor(e.move) : null, to = remote && P.ringFor ? P.ringFor(e.move) : null;
   clearLastMove();

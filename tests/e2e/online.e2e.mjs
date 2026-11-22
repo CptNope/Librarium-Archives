@@ -31,7 +31,7 @@ const base = `http://localhost:${server.address().port}`;
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 after(async () => { await browser.close(); server.close(); });
 // A failed test leaves no page running behind it: two software-rendered pages at once starve each other.
-const closeAll = async () => { for (const p of opened.splice(0)) await p.close().catch(() => {}); };
+const closeAll = async () => { for (const p of opened.splice(0)) await p.close().catch(() => {}); for (const f of friends.splice(0)) f.close(); };
 
 // The other player: plays at random on its turns, and keeps the last state the server sent.
 function friend(code, token) {
@@ -57,10 +57,12 @@ function friend(code, token) {
     }
   });
   f.close = () => { try { ws.close(); } catch (e) { /* closed */ } };
+  f.log = []; ws.addEventListener('message', e => { if (e.data !== 'pong') f.log.push(String(e.data).slice(0, 300)); });
+  friends.push(f);
   return f;
 }
 
-const opened = [];
+const opened = [], friends = [];
 async function newPage(url) {
   const page = await browser.newPage({ viewport: { width: 760, height: 520 } });
   opened.push(page);
@@ -143,6 +145,53 @@ test('online, as guest: join an Ur room by its link, sit across the table, throw
   // A dropped connection comes back to the same seat: reload the page with the link.
   await page.reload({ timeout: LONG, waitUntil: 'domcontentloaded' });
   await waitOn(page, () => { const P = window.__archives && window.__archives.play; return P && P.online && P.online.seat === 1 && ['throw', 'remote', 'choose'].includes(P.phase); }, null, { polling: 500, timeout: LONG });
+  f.close();
+  assert.deepEqual(page.errors, []);
+});
+
+test('online cards: join a gin room in the second seat; the other hand and the stock are only ever card backs here', { timeout: LONG * 3 }, async t => {
+  t.after(closeAll);
+  const r = await fetch(ONLINE + '/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: 'gin' }) }).then(x => x.json());
+  const f = friend(r.code, r.token);
+  const page = await newPage(`${base}/index.html?debug&join=${r.code}`);
+  await waitOn(page, () => { const P = window.__archives.play; return P.online && ['choose', 'remote'].includes(P.phase); }, null, { polling: 500, timeout: LONG });
+  // What this page holds: its own ten cards, face values; the host's hand and the stock, backs (negative) only.
+  const hands = () => page.evaluate(() => { const G = window.__archives.play.game; return { mine: G.hands[1].slice(), theirs: G.hands[0].slice(), stock: G.stock.slice(), up: G.hands[1].map(c => { const m = window.__archives.play.P.mesh.get(c); return m && Math.abs(m.rotation.z) < 0.01; }) }; });
+  for (let k = 0; k < 6; k++) {
+    const h = await hands();
+    assert.ok(h.mine.length >= 10 && h.mine.every(c => c >= 0), 'your own cards, face values');
+    assert.ok(h.theirs.every(c => c < 0), 'the host\'s cards: backs only');
+    assert.ok(h.stock.every(c => c < 0), 'the stock: backs only');
+    assert.ok(h.up.every(Boolean), 'your own hand is face up on your side');
+    // Our move when it is our turn; then the friend's.
+    await waitOn(page, () => { const P = window.__archives.play; return P.phase === 'choose' && P.cur === P.online.seat; }, null, { polling: 500, timeout: LONG });
+    await page.evaluate(() => { const A = window.__archives, P = A.play; A.choose(P.moves[(Math.random() * P.moves.length) | 0]); });
+    await page.waitForTimeout(2500);
+  }
+  assert.ok(!(await page.evaluate(() => document.getElementById('lm-msg').textContent)).includes('Scribe'));
+  await page.screenshot({ path: join(OUT, 'online-gin.png'), clip: { x: 0, y: 0, width: 760, height: 520 }, timeout: LONG, animations: 'disabled' });
+  f.close();
+  assert.deepEqual(page.errors, []);
+});
+
+test('online cards: open an Écarté room as host; the guest\'s hand and the talon are only ever card backs here', { timeout: LONG * 3 }, async t => {
+  t.after(closeAll);
+  const page = await newPage(`${base}/index.html?debug`);
+  await page.evaluate(() => { const A = window.__archives, ex = A.STOPS.find(s => s.game === 'ecarte'); A.jump(ex.id); A.startGame(ex); });
+  await waitOn(page, () => !!document.getElementById('lm-onlineBtn'), null, { polling: 500, timeout: LONG });
+  await page.evaluate(() => document.getElementById('lm-onlineBtn').click());
+  await page.evaluate(() => document.getElementById('lm-onOpen').click());
+  await waitOn(page, () => /^[A-Z2-9]{6}$/.test(document.getElementById('lm-onCodeShow').textContent), null, { polling: 500, timeout: LONG });
+  const f = friend(await page.evaluate(() => document.getElementById('lm-onCodeShow').textContent));
+  await waitOn(page, () => { const P = window.__archives.play; return P.online && P.game.id === 'ecarte' && ['choose', 'remote'].includes(P.phase); }, null, { polling: 500, timeout: LONG });
+  for (let k = 0; k < 5; k++) {
+    const h = await page.evaluate(() => { const G = window.__archives.play.game; return { mine: G.hands[0].slice(), theirs: G.hands[1].slice(), talon: G.stock.slice(), theirDiscards: G.discards[1].slice() }; });
+    assert.ok(h.mine.every(c => c >= 0) && h.theirs.every(c => c < 0) && h.talon.every(c => c < 0) && h.theirDiscards.every(c => c < 0), 'only your own cards are faces');
+    await waitOn(page, () => { const P = window.__archives.play; return P.phase === 'choose' && P.cur === P.online.seat || P.phase === 'over'; }, null, { polling: 500, timeout: LONG });
+    if (await page.evaluate(() => window.__archives.play.phase === 'over')) break;
+    await page.evaluate(() => { const A = window.__archives, P = A.play; A.choose(P.moves[(Math.random() * P.moves.length) | 0]); });
+    await page.waitForTimeout(2500);
+  }
   f.close();
   assert.deepEqual(page.errors, []);
 });

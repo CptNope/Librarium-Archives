@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.43.0: Online card tables, Gin Rummy and Écarté
+
+The first card tables online. Each player's hand stays on their own device.
+
+- **Gin Rummy and Écarté** offer **Online** in the Opponent row, beside the Scribe. Whichever seat you take, your own hand is face up on your side, and your friend's hand is card backs.
+- **The other hand never reaches your device.** The server sends every card you may not see as a back: the other hand, the stock, face-down discards, and the cards your friend has marked to exchange. A back is a random number for one card for one deal, drawn afresh each deal, so it can't be read. Hidden hands are sorted by their backs, so where a card is played from tells you nothing.
+- **Moves still animate.** When your friend plays a card, it is shown just before the move, so the table plays it as usual.
+- **Notes stay private.** Only the player who drew blind is told the card; the other gets a note without it.
+- **The guest can move first.** At Écarté the guest is the elder and opens the hand. The host's table now finishes laying out before it plays that move. Before this fix, the host's page could miss the move and wait for its friend forever.
+- `docs/online.md` describes how a card table lists what each seat may see, and which tables come next.
+- Tests: every card table is played out at random through the referee. The test checks that every field of the game is accounted for, and that no seat is ever sent a card it has not seen: by value, by back, in a move, or by name. The hall joins a gin room in the second seat and opens an Écarté room as host, and checks that the other hand and the stock are only ever backs.
+
 ## 0.42.0: Online play
 
 Two people can now play from two devices. Fifty tables offer it: the board games and the race games that already seated two at one screen.

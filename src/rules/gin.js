@@ -74,13 +74,13 @@
     sort(p) { const h = this.hands[p]; h.sort((a, b) => gnSuit(a) - gnSuit(b) || gnRank(a) - gnRank(b)); },
     who(p) { return p === 0 ? 'You' : 'The Scribe'; },
     canKnock(p, c) { const h = this.hands[p].filter(x => x !== c); return gnBest(h).dead <= 10; },
-    prompt0() {
+    prompt0(p = 0) { // p: the player reading it (online, either seat)
       const up = this.pile[this.pile.length - 1];
       if (this.stage === 'next') return this.notes.join(' ') + (this.decided ? ' Press See the result.' : ' Press Next hand when you are ready.');
       if (this.stage === 'upcard') return `The ${gnName(up)} is turned up. Take it (click it), or pass.`;
       if (this.stage === 'draw') return `Draw from the stock or take the ${gnName(up)}: click one.`;
       if (this.knocking) return 'Click the card to discard face down and knock.';
-      const h = this.hands[0], d = Math.min(...h.filter(c => c !== this.taken).map(c => gnBest(h.filter(x => x !== c)).dead));
+      const h = this.hands[p], d = Math.min(...h.filter(c => c !== this.taken).map(c => gnBest(h.filter(x => x !== c)).dead));
       return `Discard a card: click it. Your best discard leaves ${d} in deadwood${d <= 10 ? ', low enough to knock' : ' (10 or less to knock)'}.`;
     },
     legal(pl) {
@@ -117,7 +117,8 @@
         this.stage = 'discard'; this.knocking = false;
         events.push({ type: 'draw', seat: p, card: c, fromPile });
         const note = fromPile ? `${this.who(p)} ${p ? 'takes' : 'take'} the ${gnName(c)}.` : `${m.why ? 'Both passed. ' : ''}${this.who(p)} ${p ? 'draws' : 'draw'} from the stock${p ? '' : `: the ${gnName(c)}`}.`;
-        return { note, events };
+        // publicNote: what the other player is told (online), without the card drawn blind.
+        return { note, publicNote: fromPile ? note : `${m.why ? 'Both passed. ' : ''}${this.who(p)} ${p ? 'draws' : 'draw'} from the stock.`, events };
       }
       // A discard, or a knock.
       const c = m.card, h = this.hands[p]; h.splice(h.indexOf(c), 1);

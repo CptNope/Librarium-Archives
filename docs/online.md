@@ -2,7 +2,7 @@
 
 Two people can play a table together from two phones or computers. One opens a room at the table, and the other joins it with the room's six-letter code or a link. The game itself is kept on a small server on Cloudflare's free plan. The server throws the dice, checks every move against the rules, and sends each player the game as they may see it.
 
-Online play is offered at the 50 tables that already seat two people at one screen: the board games (chess, go, draughts, shogi, the tafl games and the rest) and the race games (Ur, Senet, Tables, Pachisi and the rest). The card tables are next (see [What comes next](#what-comes-next)).
+Online play is offered at 52 tables: the 50 that already seat two people at one screen (the board games, such as chess, go, draughts, shogi and the tafl games, and the race games, such as Ur, Senet, Tables and Pachisi), and two card tables, **Gin Rummy** and **Écarté**, where each hand stays on its own device. More card tables follow (see [What comes next](#what-comes-next)).
 
 ## For visitors
 
@@ -51,7 +51,18 @@ sequenceDiagram
 
 ### What a player is sent
 
-Every state a player is sent goes through `viewOf(game, seat, state)` in `server/referee.mjs`. For the online tables today the view is the whole state, as both players see the whole board. For a game with hidden hands, the view will replace each card the seat may not see with a face-down placeholder (the other hand and the stock), so those cards never reach that device. Moves offered to one player are never sent to the other.
+Every state and move a player is sent is that seat's view (`snapshotFor` and `eventsFor` on the referee). At the board and race tables the view is the whole game, as both players see the whole board. At a card table, every card the seat may not see is sent as a **card back** instead: the other hand, the stock, face-down discards, and the other player's marked cards in Écarté's exchange.
+
+- **A back is a negative number** that stands for one card for one deal. The backs are drawn from `crypto.getRandomValues` for each deal and kept on the server, so they say nothing about the cards, and a back seen in one deal means nothing in the next.
+- **Hidden hands are sorted by their backs.** In the cards' own order, the place a card was played from would tell where the others sit in the suits.
+- **A move brings cards into view.** When the other player plays a card, or lays their hand down at a knock, the state sent as "before" the move already shows those cards. The page can then play the move on its own copy, and lands on the "after" state.
+- **Hidden cards in moves.** A card a move names that the seat may not see, such as a face-down discard, is sent as its back.
+- **Notes.** Where the rules' note names a card drawn blind ("You draw from the stock: the seven of clubs"), the other player gets the public note instead ("…draw from the stock.").
+- **Prompts.** These are written on the page from that seat's own hand, never on the server.
+
+Each card table lists, in `VIEWS` in `server/referee.mjs`, where its cards can be, which places are hidden from whom and when (Gin shows both hands after a knock), and every other field of its state as public. The tests play every card table out at random and fail if any field is unlisted, or if a seat is ever sent a card it has not seen, by value, by back, in a move, or by name in any text.
+
+On the page, a card back is drawn as a card with a back on both sides (`crCard` with a negative card). The two card tables draw your own hand face up from either seat: `ME()` is the seat at this screen.
 
 ### Messages
 
@@ -109,11 +120,17 @@ Figures from Cloudflare's [Durable Objects pricing](https://developers.cloudflar
 
 | Command | What it checks |
 | --- | --- |
-| `npm test` (`tests/online.test.mjs`) | The referee, in Node: every online table played out at random by two players, packed and unpacked along the way as a sleeping room would be; moves out of turn or not offered refused; and the page's own copy landing on the server's state after every move |
+| `npm test` (`tests/online.test.mjs`) | The referee, in Node: every online table played out at random by two players, packed and unpacked along the way as a sleeping room would be; moves out of turn or not offered refused; and the page's own copy landing on the server's state after every move. At the card tables: every field listed, and no seat ever sent a card it has not seen |
 | `npm run test:online` | Starts a local server (`wrangler dev`, after `npm install` in `server/`) and plays whole games through it with two WebSocket players: rooms, seats, a refused move, a dropped connection rejoined with its token, a third player turned away, a code that was never opened, and Play again |
-| `npm run test:online -- --e2e` | The same, then the hall in Chromium against a WebSocket player: as host at chess (opening the room from the Opponent row), and as guest at Ur (joining by link, the camera across the table, the notes turned round, its own throws, and a reload back into the same seat) |
+| `npm run test:online -- --e2e` | The same, then the hall in Chromium against a WebSocket player: as host at chess (opening the room from the Opponent row), and as guest at Ur (joining by link, the camera across the table, the notes turned round, its own throws, and a reload back into the same seat); and at the card tables, joining gin in the second seat and opening Écarté as host, with the other hand and the stock only ever backs |
 
 ## What comes next
 
-- **Card tables.** None of the card tables seats two people yet. Each two-player card game (gin, cribbage, piquet, bezique, cassino, Écarté, Conquian, Koi-Koi, Scopa and others) needs three things: a second human seat in its rules, a `viewOf` entry that hides the other hand and the stock, and a table that shows your own hand face up from either seat. The four-seat tables (Bridge, Spades, Hearts, Whist, Euchre) add more seats to the same rooms.
+- **More card tables.** The two-player card tables still to come are Cribbage, Piquet, Bézique, Pinochle, Cassino, Scopa, Conquian, Koi-Koi, Primero, Tarocchi and Dominoes. Each needs three things:
+  - a `VIEWS` entry;
+  - a public note wherever its notes name a hidden card;
+  - its table drawn from either seat.
+
+  Cribbage also needs its rules changed: they make the Scribe's crib discard by themselves. Bézique and Pinochle use two packs, so their backs need telling apart copy by copy.
+- **Four-seat tables.** Bridge, Spades, Hearts, Whist and Euchre need rooms with more seats.
 - **Matchmaking.** Rooms are private: there's no list of open rooms or of people waiting.

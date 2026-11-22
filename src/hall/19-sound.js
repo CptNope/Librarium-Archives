@@ -122,10 +122,10 @@ const HOTSEAT = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draug
   // dice games too: each player throws for themselves
   'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard', 'landlord']);
 const friendOn = g => HOTSEAT.has(g.id) && ((store.opponent || {})[g.id] === 'friend');
-function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex); }
+function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; return startGame(ex); }
 function renderVariants(g) {
   const box = $('#lm-variant'); box.innerHTML = '';
-  box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !play.resumed && !PACK_TABLES[g.id];
+  box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !onlineOk(g) && !play.resumed && !PACK_TABLES[g.id];
   $('#lm-level').hidden = !!play.hotseat || !!g.solo; // no Scribe to set at a solo table, or against a friend
   if (play.online) { // online: the room, and a way out of it; the host's variant and rules hold for the game
     const label = document.createElement('span'); label.textContent = 'Online'; box.appendChild(label);
@@ -140,11 +140,14 @@ function renderVariants(g) {
       b.addEventListener('click', () => { if ((friendOn(g) ? 'friend' : 'scribe') === id) return; store.opponent = Object.assign(store.opponent || {}, { [g.id]: id }); save(); restartTable(); });
       box.appendChild(b);
     }
-    if (onlineOk(g)) { // on another device: opens the online panel
-      const b = document.createElement('button'); b.textContent = 'Online'; b.setAttribute('aria-pressed', 'false'); b.id = 'lm-onlineBtn';
-      b.title = 'Play a friend on another phone or computer';
-      b.addEventListener('click', () => { hudMenu(false); openOnline(g); }); box.appendChild(b);
-    }
+  } else if (onlineOk(g)) { // a card table: the Scribe here, or a friend online (each hand stays on its own device)
+    const label = document.createElement('span'); label.textContent = 'Opponent'; box.appendChild(label);
+    const b = document.createElement('button'); b.textContent = 'The Scribe'; b.setAttribute('aria-pressed', 'true'); box.appendChild(b);
+  }
+  if (onlineOk(g)) { // on another device: opens the online panel
+    const b = document.createElement('button'); b.textContent = 'Online'; b.setAttribute('aria-pressed', 'false'); b.id = 'lm-onlineBtn';
+    b.title = 'Play a friend on another phone or computer';
+    b.addEventListener('click', () => { hudMenu(false); openOnline(g); }); box.appendChild(b);
   }
   if (PACK_TABLES[g.id]) { // the same game in another country's cards: redrawn in place, nothing restarts
     box.hidden = false;
