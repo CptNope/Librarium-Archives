@@ -9604,7 +9604,7 @@ const HOTSEAT = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draug
   // dice games too: each player throws for themselves
   'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard', 'landlord']);
 const friendOn = g => HOTSEAT.has(g.id) && ((store.opponent || {})[g.id] === 'friend');
-function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex); }
+function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; return startGame(ex); }
 function renderVariants(g) {
   const box = $('#lm-variant'); box.innerHTML = '';
   box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !onlineOk(g) && !play.resumed && !PACK_TABLES[g.id];
@@ -11021,7 +11021,9 @@ async function onlineSnapshot(msg) {
   closeOnlinePanel();
   play.online = { seat: net.seat, code: net.code, game: snap.id, settings: snap.settings, snap };
   if (mode === 'play') {
-    if (play.ex === ex) { restartTable(); return; }
+    // Wait for the table to be laid out before the next message: the friend may move first (the elder at
+    // Écarté), and that move must find the table ready, not be overtaken by the opening turn.
+    if (play.ex === ex) { await restartTable(); return; }
     net.switching = true; leaveGame(); net.switching = false;
   }
   stopTour(); goStop(STOPS.indexOf(ex), false); showPlacard(false);
