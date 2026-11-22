@@ -63,7 +63,7 @@ async function playGame(game) {
   assert.equal((await third.next(m => m.t === 'full')).t, 'full');
 
   let actions = 0, refusedOnce = false, rejoined = false;
-  while (T[0].phase !== 'over' && actions < 600) {
+  while (T[0].phase !== 'over' && actions < 1500) { // random play: tables usually ends in about 300 actions, and 1 game in 40 runs past 600
     actions++;
     const s = T[0].cur, me = P[s];
     if (!refusedOnce) { // the other player tries to act: refused, with the game sent again
