@@ -1,0 +1,21 @@
+# Librarium Online: the game server for playing the Archives with a friend on another device.
+# Runs on Cloudflare's free Workers plan. See docs/online.md to set it up.
+name = "librarium-online"
+main = "worker.mjs"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+# Pages allowed to use this server, comma-separated (for example "https://cptnope.github.io,https://librarium.games"),
+# or "*" for any. Anyone can open rooms on a server set to "*"; on the free plan that can only use up the day's
+# free requests, never cost money.
+[vars]
+ALLOWED_ORIGINS = "*"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+# Rooms keep their game in SQLite storage: the only kind the free plan offers.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]

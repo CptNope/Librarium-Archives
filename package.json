@@ -1,6 +1,6 @@
 {
   "name": "librarium-archives",
-  "version": "0.41.0",
+  "version": "0.42.0",
   "private": true,
   "description": "Librarium Archives: a walkable 3D hall of 57 historical board and card games, 49 of them playable against an AI opponent.",
   "scripts": {
@@ -10,7 +10,8 @@
     "build:artifact": "node tools/build-artifact.mjs",
     "build:wp": "node tools/build-wp.mjs",
     "test:plugin": "node tools/build-wp.mjs && php tests/plugin-render.test.php render && php tests/plugin-render.test.php sanitize",
-    "test:e2e": "node --test --test-concurrency=1 tests/e2e/hall.e2e.mjs"
+    "test:e2e": "node --test --test-concurrency=1 tests/e2e/hall.e2e.mjs",
+    "test:online": "node tests/online-run.mjs"
   },
   "engines": {
     "node": ">=18"

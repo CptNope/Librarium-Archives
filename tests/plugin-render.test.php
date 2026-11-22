@@ -21,6 +21,7 @@ function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES ); }
 function esc_html__( $s ) { return esc_html( $s ); }
 function __( $s ) { return $s; }
 function esc_url( $u, $protocols = array( 'http', 'https' ) ) { $u = trim( (string) $u ); foreach ( $protocols as $p ) { if ( stripos( $u, $p . '://' ) === 0 ) { return esc_attr( $u ); } } return ''; }
+function untrailingslashit( $s ) { return rtrim( (string) $s, '/\\' ); }
 function sanitize_key( $k ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $k ) ); }
 function current_user_can( $c ) { return $GLOBALS['can_edit']; }
 function wp_enqueue_style( $h ) { $GLOBALS['enqueued'][] = $h; }
@@ -34,11 +35,12 @@ function check( $label, $cond ) { global $fails; echo ( $cond ? 'ok     ' : 'FAI
 $mode = isset( $argv[1] ) ? $argv[1] : 'render';
 
 if ( 'render' === $mode ) {
-	$html = librarium_archives_render( array( 'height' => '720px', 'start' => 'tables', 'shop_url' => 'https://librarium.games/marketplace/' ) );
+	$html = librarium_archives_render( array( 'height' => '720px', 'start' => 'tables', 'shop_url' => 'https://librarium.games/marketplace/', 'online' => 'https://librarium-online.example.workers.dev/' ) );
 	check( 'wraps the Archives in .lm-embed with the height', strpos( $html, '<div class="lm-embed" style="--lm-height:720px">' ) === 0 );
 	check( 'passes the start exhibit', strpos( $html, 'data-start="tables"' ) !== false );
 	check( 'passes the shop link', strpos( $html, 'data-shop="https://librarium.games/marketplace/"' ) !== false );
 	check( 'points the soundtrack at the plugin', strpos( $html, 'data-music="https://example.test/wp-content/plugins/librarium-archives/assets/music/"' ) !== false );
+	check( 'passes the online server, without its trailing slash', strpos( $html, 'data-online="https://librarium-online.example.workers.dev"' ) !== false );
 	check( 'ships the soundtrack', is_readable( $plugin . 'assets/music/opening-a.mp3' ) );
 	check( 'includes the Archives markup', strpos( $html, 'id="lm-scene"' ) !== false && strpos( $html, 'id="lm-hud"' ) !== false );
 	check( 'has no script tags in the markup', stripos( $html, '<script' ) === false );
@@ -49,9 +51,10 @@ if ( 'render' === $mode ) {
 	check( 'a second copy shows editors a notice', strpos( librarium_archives_render( array() ), 'Only one copy of the Librarium Archives' ) !== false );
 } else {
 	// Run in its own process so the one-per-page flag starts fresh.
-	$bad = librarium_archives_render( array( 'height' => '100%;background:red', 'start' => '<b>nope</b>', 'shop_url' => 'javascript:alert(1)' ) );
+	$bad = librarium_archives_render( array( 'height' => '100%;background:red', 'start' => '<b>nope</b>', 'shop_url' => 'javascript:alert(1)', 'online' => 'javascript:alert(1)//' ) );
 	check( 'rejects an unsafe height', strpos( $bad, '--lm-height:80vh' ) !== false );
 	check( 'rejects an unknown start exhibit', strpos( $bad, 'data-start=""' ) !== false );
+	check( 'rejects a javascript: online server', strpos( $bad, 'data-online=""' ) !== false );
 	check( 'rejects a javascript: shop link', strpos( $bad, 'data-shop=""' ) !== false );
 }
 

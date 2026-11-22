@@ -52,11 +52,16 @@ Only one copy of the Archives can appear on a page. Assets load only on pages th
 
 == External services ==
 
-None. The released plugin bundles three.js and its fonts, sends nothing anywhere, and stores nothing on the server. The only link out is the "Visit Librarium Games" button at the end of the hall, which goes to the shop_url you set, and only when a visitor clicks it.
+None by default. The released plugin bundles three.js and its fonts, sends nothing anywhere, and stores nothing on the server. The only link out is the "Visit Librarium Games" button at the end of the hall, which goes to the shop_url you set, and only when a visitor clicks it.
+
+Online play is off unless you set the shortcode's online attribute (or the widget's Online play server) to the address of a Librarium Online server you run on Cloudflare. Then, and only when a visitor chooses to play a friend online, the visitor's browser connects to that server and sends it the table, the room code and their moves. Nothing about the visitor is sent, and the server keeps a room for a day after it was last used. See docs/online.md in the source repository.
 
 (A development build made without the bundled files falls back to three.js from cdnjs.cloudflare.com and the fonts from fonts.googleapis.com.)
 
 == Changelog ==
+
+= 0.42.0 =
+* Online play: two people on two devices at fifty tables, with the game refereed by your own free Cloudflare server (off until you set its address).
 
 = 0.41.0 =
 * The soundtrack panel: pause, skip, seek or pick any piece of the music.

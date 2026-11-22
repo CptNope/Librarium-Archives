@@ -153,6 +153,7 @@ table-registry.js
 21-hints-and-undo.js
 22-saved-games.js
 23-learning-the-game.js
+23b-online.js
 24-input.js
 25-touch-zoom.js
 26-loop.js

@@ -1,0 +1,40 @@
+name: Online server
+
+# Tests the online game server (server/) on every change to it or to the rules. Cloudflare deploys it itself,
+# from main, through Workers Builds (its GitHub connection): see docs/online.md.
+on:
+  push:
+    branches: [main]
+    paths: ['server/**', 'js/rules.js', 'src/rules/**', 'tests/online*', 'tests/e2e/online*', '.github/workflows/online.yml']
+  pull_request:
+    paths: ['server/**', 'js/rules.js', 'src/rules/**', 'src/hall/**', 'tests/online*', 'tests/e2e/online*', '.github/workflows/online.yml']
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the server's tools (wrangler)
+        working-directory: server
+        run: npm ci --no-audit --no-fund
+      - name: Fetch three.js r128
+        run: |
+          mkdir -p vendor
+          curl -sSfL https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js -o vendor/three.min.js
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Online tests (a local server, two players, and the hall in Chromium)
+        run: npm run test:online -- --e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: online-screenshots
+          path: test-results/
+

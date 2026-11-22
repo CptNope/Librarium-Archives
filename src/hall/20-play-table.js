@@ -31,12 +31,16 @@ async function startGame(ex) {
   play.phase = 'idle'; play.moves = []; play.selected = null; // nothing from the last table carries over during the glide
   $('#lm-choices').hidden = true;
   g.surface = ex.surface;
-  if (g.variants) g.setVariant((store.variants || {})[g.id] || g.variant);
-  for (const t of g.toggles || []) g.setToggle(t.id, toggleOn(g, t));
-  play.hotseat = friendOn(g);
+  // Online, the table is set as the room's: the host's variant and rules, and the server's game (23b-online.js).
+  const on = play.online && play.online.game === g.id ? play.online : null;
+  if (!on) play.online = null;
+  if (g.variants) g.setVariant(on ? on.settings.variant ?? g.variant : (store.variants || {})[g.id] || g.variant);
+  for (const t of g.toggles || []) g.setToggle(t.id, on ? !!(on.settings.toggles || {})[t.id] : toggleOn(g, t));
+  play.hotseat = on ? true : friendOn(g);
   g.init();
   if (g.human) g.human = [true, !!play.hotseat]; // engines that ask a person for choices the Scribe makes by itself
-  play.resumed = loadGame(g);
+  play.resumed = on ? false : loadGame(g);
+  if (on) Object.assign(g, R.unpackState(on.snap.state));
   renderVariants(g);
   P.setup(ex);
   play.turnNo = 0; play.coachSeen = new Set(); $('#lm-coach').hidden = true; $('#lm-choices').classList.remove('replaybar');
@@ -45,20 +49,22 @@ async function startGame(ex) {
   root.classList.add('playing');
   resetView(true); updateJoy();
   $('#lm-hud').hidden = false; $('#lm-win').hidden = true; $('#lm-rules').hidden = true;
-  $('#lm-hudTitle').textContent = g.name;
+  $('#lm-hudTitle').textContent = g.name + (on ? ' · online' : '');
   $('#lm-throwBtn').hidden = !g.dice; $('#lm-dice').hidden = !g.dice;
   $('#lm-passBtn').hidden = !(g.canPass || g.stopLabel); $('#lm-passBtn').disabled = true;
   $('#lm-passBtn').textContent = g.stopLabel || 'Pass';
   play.undo = []; play.hintCount = 0;
-  $('#lm-hintBtn').hidden = !canHint(g); $('#lm-undoBtn').hidden = !UNDO_OK.has(g.id);
+  $('#lm-hintBtn').hidden = !canHint(g) || !!on; $('#lm-undoBtn').hidden = !UNDO_OK.has(g.id) || !!on; // online, no take-backs and no help from the Scribe
   refreshAids();
   renderRules(g);
   if (!store.rulesSeen[g.id]) { $('#lm-rules').hidden = false; store.rulesSeen[g.id] = true; save(); }
   clearLastMove();
   if (g.dice) renderDice(g, null);
   updateScore();
-  setMsg(g.first === 0 ? 'Your turn' : scribeName(g), g.first === 0 ? '' : `${scribeName(g)} moves first.`);
+  if (on) setMsg('Online', 'Sitting down…', true);
+  else setMsg(g.first === 0 ? 'Your turn' : scribeName(g), g.first === 0 ? '' : `${scribeName(g)} moves first.`);
   await flyToPlay(ex);
+  if (on) { if (play.online === on && mode === 'play') onlineSeated(); return; }
   if (play.resumed) { beginTurn(0); setMsg('Your turn', 'Your saved game is back on the table, as you left it. ' + P.prompt()); return; }
   beginTurn(g.first, true);
 }

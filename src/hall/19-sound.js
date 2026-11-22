@@ -126,13 +126,24 @@ function restartTable() { const ex = play.ex; clearSave(play.game.id); play.toke
 function renderVariants(g) {
   const box = $('#lm-variant'); box.innerHTML = '';
   box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !play.resumed && !PACK_TABLES[g.id];
-  $('#lm-level').hidden = friendOn(g) || !!g.solo; // no Scribe to set at a solo table
+  $('#lm-level').hidden = !!play.hotseat || !!g.solo; // no Scribe to set at a solo table, or against a friend
+  if (play.online) { // online: the room, and a way out of it; the host's variant and rules hold for the game
+    const label = document.createElement('span'); label.textContent = 'Online'; box.appendChild(label);
+    const room = document.createElement('span'); room.className = 'room'; room.textContent = `Room ${play.online.code} · ${net.friend ? 'your friend is here' : 'your friend is away'}`; box.appendChild(room);
+    const b = document.createElement('button'); b.textContent = 'Leave the room'; b.addEventListener('click', () => { onlineLeave(); restartTable(); }); box.appendChild(b);
+    box.hidden = false; return;
+  }
   if (HOTSEAT.has(g.id)) {
     const label = document.createElement('span'); label.textContent = 'Opponent'; box.appendChild(label);
     for (const [id, text] of [['scribe', 'The Scribe'], ['friend', 'A friend']]) {
       const b = document.createElement('button'); b.textContent = text; b.setAttribute('aria-pressed', String((friendOn(g) ? 'friend' : 'scribe') === id));
       b.addEventListener('click', () => { if ((friendOn(g) ? 'friend' : 'scribe') === id) return; store.opponent = Object.assign(store.opponent || {}, { [g.id]: id }); save(); restartTable(); });
       box.appendChild(b);
+    }
+    if (onlineOk(g)) { // on another device: opens the online panel
+      const b = document.createElement('button'); b.textContent = 'Online'; b.setAttribute('aria-pressed', 'false'); b.id = 'lm-onlineBtn';
+      b.title = 'Play a friend on another phone or computer';
+      b.addEventListener('click', () => { hudMenu(false); openOnline(g); }); box.appendChild(b);
     }
   }
   if (PACK_TABLES[g.id]) { // the same game in another country's cards: redrawn in place, nothing restarts

@@ -39,8 +39,9 @@ function flyToPlay(stop, dur = 1.4) {
   let dist = (W / 2) / Math.tan(hf) * 1.06;
   dist = Math.max(dist, (P.camD || 0.62) / Math.tan(vf) * 1.1);
   const center = V3(0, TOP + 0.05, 0.02);
-  const pos = center.clone().add(V3(0, Math.sin(elev) * dist, Math.cos(elev) * dist));
+  const far = play.online && play.online.seat === 1 && play.ex === stop ? -1 : 1; // online, the second player sits across the table
+  const pos = center.clone().add(V3(0, Math.sin(elev) * dist, far * Math.cos(elev) * dist));
   play.camDist = dist;
-  return flyTo(g.localToWorld(pos), g.localToWorld(center.clone().add(V3(0, 0, -0.03))), dur);
+  return flyTo(g.localToWorld(pos), g.localToWorld(center.clone().add(V3(0, 0, -0.03 * far))), dur);
 }
 

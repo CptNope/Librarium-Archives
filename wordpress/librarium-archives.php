@@ -156,6 +156,7 @@ add_action( 'wp_enqueue_scripts', 'librarium_archives_maybe_enqueue_early', 20 )
  * - height:   CSS height of the Archives box, e.g. "80vh" or "720px". Default 80vh.
  * - start:    exhibit id to open on (see librarium_archives_exhibits()). Default: the entrance.
  * - shop_url: where the closing "Visit Librarium Games" link points.
+ * - online:   the address of a Librarium Online game server (docs/online.md). Empty: no online play.
  *
  * @param array|string $atts Shortcode attributes.
  * @return string
@@ -168,6 +169,7 @@ function librarium_archives_render( $atts = array() ) {
 			'height'   => '80vh',
 			'start'    => '',
 			'shop_url' => 'https://librarium.games/',
+			'online'   => '',
 		),
 		$atts,
 		'librarium_archives'
@@ -196,12 +198,14 @@ function librarium_archives_render( $atts = array() ) {
 		$start = '';
 	}
 	$shop = esc_url( $atts['shop_url'], array( 'http', 'https' ) );
+	// Online play talks to this server from the visitor's browser; only an https address (or http for a local test).
+	$online = esc_url( untrailingslashit( trim( (string) $atts['online'] ) ), array( 'https', 'http' ) );
 
 	// The template is the Archives' own static markup, built from index.html with the plugin.
 	$markup = file_get_contents( $template ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 	$markup = str_replace(
 		'<div id="lm-app">',
-		'<div id="lm-app" data-start="' . esc_attr( $start ) . '" data-shop="' . esc_attr( $shop ) . '" data-music="' . esc_url( LIBRARIUM_ARCHIVES_URL . 'assets/music/' ) . '">',
+		'<div id="lm-app" data-start="' . esc_attr( $start ) . '" data-shop="' . esc_attr( $shop ) . '" data-music="' . esc_url( LIBRARIUM_ARCHIVES_URL . 'assets/music/' ) . '" data-online="' . esc_attr( $online ) . '">',
 		$markup
 	);
 

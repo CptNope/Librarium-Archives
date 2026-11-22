@@ -18,8 +18,9 @@ The Archives ship as a WordPress plugin for librarium.games, with a shortcode an
 | `height` | Height of the Archives box | a number with `px`, `vh`, `svh`, `dvh`, `em`, `rem` or `%` | `80vh` |
 | `start` | Exhibit to open on | any [exhibit id](#exhibit-ids) | the entrance |
 | `shop_url` | Where the "Visit Librarium Games" button at the end of the hall points | an `http` or `https` URL | `https://librarium.games/` |
+| `online` | The address of a Librarium Online server, so visitors can play a friend on another device ([Online play](online.md)) | an `https` URL (or `http` for a local test) | empty: no online play |
 
-The Elementor widget offers the same three settings: a height slider, a dropdown of exhibits, and a link field.
+The Elementor widget offers the same four settings: a height slider, a dropdown of exhibits, and two link fields.
 
 ## How a page loads it
 
@@ -71,6 +72,7 @@ flowchart LR
     h["height"] -->|"must match a number + unit,<br/>else 80vh"| out1["style --lm-height<br/>esc_attr()"]
     s["start"] -->|"sanitize_key(),<br/>must be a known exhibit id"| out2["data-start<br/>esc_attr()"]
     u["shop_url"] -->|"esc_url(), http/https only"| out3["data-shop<br/>esc_attr()"]
+    o["online"] -->|"esc_url(), http/https only,<br/>no trailing slash"| out5["data-online<br/>esc_attr()"]
     n["the one-per-page notice"] -->|"only for users who can edit_posts"| out4["esc_html__()"]
 ```
 

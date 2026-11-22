@@ -48,6 +48,7 @@ async function boot() {
   frame();
   setTimeout(() => {
     $('#lm-loader').classList.add('done');
+    onlineFromLink(); // arriving by a friend's room link
     if (startAt > 0) goStop(startAt);
     else { goStop(0, false); flyTo(v.pos, v.target, 2.2); }
   }, 250);
