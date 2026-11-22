@@ -1,7 +1,7 @@
 name: Online server
 
-# Tests the online game server (server/) on every change to it or to the rules, and deploys it to Cloudflare
-# from main once the repository has the two secrets docs/online.md describes. Until then the deploy is skipped.
+# Tests the online game server (server/) on every change to it or to the rules. Cloudflare deploys it itself,
+# from main, through Workers Builds (its GitHub connection): see docs/online.md.
 on:
   push:
     branches: [main]
@@ -38,26 +38,3 @@ jobs:
           name: online-screenshots
           path: test-results/
 
-  deploy:
-    needs: test
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    steps:
-      - uses: actions/checkout@v4
-        if: env.CLOUDFLARE_API_TOKEN != ''
-      - uses: actions/setup-node@v4
-        if: env.CLOUDFLARE_API_TOKEN != ''
-        with:
-          node-version: 22
-      - name: Deploy to Cloudflare (free plan)
-        if: env.CLOUDFLARE_API_TOKEN != ''
-        working-directory: server
-        run: |
-          npm ci --no-audit --no-fund
-          npx wrangler deploy
-      - name: No Cloudflare token yet
-        if: env.CLOUDFLARE_API_TOKEN == ''
-        run: echo "Skipped: add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to the repository's secrets to deploy (docs/online.md)."

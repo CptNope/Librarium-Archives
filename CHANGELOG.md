@@ -9,7 +9,7 @@ Two people can now play from two devices. Fifty tables offer it: the board games
 - **Moves animate** as they do against the Scribe: each page plays the server's moves on its own copy of the game and then takes the server's state.
 - **Dropped connections** reconnect by themselves, and a reload or the code again comes back to the same seat. Rooms clear a day after their last use.
 - Online games don't count toward your record against the Scribe, with no hints or take-backs.
-- The website and the WordPress plugin offer online play once given the server's address (`data-online`, or the shortcode's `online` attribute and the widget's **Online play server**). `docs/online.md` covers setting the server up on Cloudflare's free plan, and a workflow deploys it from `main` once the repository has a Cloudflare token.
+- The website and the WordPress plugin offer online play once given the server's address (`data-online`, or the shortcode's `online` attribute and the widget's **Online play server**). `docs/online.md` covers setting the server up on Cloudflare's free plan, where Cloudflare deploys it from `main` through its own GitHub connection; a workflow tests it on every change.
 - Tests: the referee plays every online table out at random in Node (`npm test`), a local server plays whole games between two WebSocket players (`npm run test:online`), and the hall plays online in Chromium as host and as guest (`npm run test:online -- --e2e`).
 
 ## 0.41.0: The soundtrack panel

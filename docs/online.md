@@ -78,15 +78,18 @@ Every state a player is sent goes through `viewOf(game, seat, state)` in `server
 Everything here is on Cloudflare's **free** Workers plan, which needs no card and so can't charge anything. If a day's free allowance were ever used up, new moves would fail until midnight UTC and the hall would go on as before with the Scribe and same-screen play.
 
 1. **Create a free Cloudflare account** at [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up). Choose the free plan; no domain is needed.
-2. **Deploy once from your computer** (Node 20 or later):
-   ```bash
-   cd server
-   npm install
-   npx wrangler login     # opens Cloudflare in your browser to allow it
-   npx wrangler deploy
-   ```
-   Wrangler prints the server's address, like `https://librarium-online.<your-subdomain>.workers.dev`.
-3. **Or let GitHub deploy it** on every change to `main`: in Cloudflare, create an API token from the "Edit Cloudflare Workers" template, and add it to the repository's secrets as `CLOUDFLARE_API_TOKEN`, with your account ID as `CLOUDFLARE_ACCOUNT_ID`. The `Online server` workflow then tests the server and deploys it. Without the secrets it tests and skips the deploy.
+2. **Connect the repository** (Workers Builds: Cloudflare builds and deploys from GitHub itself, so no token is ever copied anywhere). In the dashboard: **Workers & Pages → Create → Import a repository**, sign in to GitHub and allow the Cloudflare app for `CptNope/Librarium-Archives`, then set:
+
+   | Setting | Value |
+   | --- | --- |
+   | Project name | `librarium-online` (it must match `name` in `server/wrangler.toml`) |
+   | Production branch | `main` |
+   | Root directory | `server` |
+   | Build command | (empty) |
+   | Deploy command | `npx wrangler deploy` |
+
+   Cloudflare deploys it, and again on every push to `main`. The free plan includes 3,000 build minutes a month ([Workers Builds limits](https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/)); a deploy takes about a minute. The first time, the dashboard asks you to choose your `workers.dev` subdomain. The server's address is then `https://librarium-online.<your-subdomain>.workers.dev`, and `/health` there answers `{"ok":true}`.
+3. **Or deploy from your computer** instead (Node 20 or later): `cd server`, `npm install`, `npx wrangler login`, `npx wrangler deploy`.
 4. **Point the hall at it.**
    - The website: add `data-online="https://librarium-online.<your-subdomain>.workers.dev"` to `<div id="lm-app">` in `index.html`.
    - WordPress: the shortcode's `online` attribute, `[librarium_archives online="https://librarium-online.<your-subdomain>.workers.dev"]`, or **Online play server** in the Elementor widget.
