@@ -83,6 +83,50 @@
 @media (prefers-reduced-motion:reduce){#lm-app .jukelist .eq i{animation:none;transform:scaleY(.6)}}
 @container archives (max-width:720px){#lm-app .jukebox{left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));width:auto}}
 #lm-app.lm-compact.playing .jukebox{display:none}
+#lm-app .jukecredits{flex:none;margin:0 8px 10px;min-height:38px;border:1px solid var(--line);background:none;color:var(--gold);font-family:var(--f-display);font-size:16px;cursor:pointer}
+#lm-app .jukecredits:hover{background:rgba(246,160,26,.12)}
+
+/* The credits: a roll over the hall, like the end of a film. The hall stays faintly behind it. */
+#lm-app .credits{position:absolute;inset:0;z-index:12;display:flex;background:radial-gradient(ellipse 70% 90% at 50% 50%,rgba(11,9,7,.86),rgba(11,9,7,.97))}
+#lm-app.crediting .rail,#lm-app.crediting .placard,#lm-app.crediting .hint,#lm-app.crediting .iconbtn,#lm-app.crediting .brand{visibility:hidden}
+#lm-app .creditsroll{flex:1;min-width:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(transparent,#000 12%,#000 88%,transparent)}
+#lm-app .creditsroll::-webkit-scrollbar{display:none}
+#lm-app .creditsbody{max-width:36rem;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));text-align:center}
+#lm-app .creditsbar{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));display:flex;gap:8px}
+#lm-app .creditspause{min-height:38px;padding:0 14px;border:1px solid var(--line);background:rgba(11,9,7,.6);color:var(--parchment);font-family:var(--f-ui);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+#lm-app .creditspause[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}
+#lm-app .credits .indexclose{background:rgba(11,9,7,.6)}
+#lm-app .crtitle h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(44px,9vw,72px);line-height:1;color:var(--gold);letter-spacing:.02em;text-shadow:0 2px 30px rgba(246,160,26,.18)}
+#lm-app .crsub{margin:10px 0 0;font-family:var(--f-ui);font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:var(--dust)}
+#lm-app .crtag{margin:22px auto 0;max-width:22em;font-style:italic;color:var(--parchment)}
+#lm-app .crblock{margin-top:22vh}
+#lm-app .crlabel{display:flex;align-items:center;gap:14px;margin:0 0 22px;font-family:var(--f-ui);font-size:11px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:var(--dust)}
+#lm-app .crlabel::before,#lm-app .crlabel::after{content:"";flex:1;height:1px;background:var(--line)}
+#lm-app .crhouse{font-family:var(--f-display);font-size:32px;color:var(--gold);text-decoration:none}
+#lm-app .crhouse:hover{text-decoration:underline;text-underline-offset:4px}
+#lm-app .crgames{margin:10px 0 0;color:var(--parchment)}
+#lm-app .crdot{color:var(--dust)}
+#lm-app .crwing{margin:0 0 34px}
+#lm-app .crwing h4{display:flex;flex-direction:column;align-items:center;gap:2px;margin:0 0 12px;font-family:var(--f-display);font-weight:400;font-size:22px;color:var(--gold)}
+#lm-app .crwing .crnum{font-size:14px;letter-spacing:.18em;color:var(--dust)}
+#lm-app .crwing ul,#lm-app .crpieces{list-style:none;margin:0;padding:0}
+#lm-app .crwing li{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:3px 0;text-align:left}
+#lm-app .crex{text-align:right;color:var(--parchment)}
+#lm-app .crdate{font-family:var(--f-ui);font-size:12px;line-height:1.9;color:var(--dust);font-variant-numeric:tabular-nums}
+#lm-app .crpieces li{padding:4px 0;font-family:var(--f-display);font-size:19px;color:var(--parchment)}
+#lm-app .crnote{margin:14px 0 0;font-style:italic;color:var(--dust)}
+#lm-app .crpair{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0;padding:4px 0;text-align:left}
+#lm-app .crrole{text-align:right;font-family:var(--f-ui);font-size:12px;line-height:1.9;letter-spacing:.06em;color:var(--dust)}
+#lm-app .crname{color:var(--parchment);text-decoration:none}
+#lm-app a.crname:hover{color:var(--gold);text-decoration:underline;text-underline-offset:3px}
+#lm-app .crend{margin-top:28vh;display:flex;flex-direction:column;align-items:center;gap:6px}
+#lm-app .crmark{margin:0;font-family:var(--f-display);font-size:40px;color:var(--gold)}
+#lm-app .crthanks{margin:0 0 18px;font-style:italic;color:var(--parchment)}
+@container archives (max-width:520px){
+  #lm-app .crwing li,#lm-app .crpair{grid-template-columns:1fr;gap:0;text-align:center;padding:5px 0}
+  #lm-app .crex,#lm-app .crrole{text-align:center}
+  #lm-app .crdate,#lm-app .crrole{line-height:1.5}
+}
 
 /* Placard */
 #lm-app .placard{position:absolute;top:calc(72px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(var(--rail-h,80px) + 16px);width:min(380px,calc(100vw - 32px));display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:3px;box-shadow:0 20px 60px rgba(0,0,0,.55);backdrop-filter:blur(6px);transition:opacity .35s,transform .35s}
