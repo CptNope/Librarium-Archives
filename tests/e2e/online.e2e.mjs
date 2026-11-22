@@ -31,7 +31,7 @@ const base = `http://localhost:${server.address().port}`;
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 after(async () => { await browser.close(); server.close(); });
 // A failed test leaves no page running behind it: two software-rendered pages at once starve each other.
-const closeAll = async () => { for (const p of opened.splice(0)) await p.close().catch(() => {}); };
+const closeAll = async () => { for (const p of opened.splice(0)) await p.close().catch(() => {}); for (const f of friends.splice(0)) f.close(); };
 
 // The other player: plays at random on its turns, and keeps the last state the server sent.
 function friend(code, token) {
@@ -57,10 +57,12 @@ function friend(code, token) {
     }
   });
   f.close = () => { try { ws.close(); } catch (e) { /* closed */ } };
+  f.log = []; ws.addEventListener('message', e => { if (e.data !== 'pong') f.log.push(String(e.data).slice(0, 300)); });
+  friends.push(f);
   return f;
 }
 
-const opened = [];
+const opened = [], friends = [];
 async function newPage(url) {
   const page = await browser.newPage({ viewport: { width: 760, height: 520 } });
   opened.push(page);

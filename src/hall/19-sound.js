@@ -122,7 +122,7 @@ const HOTSEAT = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draug
   // dice games too: each player throws for themselves
   'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard', 'landlord']);
 const friendOn = g => HOTSEAT.has(g.id) && ((store.opponent || {})[g.id] === 'friend');
-function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; startGame(ex); }
+function restartTable() { const ex = play.ex; clearSave(play.game.id); play.token++; clearHighlights(); clearLastMove(); mode = 'gallery'; return startGame(ex); }
 function renderVariants(g) {
   const box = $('#lm-variant'); box.innerHTML = '';
   box.hidden = !g.variants && !g.toggles && !HOTSEAT.has(g.id) && !onlineOk(g) && !play.resumed && !PACK_TABLES[g.id];

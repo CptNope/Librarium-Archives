@@ -193,7 +193,9 @@ async function onlineSnapshot(msg) {
   closeOnlinePanel();
   play.online = { seat: net.seat, code: net.code, game: snap.id, settings: snap.settings, snap };
   if (mode === 'play') {
-    if (play.ex === ex) { restartTable(); return; }
+    // Wait for the table to be laid out before the next message: the friend may move first (the elder at
+    // Écarté), and that move must find the table ready, not be overtaken by the opening turn.
+    if (play.ex === ex) { await restartTable(); return; }
     net.switching = true; leaveGame(); net.switching = false;
   }
   stopTour(); goStop(STOPS.indexOf(ex), false); showPlacard(false);
