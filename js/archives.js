@@ -10825,14 +10825,17 @@ function clearHighlights() {
  * each move the server reports on its own copy of the game, so the pieces move as they do against the Scribe,
  * and takes the server's state afterwards, so the two copies can never drift apart. See docs/online.md.
  *
- * The server's address is data-online on #lm-app (the WordPress plugin fills it from its settings). With no
+ * The server's address is data-online on #lm-app (the WordPress plugin fills it from its settings), or the
+ * website's <meta name="librarium-online">. With no
  * address, nothing here shows. A friend joins with the room's six-letter code, or with a link that carries it
  * (?join=CODE). Each seat has a token, kept in this browser, so a dropped connection or a reload comes back to
  * the same seat. */
 // The tables the server will play: the same list as server/referee.mjs (a test keeps the two in step).
 const ONLINE_GAMES = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier', 'idraughts', 'hnefatafl',
   'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard']);
-const onlineServer = () => { const s = (root.dataset.online || '').trim().replace(/\/+$/, ''); return /^https?:\/\/[^\s"'<>]+$/.test(s) ? s : ''; };
+const onlineServer = () => { // data-online on #lm-app (WordPress), or the site's <meta name="librarium-online">
+  const meta = document.querySelector('meta[name="librarium-online"]');
+  const s = (root.dataset.online || (meta && meta.content) || '').trim().replace(/\/+$/, ''); return /^https?:\/\/[^\s"'<>]+$/.test(s) ? s : ''; };
 const onlineOk = g => !!onlineServer() && ONLINE_GAMES.has(g.id) && typeof WebSocket !== 'undefined';
 const CODE_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/;
 

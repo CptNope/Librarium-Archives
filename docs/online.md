@@ -91,7 +91,7 @@ Everything here is on Cloudflare's **free** Workers plan, which needs no card an
    Cloudflare deploys it, and again on every push to `main`. The free plan includes 3,000 build minutes a month ([Workers Builds limits](https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/)); a deploy takes about a minute. The first time, the dashboard asks you to choose your `workers.dev` subdomain. The server's address is then `https://librarium-online.<your-subdomain>.workers.dev`, and `/health` there answers `{"ok":true}`.
 3. **Or deploy from your computer** instead (Node 20 or later): `cd server`, `npm install`, `npx wrangler login`, `npx wrangler deploy`.
 4. **Point the hall at it.**
-   - The website: add `data-online="https://librarium-online.<your-subdomain>.workers.dev"` to `<div id="lm-app">` in `index.html`.
+   - The website: the `<meta name="librarium-online">` tag in `index.html` (set to `https://librarium-online.jca2016satx.workers.dev`). The single-file build leaves it out, as an artifact can't reach other sites.
    - WordPress: the shortcode's `online` attribute, `[librarium_archives online="https://librarium-online.<your-subdomain>.workers.dev"]`, or **Online play server** in the Elementor widget.
 5. **Optionally, limit which sites may use it**: set `ALLOWED_ORIGINS` in `server/wrangler.toml` to your sites, for example `"https://cptnope.github.io,https://librarium.games"`, and deploy again.
 
