@@ -106,5 +106,72 @@ assert.equal((await ghost.next(m => m.t === 'gone')).t, 'gone');
 // A table that cannot be played online.
 assert.equal((await fetch(`${BASE}/rooms`, { method: 'POST', body: JSON.stringify({ game: 'cribbage' }) })).status, 400);
 for (const g of GAMES) console.log(`${g}: played through the server in ${await playGame(g)} actions`);
+
+// A room from the Games Desk: no game until one is suggested and accepted; the one who suggests moves first;
+// a game saved to a file comes back, sealed, in a new room, with each player in the seat they had.
+async function lobbyRoom() {
+  const r = await fetch(`${BASE}/rooms`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  assert.equal(r.status, 200, 'opening a room with no game');
+  const room = await r.json(); assert.equal(room.lobby, true); assert.equal(room.game, null);
+  const host = client(`${WS}/rooms/${room.code}?token=${room.token}`); await host.opened;
+  assert.equal((await host.next(m => m.t === 'welcome')).lobby, true);
+  const guest = client(`${WS}/rooms/${room.code}`); await guest.opened;
+  const gw = await guest.next(m => m.t === 'welcome'); assert.equal(gw.seat, 1); assert.equal(gw.proposal, null);
+  await new Promise(r => setTimeout(r, 300));
+  assert.ok(!host.inbox.some(m => m.t === 'snapshot') && !guest.inbox.some(m => m.t === 'snapshot'), 'no game begins by itself');
+  return { room, host, guest, gw };
+}
+{
+  const { host, guest } = await lobbyRoom();
+  // Moving before any game is refused.
+  guest.send({ t: 'choose', i: 0 }); assert.match((await guest.next(m => m.t === 'error')).msg, /No game/);
+  // The guest suggests Ur; the guest cannot answer their own suggestion; the host declines, then accepts the next.
+  guest.send({ t: 'propose', game: 'ur' });
+  for (const c of [host, guest]) { const p = await c.next(m => m.t === 'proposal'); assert.deepEqual([p.proposal.by, p.proposal.game], [1, 'ur']); }
+  guest.send({ t: 'answer', yes: true }); assert.match((await guest.next(m => m.t === 'error')).msg, /no suggestion/);
+  host.send({ t: 'answer', yes: false });
+  for (const c of [host, guest]) { const p = await c.next(m => m.t === 'proposal'); assert.equal(p.proposal, null); assert.equal(p.declined, 0); }
+  guest.send({ t: 'propose', game: 'chess' });
+  for (const c of [host, guest]) await c.next(m => m.t === 'proposal' && m.proposal);
+  host.send({ t: 'answer', yes: true });
+  const hs = await host.next(m => m.t === 'snapshot'), gs = await guest.next(m => m.t === 'snapshot');
+  assert.equal(hs.fresh, true); assert.equal(hs.snap.id, 'chess');
+  assert.deepEqual([gs.snap.you, hs.snap.you], [0, 1], 'the one who suggested the game moves first');
+  assert.equal(gs.snap.moves.length > 0, true); assert.equal(hs.snap.moves.length, 0);
+  // Play a few moves, then save: only the one who asks gets the file, and it is sealed.
+  const T = { [0]: guest, [1]: host }, tr = [tracker(), tracker()]; tr[0].take(gs); tr[1].take(hs);
+  for (let k = 0; k < 4; k++) {
+    const me = T[tr[0].cur]; me.send({ t: 'choose', i: (Math.random() * tr[tr[0].cur].moves.length) | 0 });
+    tr[0].take(await guest.next(m => m.t === 'events')); tr[1].take(await host.next(m => m.t === 'events'));
+  }
+  host.send({ t: 'save' });
+  const saved = await host.next(m => m.t === 'saved');
+  assert.equal(saved.game, 'chess'); assert.equal(saved.seat, 1); assert.match(saved.sealed, /^L1\./);
+  assert.ok(!saved.sealed.includes('chess') && saved.sealed.length < 40000, 'the file is sealed, and small');
+  await new Promise(r => setTimeout(r, 200)); assert.ok(!guest.inbox.some(m => m.t === 'saved'), 'the other player is not sent the file');
+  host.send({ t: 'sync' }); const now = await host.next(m => m.t === 'snapshot'); assert.equal(now.fresh, undefined);
+  for (const c of [host, guest]) try { c.ws.close(); } catch (e) { /* closed */ }
+
+  // A new room: the file is refused if changed; whole, it is suggested, and accepted, it carries on where it
+  // was, with the host back in the seat they had (the second), although the host opened this room.
+  const b = await lobbyRoom();
+  const bent = saved.sealed.slice(0, 40) + (saved.sealed[40] === 'A' ? 'B' : 'A') + saved.sealed.slice(41);
+  b.host.send({ t: 'propose', save: bent }); assert.match((await b.host.next(m => m.t === 'error')).msg, /changed/);
+  b.host.send({ t: 'propose', save: saved.sealed });
+  const pr = await b.guest.next(m => m.t === 'proposal' && m.proposal);
+  assert.equal(pr.proposal.game, 'chess'); assert.equal(pr.proposal.by, 0); assert.ok(pr.proposal.resume && pr.proposal.resume.turns >= 4);
+  b.guest.send({ t: 'answer', yes: true });
+  const h2 = await b.host.next(m => m.t === 'snapshot'), g2 = await b.guest.next(m => m.t === 'snapshot');
+  assert.equal(h2.resumed, true); assert.deepEqual([h2.snap.you, g2.snap.you], [1, 0], 'each back in the seat they had');
+  assert.deepEqual(h2.snap.state.b, now.snap.state.b, 'the board as it was saved');
+  assert.equal(h2.snap.cur, now.snap.cur);
+  for (const c of [b.host, b.guest]) try { c.ws.close(); } catch (e) { /* closed */ }
+  // A table's room still begins by itself, and suggestions there are refused.
+  const t = await open('kalah'); const th = client(`${WS}/rooms/${t.code}?token=${t.token}`); await th.opened;
+  const tg = client(`${WS}/rooms/${t.code}`); await tg.opened; await th.next(m => m.t === 'snapshot');
+  th.send({ t: 'propose', game: 'chess' }); assert.match((await th.next(m => m.t === 'error')).msg, /one table/);
+  for (const c of [th, tg]) try { c.ws.close(); } catch (e) { /* closed */ }
+  console.log('games desk rooms: suggest, decline, accept, save and carry on all passed');
+}
 console.log('online server: all checks passed');
 process.exit(0);

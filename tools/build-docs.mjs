@@ -20,7 +20,7 @@ const R = createRequire(import.meta.url)(join(ROOT, 'js/rules.js'));
 // The placards. Model builders are code, so they are swapped for their names before the data is evaluated.
 const STOPS = new Function(read('src/hall/09-exhibit-data.js')
   .replace(/build: *([A-Za-z_$][\w$]*)/g, (m, name) => `build: ${JSON.stringify(name)}`) + ';return STOPS;')();
-const EXHIBITS = STOPS.filter(s => !s.begin && s.id !== 'next');
+const EXHIBITS = STOPS.filter(s => !s.begin && s.id !== 'next' && s.id !== 'lobby');
 const WINGS = STOPS.filter(s => s.begin || s.id === 'hall');
 const WING_NAME = ['', 'I', 'II', 'III', 'IV', 'V', 'VI'];
 

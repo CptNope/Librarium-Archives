@@ -28,6 +28,7 @@
   <button class="iconbtn" id="lm-helpBtn" aria-label="How to explore">?</button>
   <button class="iconbtn soundbtn" id="lm-soundBtn" aria-label="Sound effects on. Mute" title="Sound effects" aria-pressed="true"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 8h3l4-3v10l-4-3H3z" fill="currentColor"/><path class="wave" d="M13 7.2a4 4 0 0 1 0 5.6M15.2 5a7 7 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path class="mute" d="M13 7.5l5 5M18 7.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   <button class="iconbtn musicbtn" id="lm-musicBtn" aria-label="Soundtrack" title="Soundtrack" aria-haspopup="dialog" aria-expanded="false" aria-controls="lm-music"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M8 14.5V4.5l8-2v10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6" cy="14.5" r="2.2" fill="currentColor"/><circle cx="14" cy="12.5" r="2.2" fill="currentColor"/><path class="mute" d="M3 3l14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+  <button class="iconbtn deskbtn" id="lm-deskBtn" aria-label="The Games Desk: play online, or carry on a saved game" title="Games Desk: play online, carry on a saved game" aria-haspopup="dialog" aria-expanded="false" aria-controls="lm-online"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="7" cy="6.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="13.5" cy="6.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 16c.4-3 2.2-4.6 4.5-4.6S11.1 13 11.5 16M9.6 12.2c.9-.6 2.2-.8 3.9-.8 2.3 0 4.1 1.6 4.5 4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><i class="dot" aria-hidden="true"></i></button>
   <button class="iconbtn fsbtn" id="lm-fsBtn" aria-label="Full screen"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 8V3h5M12 3h5v5M17 12v5h-5M8 17H3v-5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
 
   <section class="jukebox" id="lm-music" role="dialog" aria-labelledby="lm-musicTitle" hidden>
@@ -115,6 +116,7 @@
         <div class="level" id="lm-variant" role="group" aria-label="Game variant" hidden></div>
         <button class="hudbtn" id="lm-movesBtn" hidden aria-expanded="false" aria-controls="lm-moves">Moves</button>
         <button class="hudbtn" id="lm-marksBtn" aria-pressed="true" title="Ring the pieces you can move and the places they can go (M)">Hints: on</button>
+        <button class="hudbtn" id="lm-saveBtn" hidden title="Save this game to a file, to carry on later at the Games Desk">Save</button>
         <button class="hudbtn" id="lm-rulesBtn" aria-expanded="false" aria-controls="lm-rules">Rules</button>
       </div>
       <button class="hudbtn" id="lm-leaveBtn">Leave<span class="long"> the table</span></button>
@@ -155,27 +157,61 @@
   </section>
 
   <div class="win online" id="lm-online" role="dialog" aria-labelledby="lm-onlineTitle" hidden>
-    <div class="card">
-      <h3 id="lm-onlineTitle">Play online</h3>
+    <div class="card desk">
+      <header class="deskhead">
+        <h3 id="lm-onlineTitle">The Games Desk</h3>
+        <button class="indexclose" id="lm-onCancel" aria-label="Close the Games Desk">×</button>
+      </header>
       <p id="lm-onIntro"></p>
-      <div id="lm-onStart">
+      <div id="lm-onStart" class="desksec">
+        <ol class="decksteps" id="lm-onSteps">
+          <li><b>Open a room</b> and send your friend its code, or the link.</li>
+          <li><b>Suggest a game</b> once you are both in. Your friend accepts or declines; whoever suggests a game moves first.</li>
+          <li><b>Play.</b> The server throws the dice and deals the cards, so neither of you sees the other's hand.</li>
+          <li><b>Save to a file</b> from the table at any time, and bring it back here to carry on.</li>
+        </ol>
         <div class="row"><button class="btn primary" id="lm-onOpen">Open a room</button></div>
         <form class="onjoin" id="lm-onJoinForm">
           <label for="lm-onCode">Or join a friend's room with its code</label>
           <div class="row"><input id="lm-onCode" maxlength="7" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="K7MXQ2" aria-describedby="lm-onErr"><button class="btn" type="submit">Join</button></div>
         </form>
-        <p class="onsmall">The game is kept on the Archives' server, which throws the dice for you both. Nothing about you is sent: only the room's code and your moves.</p>
+        <p class="onsmall">The game is kept on the Archives' server. Nothing about you is sent: only the room's code and your moves.</p>
       </div>
-      <div id="lm-onWait" hidden>
-        <p>Give your friend this code, or send them the link:</p>
-        <p class="oncode" id="lm-onCodeShow"></p>
-        <div class="row"><button class="btn" id="lm-onCopy">Copy the link</button></div>
+      <div id="lm-onWait" class="desksec" hidden>
+        <div class="deskroom">
+          <div><span class="decklabel">Room</span><p class="oncode" id="lm-onCodeShow"></p></div>
+          <button class="btn" id="lm-onCopy">Copy the link</button>
+        </div>
         <p class="onsmall" id="lm-onStatus" aria-live="polite">Waiting for your friend to join…</p>
+        <div class="deskgame" id="lm-onGame" hidden>
+          <p id="lm-onGameText"></p>
+          <button class="btn primary" id="lm-onBack">Back to the table</button>
+        </div>
+        <div class="deskprop" id="lm-onProposal" aria-live="polite" hidden>
+          <p id="lm-onPropText"></p>
+          <div class="row" id="lm-onPropYes"><button class="btn primary" id="lm-onAccept">Accept</button><button class="btn" id="lm-onDecline">Decline</button></div>
+          <div class="row" id="lm-onPropMine"><button class="btn quiet" id="lm-onWithdraw">Take it back</button></div>
+        </div>
+        <form class="desksuggest" id="lm-onSuggest" hidden>
+          <label for="lm-onPick" class="decklabel">Suggest a game</label>
+          <div class="deckpick">
+            <select id="lm-onPick"></select>
+            <select id="lm-onVariant" aria-label="Size or rules" hidden></select>
+          </div>
+          <div class="row"><button class="btn primary" type="submit" id="lm-onPropose">Suggest it</button></div>
+        </form>
+        <div class="row"><button class="btn quiet" id="lm-onLeaveRoom">Leave the room</button></div>
+      </div>
+      <div class="desksec desksaved" id="lm-onSaved">
+        <h4 class="decklabel">Carry on a saved game</h4>
+        <p class="onsmall" id="lm-onSavedText">Open a file saved with a table's Save button. A game against the Scribe or at one screen goes straight back to its table. An online game is suggested to your friend in your room.</p>
+        <div class="row"><button class="btn" id="lm-onFileBtn" type="button">Open a saved game…</button><input type="file" id="lm-onFile" accept=".json,application/json" hidden></div>
       </div>
       <p class="onerr" id="lm-onErr" role="alert" hidden></p>
-      <div class="row"><button class="btn quiet" id="lm-onCancel">Cancel</button></div>
     </div>
   </div>
+
+  <p class="toast" id="lm-toast" role="status" aria-live="polite" hidden></p>
 
   <div class="loader" id="lm-loader"><div>Lighting the lamps…<small>Librarium Archives</small></div></div>
 </div>

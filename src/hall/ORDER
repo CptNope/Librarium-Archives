@@ -60,6 +60,7 @@ build-backfill-displays.js
 build-backfill-tables.js
 build-games-of-the-world.js
 build-finale-lectern.js
+build-games-desk.js
 09-exhibit-data.js
 10-games.js
 11-tweens.js

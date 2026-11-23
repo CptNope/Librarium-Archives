@@ -42,7 +42,7 @@ const credits = (() => {
       const h = el('h4', null, null, wing); el('span', 'crnum', ROMAN_WINGS[w], h); el('span', null, MUSIC_WINGS[w - 1], h);
       const ul = el('ul', null, null, wing);
       for (const s of STOPS) {
-        if (s.wing !== w || s.id === 'hall' || s.id === 'next' || /^wing\d$/.test(s.id)) continue;
+        if (s.wing !== w || !isExhibit(s)) continue;
         const li = el('li', null, null, ul); el('span', 'crex', s.title, li); el('span', 'crdate', s.date, li);
       }
     }

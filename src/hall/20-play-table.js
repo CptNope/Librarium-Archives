@@ -55,6 +55,8 @@ async function startGame(ex) {
   $('#lm-passBtn').textContent = g.stopLabel || 'Pass';
   play.undo = []; play.hintCount = 0;
   $('#lm-hintBtn').hidden = !canHint(g) || !!on; $('#lm-undoBtn').hidden = !UNDO_OK.has(g.id) || !!on; // online, no take-backs and no help from the Scribe
+  $('#lm-saveBtn').hidden = !(on ? net.lobby : SAVE_OK.has(g.id) || HOTSEAT.has(g.id)); // online, a desk room's game is saved by the server, sealed
+  $('#lm-winLeave').textContent = on && net.lobby ? 'Back to the room' : 'Back to the hall';
   refreshAids();
   renderRules(g);
   if (!store.rulesSeen[g.id]) { $('#lm-rules').hidden = false; store.rulesSeen[g.id] = true; save(); }
@@ -65,7 +67,12 @@ async function startGame(ex) {
   else setMsg(g.first === 0 ? 'Your turn' : scribeName(g), g.first === 0 ? '' : `${scribeName(g)} moves first.`);
   await flyToPlay(ex);
   if (on) { if (play.online === on && mode === 'play') onlineSeated(); return; }
-  if (play.resumed) { beginTurn(0); setMsg('Your turn', 'Your saved game is back on the table, as you left it. ' + P.prompt()); return; }
+  if (play.resumed) {
+    beginTurn(play.resumeTurn || 0);
+    if (play.hotseat) toast('Your saved game is back on the table, as you left it.');
+    else setMsg('Your turn', 'Your saved game is back on the table, as you left it. ' + P.prompt());
+    return;
+  }
   beginTurn(g.first, true);
 }
 

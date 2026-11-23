@@ -256,7 +256,7 @@ function renderRules(g) {
 }
 function leaveGame() {
   if (mode !== 'play') return;
-  if (play.online && !net.switching) onlineLeave();
+  if (play.online && !net.switching) { if (net.lobby) onlineToDesk(); else onlineLeave(); } // a desk room stays open: back to the desk
   play.token++; clearHighlights(); clearLastMove(); $('#lm-choices').hidden = true;
   if (play.P && play.P.leave) play.P.leave(play.ex);
   $('#lm-coach').hidden = true; $('#lm-moves').hidden = true; $('#lm-choices').classList.remove('replaybar'); hudMenu(false);

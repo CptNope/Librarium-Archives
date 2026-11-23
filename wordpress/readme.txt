@@ -60,6 +60,9 @@ Online play is off unless you set the shortcode's online attribute (or the widge
 
 == Changelog ==
 
+= 0.45.0 =
+* The Games Desk at the entrance: rooms where two players choose games together, and games saved to a file to carry on later (online games sealed by the server).
+
 = 0.44.0 =
 * New music for the entrance hall, softer, with a hushed choir; the bold opening theme now plays under a credits roll at the end of the hall.
 

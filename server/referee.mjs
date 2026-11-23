@@ -17,6 +17,13 @@ export const ONLINE = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 
   // Card tables, each with a view below that keeps the other hand and the stock face down.
   'gin', 'ecarte']);
 
+// A table's settings as a page sends them (the host's variant and on-off rules), kept to plain, short values.
+export function cleanSettings(body) {
+  const settings = { variant: body && typeof body.variant === 'string' ? body.variant.slice(0, 20) : null, toggles: {} };
+  if (body && body.toggles && typeof body.toggles === 'object') for (const [k, v] of Object.entries(body.toggles).slice(0, 12)) settings.toggles[String(k).slice(0, 30)] = !!v;
+  return settings;
+}
+
 // Fair dice and shuffles: the engines call Math.random, so while the referee is working it answers from
 // crypto.getRandomValues, which a player cannot predict from the throws they have seen.
 const cryptoRandom = () => { const a = new Uint32Array(2); crypto.getRandomValues(a); return (a[0] * 2 ** 21 + (a[1] >>> 11)) / 2 ** 53; };

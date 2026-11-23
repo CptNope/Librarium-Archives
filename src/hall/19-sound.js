@@ -130,7 +130,8 @@ function renderVariants(g) {
   if (play.online) { // online: the room, and a way out of it; the host's variant and rules hold for the game
     const label = document.createElement('span'); label.textContent = 'Online'; box.appendChild(label);
     const room = document.createElement('span'); room.className = 'room'; room.textContent = `Room ${play.online.code} · ${net.friend ? 'your friend is here' : 'your friend is away'}`; box.appendChild(room);
-    const b = document.createElement('button'); b.textContent = 'Leave the room'; b.addEventListener('click', () => { onlineLeave(); restartTable(); }); box.appendChild(b);
+    if (net.lobby) { const d = document.createElement('button'); d.textContent = 'Games Desk'; d.title = 'Suggest another game, or answer your friend'; d.addEventListener('click', () => { hudMenu(false); openDesk(); }); box.appendChild(d); }
+    const b = document.createElement('button'); b.textContent = 'Leave the room'; b.addEventListener('click', () => { hudMenu(false); onlineLeaveRoom(); }); box.appendChild(b);
     box.hidden = false; return;
   }
   if (HOTSEAT.has(g.id)) {

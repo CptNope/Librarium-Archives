@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.45.0: The Games Desk
+
+A place at the entrance to play online and to carry on saved games.
+
+- **The Games Desk** stands on the left as you come in: a librarian's counter with a register of rooms and a brass bell, and a notice board behind it with the four steps of playing online. It is a stop on the rail, and its placard explains online play. **Open the Games Desk** on the placard, or the new people button at the top of the screen, opens its panel from anywhere.
+- **Rooms where you choose the game together.** Open a room at the desk and send the code or link. Once your friend is in, either of you suggests any online table, with its size or rules. The other **Accepts** or **Declines**, and you can take a suggestion back until it is answered. A friend's suggestion opens the desk by itself, and the people button shows a dot. **Whoever suggests a game moves first.** When it ends, **Back to the room** returns to the desk to suggest the next. Leaving the table keeps the room open, and **Back to the table** returns to a game that is still on. A browser that was in a room within the day offers **Back to room …** after a reload.
+- **Save to a file, carry on later.** The table's new **Save** button (in Options on a phone) saves the game to a file:
+  - Against the Scribe or at one screen with a friend: at the start of a turn. At the desk, **Open a saved game…** puts it straight back on its table, as it was, with the same player to move.
+  - Online: either player can save at any time. The file is **sealed**: the server compresses the whole game, encrypts it and signs it with a key only it holds, so the hidden cards stay hidden and a changed file is refused. Brought back to the desk, it is suggested to your friend (or waits for whoever joins a new room), and **each player sits in the seat they had**.
+- A table's own **Online** button still opens a room for that table alone, as before.
+- The server: rooms with no game (`POST /rooms {}`), messages to suggest, answer, take back, save and sync, room seats and game seats kept apart, and the sealing key (`SAVE_KEY`, or one the server makes for itself on first use). Nothing to set up on Cloudflare.
+- Tests: the server plays a desk room end to end (no game until accepted, a decline, who moves first, a sealed save sent to the saver alone, a changed file refused, and the file carried on in a new room with the seats as they were). The hall accepts a friend's suggestion at the desk, saves, leaves and comes back, and carries the file on in a new room. Chess against the Scribe and Ur at one screen go to a file and come back.
+
 ## 0.44.0: The entrance hall's music, and the credits
 
 A quieter welcome, and the bold theme saved for the end.
