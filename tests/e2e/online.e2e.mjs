@@ -36,17 +36,18 @@ const closeAll = async () => { for (const p of opened.splice(0)) await p.close()
 // The other player: plays at random on its turns, and keeps the last state the server sent.
 function friend(code, token) {
   const ws = new WebSocket(`${WS}/rooms/${code}` + (token ? `?token=${encodeURIComponent(token)}` : ''));
-  const f = { seat: null, cur: 0, phase: '', moves: [], over: null, state: null, sent: 0 };
+  const f = { seat: null, me: null, cur: 0, phase: '', moves: [], over: null, state: null, sent: 0, auto: true, inbox: [] };
   const act = () => {
-    if (f.phase !== 'throw' && f.phase !== 'choose' || f.cur !== f.seat) return;
+    if (!f.auto || f.phase !== 'throw' && f.phase !== 'choose' || f.cur !== f.me) return;
     const msg = f.phase === 'throw' ? { t: 'throw' } : f.moves.length ? { t: 'choose', i: (Math.random() * f.moves.length) | 0 } : { t: 'pass' };
     f.phase = 'sent'; setTimeout(() => { ws.send(JSON.stringify(msg)); f.sent++; }, 700);
   };
   ws.addEventListener('message', e => {
     if (e.data === 'pong') return;
     const m = JSON.parse(e.data);
-    if (m.t === 'welcome') f.seat = m.seat;
-    if (m.t === 'snapshot') { Object.assign(f, { cur: m.snap.cur, phase: m.snap.phase, moves: m.snap.moves || [], state: m.snap.state }); act(); }
+    f.inbox.push(m);
+    if (m.t === 'welcome') { f.seat = m.seat; f.me = m.seat; }
+    if (m.t === 'snapshot') { Object.assign(f, { me: m.snap.you ?? f.seat, cur: m.snap.cur, phase: m.snap.phase, moves: m.snap.moves || [], state: m.snap.state }); act(); }
     if (m.t === 'events') {
       for (const ev of m.events) {
         if (ev.type === 'turn') Object.assign(f, { cur: ev.seat, phase: ev.phase, moves: ev.moves || [] });
@@ -57,6 +58,9 @@ function friend(code, token) {
     }
   });
   f.close = () => { try { ws.close(); } catch (e) { /* closed */ } };
+  f.send = m => ws.send(JSON.stringify(m));
+  f.opened = new Promise(r => ws.addEventListener('open', r));
+  f.wait = async (pred, ms = LONG) => { const t0 = Date.now(); for (;;) { const i = f.inbox.findIndex(pred); if (i >= 0) return f.inbox.splice(i, 1)[0]; if (Date.now() - t0 > ms) throw new Error('the friend waited in vain; got ' + f.inbox.map(x => x.t).join(',')); await new Promise(r => setTimeout(r, 200)); } };
   f.log = []; ws.addEventListener('message', e => { if (e.data !== 'pong') f.log.push(String(e.data).slice(0, 300)); });
   friends.push(f);
   return f;
@@ -193,5 +197,112 @@ test('online cards: open an Écarté room as host; the guest\'s hand and the tal
     await page.waitForTimeout(2500);
   }
   f.close();
+  assert.deepEqual(page.errors, []);
+});
+
+// The Games Desk: a room with no game, the friend's suggestion accepted, the game saved to a sealed file, the
+// table left and come back to, and the file carried on in a new room, each player back in their seat.
+test('the Games Desk: a suggestion accepted, a sealed save, and the game carried on in a new room', { timeout: LONG * 4 }, async t => {
+  t.after(closeAll);
+  const page = await newPage(`${base}/index.html?debug`);
+  await page.evaluate(() => { const A = window.__archives; A.jump('lobby'); });
+  await waitOn(page, () => [...document.querySelectorAll('#lm-placardActions .btn')].some(b => b.textContent === 'Open the Games Desk'), null, { polling: 500, timeout: LONG });
+  await page.evaluate(() => [...document.querySelectorAll('#lm-placardActions .btn')].find(b => b.textContent === 'Open the Games Desk').click());
+  assert.equal(await page.evaluate(() => !document.getElementById('lm-online').hidden && document.querySelectorAll('#lm-onSteps li').length), 4, 'the desk opens with its four steps');
+  await page.evaluate(() => document.getElementById('lm-onOpen').click());
+  await waitOn(page, () => /^[A-Z2-9]{6}$/.test(document.getElementById('lm-onCodeShow').textContent), null, { polling: 500, timeout: LONG });
+  const code = await page.evaluate(() => document.getElementById('lm-onCodeShow').textContent);
+  await page.screenshot({ path: join(OUT, 'online-desk.png'), clip: { x: 0, y: 0, width: 760, height: 520 }, timeout: LONG, animations: 'disabled' });
+  // The friend joins and suggests Kalah; the page sees it at the desk and accepts.
+  const f = friend(code); await f.opened; await f.wait(m => m.t === 'welcome');
+  assert.equal(await page.evaluate(() => window.__archives.play.phase !== 'choose'), true, 'no game begins by itself');
+  f.send({ t: 'propose', game: 'kalah' });
+  await waitOn(page, () => !document.getElementById('lm-onProposal').hidden && !document.getElementById('lm-onPropYes').hidden, null, { polling: 500, timeout: LONG });
+  assert.match(await page.evaluate(() => document.getElementById('lm-onPropText').textContent), /Your friend suggests Kalah/);
+  await page.evaluate(() => document.getElementById('lm-onAccept').click());
+  await waitOn(page, () => { const P = window.__archives.play; return P.online && P.game.id === 'kalah' && ['choose', 'remote'].includes(P.phase); }, null, { polling: 500, timeout: LONG });
+  assert.equal(await page.evaluate(() => window.__archives.play.online.seat), 1, 'the friend suggested it, so the friend moves first');
+  await playTurns(page, f, 2);
+  // Save: a sealed file comes down; the friend is sent nothing.
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: LONG }), page.evaluate(() => document.getElementById('lm-saveBtn').click())]);
+  const file = JSON.parse(readFileSync(await dl.path(), 'utf8'));
+  assert.equal(file.librarium, 'online-save'); assert.equal(file.game, 'kalah'); assert.equal(file.seat, 1); assert.match(file.sealed, /^L1\./);
+  assert.ok(!file.sealed.includes('kalah') && !('state' in file), 'the game is sealed');
+  const atSave = JSON.parse(await engine(page));
+  // Leaving the table keeps the room: the desk says the game is on, and Back to the table returns to it.
+  await page.evaluate(() => window.__archives.leaveGame());
+  await waitOn(page, () => !document.getElementById('lm-online').hidden && !document.getElementById('lm-onGame').hidden, null, { polling: 500, timeout: LONG });
+  await page.evaluate(() => document.getElementById('lm-onBack').click());
+  await waitOn(page, () => { const P = window.__archives.play; return P.online && P.game.id === 'kalah' && ['choose', 'remote'].includes(P.phase); }, null, { polling: 500, timeout: LONG });
+  // Leave the room altogether; open a new one, and bring the file: the new friend is asked, and accepts.
+  f.auto = false;
+  await page.evaluate(() => { window.__archives.leaveGame(); });
+  await waitOn(page, () => !document.getElementById('lm-online').hidden, null, { polling: 500, timeout: LONG });
+  await page.evaluate(() => document.getElementById('lm-onLeaveRoom').click());
+  f.close();
+  await waitOn(page, () => !document.getElementById('lm-onStart').hidden, null, { polling: 500, timeout: LONG });
+  await page.setInputFiles('#lm-onFile', { name: 'saved.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(file)) });
+  await waitOn(page, () => /^[A-Z2-9]{6}$/.test(document.getElementById('lm-onCodeShow').textContent) && !document.getElementById('lm-onProposal').hidden, null, { polling: 500, timeout: LONG });
+  assert.match(await page.evaluate(() => document.getElementById('lm-onPropText').textContent), /You asked to carry on your game of Kalah/);
+  const code2 = await page.evaluate(() => document.getElementById('lm-onCodeShow').textContent);
+  assert.notEqual(code2, code);
+  const f2 = friend(code2); await f2.opened;
+  const w2 = await f2.wait(m => m.t === 'welcome');
+  assert.ok(w2.proposal && w2.proposal.resume && w2.proposal.game === 'kalah', 'the new friend is asked to carry on the saved game');
+  f2.send({ t: 'answer', yes: true });
+  await waitOn(page, () => { const P = window.__archives.play; return P.online && P.game.id === 'kalah' && ['choose', 'remote'].includes(P.phase); }, null, { polling: 500, timeout: LONG });
+  assert.equal(await page.evaluate(() => window.__archives.play.online.seat), 1, 'back in the seat it had, though this page opened the room');
+  const back = JSON.parse(await engine(page));
+  assert.deepEqual(back.p, atSave.p, 'the pits as they were saved');
+  f2.close();
+  assert.deepEqual(page.errors, []);
+});
+
+// Games at one screen and against the Scribe save to a plain file and come back from the desk as they were.
+test('saved games: a chess game against the Scribe and an Ur game at one screen go to a file and come back', { timeout: LONG * 3 }, async t => {
+  t.after(closeAll);
+  const page = await newPage(`${base}/index.html?debug`);
+  const sit = id => page.evaluate(id => { const A = window.__archives, ex = A.STOPS.find(s => s.game === id); A.jump(ex.id); A.startGame(ex); }, id);
+  const saveFile = async () => { const [dl] = await Promise.all([page.waitForEvent('download', { timeout: LONG }), page.evaluate(() => document.getElementById('lm-saveBtn').click())]); return JSON.parse(readFileSync(await dl.path(), 'utf8')); };
+  const bring = async file => {
+    await page.evaluate(() => { const A = window.__archives; A.leaveGame(); });
+    await page.evaluate(() => document.getElementById('lm-deskBtn').click());
+    await waitOn(page, () => !document.getElementById('lm-online').hidden, null, { polling: 500, timeout: LONG });
+    await page.setInputFiles('#lm-onFile', { name: 'saved.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(file)) });
+  };
+  // Chess against the Scribe: one move each, then save at the start of the next turn.
+  await sit('chess');
+  await waitOn(page, () => window.__archives.play.phase === 'choose', null, { polling: 500, timeout: LONG });
+  await page.evaluate(() => { const A = window.__archives, P = A.play; A.choose(P.moves[0]); });
+  await waitOn(page, () => { const P = window.__archives.play; return P.phase === 'choose' && P.cur === 0; }, null, { polling: 500, timeout: LONG });
+  const chess = await saveFile();
+  assert.equal(chess.librarium, 'game-save'); assert.equal(chess.game, 'chess'); assert.equal(chess.hotseat, false);
+  await bring(chess);
+  await waitOn(page, () => { const P = window.__archives.play; return P.game && P.game.id === 'chess' && P.phase === 'choose' && P.resumed; }, null, { polling: 500, timeout: LONG });
+  assert.deepEqual(JSON.parse(await engine(page)).b, chess.state.b, 'the board as it was saved');
+  // Ur at one screen: save before a throw; it comes back at one screen, with the same player to throw.
+  await page.evaluate(() => { const A = window.__archives; A.leaveGame(); });
+  await sit('ur');
+  await waitOn(page, () => !!document.querySelector('#lm-variant button'), null, { polling: 500, timeout: LONG });
+  await page.evaluate(() => { const b = [...document.querySelectorAll('#lm-variant button')].find(x => x.textContent === 'A friend'); if (b && b.getAttribute('aria-pressed') !== 'true') b.click(); });
+  await waitOn(page, () => { const P = window.__archives.play; return P.hotseat && P.phase === 'throw'; }, null, { polling: 500, timeout: LONG });
+  for (let k = 0; k < 40; k++) { // a few throws and moves, ending before a throw
+    const ph = await page.evaluate(() => window.__archives.play.phase);
+    if (k >= 4 && ph === 'throw') break;
+    await page.evaluate(() => { const A = window.__archives, P = A.play; if (P.phase === 'throw') A.humanThrow(); else if (P.phase === 'choose') A.choose(P.moves[0]); });
+    await page.waitForTimeout(1500);
+  }
+  await waitOn(page, () => window.__archives.play.phase === 'throw', null, { polling: 500, timeout: LONG });
+  const ur = await saveFile();
+  assert.equal(ur.game, 'ur'); assert.equal(ur.hotseat, true);
+  const turn = await page.evaluate(() => window.__archives.play.cur);
+  assert.equal(ur.turn, turn);
+  await bring(ur);
+  await waitOn(page, () => { const P = window.__archives.play; return P.game && P.game.id === 'ur' && P.hotseat && P.phase === 'throw' && P.resumed; }, null, { polling: 500, timeout: LONG });
+  assert.equal(await page.evaluate(() => window.__archives.play.cur), turn, 'the same player to throw');
+  assert.deepEqual(JSON.parse(await engine(page)).pos, ur.state.pos, 'the pieces as they were');
+  // A file that is not a saved game is refused at the desk.
+  await page.setInputFiles('#lm-onFile', { name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('{"hello":1}') });
+  await waitOn(page, () => !document.getElementById('lm-onErr').hidden, null, { polling: 500, timeout: LONG });
   assert.deepEqual(page.errors, []);
 });

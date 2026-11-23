@@ -3,7 +3,7 @@ const passport = $('#lm-passport'), passBtn = $('#lm-passBtnRail');
 const SEAL = ['Gentle', 'Fair', 'Sharp'];
 function renderPassport() {
   const cols = $('#lm-passCols'); cols.innerHTML = '';
-  const exhibits = STOPS.filter(s => s.id !== 'hall' && s.id !== 'next' && !/^wing\d$/.test(s.id)); // wing entrances and the lectern carry no stamp
+  const exhibits = STOPS.filter(isExhibit); // the entrance, the Games Desk, wing entrances and the lectern carry no stamp
   const tables = STOPS.filter(s => s.game), seen = exhibits.filter(s => store.visited[s.id]).length;
   const played = tables.filter(s => (store.record[s.game] || [0, 0, 0]).some(Boolean)).length;
   const won = tables.filter(s => (store.record[s.game] || [0])[0] > 0).length;
@@ -11,7 +11,7 @@ function renderPassport() {
   $('#lm-passCount').textContent = `${seen} of ${exhibits.length} exhibits visited · ${played} of ${tables.length} tables played · ${won} won${golds ? ` (${golds} at Sharp)` : ''}`;
   for (const w of WINGS) {
     const col = document.createElement('section'); col.className = 'indexwing';
-    const items = STOPS.map((s, i) => [s, i]).filter(([s]) => s.wing === w.n && s.id !== 'hall' && s.id !== 'wing' + w.n && s.id !== 'next');
+    const items = STOPS.map((s, i) => [s, i]).filter(([s]) => s.wing === w.n && isExhibit(s));
     if (!items.length) continue;
     const h = document.createElement('h3'); h.innerHTML = '<span class="r"></span><span class="n"></span><span class="dd"></span>';
     h.querySelector('.r').textContent = w.roman; h.querySelector('.n').textContent = w.title;
@@ -109,6 +109,9 @@ function renderPlacard(s) {
     if (s.note) { const n = document.createElement('span'); n.className = 'soon recon'; n.textContent = s.note; act.appendChild(n); } // e.g. that the table plays a modern reconstruction
     const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Take a seat and play';
     b.addEventListener('click', () => startGame(s)); act.appendChild(b);
+  } else if (s.desk) { // the Games Desk: rooms to play online, and saved games to carry on
+    const b = document.createElement('button'); b.className = 'btn primary'; b.type = 'button'; b.textContent = 'Open the Games Desk';
+    b.addEventListener('click', () => openDesk()); act.appendChild(b);
   } else if (s.link) {
     const a = document.createElement('a'); a.className = 'btn primary'; a.href = s.link[1]; a.target = '_blank'; a.rel = 'noopener'; a.textContent = s.link[0]; act.appendChild(a);
     if (s.id === 'next' && creditsBox) { // the end of the hall: the credits

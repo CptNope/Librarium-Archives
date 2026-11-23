@@ -26,6 +26,7 @@ function stopView(stop) {
     const d = HALL.dividers[+stop.id.slice(4) - 2];
     return { pos: V3(0, 1.62, d - 1.2), target: V3(0, 1.85, d - 14) };
   }
+  if (stop.id === 'lobby') { const g = stop.group; return { pos: g.localToWorld(V3(0.15, 1.66, 2.35)), target: g.localToWorld(V3(0, 1.25, -0.35)) }; }
   if (stop.id === 'next') return { pos: V3(0, 1.62, lectern.position.z + 3), target: V3(0, 1.15, lectern.position.z) };
   const g = stop.group;
   return { pos: g.localToWorld(V3(0, 1.66, 2.15)), target: g.localToWorld(V3(0, 1.08, 0)) };

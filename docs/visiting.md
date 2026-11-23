@@ -91,9 +91,13 @@ Choosing a variant or an opponent restarts the game, and every choice is remembe
 
 Where the site has an online server, the Opponent row at the two-player board and dice tables also offers **Online**: a friend on another phone or computer. One of you opens a room and sends the other its six-letter code or link; the friend sits down across the table from you, and you take turns, each throwing your own dice. A dropped connection or a reload comes back to the same seat. Online games don't count toward your record, and there are no hints or take-backs. More in [Online play](online.md).
 
+On the left as you come in, the **Games Desk** is where you play online: open a room, send the code, and suggest games to each other. It is also where saved games come back: the **Save** button at a table writes the game to a file, and **Open a saved game…** at the desk carries it on. The people button at the top opens the desk from anywhere. More in [Online play](online.md).
+
 ## Saved games
 
 Games against the Scribe are kept as you play at every two-player table without dice (the chess family, Go, Shogi, both draughts, the tafl games, the mancala games, Morris and the rest), and at Whist, Piquet and Mahjong. The game is saved at the start of each of your turns (at the card tables, between tricks; at Mahjong, when it is your turn to discard). Leave the table, or close the page, and the game is back on the table as you left it when you sit down again; a **New game** button above the board starts afresh. A finished game clears its save. Pieces already taken are laid out beside the board again, and pieces in hand (in Shogi, and at the tables where pieces are placed first) go back to their places.
+
+**To a file.** The **Save** button at a table (in **Options** on a phone) saves the game to a file you keep: at the start of your turn against the Scribe, at the start of either player's turn at one screen (before the throw at a dice table), and at any time online, where the file is sealed by the server. Bring it back to the **Games Desk** at the entrance with **Open a saved game…**: a game against the Scribe or at one screen goes straight back to its table, and an online game is suggested to your friend, each of you in the seat you had. More in [Online play](online.md#saved-games).
 
 ## Sound
 

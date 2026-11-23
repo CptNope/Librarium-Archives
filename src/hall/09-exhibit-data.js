@@ -1,4 +1,7 @@
 /* ---------------------------------------------------------- exhibit data */
+// Stops that are places in the hall rather than exhibits: the entrance, the Games Desk, each wing's arch and the
+// lectern at the end. They carry no passport stamp and are not listed among the exhibits.
+const isExhibit = s => s.id !== 'hall' && s.id !== 'lobby' && s.id !== 'next' && !/^wing\d$/.test(s.id);
 const STOPS = [
   { id: 'hall', wing: 1, title: 'The Dawn of Play', short: 'Welcome', date: 'Wing I', rail: 'Entrance',
     eyebrow: 'Wing I · Librarium Archives', status: null, begin: 'senet',
@@ -7,6 +10,15 @@ const STOPS = [
       'Four tables are ready to play: Senet, the Royal Game of Ur, Hounds and Jackals, and Hazard at the first dice. Walk up to a plinth, read its story, and take a seat at the table. Where the old rules are lost, the placard says what we play instead, or shows the game as it was found. Beyond the arch, Wing II turns from luck to strategy.'
     ],
     facts: [['Look', 'Drag the view'], ['Walk', 'WASD or arrow keys'], ['Visit', 'Click an exhibit or use the timeline']],
+  },
+  { id: 'lobby', wing: 1, title: 'The Games Desk', short: 'Games Desk', date: 'Play online', rail: 'Games Desk', desk: true,
+    eyebrow: 'Entrance · Online play and saved games', status: null,
+    body: [
+      'Play any of the two-player tables with a friend on another phone or computer. One of you opens a room here and sends the other its six-letter code, or a link. Once you are both in the room, either of you suggests a game, with its size and rules, and the other accepts or declines. Whoever suggests a game moves first, and when it ends, either of you suggests the next.',
+      'The game is kept on the Archives\' server, which throws the dice and deals the cards, so neither of you ever sees the other\'s hand. If a connection drops, the player comes back to the same seat.',
+      'Any game can be saved to a file with the table\'s Save button: an online game, a game against the Scribe, or a game played at one screen with a friend. Bring the file back here, or to the Games Desk button at the top of the screen, to carry on. An online game\'s file is sealed, so only the server can read it and the hidden cards stay hidden. Your friend accepts it before the game goes on.'
+    ],
+    facts: [['Open', 'A room, then send the code'], ['Suggest', 'Either player picks the game'], ['Save', 'To a file, from the table'], ['Carry on', 'Bring the file back here']],
   },
   { id: 'senet', wing: 1, title: 'Senet', date: 'c. 3100 BCE', rail: 'Senet',
     eyebrow: 'Egypt · Early Dynastic period', status: ['recon', 'Rules reconstructed'], game: 'senet',

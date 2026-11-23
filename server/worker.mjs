@@ -1,13 +1,14 @@
 /* Librarium Online: the Cloudflare Worker in front of the game rooms.
  *
- *   POST /rooms               { game, variant, toggles }  → { code, token, seat: 0 }   a new room, you in seat 0
+ *   POST /rooms               { game, variant, toggles }  → { code, token, seat: 0 }   a new room for that game, you in seat 0
+ *   POST /rooms               {}                          → { code, token, seat: 0 }   a room with no game yet: either player suggests one
  *   GET  /rooms/CODE          (WebSocket)  ?token=…         join, or come back to, a room
  *   GET  /health              → ok
  *
  * Each room is a Durable Object of its own (room.mjs), named by its code. Everything runs on Cloudflare's free
  * plan: see docs/online.md for what it allows and what happens at its limits. */
 import { Room } from './room.mjs';
-import { ONLINE } from './referee.mjs';
+import { ONLINE, cleanSettings } from './referee.mjs';
 export { Room };
 
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O, 1/I/L: easy to read out and type
@@ -36,12 +37,13 @@ export default {
 
     if (url.pathname === '/rooms' && req.method === 'POST') {
       let body; try { body = await req.json(); } catch (e) { return json({ error: 'Bad request.' }, 400, h); }
-      if (!body || !ONLINE.has(body.game)) return json({ error: 'That table cannot be played online.' }, 400, h);
-      const settings = { variant: typeof body.variant === 'string' ? body.variant.slice(0, 20) : null, toggles: {} };
-      if (body.toggles && typeof body.toggles === 'object') for (const [k, v] of Object.entries(body.toggles).slice(0, 12)) settings.toggles[String(k).slice(0, 30)] = !!v;
+      if (!body || typeof body !== 'object') return json({ error: 'Bad request.' }, 400, h);
+      const game = body.game == null ? null : body.game; // no game: a room where the players choose one together
+      if (game !== null && !ONLINE.has(game)) return json({ error: 'That table cannot be played online.' }, 400, h);
+      const settings = cleanSettings(body);
       for (let tries = 0; tries < 5; tries++) { // a fresh code; another try in the unlikely case it is taken
         const code = randomCode(), stub = env.ROOMS.get(env.ROOMS.idFromName(code));
-        const r = await stub.fetch('https://room/create', { method: 'POST', body: JSON.stringify({ code, game: body.game, settings }) });
+        const r = await stub.fetch('https://room/create', { method: 'POST', body: JSON.stringify({ code, game, settings }) });
         if (r.status === 409) continue;
         const out = await r.json();
         return json(out, r.status, h);

@@ -4138,7 +4138,72 @@ function buildLectern(z) {
   spotSources.push({ pos: new THREE.Vector3(0, 1.1, z), lightPos: new THREE.Vector3(0, 3.6, z + 0.9) });
 }
 
+/* --- The Games Desk, at the entrance
+ * A librarian's counter on the left as you come in, where online rooms are opened and saved games brought
+ * back. A notice board hangs behind it with the four steps of playing online; on the counter lie an open
+ * register of rooms and a brass bell. It is the 'lobby' stop: clicking it opens its placard, whose button
+ * opens the Games Desk panel (23b-online.js). */
+let gamesDesk;
+function buildGamesDesk() {
+  const g = new THREE.Group();
+  g.position.set(-3.05, 0, -1.7);
+  g.rotation.y = Math.PI / 2; // local +z faces the aisle
+  // The counter: a dark case with a lighter top and a plinth's brass plaque on its front.
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.9, 0.62), MAT.woodDark); body.position.y = 0.45; g.add(body);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(2.02, 0.05, 0.76), MAT.wood); top.position.set(0, 0.925, 0.03); g.add(top);
+  const kick = new THREE.Mesh(new THREE.BoxGeometry(1.96, 0.08, 0.66), MAT.wood); kick.position.y = 0.04; g.add(kick);
+  for (const x of [-0.62, 0, 0.62]) { // panelled front
+    const p = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.56, 0.02), MAT.wood); p.position.set(x, 0.42, 0.315); g.add(p);
+  }
+  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.14), new THREE.MeshStandardMaterial({ map: plaqueTex('Games Desk', 'Play online'), metalness: 0.6, roughness: 0.4 }));
+  plaque.position.set(0, 0.78, 0.327); g.add(plaque);
+  // The register: two pages, the rooms of the day on the left, a game in progress sketched on the right.
+  const regT = tex(512, 320, (c, w, h) => {
+    c.fillStyle = '#efe2c4'; c.fillRect(0, 0, w, h); speckle(c, w, h, 700, ['#c9b68e', '#fff8e6'], 1.2);
+    c.fillStyle = '#e2d1aa'; c.fillRect(w / 2 - 5, 0, 10, h);
+    c.fillStyle = '#7a4a10'; c.textAlign = 'center'; c.font = '30px "Almendra SC", serif'; c.fillText('Rooms', w / 4, 46);
+    c.fillStyle = '#3b2a18'; c.font = '19px "Amethysta", serif'; c.textAlign = 'left';
+    ['K7MXQ2 · Chess', 'R4TNW8 · Ur', 'HB3ZP6 · Go', 'Q9DLC5 · Gin'].forEach((t, i) => { c.fillText(t, 28, 92 + i * 44); c.fillRect(28, 100 + i * 44, w / 2 - 60, 1); });
+    c.strokeStyle = '#5a3b1c'; c.lineWidth = 2; // a little board on the right-hand page
+    const x0 = w * 0.58, y0 = 60, s = 26;
+    for (let i = 0; i <= 8; i++) { c.beginPath(); c.moveTo(x0, y0 + i * s); c.lineTo(x0 + 8 * s, y0 + i * s); c.stroke(); c.beginPath(); c.moveTo(x0 + i * s, y0); c.lineTo(x0 + i * s, y0 + 8 * s); c.stroke(); }
+    for (const [i, j, col] of [[3, 3, '#1b120c'], [4, 4, '#1b120c'], [3, 4, '#f4ead4'], [4, 3, '#f4ead4'], [2, 4, '#1b120c']]) { c.fillStyle = col; c.beginPath(); c.arc(x0 + (i + 0.5) * s, y0 + (j + 0.5) * s, s * 0.38, 0, TAU); c.fill(); c.stroke(); }
+  });
+  const reg = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.025, 0.36), [MAT.woodDark, MAT.woodDark, new THREE.MeshLambertMaterial({ map: regT }), MAT.woodDark, MAT.woodDark, MAT.woodDark]);
+  reg.position.set(-0.3, 0.963, 0.06); reg.rotation.y = 0.12; g.add(reg);
+  // The bell: a brass dome on a small foot, and a lamp at the other end.
+  const bellBase = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.065, 0.02, 24), MAT.woodDark); bellBase.position.set(0.55, 0.96, 0.12); g.add(bellBase);
+  const bell = new THREE.Mesh(new THREE.SphereGeometry(0.05, 20, 10, 0, TAU, 0, Math.PI / 2), MAT.brass); bell.position.set(0.55, 0.97, 0.12); g.add(bell);
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.009, 10, 8), MAT.brass); knob.position.set(0.55, 1.025, 0.12); g.add(knob);
+  const lampPost = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.34, 10), MAT.brass); lampPost.position.set(0.82, 1.12, -0.18); g.add(lampPost);
+  const lampFoot = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.03, 18), MAT.brass); lampFoot.position.set(0.82, 0.965, -0.18); g.add(lampFoot);
+  const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.11, 0.1, 18, 1, true), new THREE.MeshBasicMaterial({ color: 0x3f6b4a, side: THREE.DoubleSide })); shade.position.set(0.82, 1.3, -0.18); g.add(shade);
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.1, 18), new THREE.MeshBasicMaterial({ color: 0xffd68a })); glow.rotation.x = Math.PI / 2; glow.position.set(0.82, 1.252, -0.18); g.add(glow);
+  // The notice board, hung on the shelves behind: how to play online, in four steps.
+  const boardT = tex(768, 512, (c, w, h) => {
+    c.fillStyle = '#e9dcbc'; c.fillRect(0, 0, w, h); speckle(c, w, h, 1400, ['#c4ad80', '#fbf2dc'], 1.4);
+    c.strokeStyle = '#7a4a10'; c.lineWidth = 3; c.strokeRect(22, 22, w - 44, h - 44);
+    c.textAlign = 'center'; c.fillStyle = '#7a4a10'; c.font = '56px "Almendra SC", serif'; c.fillText('Play Online', w / 2, 96);
+    c.fillStyle = '#3b2a18'; c.font = '22px "Amethysta", serif'; c.fillText('with a friend on another phone or computer', w / 2, 132);
+    c.textAlign = 'left';
+    [['I', 'Open a room at this desk'], ['II', 'Send your friend its code or link'], ['III', 'Suggest a game, or accept one'], ['IV', 'Save to a file, and carry on later']].forEach(([n, t], i) => {
+      const y = 208 + i * 72;
+      c.fillStyle = '#7a4a10'; c.font = '34px "Almendra SC", serif'; c.fillText(n, 92, y);
+      c.fillStyle = '#2b1a0c'; c.font = '30px "Amethysta", serif'; c.fillText(t, 176, y);
+    });
+  });
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.62, 1.1, 0.05), MAT.woodDark); frame.position.set(0, 1.82, -1.56); g.add(frame);
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.0), new THREE.MeshLambertMaterial({ map: boardT })); board.position.set(0, 1.82, -1.53); g.add(board);
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.5, 0.9), MAT.hit); hit.position.y = 0.75; g.add(hit); g.userData.hit = hit;
+  const sh = contactShadow(2.8, 1.6); sh.position.y = 0.004; g.add(sh);
+  scene.add(g); g.updateMatrixWorld(true); gamesDesk = g;
+  spotSources.push({ pos: g.localToWorld(V3(0, 0.95, 0)), lightPos: g.localToWorld(V3(0, 3.6, 1.0)) });
+  return g;
+}
 /* ---------------------------------------------------------- exhibit data */
+// Stops that are places in the hall rather than exhibits: the entrance, the Games Desk, each wing's arch and the
+// lectern at the end. They carry no passport stamp and are not listed among the exhibits.
+const isExhibit = s => s.id !== 'hall' && s.id !== 'lobby' && s.id !== 'next' && !/^wing\d$/.test(s.id);
 const STOPS = [
   { id: 'hall', wing: 1, title: 'The Dawn of Play', short: 'Welcome', date: 'Wing I', rail: 'Entrance',
     eyebrow: 'Wing I · Librarium Archives', status: null, begin: 'senet',
@@ -4147,6 +4212,15 @@ const STOPS = [
       'Four tables are ready to play: Senet, the Royal Game of Ur, Hounds and Jackals, and Hazard at the first dice. Walk up to a plinth, read its story, and take a seat at the table. Where the old rules are lost, the placard says what we play instead, or shows the game as it was found. Beyond the arch, Wing II turns from luck to strategy.'
     ],
     facts: [['Look', 'Drag the view'], ['Walk', 'WASD or arrow keys'], ['Visit', 'Click an exhibit or use the timeline']],
+  },
+  { id: 'lobby', wing: 1, title: 'The Games Desk', short: 'Games Desk', date: 'Play online', rail: 'Games Desk', desk: true,
+    eyebrow: 'Entrance · Online play and saved games', status: null,
+    body: [
+      'Play any of the two-player tables with a friend on another phone or computer. One of you opens a room here and sends the other its six-letter code, or a link. Once you are both in the room, either of you suggests a game, with its size and rules, and the other accepts or declines. Whoever suggests a game moves first, and when it ends, either of you suggests the next.',
+      'The game is kept on the Archives\' server, which throws the dice and deals the cards, so neither of you ever sees the other\'s hand. If a connection drops, the player comes back to the same seat.',
+      'Any game can be saved to a file with the table\'s Save button: an online game, a game against the Scribe, or a game played at one screen with a friend. Bring the file back here, or to the Games Desk button at the top of the screen, to carry on. An online game\'s file is sealed, so only the server can read it and the hidden cards stay hidden. Your friend accepts it before the game goes on.'
+    ],
+    facts: [['Open', 'A room, then send the code'], ['Suggest', 'Either player picks the game'], ['Save', 'To a file, from the table'], ['Carry on', 'Bring the file back here']],
   },
   { id: 'senet', wing: 1, title: 'Senet', date: 'c. 3100 BCE', rail: 'Senet',
     eyebrow: 'Egypt · Early Dynastic period', status: ['recon', 'Rules reconstructed'], game: 'senet',
@@ -9149,6 +9223,7 @@ function stopView(stop) {
     const d = HALL.dividers[+stop.id.slice(4) - 2];
     return { pos: V3(0, 1.62, d - 1.2), target: V3(0, 1.85, d - 14) };
   }
+  if (stop.id === 'lobby') { const g = stop.group; return { pos: g.localToWorld(V3(0.15, 1.66, 2.35)), target: g.localToWorld(V3(0, 1.25, -0.35)) }; }
   if (stop.id === 'next') return { pos: V3(0, 1.62, lectern.position.z + 3), target: V3(0, 1.15, lectern.position.z) };
   const g = stop.group;
   return { pos: g.localToWorld(V3(0, 1.66, 2.15)), target: g.localToWorld(V3(0, 1.08, 0)) };
@@ -9273,7 +9348,7 @@ const passport = $('#lm-passport'), passBtn = $('#lm-passBtnRail');
 const SEAL = ['Gentle', 'Fair', 'Sharp'];
 function renderPassport() {
   const cols = $('#lm-passCols'); cols.innerHTML = '';
-  const exhibits = STOPS.filter(s => s.id !== 'hall' && s.id !== 'next' && !/^wing\d$/.test(s.id)); // wing entrances and the lectern carry no stamp
+  const exhibits = STOPS.filter(isExhibit); // the entrance, the Games Desk, wing entrances and the lectern carry no stamp
   const tables = STOPS.filter(s => s.game), seen = exhibits.filter(s => store.visited[s.id]).length;
   const played = tables.filter(s => (store.record[s.game] || [0, 0, 0]).some(Boolean)).length;
   const won = tables.filter(s => (store.record[s.game] || [0])[0] > 0).length;
@@ -9281,7 +9356,7 @@ function renderPassport() {
   $('#lm-passCount').textContent = `${seen} of ${exhibits.length} exhibits visited · ${played} of ${tables.length} tables played · ${won} won${golds ? ` (${golds} at Sharp)` : ''}`;
   for (const w of WINGS) {
     const col = document.createElement('section'); col.className = 'indexwing';
-    const items = STOPS.map((s, i) => [s, i]).filter(([s]) => s.wing === w.n && s.id !== 'hall' && s.id !== 'wing' + w.n && s.id !== 'next');
+    const items = STOPS.map((s, i) => [s, i]).filter(([s]) => s.wing === w.n && isExhibit(s));
     if (!items.length) continue;
     const h = document.createElement('h3'); h.innerHTML = '<span class="r"></span><span class="n"></span><span class="dd"></span>';
     h.querySelector('.r').textContent = w.roman; h.querySelector('.n').textContent = w.title;
@@ -9379,6 +9454,9 @@ function renderPlacard(s) {
     if (s.note) { const n = document.createElement('span'); n.className = 'soon recon'; n.textContent = s.note; act.appendChild(n); } // e.g. that the table plays a modern reconstruction
     const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Take a seat and play';
     b.addEventListener('click', () => startGame(s)); act.appendChild(b);
+  } else if (s.desk) { // the Games Desk: rooms to play online, and saved games to carry on
+    const b = document.createElement('button'); b.className = 'btn primary'; b.type = 'button'; b.textContent = 'Open the Games Desk';
+    b.addEventListener('click', () => openDesk()); act.appendChild(b);
   } else if (s.link) {
     const a = document.createElement('a'); a.className = 'btn primary'; a.href = s.link[1]; a.target = '_blank'; a.rel = 'noopener'; a.textContent = s.link[0]; act.appendChild(a);
     if (s.id === 'next' && creditsBox) { // the end of the hall: the credits
@@ -9616,7 +9694,8 @@ function renderVariants(g) {
   if (play.online) { // online: the room, and a way out of it; the host's variant and rules hold for the game
     const label = document.createElement('span'); label.textContent = 'Online'; box.appendChild(label);
     const room = document.createElement('span'); room.className = 'room'; room.textContent = `Room ${play.online.code} · ${net.friend ? 'your friend is here' : 'your friend is away'}`; box.appendChild(room);
-    const b = document.createElement('button'); b.textContent = 'Leave the room'; b.addEventListener('click', () => { onlineLeave(); restartTable(); }); box.appendChild(b);
+    if (net.lobby) { const d = document.createElement('button'); d.textContent = 'Games Desk'; d.title = 'Suggest another game, or answer your friend'; d.addEventListener('click', () => { hudMenu(false); openDesk(); }); box.appendChild(d); }
+    const b = document.createElement('button'); b.textContent = 'Leave the room'; b.addEventListener('click', () => { hudMenu(false); onlineLeaveRoom(); }); box.appendChild(b);
     box.hidden = false; return;
   }
   if (HOTSEAT.has(g.id)) {
@@ -9996,7 +10075,7 @@ const credits = (() => {
       const h = el('h4', null, null, wing); el('span', 'crnum', ROMAN_WINGS[w], h); el('span', null, MUSIC_WINGS[w - 1], h);
       const ul = el('ul', null, null, wing);
       for (const s of STOPS) {
-        if (s.wing !== w || s.id === 'hall' || s.id === 'next' || /^wing\d$/.test(s.id)) continue;
+        if (s.wing !== w || !isExhibit(s)) continue;
         const li = el('li', null, null, ul); el('span', 'crex', s.title, li); el('span', 'crdate', s.date, li);
       }
     }
@@ -10142,6 +10221,8 @@ async function startGame(ex) {
   $('#lm-passBtn').textContent = g.stopLabel || 'Pass';
   play.undo = []; play.hintCount = 0;
   $('#lm-hintBtn').hidden = !canHint(g) || !!on; $('#lm-undoBtn').hidden = !UNDO_OK.has(g.id) || !!on; // online, no take-backs and no help from the Scribe
+  $('#lm-saveBtn').hidden = !(on ? net.lobby : SAVE_OK.has(g.id) || HOTSEAT.has(g.id)); // online, a desk room's game is saved by the server, sealed
+  $('#lm-winLeave').textContent = on && net.lobby ? 'Back to the room' : 'Back to the hall';
   refreshAids();
   renderRules(g);
   if (!store.rulesSeen[g.id]) { $('#lm-rules').hidden = false; store.rulesSeen[g.id] = true; save(); }
@@ -10152,7 +10233,12 @@ async function startGame(ex) {
   else setMsg(g.first === 0 ? 'Your turn' : scribeName(g), g.first === 0 ? '' : `${scribeName(g)} moves first.`);
   await flyToPlay(ex);
   if (on) { if (play.online === on && mode === 'play') onlineSeated(); return; }
-  if (play.resumed) { beginTurn(0); setMsg('Your turn', 'Your saved game is back on the table, as you left it. ' + P.prompt()); return; }
+  if (play.resumed) {
+    beginTurn(play.resumeTurn || 0);
+    if (play.hotseat) toast('Your saved game is back on the table, as you left it.');
+    else setMsg('Your turn', 'Your saved game is back on the table, as you left it. ' + P.prompt());
+    return;
+  }
   beginTurn(g.first, true);
 }
 
@@ -10251,9 +10337,48 @@ function saveGame() {
 }
 function loadGame(g) {
   const s = (store.saves || {})[g.id];
-  if (!s || s.v !== SAVE_VERSION || play.hotseat || !SAVE_OK.has(g.id)) return false;
+  play.resumeTurn = 0;
+  if (!s || s.v !== SAVE_VERSION || !(SAVE_OK.has(g.id) || (s.file && HOTSEAT.has(g.id)))) return false;
+  if (!!s.hotseat !== !!play.hotseat) return false; // a game at one screen comes back at one screen, and one against the Scribe against the Scribe
   if ((s.variant || null) !== (g.variant || null)) return false;
-  try { Object.assign(g, R.unpackState(JSON.parse(JSON.stringify(s.state)))); return true; } catch (e) { clearSave(g.id); g.init(); return false; }
+  try { Object.assign(g, R.unpackState(JSON.parse(JSON.stringify(s.state)))); } catch (e) { clearSave(g.id); g.init(); return false; }
+  play.resumeTurn = s.turn | 0;
+  if (s.file) clearSave(g.id); // brought from a file: it is back on the table, and the file is still the player's
+  return true;
+}
+
+/* A game to a file, and a file back to its table (the Save button and the Games Desk, 23b-online.js). Any game
+ * the browser keeps between visits can be saved, and any two-player game at one screen, at the start of a
+ * player's turn: before a throw at a dice table, or before a move at any other. */
+const FILE_VERSION = 1;
+function localSaveFile() {
+  const g = play.game;
+  if (!g || play.online || mode !== 'play' || !(SAVE_OK.has(g.id) || HOTSEAT.has(g.id))) return null;
+  if (g.ended && g.ended()) return null;
+  const mine = play.hotseat || play.cur === 0;
+  if (g.dice ? !(play.phase === 'throw' && mine) : !(play.phase === 'choose' && mine)) return null;
+  if ((g.trick && g.trick.length) || (g.stage === 'exchange' && g.marked && g.marked.length) || (g.saveable && !g.saveable())) return null;
+  const toggles = {}; for (const t of g.toggles || []) toggles[t.id] = toggleOn(g, t);
+  return { librarium: 'game-save', v: FILE_VERSION, game: g.id, name: g.name, saved: new Date().toISOString(), variant: g.variant || null, toggles,
+    hotseat: !!play.hotseat, turn: play.hotseat ? play.cur : 0, state: JSON.parse(JSON.stringify(engineState(g))) };
+}
+// Returns why the file cannot be carried on, or nothing once its table is being laid out.
+function loadSaveFile(d) {
+  const g = GAMES[d.game], ex = STOPS.find(s => s.game === d.game);
+  if (d.v !== FILE_VERSION || !g || !ex || !(SAVE_OK.has(g.id) || HOTSEAT.has(g.id)) || !d.state || typeof d.state !== 'object') return 'That saved game cannot be carried on here.';
+  if (d.hotseat && !HOTSEAT.has(g.id)) return 'That saved game cannot be carried on here.';
+  if (g.variants && d.variant != null && !g.variants.some(v => v.id === d.variant)) return 'That saved game is of a size or rules these Archives no longer have.';
+  if (g.variants && d.variant != null) store.variants = Object.assign(store.variants || {}, { [g.id]: d.variant });
+  if (g.toggles && d.toggles) store.toggles = Object.assign(store.toggles || {}, { [g.id]: Object.fromEntries(g.toggles.map(t => [t.id, !!d.toggles[t.id]])) });
+  if (HOTSEAT.has(g.id)) store.opponent = Object.assign(store.opponent || {}, { [g.id]: d.hotseat ? 'friend' : 'scribe' });
+  store.saves = store.saves || {};
+  store.saves[g.id] = { v: SAVE_VERSION, variant: d.variant || null, state: d.state, hotseat: !!d.hotseat, turn: d.turn | 0, file: true };
+  save();
+  closeOnlinePanel();
+  if (mode === 'play') { play.online = null; net.switching = true; leaveGame(); net.switching = false; } // a desk room stays open
+  stopTour(); goStop(STOPS.indexOf(ex), false); showPlacard(false);
+  startGame(ex);
+  return '';
 }
 function clearSave(id) { if (store.saves && store.saves[id]) { delete store.saves[id]; save(); } }
 /* ---------------------------------------------------- learning the game
@@ -10514,7 +10639,7 @@ function renderRules(g) {
 }
 function leaveGame() {
   if (mode !== 'play') return;
-  if (play.online && !net.switching) onlineLeave();
+  if (play.online && !net.switching) { if (net.lobby) onlineToDesk(); else onlineLeave(); } // a desk room stays open: back to the desk
   play.token++; clearHighlights(); clearLastMove(); $('#lm-choices').hidden = true;
   if (play.P && play.P.leave) play.P.leave(play.ex);
   $('#lm-coach').hidden = true; $('#lm-moves').hidden = true; $('#lm-choices').classList.remove('replaybar'); hudMenu(false);
@@ -11044,7 +11169,8 @@ const seatLabel = pl => (play.online ? (pl === play.online.seat ? 'You' : 'Frien
 
 /* The connection. One room at a time; events from the server are handled in order, each waiting for the last
  * to finish moving its pieces. */
-const net = { ws: null, code: null, token: null, seat: 0, game: null, settings: null, queue: Promise.resolve(), friend: false, retries: 0, closing: false, ping: 0, pendingGame: null, lastRoll: '', lastNote: '' };
+const net = { ws: null, code: null, token: null, seat: 0, game: null, settings: null, queue: Promise.resolve(), friend: false, retries: 0, closing: false, ping: 0, pendingGame: null, lastRoll: '', lastNote: '',
+  lobby: false, friendJoined: false, playing: false, proposal: null, wantTable: false, pendingSave: null, lastCode: null }; // lobby: a desk room, where the players choose games together
 function netSend(msg) { if (net.ws && net.ws.readyState === 1) { net.ws.send(JSON.stringify(msg)); return true; } onlineStatus('Not connected. Trying again…'); return false; }
 function rememberRoom(code, d) {
   store.rooms = store.rooms || {};
@@ -11082,90 +11208,208 @@ function netClose(quiet) {
   net.ws = null;
 }
 
-/* The online panel: open a room, or join one with a code. */
-const onlinePanel = $('#lm-online');
+/* The Games Desk panel (23b): open a room or join one; in a room, the friend, the game on, the suggestion on
+ * the table and a game to suggest; and saved games to carry on. Opened from the desk at the entrance, the
+ * people button at the top, and a table's Online button (which opens a room for that table alone). */
+const onlinePanel = $('#lm-online'), deskBtn = $('#lm-deskBtn');
 function onlineView(which) {
   $('#lm-onStart').hidden = which !== 'start'; $('#lm-onWait').hidden = which !== 'wait';
   $('#lm-onErr').hidden = true;
 }
-function onlineError(text) { const e = $('#lm-onErr'); e.textContent = text; e.hidden = false; onlinePanel.hidden = false; }
+function onlineError(text) { if (onlinePanel.hidden) showDesk(true); const e = $('#lm-onErr'); e.textContent = text; e.hidden = false; }
 function onlineStatus(text) {
   $('#lm-onStatus').textContent = text;
   if (play.online && mode === 'play') setMsg(play.cur === play.online.seat ? 'Your turn' : 'Online', text, true);
 }
+function showDesk(on) {
+  onlinePanel.hidden = !on;
+  if (deskBtn) deskBtn.setAttribute('aria-expanded', String(on));
+  if (on) renderDesk();
+}
+// From a table (g): a room for that table. From the desk or the top button: a room where you choose together.
 function openOnline(g) {
   net.pendingGame = g ? g.id : null;
-  onlineView('start'); onlinePanel.hidden = false;
-  $('#lm-onIntro').textContent = g ? `Play ${g.name} with a friend on another phone or computer. One of you opens a room; the other joins it with its code.` : 'Join a friend\'s room with the code they sent you.';
-  $('#lm-onOpen').hidden = !g;
-  $('#lm-onCode').value = '';
-  ($('#lm-onOpen').hidden ? $('#lm-onCode') : $('#lm-onOpen')).focus({ preventScroll: true });
+  if (!net.code) { onlineView('start'); $('#lm-onCode').value = ''; }
+  showDesk(true);
+  const first = !net.code ? ($('#lm-onOpen').hidden ? $('#lm-onCode') : $('#lm-onOpen')) : ($('#lm-onAccept').offsetParent ? $('#lm-onAccept') : $('#lm-onCancel'));
+  first.focus({ preventScroll: true });
 }
-function closeOnlinePanel() { onlinePanel.hidden = true; }
+const openDesk = () => openOnline(null);
+function closeOnlinePanel() { showDesk(false); }
+const gameName = id => (GAMES[id] ? GAMES[id].name : id);
+function variantName(id, settings) {
+  const g = GAMES[id], v = g && g.variants && settings && settings.variant != null ? g.variants.find(x => x.id === settings.variant) : null;
+  return v ? `${gameName(id)} (${v.label})` : gameName(id);
+}
+const lastRoom = () => { // a room this browser was in within the day, to go back to after a reload
+  const rooms = store.rooms || {}, code = Object.keys(rooms).sort((a, b) => rooms[b].t - rooms[a].t)[0];
+  return code && rooms[code].token && Date.now() - rooms[code].t < 20 * 3600 * 1000 ? code : null;
+};
+// The suggestion list: every table that plays online, by wing, in the hall's order.
+function fillPick() {
+  const pick = $('#lm-onPick'); if (pick.options.length) return;
+  for (let w = 1; w <= 6; w++) {
+    const grp = document.createElement('optgroup'); grp.label = `Wing ${ROMAN_WINGS[w]}: ${MUSIC_WINGS[w - 1]}`;
+    for (const s of STOPS) if (s.wing === w && s.game && ONLINE_GAMES.has(s.game) && !grp.querySelector(`[value="${s.game}"]`)) {
+      const o = document.createElement('option'); o.value = s.game; o.textContent = GAMES[s.game].name; grp.appendChild(o);
+    }
+    if (grp.children.length) pick.appendChild(grp);
+  }
+  pick.value = 'chess';
+  fillVariant();
+}
+function fillVariant() {
+  const g = GAMES[$('#lm-onPick').value], sel = $('#lm-onVariant'); sel.innerHTML = '';
+  sel.hidden = !g || !g.variants;
+  if (!g || !g.variants) return;
+  const mine = (store.variants || {})[g.id] || g.variant;
+  for (const v of g.variants) { const o = document.createElement('option'); o.value = v.id; o.textContent = v.label; sel.appendChild(o); }
+  sel.value = mine; sel.setAttribute('aria-label', g.variantLabel || 'Size');
+}
+function renderDesk() {
+  const inRoom = !!net.code, server = !!onlineServer() && typeof WebSocket !== 'undefined', g = GAMES[net.pendingGame];
+  if ($('#lm-onWait').hidden === inRoom) onlineView(inRoom ? 'wait' : 'start'); // a change of view clears the last error
+  $('#lm-onStart').hidden = inRoom || !server;
+  $('#lm-onIntro').textContent = !server ? 'Online play is not switched on for this copy of the Archives. Saved games still carry on here.'
+    : inRoom ? (net.lobby ? 'Suggest a game, or answer your friend\'s suggestion. You can save a game at any time and carry it on later.' : `This room is for ${gameName(net.game)}. The game begins when your friend joins.`)
+    : g ? `Play ${g.name} with a friend on another phone or computer. Open a room for it, or join your friend's.` : 'Play any two-player table with a friend on another phone or computer.';
+  $('#lm-onOpen').textContent = g ? `Open a room for ${g.name}` : 'Open a room';
+  const back = lastRoom();
+  let rejoin = $('#lm-onRejoin');
+  if (!inRoom && server && back) {
+    if (!rejoin) { rejoin = document.createElement('button'); rejoin.className = 'btn'; rejoin.id = 'lm-onRejoin'; rejoin.type = 'button'; $('#lm-onOpen').after(rejoin); rejoin.addEventListener('click', () => onlineJoin(rejoin.dataset.code)); }
+    rejoin.dataset.code = back; rejoin.textContent = `Back to room ${back}`; rejoin.hidden = false;
+  } else if (rejoin) rejoin.hidden = true;
+  if (deskBtn) deskBtn.classList.toggle('asking', !!(net.proposal && net.proposal.by !== net.seat));
+  if (!inRoom) return;
+  $('#lm-onCodeShow').textContent = net.code;
+  // The game on in this room, when this page is not at its table.
+  const away = net.playing && !(play.online && mode === 'play');
+  $('#lm-onGame').hidden = !away;
+  if (away) { const t = $('#lm-onGameText'); t.innerHTML = ''; t.append('Your game of '); const b = document.createElement('b'); b.textContent = variantName(net.game, net.settings); t.append(b, ' is still on.'); }
+  // The suggestion: yours (waiting for your friend), or theirs (to answer).
+  const p = net.proposal, box = $('#lm-onProposal');
+  box.hidden = !p; box.classList.toggle('theirs', !!p && p.by !== net.seat);
+  if (p) {
+    const mine = p.by === net.seat, t = $('#lm-onPropText'), b = document.createElement('b');
+    b.textContent = variantName(p.game, p.settings); t.innerHTML = '';
+    if (p.resume) {
+      const when = p.resume.saved ? new Date(p.resume.saved) : null, day = when && !isNaN(when) ? when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'earlier';
+      t.append(mine ? 'You asked to carry on your game of ' : 'Your friend wants to carry on your game of ', b, `, saved ${day}, after ${p.resume.turns} turns. Each of you sits in the seat you had.`);
+    } else t.append(mine ? 'You suggested ' : 'Your friend suggests ', b, mine ? '. Waiting for your friend to answer…' : '. They move first if you accept.');
+    if (net.playing && !mine) t.append(' Accepting ends the game that is on now.');
+    $('#lm-onPropYes').hidden = mine; $('#lm-onPropMine').hidden = !mine;
+  }
+  $('#lm-onSuggest').hidden = !net.lobby || !!p;
+  if (net.lobby) fillPick();
+  $('#lm-onLeaveRoom').hidden = false;
+}
 async function onlineOpenRoom() {
-  const g = GAMES[net.pendingGame]; if (!g) return;
+  const g = GAMES[net.pendingGame];
   const btn = $('#lm-onOpen'); btn.disabled = true;
-  const toggles = {}; for (const t of g.toggles || []) toggles[t.id] = toggleOn(g, t);
+  const body = {};
+  if (g) { const toggles = {}; for (const t of g.toggles || []) toggles[t.id] = toggleOn(g, t); Object.assign(body, { game: g.id, variant: g.variant ?? null, toggles }); }
   try {
-    const r = await fetch(onlineServer() + '/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: g.id, variant: g.variant ?? null, toggles }) });
+    const r = await fetch(onlineServer() + '/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.error || (r.status === 429 || r.status >= 500 ? 'The game server is busy. Try again in a little while.' : 'Could not open a room.'));
-    rememberRoom(d.code, { token: d.token, seat: 0, game: g.id });
-    onlineView('wait');
-    $('#lm-onCodeShow').textContent = d.code;
-    $('#lm-onStatus').textContent = 'Waiting for your friend to join…';
+    rememberRoom(d.code, { token: d.token, seat: 0, game: d.game });
+    Object.assign(net, { lobby: !!d.lobby, game: d.game, proposal: null, playing: false, friend: false });
     netConnect(d.code, d.token);
+    renderDesk();
+    $('#lm-onStatus').textContent = 'Waiting for your friend to join…';
   } catch (e) { onlineError(e && e.message && !/fetch|network/i.test(e.message) ? e.message : 'Could not reach the game server. Check your connection and try again.'); }
   finally { btn.disabled = false; }
 }
 function onlineJoin(code) {
   code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!CODE_RE.test(code)) { onlineError('A room code is six letters and numbers, like K7MXQ2.'); return; }
-  onlineView('wait'); $('#lm-onCodeShow').textContent = code; onlinePanel.hidden = false;
-  $('#lm-onStatus').textContent = 'Joining…';
+  Object.assign(net, { proposal: null, playing: false });
   netConnect(code);
+  showDesk(true);
+  $('#lm-onStatus').textContent = 'Joining…';
+}
+function onlineLeaveRoom() {
+  if (play.online && mode === 'play') { onlineLeave(); restartTable(); } else onlineLeave();
+  Object.assign(net, { proposal: null, playing: false, lobby: false, game: null, pendingSave: null });
+  if (store.rooms) { delete store.rooms[net.lastCode]; save(); }
+  renderDesk();
 }
 function joinLink(code) { const u = new URL(location.href); u.hash = ''; u.searchParams.set('join', code); return u.href; }
+function friendStatus() {
+  if (!net.friendJoined) return net.seat === 0 ? 'Waiting for your friend to join…' : 'Joining…';
+  return net.friend ? 'Your friend is here.' : 'Your friend is away just now. They can come back with the code or the link.';
+}
 
 async function onlineMessage(msg) {
   switch (msg.t) {
     case 'welcome':
-      net.seat = msg.seat; net.token = msg.token; net.game = msg.game; net.settings = msg.settings; net.friend = msg.opponent;
+      Object.assign(net, { seat: msg.seat, token: msg.token, game: msg.game, settings: msg.settings, friend: msg.opponent, lobby: !!msg.lobby, friendJoined: !!msg.friendJoined || msg.seat === 1, playing: !!msg.playing, proposal: msg.proposal || null, lastCode: msg.code });
       rememberRoom(msg.code, { token: msg.token, seat: msg.seat, game: msg.game });
-      if (!play.online) $('#lm-onStatus').textContent = msg.seat === 0 && !msg.opponent ? 'Waiting for your friend to join…' : 'Joining…';
+      if (net.pendingSave && net.lobby) { netSend({ t: 'propose', save: net.pendingSave }); net.pendingSave = null; }
+      $('#lm-onStatus').textContent = friendStatus();
+      if (!onlinePanel.hidden) renderDesk();
+      if (net.proposal && net.proposal.by !== net.seat && !(play.online && mode === 'play')) showDesk(true);
       return;
     case 'snapshot': return onlineSnapshot(msg);
-    case 'events': for (const e of msg.events) await onlineEvent(e); return;
+    case 'events':
+      for (const e of msg.events) { if (e.type === 'over') net.playing = false; await onlineEvent(e); }
+      return;
     case 'presence':
-      net.friend = msg.online;
+      net.friend = msg.online; if (msg.online) net.friendJoined = true;
+      $('#lm-onStatus').textContent = friendStatus();
+      if (!onlinePanel.hidden) renderDesk();
       if (play.online && mode === 'play') { renderVariants(play.game); if (play.phase !== 'over') setMsg('Online', msg.online ? 'Your friend is back.' : 'Your friend\'s connection dropped. The game waits for them.', true); }
       return;
     case 'left':
       net.friend = false;
+      $('#lm-onStatus').textContent = 'Your friend has left the room. It stays open for a day if they come back.';
       if (play.online && mode === 'play') { renderVariants(play.game); setMsg('Online', 'Your friend has left the table. Leave when you are ready; the room stays open for a day if they come back.', true); }
       return;
-    case 'error': if (play.online && mode === 'play') setMsg('Online', msg.msg + '.', true); return;
-    case 'full': netClose(true); onlineView('start'); onlineError('That room already has two players.'); return;
-    case 'gone': netClose(true); onlineView('start'); onlineError('There is no room with that code. It may have closed: a room is cleared a day after it was last used.'); return;
+    case 'proposal': {
+      const was = net.proposal; net.proposal = msg.proposal || null;
+      const theirs = net.proposal && net.proposal.by !== net.seat;
+      if (!onlinePanel.hidden || theirs) showDesk(true);
+      else renderDesk();
+      if (msg.declined !== undefined && msg.declined !== net.seat && was) toast(`Your friend declined ${variantName(was.game, was.settings)}.`);
+      if (msg.withdrawn !== undefined && msg.withdrawn !== net.seat) toast('Your friend took back their suggestion.');
+      if (theirs && play.online && mode === 'play') setMsg('Online', `Your friend suggests ${variantName(net.proposal.game, net.proposal.settings)}. Answer at the Games Desk.`, true);
+      if (theirs) sfx.notify && sfx.notify();
+      return;
+    }
+    case 'saved': downloadOnlineSave(msg); return;
+    case 'error':
+      if (play.online && mode === 'play' && onlinePanel.hidden) setMsg('Online', msg.msg + '.', true);
+      else onlineError(msg.msg + '.');
+      return;
+    case 'full': netClose(true); net.code = null; renderDesk(); onlineError('That room already has two players.'); return;
+    case 'gone': netClose(true); if (store.rooms) { delete store.rooms[net.code]; save(); } net.code = null; renderDesk(); onlineError('There is no room with that code. It may have closed: a room is cleared a day after it was last used.'); return;
     case 'replaced': net.closing = true; onlineStatus('This room was opened in another tab or window, so this one has stepped away.'); return;
     default: return;
   }
 }
 
-// The server's game, as a fresh start (the first game, or Play again) or to catch up after a lost connection.
+// The server's game: a fresh start (a game accepted, the first game of a table's room, Play again, a saved game
+// carried on), or the game as it is (after a lost connection, or coming back to the table from the desk).
 async function onlineSnapshot(msg) {
   const snap = msg.snap, ex = STOPS.find(s => s.game === snap.id);
   if (!ex) return;
+  Object.assign(net, { game: snap.id, settings: snap.settings, playing: snap.phase !== 'over' });
+  if (msg.fresh) net.proposal = null;
   const seatedHere = play.online && mode === 'play' && play.ex === ex && play.online.code === net.code;
   if (seatedHere && !msg.fresh) { // catch up
-    play.online.snap = snap;
+    play.online.snap = snap; play.online.seat = snap.you ?? net.seat;
     const g = play.game;
     Object.assign(g, R.unpackState(snap.state)); play.P.setup(play.ex); updateScore();
     onlineTurnFrom(snap);
     return;
   }
+  // In a desk room, the game as it is waits at the desk until the player chooses to go back to the table.
+  if (!msg.fresh && net.lobby && !net.wantTable) { if (!onlinePanel.hidden) renderDesk(); return; }
+  net.wantTable = false;
   closeOnlinePanel();
-  play.online = { seat: net.seat, code: net.code, game: snap.id, settings: snap.settings, snap };
+  const hello = !msg.fresh ? '' : msg.resumed ? 'Your saved game is back on the table, as it was. ' : net.lobby ? ((snap.you ?? net.seat) === 0 ? 'Your game begins: you move first. ' : 'Your game begins: your friend moves first. ') : null;
+  play.online = { seat: snap.you ?? net.seat, code: net.code, game: snap.id, settings: snap.settings, snap, hello };
   if (mode === 'play') {
     // Wait for the table to be laid out before the next message: the friend may move first (the elder at
     // Écarté), and that move must find the table ready, not be overtaken by the opening turn.
@@ -11175,6 +11419,9 @@ async function onlineSnapshot(msg) {
   stopTour(); goStop(STOPS.indexOf(ex), false); showPlacard(false);
   await startGame(ex);
 }
+function backToTable() { net.wantTable = true; if (!netSend({ t: 'sync' })) net.wantTable = false; }
+// Leaving the table of a desk room keeps the room: the game stays on, and the desk opens.
+function onlineToDesk() { play.online = null; setTimeout(() => showDesk(true), 400); }
 // Called by startGame once the table is laid out from the server's state.
 function onlineSeated() {
   const snap = play.online.snap;
@@ -11191,7 +11438,7 @@ function onlineTurn(e) {
   const g = play.game, P = play.P, me = play.online.seat;
   play.cur = e.seat; updateScore();
   const note = (net.lastNote ? net.lastNote + ' ' : '') + (e.note ? forSeat(e.note) + ' ' : ''); net.lastNote = '';
-  const hello = e.first ? (me === 0 ? 'Your friend has joined. ' : 'You have joined your friend\'s table, in the far seat. ') : '';
+  const hello = !e.first ? '' : play.online.hello != null ? play.online.hello : me === 0 ? 'Your friend has joined. ' : 'You have joined your friend\'s table, in the far seat. ';
   if (e.seat !== me) {
     play.phase = 'remote'; play.moves = []; clearHighlights();
     $('#lm-choices').hidden = true; $('#lm-throwBtn').disabled = true; $('#lm-passBtn').disabled = true;
@@ -11277,18 +11524,86 @@ function onlineAgain() { $('#lm-win').hidden = true; setMsg('Online', 'Starting 
 
 $('#lm-onOpen').addEventListener('click', onlineOpenRoom);
 $('#lm-onJoinForm').addEventListener('submit', e => { e.preventDefault(); onlineJoin($('#lm-onCode').value); });
-$('#lm-onCancel').addEventListener('click', () => { if (!play.online) { netClose(false); net.code = null; } closeOnlinePanel(); });
+// Closing the desk keeps the room: walk the hall while your friend joins, and come back to it at the desk.
+$('#lm-onCancel').addEventListener('click', closeOnlinePanel);
+$('#lm-onLeaveRoom').addEventListener('click', onlineLeaveRoom);
+$('#lm-onBack').addEventListener('click', backToTable);
+$('#lm-onAccept').addEventListener('click', () => netSend({ t: 'answer', yes: true }));
+$('#lm-onDecline').addEventListener('click', () => netSend({ t: 'answer', yes: false }));
+$('#lm-onWithdraw').addEventListener('click', () => netSend({ t: 'withdraw' }));
+$('#lm-onPick').addEventListener('change', fillVariant);
+$('#lm-onSuggest').addEventListener('submit', e => {
+  e.preventDefault();
+  const g = GAMES[$('#lm-onPick').value]; if (!g) return;
+  const toggles = {}; for (const t of g.toggles || []) toggles[t.id] = toggleOn(g, t);
+  netSend({ t: 'propose', game: g.id, variant: g.variants ? $('#lm-onVariant').value : null, toggles });
+});
 $('#lm-onCopy').addEventListener('click', () => {
   const link = joinLink($('#lm-onCodeShow').textContent), b = $('#lm-onCopy');
   const done = ok => { b.textContent = ok ? 'Link copied' : 'Copy failed: ' + link; setTimeout(() => { b.textContent = 'Copy the link'; }, 2500); };
   try { navigator.clipboard.writeText(link).then(() => done(true), () => done(false)); } catch (e) { done(false); }
 });
-onlinePanel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); $('#lm-onCancel').click(); } e.stopPropagation(); });
+$('#lm-onFileBtn').addEventListener('click', () => $('#lm-onFile').click());
+$('#lm-onFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) openSaveFile(f); });
+if (deskBtn) deskBtn.addEventListener('click', () => { if (onlinePanel.hidden) { hudMenu(false); openDesk(); } else closeOnlinePanel(); });
+onlinePanel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); closeOnlinePanel(); } e.stopPropagation(); });
 // Arriving with ?join=CODE: join that room once the hall is lit.
 function onlineFromLink() {
   const code = (new URLSearchParams(location.search).get('join') || '').toUpperCase();
   if (!code || !onlineServer() || !CODE_RE.test(code)) return;
   openOnline(null); onlineJoin(code);
+}
+
+/* Saving to a file, and carrying on from one. A game against the Scribe or at one screen is saved as it is
+ * (the engine's state, as the browser keeps it between visits, 22-saved-games.js); an online game is saved by
+ * the server, sealed (server/seal.mjs), so the file cannot be read or changed. */
+function toast(text) {
+  const t = $('#lm-toast'); if (!t) return;
+  t.textContent = text; t.hidden = false; t.classList.remove('out');
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.classList.add('out'); toast.timer = setTimeout(() => { t.hidden = true; }, 400); }, 4200);
+}
+function downloadFile(name, obj) {
+  const blob = new Blob([JSON.stringify(obj, null, 1)], { type: 'application/json' }), url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = name; a.hidden = true;
+  root.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+const fileStamp = iso => { const d = iso ? new Date(iso) : new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`; };
+function downloadOnlineSave(m) {
+  const name = `librarium-${m.game}-online-${fileStamp(m.at)}.json`;
+  downloadFile(name, { librarium: 'online-save', v: 1, game: m.game, name: gameName(m.game), saved: m.at, seat: m.seat, turns: m.turns, settings: m.settings, sealed: m.sealed });
+  toast(`Saved as ${name}. Bring it to the Games Desk to carry on.`);
+}
+function saveToFile() {
+  if (play.online) {
+    if (play.phase === 'over') { toast('The game is over: there is nothing to save.'); return; }
+    netSend({ t: 'save' }); return;
+  }
+  const g = play.game, file = localSaveFile();
+  if (!file) { toast(`${g.name} can be saved at the start of ${play.hotseat ? 'a' : 'your'} turn. Press Save again then.`); return; }
+  const name = `librarium-${g.id}-${fileStamp()}.json`;
+  downloadFile(name, file);
+  toast(`Saved as ${name}. Bring it to the Games Desk to carry on.`);
+}
+$('#lm-saveBtn').addEventListener('click', () => { hudMenu(false); saveToFile(); });
+// A save file brought to the desk.
+async function openSaveFile(f) {
+  $('#lm-onErr').hidden = true;
+  let d;
+  try { if (f.size > 2e6) throw new Error('big'); d = JSON.parse(await f.text()); } catch (e) { onlineError('That file is not a saved game from these Archives.'); return; }
+  if (d && d.librarium === 'game-save') {
+    const why = loadSaveFile(d);
+    if (why) onlineError(why);
+    return;
+  }
+  if (!d || d.librarium !== 'online-save' || typeof d.sealed !== 'string') { onlineError('That file is not a saved game from these Archives.'); return; }
+  if (!onlineServer()) { onlineError('This is an online game, and online play is not switched on here.'); return; }
+  if (net.code && net.ws && net.lobby) { netSend({ t: 'propose', save: d.sealed }); return; }
+  if (net.code && !net.lobby) { onlineError(`This room is for ${gameName(net.game)} only. Leave it, then open the saved game here: a new room will open for it.`); return; }
+  // No room yet: open one, and suggest the saved game as soon as it is open.
+  net.pendingGame = null; net.pendingSave = d.sealed;
+  await onlineOpenRoom();
+  toast(`Your saved game of ${gameName(d.game)} will be suggested to your friend when they join.`);
 }
 /* ------------------------------------------------------------- input */
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -11680,6 +11995,7 @@ async function boot() {
   setTimeout(drip, 400);
   buildLectern(HALL.zFar + 4.5);
   STOPS.find(s => s.id === 'next').group = lectern;
+  STOPS.find(s => s.id === 'lobby').group = buildGamesDesk();
   const sconces = [];
   for (let z = -5, k = 0; z > HALL.zFar + 2; z -= 6, k++) if (HALL.dividers.every(d => Math.abs(z - d) > 1.5)) sconces.push([k % 2 ? 4.7 : -4.7, z]);
   sconces.forEach(([x, z]) => addCandle(x, z));

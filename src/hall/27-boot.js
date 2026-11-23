@@ -29,6 +29,7 @@ async function boot() {
   setTimeout(drip, 400);
   buildLectern(HALL.zFar + 4.5);
   STOPS.find(s => s.id === 'next').group = lectern;
+  STOPS.find(s => s.id === 'lobby').group = buildGamesDesk();
   const sconces = [];
   for (let z = -5, k = 0; z > HALL.zFar + 2; z -= 6, k++) if (HALL.dividers.every(d => Math.abs(z - d) > 1.5)) sconces.push([k % 2 ? 4.7 : -4.7, z]);
   sconces.forEach(([x, z]) => addCandle(x, z));

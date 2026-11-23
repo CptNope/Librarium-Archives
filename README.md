@@ -58,7 +58,7 @@ No bundler, no framework: a static page on three.js, with every sound effect syn
 | [Visiting the Archives](docs/visiting.md) | Controls on touch and keyboard, getting around, the guided tour and passport, playing at a table (keyboard play included), playing a friend, saved games, options, sound |
 | [Game by game](docs/games/README.md) | A page for each of the 88 exhibits: history, a turn diagram, the rules as played, table features, the Scribe's play and strength, the source files |
 | [The exhibits](docs/exhibits.md) | All 88 exhibits by wing, with timelines, rule status and the rule choices at each table |
-| [Online play](docs/online.md) | Playing a friend on another device: rooms and codes, how the server referees, setting it up on Cloudflare's free plan |
+| [Online play](docs/online.md) | Playing a friend on another device: the Games Desk, rooms and suggestions, saved games, how the server referees, setting it up on Cloudflare's free plan |
 | [The soundtrack](docs/soundtrack.md) | The entrance hall's music, each wing's, and the main theme under the credits: what plays where, the credits roll, the tracks, the files |
 | [The Scribe](docs/scribe.md) | How the AI plays each game, its three levels, and measured strength |
 | [Architecture](docs/architecture.md) | Files, modules, the turn loop, table phases, conventions, stored progress |

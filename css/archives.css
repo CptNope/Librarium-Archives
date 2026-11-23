@@ -41,6 +41,10 @@
 #lm-app .fsbtn{right:calc(62px + env(safe-area-inset-right,0px));display:grid;place-items:center}
 #lm-app .soundbtn{right:calc(108px + env(safe-area-inset-right,0px));display:grid;place-items:center}
 #lm-app .musicbtn{right:calc(154px + env(safe-area-inset-right,0px));display:grid;place-items:center}
+#lm-app .deskbtn{right:calc(200px + env(safe-area-inset-right,0px));display:grid;place-items:center}
+#lm-app .deskbtn[aria-expanded="true"]{color:#1a120a;background:var(--gold);border-color:var(--gold)}
+#lm-app .deskbtn .dot{position:absolute;top:1px;right:1px;width:10px;height:10px;border-radius:50%;background:var(--ember);border:2px solid var(--ink);display:none}
+#lm-app .deskbtn.asking .dot{display:block}
 #lm-app .musicbtn[aria-expanded="true"]{color:#1a120a;background:var(--gold);border-color:var(--gold)}
 #lm-app .musicbtn .mute{display:none}#lm-app .musicbtn.off .mute{display:inline}#lm-app .musicbtn.off{color:var(--dust)}
 #lm-app .soundbtn .mute{display:none}#lm-app .soundbtn.off .mute{display:inline}#lm-app .soundbtn.off .wave{display:none}#lm-app .soundbtn.off{color:var(--dust)}
@@ -269,6 +273,32 @@
 #lm-app .oncode{font:600 34px/1.1 var(--f-ui);letter-spacing:.22em;color:var(--gold);user-select:all;font-variant-numeric:tabular-nums}
 #lm-app .onsmall{font-size:12.5px;color:var(--dust)}
 #lm-app .onerr{color:#ff9a7a;font-size:14px}
+/* A passing note (a file saved, a suggestion declined), at the top of the screen. */
+#lm-app .toast{position:absolute;left:50%;top:calc(62px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:13;width:max-content;max-width:min(34rem,calc(100% - 32px));margin:0;padding:10px 16px;background:var(--panel);border:1px solid var(--gold);color:var(--parchment);font-size:14px;box-shadow:0 10px 40px rgba(0,0,0,.5);transition:opacity .4s}
+#lm-app .toast.out{opacity:0}
+/* The Games Desk: a wider card, read top to bottom: the room (or how to open one), the suggestion, saved games. */
+#lm-app .win.online .card.desk{max-width:30rem;width:100%;text-align:left;gap:16px;padding:22px 24px 24px}
+#lm-app .deskhead{display:flex;align-items:center;gap:12px}
+#lm-app .deskhead h3{flex:1;min-width:0}
+#lm-app .desksec{display:grid;gap:12px}
+#lm-app .desksec + .desksec{padding-top:16px;border-top:1px solid var(--line)}
+#lm-app .win.online .desk .row{justify-content:flex-start}
+#lm-app .decklabel{display:block;margin:0;font:600 11px/1.3 var(--f-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--dust)}
+#lm-app .decksteps{margin:0;padding:0 0 0 1.4em;display:grid;gap:6px;font-size:14.5px}
+#lm-app .decksteps li::marker{font-family:var(--f-display);color:var(--gold)}
+#lm-app .decksteps b{font-weight:400;color:var(--gold)}
+#lm-app .deskroom{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#lm-app .deskroom .oncode{margin-top:4px}
+#lm-app .deskgame,#lm-app .deskprop{display:grid;gap:10px;padding:12px 14px;border:1px solid var(--line);background:rgba(246,160,26,.07)}
+#lm-app .deskprop.theirs{border-color:var(--gold);background:rgba(246,160,26,.14)}
+#lm-app .deskprop p b,#lm-app .deskgame p b{font-weight:400;color:var(--gold)}
+#lm-app .desksuggest{display:grid;gap:8px}
+#lm-app .deckpick{display:flex;gap:8px;flex-wrap:wrap}
+#lm-app .deckpick select{flex:1 1 12rem;min-width:0;min-height:44px;padding:0 10px;background:rgba(0,0,0,.35);border:1px solid var(--line);color:var(--parchment);font:15px var(--f-body)}
+#lm-app .deckpick select#lm-onVariant{flex:0 1 9rem}
+#lm-app .deckpick select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#lm-app .deckpick option,#lm-app .deckpick optgroup{background:#1a130d;color:var(--parchment)}
+#lm-app .desksaved h4{margin:0}
 #lm-app .level .room{font-size:12.5px;color:var(--dust);letter-spacing:0;text-transform:none}
 
 #lm-app .loader{position:absolute;inset:0;display:grid;place-items:center;background:var(--ink);font-family:var(--f-display);color:var(--gold);font-size:22px;transition:opacity .8s}
@@ -371,12 +401,13 @@
 #lm-app.playing .fsbtn{right:calc(16px + env(safe-area-inset-right,0px))}
 #lm-app.playing .soundbtn{right:calc(62px + env(safe-area-inset-right,0px))}
 #lm-app.playing .musicbtn{right:calc(108px + env(safe-area-inset-right,0px))}
+#lm-app.playing .deskbtn{right:calc(154px + env(safe-area-inset-right,0px))}
 #lm-app #lm-rulesBtn[aria-expanded="true"],#lm-app #lm-movesBtn[aria-expanded="true"],#lm-app .hudmenu[aria-expanded="true"]{color:#1a120a;background:var(--gold);border-color:var(--gold)}
 
 /* Compact: a phone, or any window too short for the full bar (layoutHud sets the class). The top bar keeps the
  * table's name, the score, Options and Leave; the Scribe's level, the game and pack switches, Moves, Hints and
  * Rules fold into the Options sheet, which wraps instead of running off the edge. */
-#lm-app.lm-compact.playing .fsbtn,#lm-app.lm-compact.playing .musicbtn{display:none}
+#lm-app.lm-compact.playing .fsbtn,#lm-app.lm-compact.playing .musicbtn,#lm-app.lm-compact.playing .deskbtn{display:none}
 #lm-app.lm-compact.playing .soundbtn{right:calc(12px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px))}
 #lm-app.lm-compact .hudtop{top:calc(10px + env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));right:calc(58px + env(safe-area-inset-right,0px));gap:6px 8px}
 #lm-app.lm-compact .hudtitle{flex:1 1 120px;min-width:0;width:auto;margin-right:0;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
