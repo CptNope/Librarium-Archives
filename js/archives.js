@@ -11997,7 +11997,8 @@ function step() {
     const hoverMove = play.hover && play.hover.userData.move;
     play.glowing.forEach(ms => {
       const hot = ms === play.selected || ms === play.hover || (play.hintMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(play.hintMove)) || (hoverMove && play.byMesh.get(ms) && play.byMesh.get(ms).includes(hoverMove));
-      const k = hot ? 0.5 : all ? pulse : 0;
+      // A card's pale face would wash out under the full glow, so it is only tinted; its halo marks it.
+      const k = (hot ? 0.5 : all ? pulse : 0) * (ms.geometry === crGeo ? 0.3 : 1);
       glowMats(ms).forEach(x => x.emissive.setRGB(0.55 * k, 0.32 * k, 0.02));
       const h = play.halos.get(ms);
       if (h) { h.material.opacity = hot ? 1 : 0.7 + 0.25 * Math.sin(t * 5); h.scale.setScalar(h.userData.base * (hot ? 1.18 : 1)); }

@@ -5,7 +5,8 @@
 - **Looking around turns the way you drag.** Drag right to look right, drag up to look up. Until now, dragging pulled the hall the other way, like moving a photo. If you prefer that, the **?** button in the hall now opens **Help and settings**, with the choice **Turns the way you drag** or **Pulls the hall**. Your browser remembers it, and the same panel still takes you to How to explore the hall.
 - **The French cards have their pips.** The number cards show their pips as on a real pack: the six of spades has six spades, in two columns, with the lower ones upside down (before, every number card had one large pip, so a six could pass for an ace).
 - **Every pack's corner indices are larger,** and the faces are drawn at one and a half times their old resolution, so a card can be read across the table without zooming in.
-- **The card tables come in closer.** The view of a card table takes in less of the empty baize and is aimed a little toward your own hand, so the cards show about a fifth larger on a computer and an eighth larger on a phone. It still keeps every hand in sight and clear of the message at the foot of the screen. Zooming in works as before.
+- **The card tables come in closer.** The view of a card table takes in less of the empty baize and is aimed a little toward your own hand, so the cards show about a fifth larger on a computer and a seventh larger on a phone. It still keeps every hand in sight and clear of the message at the foot of the screen. Zooming in works as before.
+- **Playable cards keep their print.** The gold glow that marks what you can play is only a faint tint on a card, so the face doesn't wash out; the gold halo around it still marks it.
 - **Scopa can be played online.** Each hand and the stock stay on their own side; every card played is face up, as at the table. It is in the Opponent row at the Scopa table and in the Games Desk's list. That makes 53 online tables.
 
 ## 0.45.0: The Games Desk
