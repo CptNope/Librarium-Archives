@@ -20,6 +20,7 @@ flowchart LR
 | | Touch screens | Mouse and keyboard |
 | --- | --- | --- |
 | **Look** | Drag with one finger | Drag |
+| **Which way dragging turns** | The **?** button, in the hall: **Turns the way you drag** (drag right to look right, the default) or **Pulls the hall** (like moving a photo) | The same |
 | **Walk** | Joystick at bottom left: up and down to walk, left and right to turn. Or tap the floor to walk there | WASD or arrow keys, or click the floor |
 | **Zoom** | Pinch, in the hall and at the tables | Scroll wheel or trackpad pinch (Ctrl + scroll when embedded in a page) |
 | **At a zoomed-in table** | Drag with one or two fingers to pan | Drag to pan |

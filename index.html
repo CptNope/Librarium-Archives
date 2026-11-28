@@ -25,11 +25,26 @@
   <canvas id="lm-scene" tabindex="0" aria-label="3D archive hall. Use the timeline buttons below to visit each exhibit."></canvas>
 
   <div class="brand"><div class="mark">Librarium</div><div class="sub">Archives</div></div>
-  <button class="iconbtn" id="lm-helpBtn" aria-label="How to explore">?</button>
+  <button class="iconbtn" id="lm-helpBtn" aria-label="Help and settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="lm-helpPanel">?</button>
   <button class="iconbtn soundbtn" id="lm-soundBtn" aria-label="Sound effects on. Mute" title="Sound effects" aria-pressed="true"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 8h3l4-3v10l-4-3H3z" fill="currentColor"/><path class="wave" d="M13 7.2a4 4 0 0 1 0 5.6M15.2 5a7 7 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path class="mute" d="M13 7.5l5 5M18 7.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   <button class="iconbtn musicbtn" id="lm-musicBtn" aria-label="Soundtrack" title="Soundtrack" aria-haspopup="dialog" aria-expanded="false" aria-controls="lm-music"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M8 14.5V4.5l8-2v10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6" cy="14.5" r="2.2" fill="currentColor"/><circle cx="14" cy="12.5" r="2.2" fill="currentColor"/><path class="mute" d="M3 3l14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   <button class="iconbtn deskbtn" id="lm-deskBtn" aria-label="The Games Desk: play online, or carry on a saved game" title="Games Desk: play online, carry on a saved game" aria-haspopup="dialog" aria-expanded="false" aria-controls="lm-online"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="7" cy="6.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="13.5" cy="6.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 16c.4-3 2.2-4.6 4.5-4.6S11.1 13 11.5 16M9.6 12.2c.9-.6 2.2-.8 3.9-.8 2.3 0 4.1 1.6 4.5 4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><i class="dot" aria-hidden="true"></i></button>
   <button class="iconbtn fsbtn" id="lm-fsBtn" aria-label="Full screen"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 8V3h5M12 3h5v5M17 12v5h-5M8 17H3v-5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+
+  <section class="jukebox helppanel" id="lm-helpPanel" role="dialog" aria-labelledby="lm-helpTitle" hidden>
+    <header class="jukehead"><h3 id="lm-helpTitle">Help and settings</h3><button class="indexclose" id="lm-helpClose" aria-label="Close help and settings">×</button></header>
+    <div class="helpbody">
+      <button class="btn" type="button" id="lm-helpTour">How to explore the hall</button>
+      <div class="setting" role="group" aria-labelledby="lm-lookLabel">
+        <p class="decklabel" id="lm-lookLabel">Dragging to look around</p>
+        <div class="seg" role="radiogroup" aria-labelledby="lm-lookLabel">
+          <button type="button" role="radio" data-look="turn" aria-checked="true">Turns the way you drag</button>
+          <button type="button" role="radio" data-look="pull" aria-checked="false">Pulls the hall</button>
+        </div>
+        <p class="onsmall" id="lm-lookNote"></p>
+      </div>
+    </div>
+  </section>
 
   <section class="jukebox" id="lm-music" role="dialog" aria-labelledby="lm-musicTitle" hidden>
     <header class="jukehead">

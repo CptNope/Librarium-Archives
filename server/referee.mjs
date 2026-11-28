@@ -15,7 +15,7 @@
 export const ONLINE = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier', 'idraughts', 'hnefatafl',
   'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard',
   // Card tables, each with a view below that keeps the other hand and the stock face down.
-  'gin', 'ecarte']);
+  'gin', 'ecarte', 'scopa']);
 
 // A table's settings as a page sends them (the host's variant and on-off rules), kept to plain, short values.
 export function cleanSettings(body) {
@@ -263,6 +263,7 @@ function cardCounts(st, paths) {
   return n;
 }
 const FRENCH = Array.from({ length: 52 }, (_, i) => i);
+const ITALIAN = [0, 1, 2, 3].flatMap(su => [0, 1, 2, 3, 4, 5, 6, 10, 11, 12].map(rk => su * 13 + rk)); // Scopa's forty
 export const VIEWS = {
   // Gin rummy. The stock is face down; each hand is the other's secret until a knock lays both down (stage
   // 'next' with show). Public: the discard pile, the cards each player took from it (seen, taken), the knock
@@ -288,5 +289,15 @@ export const VIEWS = {
     sortHidden: ['hands'], sort: (G, h) => { const t = Object.create(G); t.hands = [h]; t.sortAll(); },
     public: ['variant', 'score', 'dealer', 'handNo', 'over', 'decided', 'notes', 'elder', 'turnUp', 'trump', 'proposals', 'vulnerable', 'exchanged', 'trick', 'tricks', 'played', 'lastTrick', 'kingSaid', 'dealNote', 'stage', 'toMove'],
     moveCards: ['card', 'cards'],
+  },
+  // Scopa (the 40-card Italian pack). Every card is played face up, so only the stock and each hand are secret.
+  // The taken piles are public: every card in them was face up on the table when it was taken.
+  scopa: {
+    deck: ITALIAN,
+    epoch: st => st.hands0,
+    cards: () => [['hands', 0], ['hands', 1], ['table'], ['stock'], ['piles', 0], ['piles', 1], ['sweeps']],
+    hidden: (seat) => [['stock'], ['hands', 1 - seat]],
+    public: ['variant', 'total', 'hands0', 'dealer', 'over', 'decided', 'scope', 'lastTaker', 'toMove', 'stage', 'notes', 'score'],
+    moveCards: ['c', 'take'],
   },
 };

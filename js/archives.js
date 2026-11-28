@@ -1820,6 +1820,14 @@ function jokerFace() {
     g.restore();
   }, 140, 210);
 }
+// Where the pips go on the French number cards, as on a real pack: x in columns (-1 left, 0 middle, 1 right),
+// y from the top of the pip field (0) to the bottom (1).
+const FRENCH_PIPS = (() => {
+  const side = ys => ys.flatMap(y => [[-1, y], [1, y]]), mid = ys => ys.map(y => [0, y]);
+  return { 2: mid([0, 1]), 3: mid([0, 0.5, 1]), 4: side([0, 1]), 5: [...side([0, 1]), ...mid([0.5])], 6: side([0, 0.5, 1]),
+    7: [...side([0, 0.5, 1]), ...mid([0.25])], 8: [...side([0, 0.5, 1]), ...mid([0.25, 0.75])],
+    9: [...side([0, 1 / 3, 2 / 3, 1]), ...mid([0.5])], 10: [...side([0, 1 / 3, 2 / 3, 1]), ...mid([1 / 6, 5 / 6])] };
+})();
 function crFace(c, style = packNow) {
   const key = style + c;
   if (crFaceCache.has(key)) return crFaceCache.get(key);
@@ -1827,16 +1835,28 @@ function crFace(c, style = packNow) {
   const rk = c % 13, su = (c / 13) | 0, kind = PACK_SUITS[style][su], court = rk >= 10 ? rk - 10 : -1;
   const french = style === 'french', col = french ? (su === 1 || su === 2 ? '#b3261e' : '#1c1c1c') : '#2a1a0c';
   const label = court >= 0 ? PACK_COURT[style][court] : rk === 0 ? 'A' : String(rk + 1);
-  const map = cardTex((g, w, h) => {
+  // Drawn on a 140 by 210 grid, at one and a half times that, so the faces stay sharp when the view is close.
+  const map = cardTex((g, W, H) => {
+    g.scale(W / 140, H / 210); const w = 140, h = 210;
     g.fillStyle = french ? '#f7f2e6' : '#f2e8cf'; g.fillRect(0, 0, w, h);
     if (!french) speckle(g, w, h, 160, ['#d9c89e'], 1);
     g.strokeStyle = '#3a2a1a'; g.lineWidth = 4; g.strokeRect(5, 5, w - 10, h - 10);
-    const corner = () => { g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '700 30px "Montserrat",sans-serif'; g.fillText(label, 24, 26); packMark(g, kind, 24, 56, 24); };
+    // The corner index: large, so a card can be read across the table without zooming in.
+    const corner = () => {
+      g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `700 ${label.length > 1 ? 29 : 36}px "Montserrat",sans-serif`;
+      if (label.length > 1) { g.save(); g.translate(22, 28); g.scale(0.86, 1); g.fillText(label, 0, 0); g.restore(); } else g.fillText(label, 22, 28);
+      packMark(g, kind, 22, 60, 24);
+    };
     corner(); g.save(); g.translate(w, h); g.rotate(Math.PI); corner(); g.restore();
     if (court >= 0) packCourt(g, w, h, kind, court, style);
     else if (rk === 0) packMark(g, kind, w / 2, h / 2, french ? 84 : 70);
-    else if (french) packMark(g, kind, w / 2, h / 2, 58);
-    else { // the old pip cards: the suit sign repeated, in two columns
+    else if (french) { // the pips as on a real card: the six of spades has six spades, the lower ones upside down
+      for (const [cx, cy] of FRENCH_PIPS[rk + 1]) {
+        const x = w / 2 + cx * 25, y = 36 + cy * (h - 72);
+        if (cy > 0.5) { g.save(); g.translate(x, y); g.rotate(Math.PI); packMark(g, kind, 0, 0, 25); g.restore(); } else packMark(g, kind, x, y, 25);
+      }
+    } else { // the old pip cards: the suit sign repeated, in two columns
       const n = rk + 1, cols = n > 3 ? 2 : 1, rows = Math.ceil(n / cols), s = n > 8 ? 26 : n > 5 ? 30 : 36;
       for (let i = 0; i < n; i++) {
         const lastOdd = cols === 2 && n % 2 && i === n - 1, x = cols === 1 || lastOdd ? w / 2 : w / 2 + (i % 2 ? 24 : -24);
@@ -1844,7 +1864,7 @@ function crFace(c, style = packNow) {
         packMark(g, kind, x, y, s);
       }
     }
-  }, 140, 210);
+  }, 210, 315);
   crFaceCache.set(key, map); return map;
 }
 // Redraw every card on a table in another pack, in place.
@@ -7788,6 +7808,7 @@ const DOTS_P = {
 };
 // Scopa is played at its own table, with a 40-card Italian pack: three cards in each hand, the open cards
 // between, the stock at the side, and each player's takings in a pile on their right, any scope turned across it.
+// Online, the table is laid out from the local player's seat (ME()): their hand is the near one, face up.
 const SCOPA_P = {
   camW: 1.15,
   intro() { const G = GAMES.scopa; return (G.toMove === 0 ? 'The Scribe deals. You play first. ' : 'You deal. ') + this.prompt(); },
@@ -7797,13 +7818,13 @@ const SCOPA_P = {
   y: () => GAMES.scopa.surface + 0.001,
   // Scopa never has many cards out, so they are drawn a size larger than at the other tables.
   card(c) { let m = this.mesh.get(c); if (!m) { m = crCard(c); m.scale.set(1.3, 1, 1.3); this.ex.group.add(m); this.cards.push(m); this.mesh.set(c, m); } m.visible = true; return m; },
-  handSpot(pl, i, n) { return V3((i - (n - 1) / 2) * (pl ? 0.06 : 0.11), this.y() + i * 0.0004, pl ? -0.28 : 0.27); },
+  handSpot(pl, i, n) { const far = pl !== ME(); return V3((i - (n - 1) / 2) * (far ? 0.06 : 0.11), this.y() + i * 0.0004, far ? -0.28 : 0.27); },
   tableSpot(i, n) { // up to six in a row, then a second row
     const row = n > 6 ? (i < Math.ceil(n / 2) ? 0 : 1) : 0, per = n > 6 ? Math.ceil(n / 2) : n, k = row ? i - per : i, cnt = row ? n - per : per;
     return V3((k - (cnt - 1) / 2) * 0.1, this.y(), n > 6 ? (row ? 0.075 : -0.075) : 0);
   },
   stockSpot: k => V3(-0.5, GAMES.scopa.surface + 0.001 + k * 0.0016, 0),
-  pileSpot(pl, k) { return V3(0.46, this.y() + k * 0.0016, pl ? -0.16 : 0.16); },
+  pileSpot(pl, k) { return V3(0.46, this.y() + k * 0.0016, pl !== ME() ? -0.16 : 0.16); },
   faceDown(m) { m.rotation.set(0, Math.PI / 2, Math.PI); },
   redeal() {
     const G = GAMES.scopa;
@@ -7827,11 +7848,12 @@ const SCOPA_P = {
   },
   layHand(pl, instant) {
     const G = GAMES.scopa, h = G.hands[pl];
-    return Promise.all(h.map((c, i) => { const m = this.card(c), to = this.handSpot(pl, i, h.length); m.rotation.set(0, pl ? Math.PI : 0, pl ? Math.PI : 0); if (instant) { m.position.copy(to); return null; } return hop(m, to, 0.25, 0.01); }));
+    const far = pl !== ME();
+    return Promise.all(h.map((c, i) => { const m = this.card(c), to = this.handSpot(pl, i, h.length); m.rotation.set(0, far ? Math.PI : 0, far ? Math.PI : 0); if (instant) { m.position.copy(to); return null; } return hop(m, to, 0.25, 0.01); }));
   },
   // A card with one way to play is played by clicking it; a card that could take in more than one way is
   // offered as buttons, one for each set it could take.
-  meshesFor(m) { return m.kind === 'play' && m.pl === 0 && !m.label ? [this.mesh.get(m.c)] : []; },
+  meshesFor(m) { return m.kind === 'play' && m.pl === ME() && !m.label ? [this.mesh.get(m.c)] : []; },
   ringFor: () => null,
   fromFor: () => null,
   async play(m) {
@@ -7842,7 +7864,7 @@ const SCOPA_P = {
       if (e.type === 'deal') { this.redeal(); continue; }
       if (e.type === 'take' || e.type === 'lay') {
         const mc = this.card(e.c); sfx.card();
-        if (e.pl === 1) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); });
+        if (e.pl !== ME()) tween(0.3, k => { mc.rotation.z = Math.PI * (1 - k); }); // from the hidden hand, turned up
         if (e.type === 'lay') { await this.layTable(); await this.layHand(e.pl); continue; }
         const over = this.card(e.take[0]).position.clone(); over.y += 0.004;
         await hop(mc, over, 0.3, 0.04); mc.rotation.set(0, 0, 0);
@@ -7863,7 +7885,7 @@ const SCOPA_P = {
   },
   score() {
     const G = GAMES.scopa;
-    return [['You', G.total[0]], ['Scribe', G.total[1]], `to ${G.target} · hand ${G.hands0} · cards ${G.piles[0].length}–${G.piles[1].length} · scope ${G.scope[0]}–${G.scope[1]}`];
+    return [['You', G.total[0]], ['Scribe', G.total[1]], `to ${G.target} · hand ${G.hands0} · cards ${G.piles[0].length}–${G.piles[1].length} · scope ${G.scope[0]}–${G.scope[1]}`]; // online, the HUD names the seats (seatLabel)
   },
 };
 // Euchre sits like Whist: four hands round the table, the trick in the middle. While trumps are being made the
@@ -9228,16 +9250,23 @@ function stopView(stop) {
   const g = stop.group;
   return { pos: g.localToWorld(V3(0, 1.66, 2.15)), target: g.localToWorld(V3(0, 1.08, 0)) };
 }
+const CARD_TABLE_FRAME = [0.88, 0.82], CARD_TABLE_TOWARD = 0.07; // how much of the table's width and depth a card table's view takes in, and how far toward the player it is aimed
 function flyToPlay(stop, dur = 1.4) {
   const g = stop.group;
-  const P = PRES[stop.game], W = P.camW;
+  const P = PRES[stop.game];
+  // At a card table the cards take far less room than the baize, so the view comes in closer: the cards are
+  // readable without zooming, and the cloth's empty margins fall outside.
+  if (g.userData.cardTable === undefined) { let c = false; g.traverse(o => { if (o.geometry === crGeo) c = true; }); g.userData.cardTable = c; }
+  const near = g.userData.cardTable ? CARD_TABLE_FRAME : [1, 1], W = P.camW * near[0];
   const vf = THREE.MathUtils.degToRad(camera.fov) / 2;
   const hf = Math.atan(Math.tan(vf) * camera.aspect);
   const elev = THREE.MathUtils.degToRad(P.camElev || 58); // a long board is seen from higher up
   let dist = (W / 2) / Math.tan(hf) * 1.06;
-  dist = Math.max(dist, (P.camD || 0.62) / Math.tan(vf) * 1.1);
-  const center = V3(0, TOP + 0.05, 0.02);
+  dist = Math.max(dist, (P.camD || 0.62) * near[1] / Math.tan(vf) * 1.1);
   const far = play.online && play.online.seat === 1 && play.ex === stop ? -1 : 1; // online, the second player sits across the table
+  // A card table's view is aimed a little toward the player's own side, so their hand clears the message at
+  // the foot of the screen (there is room to spare above the far hand).
+  const center = V3(0, TOP + 0.05, 0.02 + (g.userData.cardTable ? CARD_TABLE_TOWARD * far : 0));
   const pos = center.clone().add(V3(0, Math.sin(elev) * dist, far * Math.cos(elev) * dist));
   play.camDist = dist;
   return flyTo(g.localToWorld(pos), g.localToWorld(center.clone().add(V3(0, 0, -0.03 * far))), dur);
@@ -9753,7 +9782,27 @@ function renderVariants(g) {
     box.appendChild(b);
   }
 }
-$('#lm-helpBtn').addEventListener('click', () => { if (mode === 'gallery') goStop(0); else $('#lm-rules').hidden = !$('#lm-rules').hidden; });
+// Help and settings (in the hall): how to explore, and which way dragging turns the view. At a table, the
+// button shows the rules instead.
+const helpPanel = $('#lm-helpPanel'), helpBtn = $('#lm-helpBtn');
+function showHelp(on) {
+  helpPanel.hidden = !on; helpBtn.setAttribute('aria-expanded', String(on));
+  if (on) { renderLook(); helpPanel.querySelector('[aria-checked="true"]').focus({ preventScroll: true }); }
+}
+function renderLook() {
+  const pull = !!store.lookPull;
+  for (const b of helpPanel.querySelectorAll('[data-look]')) b.setAttribute('aria-checked', String((b.dataset.look === 'pull') === pull));
+  $('#lm-lookNote').textContent = pull ? 'Like moving a photo: drag right and the view swings left; drag down to look up.' : 'Like turning your head: drag right to look right, drag up to look up.';
+}
+for (const b of helpPanel.querySelectorAll('[data-look]')) b.addEventListener('click', () => { store.lookPull = b.dataset.look === 'pull'; save(); renderLook(); });
+helpPanel.querySelector('.seg').addEventListener('keydown', e => { // arrow keys move between the two choices
+  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+  e.preventDefault(); store.lookPull = !store.lookPull; save(); renderLook(); helpPanel.querySelector('[aria-checked="true"]').focus();
+});
+$('#lm-helpTour').addEventListener('click', () => { showHelp(false); goStop(0); });
+$('#lm-helpClose').addEventListener('click', () => { showHelp(false); helpBtn.focus({ preventScroll: true }); });
+helpPanel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); showHelp(false); helpBtn.focus({ preventScroll: true }); } e.stopPropagation(); });
+helpBtn.addEventListener('click', () => { if (mode === 'gallery') showHelp(helpPanel.hidden); else $('#lm-rules').hidden = !$('#lm-rules').hidden; });
 
 /* ------------------------------------------------------------- music
  * The soundtrack: two pieces for the entrance hall, two for each wing, and the main theme, which plays under
@@ -10190,7 +10239,7 @@ async function startGame(ex) {
   stopTour(); narrator.stop();
   if (mode !== 'gallery') return;
   buildExhibit(ex); // in case the visitor got here before it was built
-  mode = 'play';
+  mode = 'play'; if (!helpPanel.hidden) showHelp(false);
   const g = GAMES[ex.game], P = PRES[ex.game];
   play.ex = ex; play.game = g; play.P = P; play.token++;
   packNow = packFor(g); // the cards are drawn in the pack chosen for this table
@@ -11112,7 +11161,7 @@ function clearHighlights() {
 // The tables the server will play: the same list as server/referee.mjs (a test keeps the two in step).
 const ONLINE_GAMES = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier', 'idraughts', 'hnefatafl',
   'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard',
-  'gin', 'ecarte']);
+  'gin', 'ecarte', 'scopa']);
 // The seat at this screen: 0 against the Scribe, or online the seat this player took. A card table shows this
 // seat's hand face up, and the other face down (online, as card backs: the page is never sent those cards).
 const ME = () => (play.online ? play.online.seat : 0);
@@ -11714,7 +11763,8 @@ canvas.addEventListener('pointermove', e => {
       if (mode === 'gallery') {
         camTween = null;
         const k = 1 / view.zoom; // look more finely when zoomed in
-        cam.yaw += mx * 0.0042 * k; cam.pitch += my * 0.0035 * k;
+        const way = store.lookPull ? 1 : -1; // turns the way you drag, unless set to pull the hall (Help and settings)
+        cam.yaw += way * mx * 0.0042 * k; cam.pitch += way * my * 0.0035 * k;
         cam.pitch = Math.max(-0.95, Math.min(0.7, cam.pitch));
       } else if (view.zoom > 1.02) panBy(mx, my);
     }
@@ -12023,7 +12073,7 @@ async function boot() {
 }
 // Inspect the live state from the console with ?debug in the address.
 if (/[?&]debug\b/.test(location.search)) {
-  window.__archives = {
+  window.__archives = { crFace,
     renderer, scene, RES, mergeStats, play, GAMES, PRES, STOPS, cam, view, joy, camera, choose, humanThrow, startGame, leaveGame, goStop, scribe, bootTimes, select, music,
     // Put the camera at an exhibit straight away, without the glide (for slow test machines).
     jump(id) {

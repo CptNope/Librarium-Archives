@@ -13,7 +13,7 @@
 // The tables the server will play: the same list as server/referee.mjs (a test keeps the two in step).
 const ONLINE_GAMES = new Set(['go', 'morris', 'oware', 'brandubh', 'shatranj', 'draughts', 'reversi', 'dotsboxes', 'halma', 'alquerque', 'xiangqi', 'mutorere', 'konane', 'fanorona', 'chess', 'shogi', 'bao', 'hex', 'gomoku', 'tablut', 'makruk', 'kalah', 'morabaraba', 'janggi', 'chaturanga', 'seega', 'baghchal', 'latrunculi', 'rithmo', 'jungle', 'lewischess', 'courier', 'idraughts', 'hnefatafl',
   'ur', 'senet', 'tables', 'goose', 'snakes', 'yut', 'pachisi', 'ludo', 'tab', 'hounds', 'patolli', 'mansion', 'lifegame', 'nard', 'xii', 'hazard',
-  'gin', 'ecarte']);
+  'gin', 'ecarte', 'scopa']);
 // The seat at this screen: 0 against the Scribe, or online the seat this player took. A card table shows this
 // seat's hand face up, and the other face down (online, as card backs: the page is never sent those cards).
 const ME = () => (play.online ? play.online.seat : 0);
