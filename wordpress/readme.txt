@@ -60,6 +60,9 @@ Online play is off unless you set the shortcode's online attribute (or the widge
 
 == Changelog ==
 
+= 0.46.0 =
+* Looking around turns the way you drag, with a setting to switch back; the French number cards show their pips; larger card indices and a closer view at the card tables; Scopa online.
+
 = 0.45.0 =
 * The Games Desk at the entrance: rooms where two players choose games together, and games saved to a file to carry on later (online games sealed by the server).
 

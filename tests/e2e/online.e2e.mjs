@@ -178,6 +178,26 @@ test('online cards: join a gin room in the second seat; the other hand and the s
   assert.deepEqual(page.errors, []);
 });
 
+test('online cards: join a Scopa room as guest; the host\'s hand and the stock are only ever card backs here', { timeout: LONG * 3 }, async t => {
+  t.after(closeAll);
+  const r = await fetch(ONLINE + '/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: 'scopa' }) }).then(x => x.json());
+  const f = friend(r.code, r.token);
+  const page = await newPage(`${base}/index.html?debug&join=${r.code}`);
+  await waitOn(page, () => { const P = window.__archives.play; return P.online && P.game.id === 'scopa' && ['choose', 'remote'].includes(P.phase); }, null, { polling: 500, timeout: LONG });
+  for (let k = 0; k < 6; k++) {
+    const h = await page.evaluate(() => { const A = window.__archives, G = A.play.game, P = A.play.P; return { mine: G.hands[1].slice(), theirs: G.hands[0].slice(), stock: G.stock.slice(), near: G.hands[1].every(c => { const m = P.mesh.get(c); return m && m.position.z > 0 && Math.abs(m.rotation.z) < 0.01; }) }; });
+    assert.ok(h.mine.every(c => c >= 0) && h.theirs.every(c => c < 0) && h.stock.every(c => c < 0), 'only your own cards are faces');
+    assert.ok(h.near, 'your hand is the near one, face up');
+    await waitOn(page, () => { const P = window.__archives.play; return P.phase === 'choose' && P.cur === P.online.seat || P.phase === 'over'; }, null, { polling: 500, timeout: LONG });
+    if (await page.evaluate(() => window.__archives.play.phase === 'over')) break;
+    await page.evaluate(() => { const A = window.__archives, P = A.play; A.choose(P.moves[(Math.random() * P.moves.length) | 0]); });
+    await page.waitForTimeout(2500);
+  }
+  assert.ok(!(await page.evaluate(() => document.getElementById('lm-msg').textContent)).includes('Scribe'));
+  f.close();
+  assert.deepEqual(page.errors, []);
+});
+
 test('online cards: open an Écarté room as host; the guest\'s hand and the talon are only ever card backs here', { timeout: LONG * 3 }, async t => {
   t.after(closeAll);
   const page = await newPage(`${base}/index.html?debug`);

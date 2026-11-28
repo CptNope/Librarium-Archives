@@ -41,6 +41,15 @@
 #lm-app .fsbtn{right:calc(62px + env(safe-area-inset-right,0px));display:grid;place-items:center}
 #lm-app .soundbtn{right:calc(108px + env(safe-area-inset-right,0px));display:grid;place-items:center}
 #lm-app .musicbtn{right:calc(154px + env(safe-area-inset-right,0px));display:grid;place-items:center}
+#lm-app .helppanel .jukehead h3{margin:0;font-family:var(--f-display);font-size:20px;font-weight:400;color:var(--parchment)}
+#lm-app .helppanel .helpbody{display:grid;gap:16px;padding:4px 16px 18px}
+#lm-app .helppanel .helpbody > .btn{justify-self:start}
+#lm-app .setting{display:grid;gap:8px}
+#lm-app .seg{display:flex;flex-wrap:wrap;border:1px solid var(--line)}
+#lm-app .seg button{flex:1 1 8rem;min-height:44px;padding:6px 10px;background:none;border:0;color:var(--parchment);font:14px var(--f-body);cursor:pointer}
+#lm-app .seg button + button{border-left:1px solid var(--line)}
+#lm-app .seg button[aria-checked="true"]{background:var(--gold);color:#1a120a}
+#lm-app .seg button:focus-visible{outline:2px solid var(--gold);outline-offset:-4px}
 #lm-app .deskbtn{right:calc(200px + env(safe-area-inset-right,0px));display:grid;place-items:center}
 #lm-app .deskbtn[aria-expanded="true"]{color:#1a120a;background:var(--gold);border-color:var(--gold)}
 #lm-app .deskbtn .dot{position:absolute;top:1px;right:1px;width:10px;height:10px;border-radius:50%;background:var(--ember);border:2px solid var(--ink);display:none}

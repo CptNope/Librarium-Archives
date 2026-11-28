@@ -53,7 +53,8 @@ canvas.addEventListener('pointermove', e => {
       if (mode === 'gallery') {
         camTween = null;
         const k = 1 / view.zoom; // look more finely when zoomed in
-        cam.yaw += mx * 0.0042 * k; cam.pitch += my * 0.0035 * k;
+        const way = store.lookPull ? 1 : -1; // turns the way you drag, unless set to pull the hall (Help and settings)
+        cam.yaw += way * mx * 0.0042 * k; cam.pitch += way * my * 0.0035 * k;
         cam.pitch = Math.max(-0.95, Math.min(0.7, cam.pitch));
       } else if (view.zoom > 1.02) panBy(mx, my);
     }

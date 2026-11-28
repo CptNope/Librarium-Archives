@@ -2,7 +2,7 @@
 
 Two people can play a table together from two phones or computers. One opens a room, at the **Games Desk** by the entrance or at a table, and the other joins it with the room's six-letter code or a link. The game itself is kept on a small server on Cloudflare's free plan. The server throws the dice, checks every move against the rules, and sends each player the game as they may see it.
 
-Online play is offered at 52 tables: the 50 that already seat two people at one screen (the board games, such as chess, go, draughts, shogi and the tafl games, and the race games, such as Ur, Senet, Tables and Pachisi), and two card tables, **Gin Rummy** and **Écarté**, where each hand stays on its own device. More card tables follow (see [What comes next](#what-comes-next)).
+Online play is offered at 53 tables: the 50 that already seat two people at one screen (the board games, such as chess, go, draughts, shogi and the tafl games, and the race games, such as Ur, Senet, Tables and Pachisi), and three card tables, **Gin Rummy**, **Écarté** and **Scopa**, where each hand stays on its own device. More card tables follow (see [What comes next](#what-comes-next)).
 
 ## For visitors
 
@@ -166,7 +166,7 @@ Figures from Cloudflare's [Durable Objects pricing](https://developers.cloudflar
 
 ## What comes next
 
-- **More card tables.** The two-player card tables still to come are Cribbage, Piquet, Bézique, Pinochle, Cassino, Scopa, Conquian, Koi-Koi, Primero, Tarocchi and Dominoes. Each needs three things:
+- **More card tables.** The two-player card tables still to come are Cribbage, Piquet, Bézique, Pinochle, Cassino, Conquian, Koi-Koi, Primero, Tarocchi and Dominoes. Each needs three things:
   - a `VIEWS` entry;
   - a public note wherever its notes name a hidden card;
   - its table drawn from either seat.

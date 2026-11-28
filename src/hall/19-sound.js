@@ -189,5 +189,25 @@ function renderVariants(g) {
     box.appendChild(b);
   }
 }
-$('#lm-helpBtn').addEventListener('click', () => { if (mode === 'gallery') goStop(0); else $('#lm-rules').hidden = !$('#lm-rules').hidden; });
+// Help and settings (in the hall): how to explore, and which way dragging turns the view. At a table, the
+// button shows the rules instead.
+const helpPanel = $('#lm-helpPanel'), helpBtn = $('#lm-helpBtn');
+function showHelp(on) {
+  helpPanel.hidden = !on; helpBtn.setAttribute('aria-expanded', String(on));
+  if (on) { renderLook(); helpPanel.querySelector('[aria-checked="true"]').focus({ preventScroll: true }); }
+}
+function renderLook() {
+  const pull = !!store.lookPull;
+  for (const b of helpPanel.querySelectorAll('[data-look]')) b.setAttribute('aria-checked', String((b.dataset.look === 'pull') === pull));
+  $('#lm-lookNote').textContent = pull ? 'Like moving a photo: drag right and the view swings left; drag down to look up.' : 'Like turning your head: drag right to look right, drag up to look up.';
+}
+for (const b of helpPanel.querySelectorAll('[data-look]')) b.addEventListener('click', () => { store.lookPull = b.dataset.look === 'pull'; save(); renderLook(); });
+helpPanel.querySelector('.seg').addEventListener('keydown', e => { // arrow keys move between the two choices
+  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+  e.preventDefault(); store.lookPull = !store.lookPull; save(); renderLook(); helpPanel.querySelector('[aria-checked="true"]').focus();
+});
+$('#lm-helpTour').addEventListener('click', () => { showHelp(false); goStop(0); });
+$('#lm-helpClose').addEventListener('click', () => { showHelp(false); helpBtn.focus({ preventScroll: true }); });
+helpPanel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); showHelp(false); helpBtn.focus({ preventScroll: true }); } e.stopPropagation(); });
+helpBtn.addEventListener('click', () => { if (mode === 'gallery') showHelp(helpPanel.hidden); else $('#lm-rules').hidden = !$('#lm-rules').hidden; });
 

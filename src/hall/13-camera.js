@@ -31,16 +31,23 @@ function stopView(stop) {
   const g = stop.group;
   return { pos: g.localToWorld(V3(0, 1.66, 2.15)), target: g.localToWorld(V3(0, 1.08, 0)) };
 }
+const CARD_TABLE_FRAME = [0.88, 0.82], CARD_TABLE_TOWARD = 0.07; // how much of the table's width and depth a card table's view takes in, and how far toward the player it is aimed
 function flyToPlay(stop, dur = 1.4) {
   const g = stop.group;
-  const P = PRES[stop.game], W = P.camW;
+  const P = PRES[stop.game];
+  // At a card table the cards take far less room than the baize, so the view comes in closer: the cards are
+  // readable without zooming, and the cloth's empty margins fall outside.
+  if (g.userData.cardTable === undefined) { let c = false; g.traverse(o => { if (o.geometry === crGeo) c = true; }); g.userData.cardTable = c; }
+  const near = g.userData.cardTable ? CARD_TABLE_FRAME : [1, 1], W = P.camW * near[0];
   const vf = THREE.MathUtils.degToRad(camera.fov) / 2;
   const hf = Math.atan(Math.tan(vf) * camera.aspect);
   const elev = THREE.MathUtils.degToRad(P.camElev || 58); // a long board is seen from higher up
   let dist = (W / 2) / Math.tan(hf) * 1.06;
-  dist = Math.max(dist, (P.camD || 0.62) / Math.tan(vf) * 1.1);
-  const center = V3(0, TOP + 0.05, 0.02);
+  dist = Math.max(dist, (P.camD || 0.62) * near[1] / Math.tan(vf) * 1.1);
   const far = play.online && play.online.seat === 1 && play.ex === stop ? -1 : 1; // online, the second player sits across the table
+  // A card table's view is aimed a little toward the player's own side, so their hand clears the message at
+  // the foot of the screen (there is room to spare above the far hand).
+  const center = V3(0, TOP + 0.05, 0.02 + (g.userData.cardTable ? CARD_TABLE_TOWARD * far : 0));
   const pos = center.clone().add(V3(0, Math.sin(elev) * dist, far * Math.cos(elev) * dist));
   play.camDist = dist;
   return flyTo(g.localToWorld(pos), g.localToWorld(center.clone().add(V3(0, 0, -0.03 * far))), dur);

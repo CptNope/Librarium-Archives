@@ -119,6 +119,14 @@ function jokerFace() {
     g.restore();
   }, 140, 210);
 }
+// Where the pips go on the French number cards, as on a real pack: x in columns (-1 left, 0 middle, 1 right),
+// y from the top of the pip field (0) to the bottom (1).
+const FRENCH_PIPS = (() => {
+  const side = ys => ys.flatMap(y => [[-1, y], [1, y]]), mid = ys => ys.map(y => [0, y]);
+  return { 2: mid([0, 1]), 3: mid([0, 0.5, 1]), 4: side([0, 1]), 5: [...side([0, 1]), ...mid([0.5])], 6: side([0, 0.5, 1]),
+    7: [...side([0, 0.5, 1]), ...mid([0.25])], 8: [...side([0, 0.5, 1]), ...mid([0.25, 0.75])],
+    9: [...side([0, 1 / 3, 2 / 3, 1]), ...mid([0.5])], 10: [...side([0, 1 / 3, 2 / 3, 1]), ...mid([1 / 6, 5 / 6])] };
+})();
 function crFace(c, style = packNow) {
   const key = style + c;
   if (crFaceCache.has(key)) return crFaceCache.get(key);
@@ -126,16 +134,28 @@ function crFace(c, style = packNow) {
   const rk = c % 13, su = (c / 13) | 0, kind = PACK_SUITS[style][su], court = rk >= 10 ? rk - 10 : -1;
   const french = style === 'french', col = french ? (su === 1 || su === 2 ? '#b3261e' : '#1c1c1c') : '#2a1a0c';
   const label = court >= 0 ? PACK_COURT[style][court] : rk === 0 ? 'A' : String(rk + 1);
-  const map = cardTex((g, w, h) => {
+  // Drawn on a 140 by 210 grid, at one and a half times that, so the faces stay sharp when the view is close.
+  const map = cardTex((g, W, H) => {
+    g.scale(W / 140, H / 210); const w = 140, h = 210;
     g.fillStyle = french ? '#f7f2e6' : '#f2e8cf'; g.fillRect(0, 0, w, h);
     if (!french) speckle(g, w, h, 160, ['#d9c89e'], 1);
     g.strokeStyle = '#3a2a1a'; g.lineWidth = 4; g.strokeRect(5, 5, w - 10, h - 10);
-    const corner = () => { g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '700 30px "Montserrat",sans-serif'; g.fillText(label, 24, 26); packMark(g, kind, 24, 56, 24); };
+    // The corner index: large, so a card can be read across the table without zooming in.
+    const corner = () => {
+      g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `700 ${label.length > 1 ? 29 : 36}px "Montserrat",sans-serif`;
+      if (label.length > 1) { g.save(); g.translate(22, 28); g.scale(0.86, 1); g.fillText(label, 0, 0); g.restore(); } else g.fillText(label, 22, 28);
+      packMark(g, kind, 22, 60, 24);
+    };
     corner(); g.save(); g.translate(w, h); g.rotate(Math.PI); corner(); g.restore();
     if (court >= 0) packCourt(g, w, h, kind, court, style);
     else if (rk === 0) packMark(g, kind, w / 2, h / 2, french ? 84 : 70);
-    else if (french) packMark(g, kind, w / 2, h / 2, 58);
-    else { // the old pip cards: the suit sign repeated, in two columns
+    else if (french) { // the pips as on a real card: the six of spades has six spades, the lower ones upside down
+      for (const [cx, cy] of FRENCH_PIPS[rk + 1]) {
+        const x = w / 2 + cx * 25, y = 36 + cy * (h - 72);
+        if (cy > 0.5) { g.save(); g.translate(x, y); g.rotate(Math.PI); packMark(g, kind, 0, 0, 25); g.restore(); } else packMark(g, kind, x, y, 25);
+      }
+    } else { // the old pip cards: the suit sign repeated, in two columns
       const n = rk + 1, cols = n > 3 ? 2 : 1, rows = Math.ceil(n / cols), s = n > 8 ? 26 : n > 5 ? 30 : 36;
       for (let i = 0; i < n; i++) {
         const lastOdd = cols === 2 && n % 2 && i === n - 1, x = cols === 1 || lastOdd ? w / 2 : w / 2 + (i % 2 ? 24 : -24);
@@ -143,7 +163,7 @@ function crFace(c, style = packNow) {
         packMark(g, kind, x, y, s);
       }
     }
-  }, 140, 210);
+  }, 210, 315);
   crFaceCache.set(key, map); return map;
 }
 // Redraw every card on a table in another pack, in place.

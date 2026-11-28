@@ -24,7 +24,7 @@ async function startGame(ex) {
   stopTour(); narrator.stop();
   if (mode !== 'gallery') return;
   buildExhibit(ex); // in case the visitor got here before it was built
-  mode = 'play';
+  mode = 'play'; if (!helpPanel.hidden) showHelp(false);
   const g = GAMES[ex.game], P = PRES[ex.game];
   play.ex = ex; play.game = g; play.P = P; play.token++;
   packNow = packFor(g); // the cards are drawn in the pack chosen for this table
