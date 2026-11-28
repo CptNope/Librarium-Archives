@@ -178,7 +178,7 @@ test('online cards: join a gin room in the second seat; the other hand and the s
   assert.deepEqual(page.errors, []);
 });
 
-test('online cards: join a Scopa room as guest; the host's hand and the stock are only ever card backs here', { timeout: LONG * 3 }, async t => {
+test('online cards: join a Scopa room as guest; the host\'s hand and the stock are only ever card backs here', { timeout: LONG * 3 }, async t => {
   t.after(closeAll);
   const r = await fetch(ONLINE + '/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: 'scopa' }) }).then(x => x.json());
   const f = friend(r.code, r.token);
